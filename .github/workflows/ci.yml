@@ -1,0 +1,48 @@
+name: Frontend CI
+on:
+    pull_request:
+    push:
+        branches: [develop, main]
+    workflow_dispatch:
+permissions:
+    contents: read
+concurrency:
+    group: frontend-ci-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v4
+            - name: Check project availability
+              id: project
+              shell: bash
+              run: |
+                  if [[ -f package.json && -f package-lock.json ]]; then
+                    echo "ready=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "ready=false" >> "$GITHUB_OUTPUT"
+                    echo "::notice::JavaScript project files are not committed yet; application checks are deferred."
+                    echo "Application checks deferred: package.json and package-lock.json must be committed first." >> "$GITHUB_STEP_SUMMARY"
+                  fi
+            - uses: actions/setup-node@v4
+              if: steps.project.outputs.ready == 'true'
+              with:
+                  node-version: "22.22.0"
+                  cache: npm
+            - name: Install dependencies
+              if: steps.project.outputs.ready == 'true'
+              run: npm ci
+            - name: Check code rules
+              if: steps.project.outputs.ready == 'true'
+              run: npm run lint
+            - name: Check formatting
+              if: steps.project.outputs.ready == 'true'
+              run: npm run format:check
+            - name: Run tests
+              if: steps.project.outputs.ready == 'true'
+              run: npm run test:run
+            - name: Build
+              if: steps.project.outputs.ready == 'true'
+              run: npm run build
