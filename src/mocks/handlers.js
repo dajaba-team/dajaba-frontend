@@ -70,6 +70,19 @@ export const handlers = [
 		currentUser = null
 		return new HttpResponse(null, { status: 204 })
 	}),
+	// 연동 확인 화면용. 실제 백엔드 응답 중 화면이 읽는 필드만 둡니다.
+	http.get(`${base}/actuator/health`, () => HttpResponse.json({ status: "UP" })),
+	http.get(`${base}/v3/api-docs`, () =>
+		HttpResponse.json({
+			openapi: "3.0.1",
+			info: { title: "MSW 예시 API", version: "mock" },
+			paths: {
+				"/api/v1/auth/me": { get: {} },
+				"/api/v1/auth/mock-login": { post: {} },
+				"/api/v1/auth/logout": { post: {} },
+			},
+		}),
+	),
 	http.get(`${base}/api/cases`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
 		const url = new URL(request.url)

@@ -48,7 +48,23 @@ npm run build
 - HTTPS API 연결, 쿠키 전달, CSRF (정식 로그인 뒤)
 - MSW·`/demo` 비활성, 로딩·빈 결과·조회 실패·저장 충돌 화면
 
-## 4. 실서버 연동 인수 시나리오 〔후속〕
+## 4. 백엔드 연동 확인 화면 — `/dev/connection`
+
+백엔드를 local 프로파일로 띄우고(`VITE_USE_MOCKS=false`) `npm run dev` 뒤 `http://localhost:5173/dev/connection`을 열어요. 개발 모드에서만 있고, 로그인 전에도 열려요.
+
+| 항목            | 요청                                        | 통과 기준                                         | 실패하면                    |
+| --------------- | ------------------------------------------- | ------------------------------------------------- | --------------------------- |
+| 서버 상태       | `GET /actuator/health`                      | `{"status":"UP"}`                                 | 백엔드가 꺼짐 / 프록시 확인 |
+| API 문서        | `GET /v3/api-docs` (swagger-ui가 읽는 문서) | OpenAPI 응답, 경로 목록                           | 404면 local 프로파일 아님   |
+| 현재 세션       | `GET /api/v1/auth/me`                       | 200(로그인됨) 또는 401(로그인 안 됨) — 둘 다 정상 | 그 밖의 상태                |
+| 테스트 로그인   | `POST /api/v1/auth/mock-login`              | 200, `XSRF-TOKEN` 쿠키 표시 → 세션 재확인         | 404면 local 프로파일 아님   |
+| 로그아웃 (CSRF) | `POST /api/v1/auth/logout`                  | 204 — 쓰기 요청의 CSRF 헤더가 통과                | 403 `CSRF_INVALID`          |
+
+- `/actuator`·`/v3/api-docs`도 Vite 프록시로 넘겨요(`vite.config.js`). 백엔드 CORS는 `/api/**`만 열려 있어서 `VITE_API_BASE_URL`을 8080으로 직접 두면 앞의 두 항목이 실패해요 — `/`로 두세요.
+- MSW 모드에서는 화면 위에 "MSW 예시 응답"이라고 떠요. 그때 통과는 **실제 연동 확인이 아니에요.**
+- 여기서 로그인·로그아웃하면 업무 화면 캐시도 같이 지워요.
+
+## 5. 실서버 연동 인수 시나리오 〔후속〕
 
 계약이 확정되면 API·MSW·사용자 흐름 테스트를 같이 바꾸고, 아래를 **백엔드 local에서 직접** 확인해요. 자동 테스트 통과와 실서버 연동 완료는 구분해요.
 
@@ -63,6 +79,6 @@ npm run build
 - [ ] AI 응답 유실 시 서버 상태를 먼저 보고 쓰기를 자동으로 다시 보내지 않음
 - [ ] 같은 계정 두 번째 로그인 → 첫 세션 401
 
-## 5. 참고
+## 6. 참고
 
 [React Router 설치](https://reactrouter.com/start/declarative/installation) · [MSW 브라우저 구성](https://mswjs.io/docs/integrations/browser) · [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview) · [Vitest](https://vitest.dev/guide/)

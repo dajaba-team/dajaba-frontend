@@ -6,6 +6,9 @@ export default defineConfig({
 	server: {
 		proxy: {
 			"/api": { target: "http://localhost:8080", changeOrigin: true },
+			// 개발 전용 연동 확인 화면(/dev/connection)이 쓰는 health·API 문서
+			"/actuator": { target: "http://localhost:8080", changeOrigin: true },
+			"/v3/api-docs": { target: "http://localhost:8080", changeOrigin: true },
 		},
 	},
 	test: {

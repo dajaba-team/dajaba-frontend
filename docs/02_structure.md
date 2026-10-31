@@ -21,6 +21,7 @@ src/
 │  ├─ alerts/ rules/   경보 점검·탐지 룰    (BE detection, 관리자)
 │  ├─ admin/batches/   데이터·배치 운영     (BE source·detection·shared/batch)
 │  ├─ overview/ evaluation/ audit/   업무 개요·평가·감사 기록 (지금은 시연만)
+│  ├─ connection/      백엔드 연동 확인 (개발 전용 /dev/connection)
 │  └─ (기능 안은 똑같이)
 │       api/         {기능}Api.js — HTTP 호출 + snake_case ↔ camelCase
 │       hooks/       useQuery·useMutation 묶음
@@ -63,20 +64,23 @@ app  →  features  →  shared
 | 기능 A의 페이지가 기능 B의 **훅**을 써서 조합 (케이스 상세가 `str` 훅으로 현재 초안 표시) | 기능 A가 기능 B의 `api/`를 직접 import                   |
 | `features/auth/hooks/useSession`을 어디서나                                               | 실제 화면이 `mocks/`·`shared/demo/`·`Demo*Page`를 import |
 
-예외 하나: `features/auth/components/AuthPanel`이 `app/queryClient`의 `clearBusinessData`를 써요. 로그인·로그아웃이 캐시 정리와 묶여 있어서예요. 이 밖에 `features → app` import는 만들지 않아요.
+예외: `features/auth/components/AuthPanel`과 `features/connection/pages/ConnectionCheckPage`가 `app/queryClient`의 `clearBusinessData`를 써요. 로그인·로그아웃이 캐시 정리와 묶여 있어서예요. 이 밖에 `features → app` import는 만들지 않아요.
+
+`features/connection/api/connectionApi.js`는 인증 API를 `authApi`와 따로 불러요. 연동 확인은 정규화 전 **상태 코드·시간·원본 응답**이 필요해서예요. 업무 화면에서는 쓰지 않아요.
 
 자동 검사는 아직 없어요. 〔제안〕 ESLint `no-restricted-imports`로 ① `shared`에서 `features`·`app` import 금지 ② `pages`·`components`에서 `apiClient` import 금지 ③ `Demo` 아닌 파일에서 `mocks/dashboard` import 금지를 걸면 리뷰에서 매번 안 봐도 돼요.
 
 ## 3. 라우트 [FE 코드 `router.jsx`]
 
-| 경로                 | 화면                              | 지금                |
-| -------------------- | --------------------------------- | ------------------- |
-| `/`                  | `/cases`로 이동                   | 있음                |
-| `/cases`             | `CaseListPage`                    | 있음 (〔임시〕 API) |
-| `/cases/:caseId`     | `CaseDetailPage`                  | 있음 (〔임시〕 API) |
-| `/cases/:caseId/str` | `StrPage`                         | 안내 화면만         |
-| `*`                  | 페이지 없음 안내                  | 있음                |
-| `/demo/*`            | 시연 묶음 (`DashboardDemoRouter`) | 개발 모드만         |
+| 경로                 | 화면                                                                                       | 지금                |
+| -------------------- | ------------------------------------------------------------------------------------------ | ------------------- |
+| `/`                  | 개발 모드: `/dev/connection`으로 이동 · 운영: `/cases`로 이동 (`router.jsx`의 `HOME_PATH`) | 있음                |
+| `/cases`             | `CaseListPage`                                                                             | 있음 (〔임시〕 API) |
+| `/cases/:caseId`     | `CaseDetailPage`                                                                           | 있음 (〔임시〕 API) |
+| `/cases/:caseId/str` | `StrPage`                                                                                  | 안내 화면만         |
+| `*`                  | 페이지 없음 안내                                                                           | 있음                |
+| `/demo/*`            | 시연 묶음 (`DashboardDemoRouter`)                                                          | 개발 모드만         |
+| `/dev/connection`    | 백엔드 연동 확인 (`ConnectionCheckPage`, `AppLayout` 밖 — 로그인 전에도 열림)              | 개발 모드만         |
 
 앞으로 붙을 경로(`/login`, `/approvals`, `/admin/*`)는 `06_features/`에 있어요. 경로를 새로 만들면 이 표와 해당 `06_features` 파일을 같이 고쳐요.
 

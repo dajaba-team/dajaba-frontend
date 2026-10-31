@@ -31,6 +31,11 @@ export default function AppLayout() {
 								대시보드 시연
 							</NavLink>
 						)}
+						{import.meta.env.DEV && (
+							<NavLink to="/dev/connection" className="navigation-link">
+								백엔드 연동 확인
+							</NavLink>
+						)}
 					</nav>
 					<p className="sidebar-note">
 						거래 근거부터 조사 메모까지
