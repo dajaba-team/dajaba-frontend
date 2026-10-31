@@ -1,0 +1,25 @@
+.dashboard-demo .repro {
+	margin-top: 14px;
+}
+.dashboard-demo .repro > div:last-child {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 14px;
+	padding: 13px;
+	border-radius: 7px;
+	color: #dbe7f7;
+	background: var(--navy);
+}
+.dashboard-demo .repro code {
+	flex: 1;
+	overflow-x: auto;
+	font-size: 11px;
+	white-space: nowrap;
+}
+@media (max-width: 640px) {
+	.dashboard-demo .repro > div:last-child {
+		align-items: stretch;
+		flex-direction: column;
+	}
+}

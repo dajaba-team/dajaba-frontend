@@ -1,0 +1,69 @@
+.dashboard-demo .step-grid {
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	gap: 10px;
+	margin-bottom: 14px;
+}
+.dashboard-demo .step-card {
+	min-height: 210px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	padding: 15px;
+}
+.dashboard-demo .step-card h2 {
+	margin: 13px 0 9px;
+	font-size: 14px;
+}
+.dashboard-demo .step-card code {
+	display: block;
+	color: var(--blue);
+	font-size: 10px;
+	line-height: 1.5;
+	word-break: break-all;
+}
+.dashboard-demo .step-card p {
+	color: var(--muted);
+	font-size: 11px;
+	line-height: 1.5;
+}
+.dashboard-demo .step-card .button {
+	width: 100%;
+}
+.dashboard-demo .source-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 10px;
+}
+.dashboard-demo .source-card {
+	padding: 16px;
+}
+.dashboard-demo .source-card svg {
+	color: var(--blue);
+}
+.dashboard-demo .source-card strong {
+	display: block;
+	margin-top: 10px;
+	font-size: 13px;
+}
+.dashboard-demo .source-card p {
+	color: var(--muted);
+	font-size: 11px;
+}
+
+@media (max-width: 1240px) {
+	.dashboard-demo .step-grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+@media (max-width: 900px) {
+	.dashboard-demo .source-grid {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+@media (max-width: 640px) {
+	.dashboard-demo .step-grid,
+	.dashboard-demo .source-grid {
+		grid-template-columns: 1fr;
+	}
+}
