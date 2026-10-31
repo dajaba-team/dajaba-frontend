@@ -41,10 +41,10 @@ function visibleCase(item) {
 }
 const unauthenticated = () =>
 	HttpResponse.json({ error: { code: "UNAUTHENTICATED" } }, { status: 401 })
-const base = new URL(
-	import.meta.env.VITE_API_BASE_URL || "http://localhost:8080",
-	window.location.origin,
-).href.replace(/\/$/, "")
+const base = new URL(import.meta.env.VITE_API_BASE_URL || "", window.location.origin).href.replace(
+	/\/$/,
+	"",
+)
 export const handlers = [
 	http.get(`${base}/api/v1/auth/me`, () =>
 		currentUser

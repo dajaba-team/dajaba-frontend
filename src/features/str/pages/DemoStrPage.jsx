@@ -335,7 +335,7 @@ function StrEditor({ draft, isCurrent }) {
 							<dd>{evidence.transaction_ts}</dd>
 							<dt>송금 → 수취 계좌</dt>
 							<dd>
-								{evidence.from_account_key} → {evidence.to_account_key}
+								{evidence.from_masked_account_no} → {evidence.to_masked_account_no}
 							</dd>
 							<dt>금액</dt>
 							<dd>

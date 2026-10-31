@@ -228,7 +228,7 @@ export class DashboardDemoApi {
 				},
 				{
 					section: "WHO",
-					text: "대상 계좌 ACC-8842의 고객 정보는 현재 확인되지 않았으며 거래 상대 계좌는 33개입니다.",
+					text: "대상 계좌 010_****8842의 고객 정보는 현재 확인되지 않았으며 거래 상대 계좌는 33개입니다.",
 					evidence_ids: ["TX-220902-4701"],
 				},
 				{

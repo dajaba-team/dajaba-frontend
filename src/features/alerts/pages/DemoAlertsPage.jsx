@@ -21,7 +21,7 @@ export default function Alerts() {
 	const filtered = db.alerts.filter(
 		(item) =>
 			(!scoreStatus || item.score_status === scoreStatus) &&
-			[item.alert_no, item.account_key, item.rule_name].some((value) =>
+			[item.alert_no, item.masked_account_no, item.rule_name].some((value) =>
 				value.toLowerCase().includes(search.toLowerCase()),
 			),
 	)
@@ -87,8 +87,7 @@ export default function Alerts() {
 								<tr key={item.alert_no}>
 									<td className="mono link">{item.alert_no}</td>
 									<td>
-										<strong className="mono">{item.account_key}</strong>
-										<small>{item.masked_account_no}</small>
+										<strong className="mono">{item.masked_account_no}</strong>
 									</td>
 									<td>
 										{item.rule_name}

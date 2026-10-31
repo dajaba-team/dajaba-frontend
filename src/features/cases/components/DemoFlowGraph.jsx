@@ -70,7 +70,7 @@ export default function FlowGraph({ db }) {
 					<g className="graph-node target">
 						<circle cx="400" cy="150" r="46" />
 						<text x="400" y="147">
-							ACC-8842
+							{db.cases[0].masked_account_no}
 						</text>
 						<text x="400" y="166">
 							조사 대상
@@ -81,7 +81,7 @@ export default function FlowGraph({ db }) {
 						.map((item, index) => (
 							<g
 								className="graph-node"
-								key={item.from_account_key}
+								key={item.from_account_ref}
 								role="button"
 								tabIndex={0}
 								aria-label={`거래 ${item.transaction_id} 선택`}
@@ -95,7 +95,7 @@ export default function FlowGraph({ db }) {
 							>
 								<circle cx="100" cy={45 + index * 52} r="26" />
 								<text x="100" y={49 + index * 52}>
-									{item.from_account_key.slice(-4)}
+									{item.from_masked_account_no.slice(-4)}
 								</text>
 							</g>
 						))}
@@ -104,7 +104,7 @@ export default function FlowGraph({ db }) {
 						.map((item, index) => (
 							<g
 								className="graph-node out"
-								key={item.to_account_key}
+								key={item.to_account_ref}
 								role="button"
 								tabIndex={0}
 								aria-label={`거래 ${item.transaction_id} 선택`}
@@ -118,7 +118,7 @@ export default function FlowGraph({ db }) {
 							>
 								<circle cx="690" cy={201 + index * 52} r="28" />
 								<text x="690" y={205 + index * 52}>
-									{item.to_account_key.slice(-4)}
+									{item.to_masked_account_no.slice(-4)}
 								</text>
 							</g>
 						))}
@@ -142,7 +142,7 @@ export default function FlowGraph({ db }) {
 			<div className="graph-selection">
 				<strong>{tx.transaction_id}</strong>
 				<span>
-					{tx.from_account_key} → {tx.to_account_key}
+					{tx.from_masked_account_no} → {tx.to_masked_account_no}
 				</span>
 				<span>
 					USD {tx.amount.toLocaleString()} · {tx.transaction_ts}

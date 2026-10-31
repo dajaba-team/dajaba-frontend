@@ -100,8 +100,8 @@ export default function CaseDetail() {
 										<tr key={tx.transaction_id}>
 											<td className="mono link">{tx.transaction_id}</td>
 											<td>{tx.transaction_ts}</td>
-											<td className="mono">{tx.from_account_key}</td>
-											<td className="mono">{tx.to_account_key}</td>
+											<td className="mono">{tx.from_masked_account_no}</td>
+											<td className="mono">{tx.to_masked_account_no}</td>
 											<td>
 												{tx.direction === "IN"
 													? "대상 계좌 유입"

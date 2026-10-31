@@ -26,7 +26,7 @@ const crossOrigin =
 function unreachable(result) {
 	if (result.status !== null) return null
 	return crossOrigin
-		? "브라우저가 응답을 막았어요(CORS). 백엔드는 /api/** 만 다른 출처를 허용해요. .env.local에 VITE_API_BASE_URL=/ 로 두고 개발 서버를 다시 켜 주세요."
+		? "브라우저가 응답을 막았어요(CORS). 백엔드는 /api/** 만 다른 출처를 허용해요. .env.local의 VITE_API_BASE_URL을 비우거나 / 로 두고 개발 서버를 다시 켜 주세요."
 		: "서버에 연결하지 못했어요. 백엔드가 켜져 있는지, Vite 프록시 설정을 확인해 주세요."
 }
 

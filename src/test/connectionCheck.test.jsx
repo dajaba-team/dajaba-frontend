@@ -55,8 +55,8 @@ describe("백엔드 연동 확인", () => {
 		await user.click(await screen.findByRole("button", { name: "전체 확인" }))
 		expect(await within(row("현재 세션")).findByText("통과")).toBeInTheDocument()
 		expect(within(row("서버 상태")).getByText("실패")).toBeInTheDocument()
-		// 테스트의 API 주소는 다른 출처라 CORS 안내가 나옵니다.
-		expect(within(row("서버 상태")).getByText(/CORS/)).toBeInTheDocument()
+		// 기본 API 주소는 같은 출처라 CORS가 아닌 연결 실패 안내가 나옵니다.
+		expect(within(row("서버 상태")).getByText(/서버에 연결하지 못했어요/)).toBeInTheDocument()
 		await user.click(screen.getByRole("button", { name: "로그아웃" }))
 		expect(await within(row("로그아웃 (CSRF)")).findByText(/CSRF_INVALID/)).toBeInTheDocument()
 	})
