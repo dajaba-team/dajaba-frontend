@@ -26,6 +26,8 @@ export function isVersionConflict(error) {
 
 export function getErrorMessage(error) {
 	const code = getErrorCode(error)
+	// 로그인 실패는 없는 ID인지 비밀번호가 틀렸는지 알려 주지 않으므로 문구도 하나입니다.
+	if (code === "LOGIN_FAILED") return "아이디 또는 비밀번호가 맞지 않아요."
 	if (error.response?.status === 401) return "로그인이 필요합니다."
 	if (isVersionConflict(error)) {
 		return "다른 사용자가 먼저 변경했습니다. 작성 내용은 유지됩니다. 최신 내용을 확인한 후 다시 저장해 주세요."

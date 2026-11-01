@@ -1,4 +1,8 @@
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query"
+import { getErrorCode } from "../shared/api/apiClient"
+
+// 로그인돼 있던 세션이 401로 끊겼다는 표시입니다. 같은 계정의 다른 곳 로그인(maximumSessions 1)·만료가 여기로 옵니다.
+export const sessionEndedKey = ["auth", "sessionEnded"]
 
 export function isBusinessQuery(query) {
 	return query.queryKey[0] !== "auth"
@@ -17,7 +21,10 @@ export function createQueryClient() {
 	let previousLoginId
 	const handleError = (error) => {
 		if (error.response?.status !== 401) return
-		// null은 확인된 비로그인 상태입니다. 업무 화면을 내려 미저장 민감정보도 제거합니다.
+		// 로그인 실패는 세션이 끊긴 것이 아니라 입력이 틀린 것이므로 여기서 다루지 않습니다.
+		if (getErrorCode(error) === "LOGIN_FAILED") return
+		if (client.getQueryData(["auth", "me"])) client.setQueryData(sessionEndedKey, true)
+		// null은 확인된 비로그인 상태입니다. 업무 화면을 내려 미저장 민감정보도 제거하고 로그인 폼을 보여 줍니다.
 		client.setQueryData(["auth", "me"], null)
 		void clearBusinessData(client)
 	}
@@ -47,6 +54,16 @@ export function createQueryClient() {
 			// 응답 유실 때도 서버는 저장했을 수 있으므로 쓰기를 자동 반복하지 않습니다.
 			mutations: { retry: false },
 		},
+	})
+	// me 조회(수동 기록 제외)가 로그인 상태에서 비로그인으로 바뀌면 다른 곳 로그인·만료로 끊긴 것입니다.
+	// 로그아웃 버튼·로그인 전환은 setQueryData(수동 기록)라 여기서 걸리지 않습니다.
+	let lastUser = null
+	client.getQueryCache().subscribe((event) => {
+		if (event.type !== "updated" || event.action.type !== "success") return
+		if (event.query.queryKey[0] !== "auth" || event.query.queryKey[1] !== "me") return
+		const user = event.query.state.data
+		if (!event.action.manual && !user && lastUser) client.setQueryData(sessionEndedKey, true)
+		lastUser = user
 	})
 	return client
 }

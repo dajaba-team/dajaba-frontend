@@ -52,13 +52,13 @@ npm run build
 
 백엔드를 local 프로파일로 띄우고(`VITE_USE_MOCKS=false`) `npm run dev` 뒤 `http://localhost:5173/dev/connection`을 열어요. 개발 모드에서만 있고, 로그인 전에도 열려요.
 
-| 항목            | 요청                                        | 통과 기준                                         | 실패하면                    |
-| --------------- | ------------------------------------------- | ------------------------------------------------- | --------------------------- |
-| 서버 상태       | `GET /actuator/health`                      | `{"status":"UP"}`                                 | 백엔드가 꺼짐 / 프록시 확인 |
-| API 문서        | `GET /v3/api-docs` (swagger-ui가 읽는 문서) | OpenAPI 응답, 경로 목록                           | 404면 local 프로파일 아님   |
-| 현재 세션       | `GET /api/v1/auth/me`                       | 200(로그인됨) 또는 401(로그인 안 됨) — 둘 다 정상 | 그 밖의 상태                |
-| 테스트 로그인   | `POST /api/v1/auth/mock-login`              | 200, `XSRF-TOKEN` 쿠키 표시 → 세션 재확인         | 404면 local 프로파일 아님   |
-| 로그아웃 (CSRF) | `POST /api/v1/auth/logout`                  | 204 — 쓰기 요청의 CSRF 헤더가 통과                | 403 `CSRF_INVALID`          |
+| 항목            | 요청                                        | 통과 기준                                         | 실패하면                           |
+| --------------- | ------------------------------------------- | ------------------------------------------------- | ---------------------------------- |
+| 서버 상태       | `GET /actuator/health`                      | `{"status":"UP"}`                                 | 백엔드가 꺼짐 / 프록시 확인        |
+| API 문서        | `GET /v3/api-docs` (swagger-ui가 읽는 문서) | OpenAPI 응답, 경로 목록                           | 404면 local 프로파일 아님          |
+| 현재 세션       | `GET /api/v1/auth/me`                       | 200(로그인됨) 또는 401(로그인 안 됨) — 둘 다 정상 | 그 밖의 상태                       |
+| 로그인          | `POST /api/v1/auth/login`                   | 200, `XSRF-TOKEN` 쿠키 표시 → 세션 재확인         | 401 `LOGIN_FAILED`면 비밀번호 확인 |
+| 로그아웃 (CSRF) | `POST /api/v1/auth/logout`                  | 204 — 쓰기 요청의 CSRF 헤더가 통과                | 403 `CSRF_INVALID`                 |
 
 - `/actuator`·`/v3/api-docs`도 Vite 프록시로 넘겨요(`vite.config.js`). 백엔드 CORS는 `/api/**`만 열려 있어서 `VITE_API_BASE_URL`을 8080으로 직접 두면 앞의 두 항목이 실패해요 — `/`로 두세요.
 - MSW 모드에서는 화면 위에 "MSW 예시 응답"이라고 떠요. 그때 통과는 **실제 연동 확인이 아니에요.**

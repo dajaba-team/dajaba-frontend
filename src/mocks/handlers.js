@@ -28,6 +28,19 @@ function seed() {
 }
 let cases = seed()
 let currentUser = null
+// MSW 예시 계정입니다. 실제 백엔드 비밀번호(DEV_USER_PASSWORD)와는 관계없습니다.
+export const MOCK_PASSWORD = "mock-password"
+const MOCK_USERS = Object.fromEntries(
+	[
+		["1", "inv01", "INVESTIGATOR"],
+		["2", "inv02", "INVESTIGATOR"],
+		["3", "apr01", "APPROVER"],
+		["4", "admin", "ADMIN"],
+	].map(([id, loginId, role]) => [
+		loginId,
+		{ id, login_id: loginId, display_name: `예시 ${loginId}`, role },
+	]),
+)
 export function resetCases(user = null) {
 	cases = seed()
 	currentUser = user
@@ -54,16 +67,31 @@ export const handlers = [
 					{ status: 401 },
 				),
 	),
-	http.post(`${base}/api/v1/auth/mock-login`, ({ request }) => {
-		const loginId = new URL(request.url).searchParams.get("login_id")
-		if (!["inv01", "inv02", "apr01", "admin"].includes(loginId))
-			return new HttpResponse(null, { status: 400 })
-		currentUser = {
-			id: { inv01: "1", inv02: "2", apr01: "3", admin: "4" }[loginId],
-			login_id: loginId,
-			display_name: `예시 ${loginId}`,
-			role: loginId === "admin" ? "ADMIN" : loginId === "apr01" ? "APPROVER" : "INVESTIGATOR",
-		}
+	// 실제 백엔드(POST /api/v1/auth/login)와 같은 계약입니다. 예시 비밀번호는 MOCK_PASSWORD 하나입니다.
+	http.post(`${base}/api/v1/auth/login`, async ({ request }) => {
+		const body = await request.json().catch(() => null)
+		if (!body?.login_id?.trim() || !body?.password)
+			return HttpResponse.json(
+				{
+					error: {
+						code: "INVALID_REQUEST",
+						message: "login_id 와 password 가 필요합니다",
+					},
+				},
+				{ status: 400 },
+			)
+		const user = MOCK_USERS[body.login_id]
+		if (!user || body.password !== MOCK_PASSWORD)
+			return HttpResponse.json(
+				{
+					error: {
+						code: "LOGIN_FAILED",
+						message: "아이디 또는 비밀번호가 맞지 않습니다",
+					},
+				},
+				{ status: 401 },
+			)
+		currentUser = user
 		return HttpResponse.json(currentUser)
 	}),
 	http.post(`${base}/api/v1/auth/logout`, () => {
@@ -78,7 +106,7 @@ export const handlers = [
 			info: { title: "MSW 예시 API", version: "mock" },
 			paths: {
 				"/api/v1/auth/me": { get: {} },
-				"/api/v1/auth/mock-login": { post: {} },
+				"/api/v1/auth/login": { post: {} },
 				"/api/v1/auth/logout": { post: {} },
 			},
 		}),
