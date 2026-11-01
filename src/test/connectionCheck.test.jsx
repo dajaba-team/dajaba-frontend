@@ -7,6 +7,7 @@ import { http, HttpResponse } from "msw"
 import App from "../app/App"
 import { createQueryClient } from "../app/queryClient"
 import { server } from "../mocks/server"
+import { MOCK_PASSWORD } from "../mocks/handlers"
 
 function renderPage() {
 	const queryClient = createQueryClient()
@@ -32,10 +33,19 @@ describe("백엔드 연동 확인", () => {
 		expect(within(row("현재 세션")).getByText(/401 정상 응답/)).toBeInTheDocument()
 	})
 
-	it("테스트 로그인 뒤 세션을 다시 확인하고 로그아웃으로 쓰기 요청을 확인한다", async () => {
+	it("비밀번호가 틀리면 LOGIN_FAILED를 실패로 보여 준다", async () => {
+		const user = renderPage()
+		await user.type(await screen.findByLabelText("비밀번호"), "wrong-password")
+		await user.click(screen.getByRole("button", { name: "로그인" }))
+		expect(await within(row("로그인")).findByText(/401 LOGIN_FAILED/)).toBeInTheDocument()
+		expect(within(row("로그인")).getByText("실패")).toBeInTheDocument()
+	})
+
+	it("로그인 뒤 세션을 다시 확인하고 로그아웃으로 쓰기 요청을 확인한다", async () => {
 		const user = renderPage()
 		await user.selectOptions(await screen.findByLabelText("테스트 계정"), "apr01")
-		await user.click(screen.getByRole("button", { name: "테스트 로그인" }))
+		await user.type(screen.getByLabelText("비밀번호"), MOCK_PASSWORD)
+		await user.click(screen.getByRole("button", { name: "로그인" }))
 		expect(
 			await within(row("현재 세션")).findByText(/로그인됨 — 예시 apr01 \(apr01\) · APPROVER/),
 		).toBeInTheDocument()

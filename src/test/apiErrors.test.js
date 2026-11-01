@@ -10,6 +10,12 @@ describe("서버 실패 안내", () => {
 		expect(getErrorMessage(failure(403, "CSRF_INVALID"))).toContain("보안 토큰")
 		expect(getErrorMessage(failure(403, "FORBIDDEN"))).toContain("실행 권한")
 	})
+	it("로그인 실패는 세션 만료와 다르게 한 문구로 안내한다", () => {
+		expect(
+			getErrorMessage(failure(401, "LOGIN_FAILED", "아이디 또는 비밀번호가 맞지 않습니다")),
+		).toBe("아이디 또는 비밀번호가 맞지 않아요.")
+		expect(getErrorMessage(failure(401, "UNAUTHENTICATED"))).toBe("로그인이 필요합니다.")
+	})
 	it("일반 업무 409를 버전 충돌로 취급하지 않는다", () => {
 		expect(isVersionConflict(failure(409, "INVALID_TRANSITION"))).toBe(false)
 		expect(isVersionConflict(failure(409, "CONCURRENT_UPDATE"))).toBe(true)

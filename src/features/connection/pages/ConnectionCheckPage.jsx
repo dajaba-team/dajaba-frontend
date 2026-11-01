@@ -8,12 +8,15 @@ import "../styles/connection.css"
 
 const ACCOUNTS = ["inv01", "inv02", "apr01", "admin"]
 const usingMocks = import.meta.env.VITE_USE_MOCKS === "true"
+const passwordHint = usingMocks
+	? "MSW 비밀번호는 mock-password"
+	: "비밀번호는 백엔드 .env의 DEV_USER_PASSWORD"
 
 const checks = [
 	{ id: "health", label: "서버 상태", request: "GET /actuator/health" },
 	{ id: "apiDocs", label: "API 문서", request: "GET /v3/api-docs" },
 	{ id: "me", label: "현재 세션", request: "GET /api/v1/auth/me" },
-	{ id: "login", label: "테스트 로그인", request: "POST /api/v1/auth/mock-login" },
+	{ id: "login", label: "로그인", request: "POST /api/v1/auth/login" },
 	{ id: "logout", label: "로그아웃 (CSRF)", request: "POST /api/v1/auth/logout" },
 ]
 
@@ -76,9 +79,11 @@ const interpret = {
 					pass: false,
 					summary:
 						unreachable(r) ||
-						(r.status === 404
-							? "테스트 로그인이 없어요. 백엔드를 local 프로파일로 실행해 주세요."
-							: `응답 ${r.status} ${errorCode(r) ?? ""}`),
+						(errorCode(r) === "LOGIN_FAILED"
+							? `401 LOGIN_FAILED — 아이디·비밀번호를 확인해 주세요 (${passwordHint})`
+							: errorCode(r) === "INVALID_REQUEST"
+								? "400 INVALID_REQUEST — 비밀번호를 입력해 주세요"
+								: `응답 ${r.status} ${errorCode(r) ?? ""}`),
 				},
 	logout: (r) => {
 		if (r.ok) return { pass: true, summary: `${r.status} — CSRF 헤더 통과, 세션 종료` }
@@ -87,8 +92,7 @@ const interpret = {
 				pass: false,
 				summary: "403 CSRF_INVALID — XSRF-TOKEN 쿠키와 헤더가 맞지 않아요",
 			}
-		if (r.status === 401)
-			return { pass: false, summary: "401 — 먼저 테스트 로그인을 해 주세요" }
+		if (r.status === 401) return { pass: false, summary: "401 — 먼저 로그인해 주세요" }
 		return { pass: false, summary: unreachable(r) || `응답 ${r.status} ${errorCode(r) ?? ""}` }
 	},
 }
@@ -96,6 +100,7 @@ const interpret = {
 export default function ConnectionCheckPage() {
 	const queryClient = useQueryClient()
 	const [loginId, setLoginId] = useState("inv01")
+	const [password, setPassword] = useState("")
 	// 결과는 확인한 시점의 기록이라 Query 캐시에 넣지 않습니다.
 	const [results, setResults] = useState({})
 	const [running, setRunning] = useState(false)
@@ -131,7 +136,7 @@ export default function ConnectionCheckPage() {
 		})
 	const login = () =>
 		guard(async () => {
-			const result = await run("login", () => connectionApi.mockLogin(loginId))
+			const result = await run("login", () => connectionApi.login(loginId, password))
 			if (result.pass) await resetSession()
 			await run("me", connectionApi.me)
 		})
@@ -171,8 +176,17 @@ export default function ConnectionCheckPage() {
 						</option>
 					))}
 				</select>
+				<label htmlFor="connection-password">비밀번호</label>
+				<input
+					id="connection-password"
+					type="password"
+					autoComplete="current-password"
+					value={password}
+					disabled={running}
+					onChange={(event) => setPassword(event.target.value)}
+				/>
 				<button type="button" disabled={running} onClick={login}>
-					테스트 로그인
+					로그인
 				</button>
 				<button type="button" disabled={running} onClick={logout}>
 					로그아웃

@@ -118,3 +118,7 @@
 		padding: var(--space-6);
 	}
 }
+.login-form [role="alert"],
+.login-form small {
+	flex-basis: 100%;
+}

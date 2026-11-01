@@ -26,10 +26,8 @@ export const connectionApi = {
 	health: () => probe(() => apiClient.get("/actuator/health")),
 	apiDocs: () => probe(() => apiClient.get("/v3/api-docs")),
 	me: () => probe(() => apiClient.get("/api/v1/auth/me")),
-	mockLogin: (loginId) =>
-		probe(() =>
-			apiClient.post("/api/v1/auth/mock-login", null, { params: { login_id: loginId } }),
-		),
+	login: (loginId, password) =>
+		probe(() => apiClient.post("/api/v1/auth/login", { login_id: loginId, password })),
 	logout: () => probe(() => apiClient.post("/api/v1/auth/logout")),
 	hasCsrfCookie: () => document.cookie.split("; ").some((item) => item.startsWith("XSRF-TOKEN=")),
 }
