@@ -1,0 +1,80 @@
+name: 🐛 버그 제보
+description: 화면이 의도와 다르게 동작하거나 에러가 나는 경우
+title: "[Bug] "
+labels: ["bug"]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              재현할 수 있게만 적어 주면 고치는 사람이 훨씬 빨라요. 브랜치는 `fix/{Jira 이슈 키}`.
+
+    - type: dropdown
+      id: area
+      attributes:
+          label: 발생 영역
+          multiple: true
+          options:
+              - auth (로그인·세션)
+              - cases (케이스 목록·상세·조사)
+              - str (STR 초안·수정·검증)
+              - approvals (승인·반려)
+              - admin (배치·룰·계정)
+              - shared (공통 API·UI·스타일)
+              - app (라우터·레이아웃·QueryClient)
+              - mocks (MSW·시연 데이터)
+              - infra (CI·Vercel·설정)
+              - 잘 모르겠음
+      validations:
+          required: true
+
+    - type: textarea
+      id: what
+      attributes:
+          label: 🐞 무슨 일이 있었나요?
+          placeholder: 다른 계정으로 테스트 로그인한 뒤에도 이전 계정의 케이스 목록이 잠깐 보입니다.
+      validations:
+          required: true
+
+    - type: textarea
+      id: steps
+      attributes:
+          label: 🔁 재현 방법
+          value: |
+              1.
+              2.
+              3.
+      validations:
+          required: true
+
+    - type: textarea
+      id: expected
+      attributes:
+          label: 🙆 기대한 결과
+      validations:
+          required: true
+
+    - type: textarea
+      id: logs
+      attributes:
+          label: 📜 콘솔 · 네트워크 응답
+          description: 브라우저 콘솔 에러나 에러 JSON(`X-Request-Id` 포함)을 붙여 주세요. 자동으로 코드 블록이 됩니다.
+          render: shell
+
+    - type: input
+      id: env
+      attributes:
+          label: 💻 환경
+          description: OS · 브라우저 · 브랜치(또는 커밋) · mock/실서버
+          placeholder: macOS · Chrome 130 · develop(a1b2c3d) · VITE_USE_MOCKS=true
+      validations:
+          required: true
+
+    - type: checkboxes
+      id: check
+      attributes:
+          label: 확인
+          options:
+              - label: 최신 develop을 pull 받은 뒤에도 재현된다
+                required: true
+              - label: 붙인 로그·스크린샷에 계좌번호·본문·쿠키 값 같은 민감 정보가 없다
+                required: true

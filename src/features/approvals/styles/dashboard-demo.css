@@ -1,0 +1,73 @@
+.dashboard-demo .approval-summary {
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	margin-bottom: 14px;
+}
+.dashboard-demo .approval-summary > div {
+	min-height: 78px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 13px 16px;
+	border-right: 1px solid var(--border);
+}
+.dashboard-demo .approval-summary > div:last-child {
+	border-right: 0;
+}
+.dashboard-demo .approval-summary span {
+	margin-bottom: 6px;
+	color: var(--muted);
+	font-size: 10px;
+}
+.dashboard-demo .approval-summary strong {
+	font-size: 12px;
+}
+.dashboard-demo .approval-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 310px;
+	gap: 14px;
+	align-items: start;
+}
+.dashboard-demo .decision-card {
+	position: sticky;
+	top: 76px;
+	padding: 16px;
+}
+.dashboard-demo .decision-card h2 {
+	margin: 0;
+	font-size: 14px;
+}
+.dashboard-demo .decision-card p {
+	color: var(--text-soft);
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+@media (max-width: 1240px) {
+	.dashboard-demo .approval-layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 1240px) {
+	.dashboard-demo .decision-card {
+		position: static;
+	}
+}
+
+@media (max-width: 1240px) {
+	.dashboard-demo .approval-summary {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+@media (max-width: 640px) {
+	.dashboard-demo .approval-summary {
+		grid-template-columns: 1fr;
+	}
+}
+@media (max-width: 640px) {
+	.dashboard-demo .approval-summary > div {
+		border-right: 0;
+		border-bottom: 1px solid var(--border);
+	}
+}

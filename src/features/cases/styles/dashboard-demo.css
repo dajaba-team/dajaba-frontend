@@ -1,0 +1,200 @@
+.dashboard-demo .metric-card {
+	padding: 17px;
+	border: 1px solid var(--border);
+	border-radius: 9px;
+	background: var(--surface);
+	box-shadow: var(--shadow);
+}
+.dashboard-demo .metric-card span,
+.dashboard-demo .metric-card strong,
+.dashboard-demo .metric-card small {
+	display: block;
+}
+.dashboard-demo .metric-card span {
+	color: var(--text-soft);
+	font-size: 11px;
+	font-weight: 700;
+}
+.dashboard-demo .metric-card small {
+	color: var(--muted);
+	font-size: 11px;
+}
+.dashboard-demo .case-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 370px;
+	gap: 14px;
+}
+.dashboard-demo .case-main {
+	min-width: 0;
+}
+.dashboard-demo .case-aside {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+.dashboard-demo .metric-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+	margin-bottom: 12px;
+}
+.dashboard-demo .metric-card strong {
+	margin: 7px 0 4px;
+	font-size: 18px;
+}
+.dashboard-demo .graph-card {
+	overflow: hidden;
+	margin-bottom: 12px;
+}
+.dashboard-demo .graph-workspace {
+	height: 310px;
+	position: relative;
+	overflow: hidden;
+	background-color: var(--surface-subtle);
+	background-image: radial-gradient(var(--border) 0.8px, transparent 0.8px);
+	background-size: 17px 17px;
+}
+.dashboard-demo .graph-workspace svg {
+	width: 100%;
+	height: 100%;
+	transform-origin: center;
+	transition: transform 0.15s;
+}
+.dashboard-demo .edge {
+	cursor: pointer;
+}
+.dashboard-demo .edge line {
+	stroke: var(--border-strong);
+	stroke-width: 1.5;
+}
+.dashboard-demo .edge text {
+	fill: var(--muted);
+	font: 9px var(--mono);
+}
+.dashboard-demo .edge.selected line {
+	stroke: var(--blue);
+	stroke-width: 3;
+}
+.dashboard-demo .edge.selected text {
+	fill: var(--blue);
+	font-weight: 700;
+}
+.dashboard-demo .graph-node {
+	cursor: pointer;
+}
+.dashboard-demo .graph-node circle {
+	fill: var(--blue-soft);
+	stroke: var(--blue);
+	stroke-width: 2;
+}
+.dashboard-demo .graph-node text {
+	fill: var(--blue);
+	font: 700 10px var(--mono);
+	text-anchor: middle;
+}
+.dashboard-demo .graph-node.target circle {
+	fill: var(--danger);
+	stroke: color-mix(in srgb, var(--danger) 35%, #fff);
+	stroke-width: 6;
+}
+.dashboard-demo .graph-node.target text {
+	fill: #fff;
+}
+.dashboard-demo .graph-node.out circle {
+	fill: var(--warning-soft);
+	stroke: var(--warning);
+}
+.dashboard-demo .graph-node.out text {
+	fill: var(--warning);
+}
+.dashboard-demo .zoom {
+	position: absolute;
+	right: 10px;
+	bottom: 10px;
+	display: flex;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	overflow: hidden;
+}
+.dashboard-demo .zoom button {
+	min-width: 32px;
+	height: 30px;
+	display: grid;
+	place-items: center;
+	border: 0;
+	border-right: 1px solid var(--border);
+	color: var(--text-soft);
+	background: var(--surface);
+	font-size: 10px;
+}
+.dashboard-demo .graph-selection {
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	padding: 11px 14px;
+	border-top: 1px solid var(--border);
+	font-size: 11px;
+}
+.dashboard-demo .graph-selection strong {
+	color: var(--blue);
+	font-family: var(--mono);
+}
+.dashboard-demo .graph-selection span {
+	color: var(--text-soft);
+}
+.dashboard-demo .timeline > div {
+	display: flex;
+	gap: 9px;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--border);
+}
+.dashboard-demo .timeline > div:last-child {
+	border-bottom: 0;
+}
+.dashboard-demo .timeline i {
+	width: 8px;
+	height: 8px;
+	margin-top: 4px;
+	border-radius: 50%;
+	background: var(--blue);
+	box-shadow: 0 0 0 3px var(--blue-soft);
+}
+.dashboard-demo .timeline span,
+.dashboard-demo .timeline strong,
+.dashboard-demo .timeline small {
+	display: block;
+}
+.dashboard-demo .timeline strong {
+	font-size: 11px;
+}
+.dashboard-demo .timeline small {
+	margin-top: 3px;
+	color: var(--muted);
+	font-size: 10px;
+}
+
+@media (max-width: 1240px) {
+	.dashboard-demo .case-layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 1240px) {
+	.dashboard-demo .case-aside {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+	}
+}
+@media (max-width: 640px) {
+	.dashboard-demo .metric-grid,
+	.dashboard-demo .case-aside {
+		grid-template-columns: 1fr;
+	}
+}
+@media (max-width: 640px) {
+	.dashboard-demo .graph-selection {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 4px;
+	}
+}

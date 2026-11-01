@@ -1,0 +1,36 @@
+.dashboard-demo .audit-list > div {
+	display: flex;
+	gap: 11px;
+	padding: 13px 15px;
+	border-bottom: 1px solid var(--border);
+}
+.dashboard-demo .audit-icon {
+	width: 32px;
+	height: 32px;
+	display: grid;
+	place-items: center;
+	flex: 0 0 auto;
+	border-radius: 7px;
+	color: var(--blue);
+	background: var(--blue-soft);
+}
+.dashboard-demo .audit-list p,
+.dashboard-demo .audit-list strong,
+.dashboard-demo .audit-list span,
+.dashboard-demo .audit-list small {
+	display: block;
+	margin: 0;
+}
+.dashboard-demo .audit-list strong {
+	font-size: 12px;
+}
+.dashboard-demo .audit-list span {
+	margin-top: 3px;
+	color: var(--text-soft);
+	font-size: 11px;
+}
+.dashboard-demo .audit-list small {
+	margin-top: 4px;
+	color: var(--muted);
+	font-size: 10px;
+}

@@ -1,0 +1,24 @@
+.dashboard-demo .drawer-grid pre {
+	overflow: auto;
+	padding: 12px;
+	border-radius: 7px;
+	color: #dce8f8;
+	background: var(--navy);
+	font: 11px/1.6 var(--mono);
+}
+.dashboard-demo .drawer-grid h3 {
+	margin: 18px 0 8px;
+	font-size: 12px;
+}
+.dashboard-demo .reason-row {
+	display: grid;
+	grid-template-columns: 1fr 80px 70px;
+	gap: 10px;
+	padding: 10px 0;
+	border-bottom: 1px solid var(--border);
+	font-size: 12px;
+}
+.dashboard-demo .reason-row strong {
+	color: var(--purple);
+	text-align: right;
+}
