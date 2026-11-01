@@ -9,6 +9,7 @@ import Empty from "../../../shared/ui/dashboard/Empty.jsx"
 import Button from "../../../shared/ui/dashboard/Button.jsx"
 import Modal from "../../../shared/ui/dashboard/Modal.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
+import { formatDataTime } from "../../../shared/format/time"
 export default function CaseDetail() {
 	const { db, role, go, action } = useDashboardDemo()
 	const item = db.cases[0]
@@ -99,7 +100,7 @@ export default function CaseDetail() {
 									{db.transactions.map((tx) => (
 										<tr key={tx.transaction_id}>
 											<td className="mono link">{tx.transaction_id}</td>
-											<td>{tx.transaction_ts}</td>
+											<td>{formatDataTime(tx.transaction_ts)}</td>
 											<td className="mono">{tx.from_masked_account_no}</td>
 											<td className="mono">{tx.to_masked_account_no}</td>
 											<td>

@@ -1,7 +1,8 @@
 // 개발용 합성 데이터 시연입니다. 실제 API·세션·운영 enum과 분리합니다.
 import { users, initialDb } from "./fixtures"
 import { ApiError } from "./DemoApiError"
-const now = () => new Date().toISOString()
+// 시스템 시각은 UTC `Z`·초 단위 [BE 미결 27]
+const now = () => new Date().toISOString().replace(/\.\d{3}Z$/, "Z")
 const wait = (ms = 260) => new Promise((resolve) => setTimeout(resolve, ms))
 // 일부 409 세부 코드는 명세의 제안 상태이므로 실제 연동 전 서버 계약 확인이 필요합니다.
 const error = (status, code, message, details = {}) => {

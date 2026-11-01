@@ -78,7 +78,7 @@ export const rules = [
 	version: index === 1 ? 3 : 1,
 	enabled: true,
 	updated_by: "admin01",
-	updated_at: "2022-09-01T08:30:00+09:00",
+	updated_at: "2022-08-31T23:30:00Z",
 	demo: true,
 }))
 export const initialDb = () => ({
@@ -89,8 +89,8 @@ export const initialDb = () => ({
 			batch_date: "2022-09-02",
 			type: "LOAD",
 			status: "SUCCEEDED",
-			started_at: "2022-09-02T07:00:00+09:00",
-			ended_at: "2022-09-02T07:02:14+09:00",
+			started_at: "2022-09-01T22:00:00Z",
+			ended_at: "2022-09-01T22:02:14Z",
 			input_count: 18420,
 			output_count: 18420,
 			failed_count: 0,
@@ -137,7 +137,7 @@ export const initialDb = () => ({
 			assignee_id: null,
 			latest_score: 0.94,
 			score_band: "HIGH",
-			created_at: "2022-09-02T09:42:12+09:00",
+			created_at: "2022-09-02T00:42:12Z",
 			transaction_window: "2022-09-02 08:00:00 ~ 2022-09-03 08:00:00",
 			note: "",
 			summary: null,
@@ -206,7 +206,7 @@ export const initialDb = () => ({
 			title: "케이스 생성",
 			detail: "HIGH·SCORED 경보 배치 생성",
 			actor: "SYSTEM",
-			occurred_at: "2022-09-02T09:42:12+09:00",
+			occurred_at: "2022-09-02T00:42:12Z",
 		},
 	],
 })

@@ -5,6 +5,7 @@ import Badge from "../../../shared/ui/dashboard/Badge.jsx"
 import { statusKo } from "../../../shared/demo/labels.js"
 import Button from "../../../shared/ui/dashboard/Button.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
+import { formatSystemTime } from "../../../shared/format/time"
 export default function Cases() {
 	const { db, role, assignCase: assign, openCase: open } = useDashboardDemo()
 	const item = db.cases[0]
@@ -104,7 +105,7 @@ export default function Cases() {
 										{item.latest_score} / {item.score_band}
 									</td>
 									<td>
-										{item.created_at}
+										{formatSystemTime(item.created_at)}
 										<small>거래 발생일과 구분</small>
 									</td>
 									<td>
