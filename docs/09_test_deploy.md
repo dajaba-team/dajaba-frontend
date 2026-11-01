@@ -13,7 +13,7 @@ npm run build
 ```
 
 - JavaScript 프로젝트라 `tsc`·`typecheck` 단계는 없어요.
-- GitHub Actions(`Frontend CI`)는 PR과 `develop`·`main` push마다 위 다섯 단계를 Node 22.22.0으로 돌려요. `package.json`·`package-lock.json`이 커밋되기 전에는 검사를 건너뛰고 안내만 남겨요.
+- GitHub Actions(`Frontend CI`)는 PR과 `develop`·`main` push마다 위 다섯 단계를 `.nvmrc`의 Node 버전으로 돌려요. `package.json`·`package-lock.json`이 없으면 CI가 실패해요(건너뛰지 않음).
 - Node는 `.nvmrc`(22.22.0), `engines`는 `>=22.12.0 <23`. 다른 버전이면 `nvm use`.
 - 머지를 실제로 막으려면 GitHub 보호 규칙에서 `develop`·`main` 직접 push 금지 · 리뷰 1명 · `check` 통과 필수를 켜야 해요. **아직 설정 안 됨** — 저장소 관리자 작업.
 
