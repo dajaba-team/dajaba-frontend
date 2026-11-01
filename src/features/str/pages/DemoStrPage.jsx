@@ -11,6 +11,7 @@ import Icon from "../../../shared/ui/dashboard/Icon.jsx"
 import { sectionKo } from "../../../shared/demo/labels.js"
 import Button from "../../../shared/ui/dashboard/Button.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
+import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
 function StrEditor({ draft, isCurrent }) {
 	const { db, role, action } = useDashboardDemo()
 	const item = db.cases[0]
@@ -226,7 +227,7 @@ function StrEditor({ draft, isCurrent }) {
 								<span>verifier</span>
 								<code>{verification.verifier_version}</code>
 								<span>produced_at</span>
-								<code>{verification.produced_at}</code>
+								<code>{formatSystemTime(verification.produced_at)}</code>
 							</div>
 							{!verification.is_current && (
 								<div className="callout warning">
@@ -332,7 +333,7 @@ function StrEditor({ draft, isCurrent }) {
 					{evidence ? (
 						<dl>
 							<dt>거래 시각</dt>
-							<dd>{evidence.transaction_ts}</dd>
+							<dd>{formatDataTime(evidence.transaction_ts)}</dd>
 							<dt>송금 → 수취 계좌</dt>
 							<dd>
 								{evidence.from_masked_account_no} → {evidence.to_masked_account_no}

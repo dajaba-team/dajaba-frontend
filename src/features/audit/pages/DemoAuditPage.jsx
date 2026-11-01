@@ -4,6 +4,7 @@ import PageHeading from "../../../shared/ui/dashboard/PageHeading.jsx"
 import Icon from "../../../shared/ui/dashboard/Icon.jsx"
 import Empty from "../../../shared/ui/dashboard/Empty.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
+import { formatSystemTime } from "../../../shared/format/time"
 export default function Audit() {
 	const { db } = useDashboardDemo()
 	const [tab, setTab] = useState("CASE")
@@ -53,7 +54,7 @@ export default function Audit() {
 									<strong>{item.title}</strong>
 									<span>{item.detail}</span>
 									<small>
-										{item.actor} · {item.occurred_at}
+										{item.actor} · {formatSystemTime(item.occurred_at)}
 									</small>
 								</p>
 							</div>

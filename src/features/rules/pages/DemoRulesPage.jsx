@@ -5,6 +5,7 @@ import Badge from "../../../shared/ui/dashboard/Badge.jsx"
 import Button from "../../../shared/ui/dashboard/Button.jsx"
 import Modal from "../../../shared/ui/dashboard/Modal.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
+import { formatSystemTime } from "../../../shared/format/time"
 export default function Rules() {
 	const { db, updateRule: save } = useDashboardDemo()
 	const [editing, setEditing] = useState(null)
@@ -62,7 +63,7 @@ export default function Rules() {
 									<td>{rule.threshold}</td>
 									<td>
 										{rule.updated_by}
-										<small>{rule.updated_at}</small>
+										<small>{formatSystemTime(rule.updated_at)}</small>
 									</td>
 									<td>
 										<Button variant="secondary" onClick={() => open(rule)}>

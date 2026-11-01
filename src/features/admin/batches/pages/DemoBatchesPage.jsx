@@ -5,6 +5,7 @@ import Button from "../../../../shared/ui/dashboard/Button.jsx"
 import { statusKo } from "../../../../shared/demo/labels.js"
 import Icon from "../../../../shared/ui/dashboard/Icon.jsx"
 import { useDashboardDemo } from "../../../../shared/demo/useDashboardDemo.js"
+import { formatSystemTime } from "../../../../shared/format/time"
 export default function BatchOperations() {
 	const { db, runBatch: run } = useDashboardDemo()
 	const completed = (type) => db.batches.some((b) => b.type === type && b.status === "SUCCEEDED")
@@ -118,8 +119,12 @@ export default function BatchOperations() {
 										</Badge>
 									</td>
 									<td>
-										{batch.started_at}
-										<small>{batch.ended_at ?? "처리 중"}</small>
+										{formatSystemTime(batch.started_at)}
+										<small>
+											{batch.ended_at
+												? formatSystemTime(batch.ended_at)
+												: "처리 중"}
+										</small>
 									</td>
 									<td>{batch.input_count.toLocaleString()}</td>
 									<td>{batch.output_count.toLocaleString()}</td>

@@ -2,6 +2,7 @@ import "../styles/dashboard-demo.css"
 import { useState } from "react"
 import Badge from "../../../shared/ui/dashboard/Badge.jsx"
 import Icon from "../../../shared/ui/dashboard/Icon.jsx"
+import { formatDataTime } from "../../../shared/format/time"
 export default function FlowGraph({ db }) {
 	const [selected, setSelected] = useState(db.transactions[0].transaction_id)
 	const [zoom, setZoom] = useState(1)
@@ -145,7 +146,7 @@ export default function FlowGraph({ db }) {
 					{tx.from_masked_account_no} → {tx.to_masked_account_no}
 				</span>
 				<span>
-					USD {tx.amount.toLocaleString()} · {tx.transaction_ts}
+					USD {tx.amount.toLocaleString()} · {formatDataTime(tx.transaction_ts)}
 				</span>
 			</div>
 		</section>
