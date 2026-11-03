@@ -41,19 +41,33 @@
 
 ## 3. API 〔초안 — STR 명세, BE `06_features/str.md`〕
 
-| #   | API                                                                    | 화면             | 프론트 |
-| --- | ---------------------------------------------------------------------- | ---------------- | ------ |
-| 1   | `POST /cases/{case_no}/str-drafts` (최대 90초)                         | 초안 생성·재생성 | 없음   |
-| 2   | `GET /str-drafts/{draft_id}`                                           | 초안 보기        | 없음   |
-| 3   | `PUT /str-drafts/{draft_id}/revisions` (고친 섹션만)                   | 섹션 저장        | 없음   |
-| 4   | `GET /str-drafts/{draft_id}/revisions?revision_no=`                    | 수정 이력        | 없음   |
-| 5   | `POST /str-drafts/{draft_id}/verify` (body `{}`)                       | 검증             | 없음   |
-| 6   | `POST /str-drafts/{draft_id}/submit` `{case_version, verification_id}` | 승인 요청        | 없음   |
-| 9   | `POST /cases/{case_no}/close-with-draft`                               | 초안 있는 종료   | 없음   |
+| #   | API                                                                    | 화면             | 프론트                      |
+| --- | ---------------------------------------------------------------------- | ---------------- | --------------------------- |
+| 1   | `POST /cases/{case_no}/str-drafts` (최대 90초)                         | 초안 생성·재생성 | 없음                        |
+| 2   | `GET /str-drafts/{draft_id}`                                           | 초안 보기        | `strApi.getDraft` (MSW)     |
+| 3   | `PUT /str-drafts/{draft_id}/revisions` (고친 섹션만)                   | 섹션 저장        | 없음                        |
+| 4   | `GET /str-drafts/{draft_id}/revisions?revision_no=`                    | 수정 이력        | `strApi.getRevisions` (MSW) |
+| 5   | `POST /str-drafts/{draft_id}/verify` (body `{}`)                       | 검증             | 없음                        |
+| 6   | `POST /str-drafts/{draft_id}/submit` `{case_version, verification_id}` | 승인 요청        | 없음                        |
+| 9   | `POST /cases/{case_no}/close-with-draft`                               | 초안 있는 종료   | 없음                        |
 
 승인·반려(7·8)는 `approvals.md`. 확정본 PDF는 STR 명세 〔후속〕.
 
-Query key 〔제안〕: `["draft", draftId]`, `["draft", draftId, "revisions", revisionNo]`.
+Query key 〔제안〕: `["draft", draftId]`, `["draft", draftId, "revisions"]` (`useStrDraft`·`useStrRevisions`).
+
+### 본문 열람 제한 계약 〔제안 — SCRUM-110, FR-APR-02·NFR-APR-01·권한 매트릭스 14번〕
+
+본문을 볼 수 있는 사람은 **그 케이스의 담당 조사역**과 **승인자(APPROVER)**뿐이에요. ADMIN은 조사역·승인자 권한을 물려받지 않아요.
+
+| 누가                 | `GET /str-drafts/{id}`                                                                                                                                          | `GET /str-drafts/{id}/revisions` |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| 담당 조사역 · 승인자 | 200 전체 — `content_visible: true` + `version`·`revision_no`·`facts`·`sections`                                                                                 | 200 `{ items }`                  |
+| 관리자 · 다른 조사역 | 200 **제한 응답** — `{ draft_id, case_no, status, created_at, updated_at, submitted_at, decided_at, content_visible: false }`만. 본문 필드는 **키 자체가 없음** | 403 `NOT_STR_VIEWER` 〔제안〕    |
+
+- 제한 응답도 `strView` 열람 기록 한 줄을 남겨요(BE `03_shared` §9).
+- 서버는 제한 응답을 **허용 필드만 골라** 만들어요(본문 필드가 새로 생겨도 새지 않게). 프론트 `toDraft`도 `content_visible`이 `true`가 아니면 본문 필드를 화면 모델로 옮기지 않아요.
+- 화면은 `contentVisible`로 "본문 보기"와 "상태·날짜만 보기"를 고르고, 역할로 다시 계산하지 않아요.
+- 〔확인 필요〕 `NOT_STR_VIEWER` 이름과 `submitted_at`·`decided_at`을 초안 응답에 둘지 — 채영·진희.
 
 ## 4. 실패 처리 [BE 03 §2, BE flows 04]
 

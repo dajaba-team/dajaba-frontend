@@ -41,6 +41,9 @@ export function getErrorMessage(error) {
 	if (code === "SELF_APPROVAL") return "본인이 담당한 케이스는 승인할 수 없습니다."
 	if (code === "NARRATIVE_UNCHANGED") return "반려된 본문을 보완한 후 다시 요청해 주세요."
 	if (code === "INVALID_REQUEST") return "입력 값이 올바른지 확인해 주세요."
+	// 〔제안〕 STR 본문·수정 이력 열람 제한(FR-APR-02). 실행 권한 부족과 다른 뜻이라 문구를 나눠요.
+	if (code === "NOT_STR_VIEWER")
+		return "STR 본문과 수정 이력은 담당 조사역과 승인자만 볼 수 있어요."
 	// 코드별 문구가 없으면 서버 문구를 먼저 쓰고, 없을 때만 상태별 기본 문구를 씁니다.
 	const serverMessage = error.response?.data?.error?.message
 	if (serverMessage) return serverMessage

@@ -48,6 +48,7 @@
 | 403  | `FORBIDDEN`                                                                             | 화면 유지, "실행 권한이 없어요" 토스트                                                          | 처리                      |
 | 403  | `CSRF_INVALID`                                                                          | 입력 유지, "현재 사용자를 다시 확인한 뒤 시도" — 권한 부족과 다른 문구. 자동 반복 없음          | 처리                      |
 | 403  | `NOT_ASSIGNEE`                                                                          | "담당자만 할 수 있어요" + 상세 재조회                                                           | 아직 (서버 문구로 떨어짐) |
+| 403  | `NOT_STR_VIEWER` 〔제안〕                                                               | "STR 본문과 수정 이력은 담당 조사역과 승인자만 볼 수 있어요" (SCRUM-110)                        | 처리                      |
 | 404  | `CASE_NOT_FOUND`, `DRAFT_NOT_FOUND` …                                                   | 대상 없음 안내 + 목록으로                                                                       | 처리 (404 공통)           |
 | 409  | `CONCURRENT_UPDATE`                                                                     | **입력·기준 버전 유지**, 최신 내용을 따로 불러 비교, 사용자가 고른 뒤 새 버전으로 명시적 재저장 | 처리                      |
 | 409  | `INVALID_CASE_TRANSITION`                                                               | "현재 상태에서 할 수 없어요" + 상세 재조회                                                      | 처리                      |
@@ -99,6 +100,15 @@
 | 메모 | `PUT /api/cases/:id/memo` | `{ memo, case_version }`    | 응답 상세로 캐시 교체, 목록 무효화 |
 
 상세 응답: `id`, `title`, `status`, `evidence`, `memo`(string) · `assignee_name`(string|null) · `case_version`(number) · `allowed_actions`(string[], `SAVE_MEMO` 등) · `history`(string[]). 충돌은 409 `CASE_VERSION_CONFLICT`.
+
+### 〔초안〕 STR 초안 조회 — MSW 계약 [FE 코드 `strApi.js`·`handlers.js`, SCRUM-110]
+
+백엔드 str API가 아직 없어 STR 명세 〔초안〕 경로·필드로 MSW가 답해요. 본문 열람 제한 규칙은 `06_features/str.md` §3.
+
+| 동작      | API                                           | 응답                                                                 | 프론트                |
+| --------- | --------------------------------------------- | -------------------------------------------------------------------- | --------------------- |
+| 초안 보기 | `GET /api/v1/str-drafts/{draft_id}`           | 전체 또는 제한 응답(`content_visible`), 없으면 404 `DRAFT_NOT_FOUND` | `strApi.getDraft`     |
+| 수정 이력 | `GET /api/v1/str-drafts/{draft_id}/revisions` | `{ items }`, 열람 권한 없으면 403 `NOT_STR_VIEWER` 〔제안〕          | `strApi.getRevisions` |
 
 ### 실제 계약으로 바꿀 때 달라지는 것
 
