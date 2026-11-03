@@ -19,3 +19,11 @@ export function useStrRevisions(draftId, { enabled = true } = {}) {
 		enabled: Boolean(draftId) && enabled,
 	})
 }
+
+export function useStrRevision(draftId, revisionNo, { enabled = true } = {}) {
+	return useQuery({
+		queryKey: [...draftKey(draftId), "revisions", revisionNo],
+		queryFn: ({ signal }) => strApi.getRevision(draftId, revisionNo, signal),
+		enabled: Boolean(draftId) && revisionNo != null && enabled,
+	})
+}

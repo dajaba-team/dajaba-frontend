@@ -1,3 +1,4 @@
+import { canViewStrContent, seedStrDrafts, visibleStrDraft } from "./strDrafts"
 import { http, HttpResponse } from "msw"
 
 function seed() {
@@ -26,56 +27,8 @@ function seed() {
 		},
 	]
 }
-// 〔초안〕 STR 초안. 담당자는 내부 판단용이라 응답에 넣지 않아요(seedDrafts의 assignee_login_id).
-function seedDrafts() {
-	return [
-		{
-			draft_id: "DRF-2022-000001",
-			case_no: "CASE-2022-000057",
-			assignee_login_id: "inv01",
-			status: "ACTIVE",
-			version: 2,
-			revision_no: 1,
-			created_at: "2026-11-02T01:10:00Z",
-			updated_at: "2026-11-02T02:30:00Z",
-			submitted_at: null,
-			decided_at: null,
-			facts: {
-				transaction_count: 12,
-				account_count: 4,
-				currency: "USD",
-				inbound_total: 320482,
-				outbound_total: 309200,
-			},
-			sections: [
-				{
-					section: "WHO",
-					title: "혐의 대상",
-					text: "예시: 법인 계좌 010_****8842가 단기간 다수 계좌와 거래했습니다.",
-					evidence_ids: ["TX-1001"],
-				},
-				{
-					section: "WHAT",
-					title: "거래 내용",
-					text: "예시: 입금 직후 대부분을 해외 계좌로 송금했습니다.",
-					evidence_ids: ["TX-1002", "TX-1003"],
-				},
-			],
-			revisions: [
-				{
-					revision_no: 1,
-					changed_sections: ["WHAT"],
-					before: { WHAT: "예시: 입금 후 송금했습니다." },
-					after: { WHAT: "예시: 입금 직후 대부분을 해외 계좌로 송금했습니다." },
-					created_at: "2026-11-02T02:30:00Z",
-					created_by: "inv01",
-				},
-			],
-		},
-	]
-}
 let cases = seed()
-let drafts = seedDrafts()
+let drafts = seedStrDrafts()
 let currentUser = null
 // MSW 예시 계정입니다. 실제 백엔드 비밀번호(DEV_USER_PASSWORD)와는 관계없습니다.
 export const MOCK_PASSWORD = "mock-password"
@@ -92,7 +45,7 @@ const MOCK_USERS = Object.fromEntries(
 )
 export function resetCases(user = null) {
 	cases = seed()
-	drafts = seedDrafts()
+	drafts = seedStrDrafts()
 	currentUser = user
 }
 // 예시 사용자도 역할·담당자 조건을 지켜야 개발 화면이 과도한 권한을 전제로 굳지 않습니다.
@@ -101,34 +54,6 @@ function canSaveMemo(item) {
 }
 function visibleCase(item) {
 	return { ...item, allowed_actions: canSaveMemo(item) ? ["SAVE_MEMO"] : [] }
-}
-// STR 본문은 담당 조사역과 승인자만 봐요(FR-APR-02, 권한 매트릭스 14번). ADMIN도 볼 수 없어요.
-function canViewStrContent(draft) {
-	return (
-		currentUser?.role === "APPROVER" ||
-		(currentUser?.role === "INVESTIGATOR" && currentUser.login_id === draft.assignee_login_id)
-	)
-}
-// 제한 응답은 화이트리스트로 만들어요. 본문 필드가 새로 생겨도 실수로 새어 나가지 않게요.
-function visibleDraft(draft) {
-	const meta = {
-		draft_id: draft.draft_id,
-		case_no: draft.case_no,
-		status: draft.status,
-		created_at: draft.created_at,
-		updated_at: draft.updated_at,
-		submitted_at: draft.submitted_at,
-		decided_at: draft.decided_at,
-	}
-	if (!canViewStrContent(draft)) return { ...meta, content_visible: false }
-	return {
-		...meta,
-		content_visible: true,
-		version: draft.version,
-		revision_no: draft.revision_no,
-		facts: draft.facts,
-		sections: draft.sections,
-	}
 }
 const draftNotFound = () =>
 	HttpResponse.json(
@@ -213,24 +138,51 @@ export const handlers = [
 	http.get(`${base}/api/v1/str-drafts/:draftId`, ({ params }) => {
 		if (!currentUser) return unauthenticated()
 		const draft = drafts.find((item) => item.draft_id === params.draftId)
-		return draft ? HttpResponse.json(visibleDraft(draft)) : draftNotFound()
+		return draft ? HttpResponse.json(visibleStrDraft(currentUser, draft)) : draftNotFound()
 	}),
-	http.get(`${base}/api/v1/str-drafts/:draftId/revisions`, ({ params }) => {
+	// 목록은 본문 없이, `?revision_no=`면 그 한 행의 전·후 본문(명세 4번).
+	http.get(`${base}/api/v1/str-drafts/:draftId/revisions`, ({ params, request }) => {
 		if (!currentUser) return unauthenticated()
 		const draft = drafts.find((item) => item.draft_id === params.draftId)
 		if (!draft) return draftNotFound()
-		if (!canViewStrContent(draft))
+		// TODO(SCRUM-110): 명세는 "수정 이력도 같은 규칙"이라고만 해요. 이력은 상태·날짜로 줄일 게 없어 403으로 둠 — 확인 필요
+		if (!canViewStrContent(currentUser, draft))
 			return HttpResponse.json(
 				{
 					error: {
-						code: "NOT_STR_VIEWER",
-						message: "STR 수정 이력은 담당 조사역과 승인자만 볼 수 있습니다",
+						code: currentUser.role === "ADMIN" ? "FORBIDDEN" : "NOT_ASSIGNEE",
+						message: "권한이 없습니다",
 						details: {},
 					},
 				},
 				{ status: 403 },
 			)
-		return HttpResponse.json({ items: draft.revisions })
+		const revisionNo = new URL(request.url).searchParams.get("revision_no")
+		if (revisionNo == null)
+			return HttpResponse.json({
+				draft_id: draft.draft_id,
+				// 목록은 본문 없이 메타만(명세 4번).
+				items: draft.revisions.map((item) => ({
+					revision_no: item.revision_no,
+					changed_sections: item.changed_sections,
+					edited_by: item.edited_by,
+					edited_at: item.edited_at,
+				})),
+			})
+		// 명세는 "없는 번호는 404"만 정함. 코드 이름 REVISION_NOT_FOUND는 〔확인 필요〕
+		const revision = draft.revisions.find((item) => item.revision_no === Number(revisionNo))
+		return revision
+			? HttpResponse.json(revision)
+			: HttpResponse.json(
+					{
+						error: {
+							code: "REVISION_NOT_FOUND",
+							message: "수정본이 없습니다",
+							details: {},
+						},
+					},
+					{ status: 404 },
+				)
 	}),
 	http.put(`${base}/api/cases/:id/memo`, async ({ params, request }) => {
 		if (!currentUser) return unauthenticated()

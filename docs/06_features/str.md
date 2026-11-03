@@ -53,21 +53,23 @@
 
 승인·반려(7·8)는 `approvals.md`. 확정본 PDF는 STR 명세 〔후속〕.
 
-Query key 〔제안〕: `["draft", draftId]`, `["draft", draftId, "revisions"]` (`useStrDraft`·`useStrRevisions`).
+Query key 〔제안〕: `["draft", draftId]`, `["draft", draftId, "revisions"]`, `["draft", draftId, "revisions", revisionNo]` (`useStrDraft`·`useStrRevisions`·`useStrRevision`).
 
-### 본문 열람 제한 계약 〔제안 — SCRUM-110, FR-APR-02·NFR-APR-01·권한 매트릭스 14번〕
+응답 모양은 **STR API 명세 1·2·4·5번 예시 그대로**예요 — `narrative[]`(`section`·`text`·`evidence_ids`), 서술부 7항목(`SUBJECT`·`DATE`·`PLACE`·`INSTRUMENT`·`METHOD`·`GROUNDS`·`OPINION`), `current_revision_no`(1 = AI 원문), `facts`, `latest_verification`. MSW 시드는 `src/mocks/strDrafts.js`.
 
-본문을 볼 수 있는 사람은 **그 케이스의 담당 조사역**과 **승인자(APPROVER)**뿐이에요. ADMIN은 조사역·승인자 권한을 물려받지 않아요.
+### 본문 열람 제한 〔SCRUM-110, FR-APR-02·NFR-APR-01·권한 매트릭스 14번 — 11/3 확정〕
 
-| 누가                 | `GET /str-drafts/{id}`                                                                                                                                          | `GET /str-drafts/{id}/revisions` |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| 담당 조사역 · 승인자 | 200 전체 — `content_visible: true` + `version`·`revision_no`·`facts`·`sections`                                                                                 | 200 `{ items }`                  |
-| 관리자 · 다른 조사역 | 200 **제한 응답** — `{ draft_id, case_no, status, created_at, updated_at, submitted_at, decided_at, content_visible: false }`만. 본문 필드는 **키 자체가 없음** | 403 `NOT_STR_VIEWER` 〔제안〕    |
+본문을 볼 수 있는 사람은 **그 케이스의 담당 조사역**과 **승인자(APPROVER)**뿐이에요. **관리자와 비담당 조사역은 상태·날짜만** 받아요(ADMIN은 조사역·승인자 권한을 물려받지 않음). STR 명세 §2의 "담당이 아닌 조사역은 403 `NOT_ASSIGNEE`"는 채영님이 이 결정에 맞춰 고쳐요.
+
+| 누가                   | `GET /str-drafts/{id}`                                                                                                                            | `GET /str-drafts/{id}/revisions`                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 담당 조사역 · 승인자   | 200 명세 1번 모양 전체 + `content_visible: true`                                                                                                  | 200 목록 `{ draft_id, items }`(본문 없음), `?revision_no=`면 그 행의 `narrative_before`·`narrative_after` |
+| 관리자 · 비담당 조사역 | 200 **제한 응답** `{ draft_id, case_no, status, case_status, produced_at, content_visible: false }`만. `facts`·`narrative` 등 본문 키 자체가 없음 | 403 — 관리자 `FORBIDDEN`, 비담당 조사역 `NOT_ASSIGNEE`                                                    |
 
 - 제한 응답도 `strView` 열람 기록 한 줄을 남겨요(BE `03_shared` §9).
-- 서버는 제한 응답을 **허용 필드만 골라** 만들어요(본문 필드가 새로 생겨도 새지 않게). 프론트 `toDraft`도 `content_visible`이 `true`가 아니면 본문 필드를 화면 모델로 옮기지 않아요.
+- 서버는 제한 응답을 **허용 필드만 골라** 만들어요. 프론트 `toDraft`도 `content_visible`이 `true`가 아니면 본문 필드를 화면 모델로 옮기지 않아요.
 - 화면은 `contentVisible`로 "본문 보기"와 "상태·날짜만 보기"를 고르고, 역할로 다시 계산하지 않아요.
-- 〔확인 필요〕 `NOT_STR_VIEWER` 이름과 `submitted_at`·`decided_at`을 초안 응답에 둘지 — 채영·진희.
+- 〔확인 필요 — 채영〕 ① 제한 응답의 필드 목록과 구분 필드 이름(`content_visible`) — 명세에는 "상태·날짜만"이라고만 있음 ② 수정 이력을 제한 응답 없이 403으로 둘지(명세: "같은 규칙") ③ 없는 수정본 404의 코드 이름.
 
 ## 4. 실패 처리 [BE 03 §2, BE flows 04]
 
