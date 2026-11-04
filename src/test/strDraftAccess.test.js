@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest"
 import { strApi, toDraft } from "../features/str/api/strApi"
 import { resetCases } from "../mocks/handlers"
-import { getErrorCode } from "../shared/api/apiClient"
+import { apiClient, getErrorCode } from "../shared/api/apiClient"
 
-const DRAFT_ID = "DRF-3b81e2"
+const DRAFT_NO = "DRF-000123"
 const users = {
 	inv01: { id: "1", login_id: "inv01", display_name: "예시 inv01", role: "INVESTIGATOR" },
 	inv02: { id: "2", login_id: "inv02", display_name: "예시 inv02", role: "INVESTIGATOR" },
@@ -27,12 +27,13 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 		"%s(담당 조사역·승인자)는 명세 모양의 본문을 받는다",
 		async (who) => {
 			resetCases(users[who])
-			const draft = await strApi.getDraft(DRAFT_ID)
+			const draft = await strApi.getDraft(DRAFT_NO)
 			expect(draft).toMatchObject({
-				draftId: DRAFT_ID,
+				draftNo: DRAFT_NO,
 				caseNo: "CASE-2022-000057",
 				status: "ACTIVE",
 				caseStatus: "DRAFTED",
+				access: "FULL",
 				contentVisible: true,
 				currentRevisionNo: 2,
 				version: 1,
@@ -50,50 +51,119 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 				revisionNo: 2,
 				isCurrent: true,
 				passed: true,
+				status: "PASSED",
 			})
 		},
 	)
 
+	it("검증 결과는 계약서 S5 모양(코드 검사 5종·AI 평가 5종)으로 옮긴다", async () => {
+		resetCases(users.inv01)
+		const { latestVerification } = await strApi.getDraft(DRAFT_NO)
+		expect(latestVerification.codeChecks.map((item) => item.check)).toEqual([
+			"AMOUNT_MATCH",
+			"DATE_MATCH",
+			"COUNT_MATCH",
+			"ACCOUNT_ID_MATCH",
+			"EVIDENCE_IN_SCOPE",
+		])
+		expect(latestVerification.codeChecks[1]).toEqual({
+			check: "DATE_MATCH",
+			section: "METHOD",
+			draftValue: "2022-09-02",
+			sourceValue: "2022-09-02",
+			match: true,
+			reason: null,
+		})
+		expect(latestVerification.llmChecks).toHaveLength(5)
+		expect(latestVerification.llmChecks[0]).toEqual({
+			check: "FIVE_W_ONE_H_COMPLETE",
+			comment: expect.any(String),
+			score: 4,
+		})
+	})
+
+	it("코드 검사가 실패해 평가자를 안 돌렸으면 llmChecks는 빈 배열이 아니라 null이다", () => {
+		const draft = toDraft({
+			draft_no: DRAFT_NO,
+			access: "FULL",
+			latest_verification: {
+				passed: false,
+				status: "CODE_FAILED",
+				code_checks: [
+					{
+						check: "DATE_MATCH",
+						section: "DATE",
+						draft_value: "2022-09-03",
+						source_value: "2022-09-02",
+						match: false,
+						reason: "MISMATCH",
+					},
+				],
+				llm_checks: null,
+			},
+		})
+		expect(draft.latestVerification.codeChecks[0]).toMatchObject({
+			sourceValue: "2022-09-02",
+			match: false,
+			reason: "MISMATCH",
+		})
+		expect(draft.latestVerification.llmChecks).toBeNull()
+	})
+
 	it("수정 이력 목록에는 본문이 없고, revision_no로 한 행의 전·후 본문을 받는다", async () => {
 		resetCases(users.inv01)
-		const items = await strApi.getRevisions(DRAFT_ID)
+		const items = await strApi.getRevisions(DRAFT_NO)
 		expect(items.map((item) => item.revisionNo)).toEqual([2, 1])
 		expect(JSON.stringify(items)).not.toContain(BODY_SNIPPET)
-		const second = await strApi.getRevision(DRAFT_ID, 2)
+		const second = await strApi.getRevision(DRAFT_NO, 2)
 		expect(second.narrativeBefore[0].text).toContain("9월 3일")
 		expect(second.narrativeAfter[0].text).toContain("9월 2일")
-		const original = await strApi.getRevision(DRAFT_ID, 1)
+		const original = await strApi.getRevision(DRAFT_NO, 1)
 		expect(original).toMatchObject({ editedBy: "SYSTEM", narrativeBefore: [] })
 	})
 
 	it.each(["admin", "inv02"])(
-		"%s(관리자·비담당 조사역)는 상태·날짜만 받고 본문 키 자체가 없다",
+		"%s(관리자·비담당 조사역)는 META_ONLY로 상태·날짜만 받고 본문은 null이다",
 		async (who) => {
 			resetCases(users[who])
-			const draft = await strApi.getDraft(DRAFT_ID)
+			// 서버 응답: 본문 키는 빠지지 않고 null (계약서 2.3, 11/4 채영).
+			const { data } = await apiClient.get(`/api/v1/str-drafts/${DRAFT_NO}`)
+			expect(data).toMatchObject({
+				access: "META_ONLY",
+				facts: null,
+				narrative: null,
+				latest_verification: null,
+				last_rejection: null,
+				references: null,
+			})
+			expect(JSON.stringify(data)).not.toContain(BODY_SNIPPET)
+			// 화면 모델: 상태·날짜만.
+			const draft = await strApi.getDraft(DRAFT_NO)
 			expect(draft).toEqual({
-				draftId: DRAFT_ID,
+				draftNo: DRAFT_NO,
 				caseNo: "CASE-2022-000057",
 				status: "ACTIVE",
 				caseStatus: "DRAFTED",
 				producedAt: "2026-10-21T10:15:02Z",
+				access: "META_ONLY",
 				contentVisible: false,
 			})
-			expect(JSON.stringify(draft)).not.toContain(BODY_SNIPPET)
 		},
 	)
 
-	it("서버가 실수로 본문을 같이 보내도 제한 응답이면 화면 모델에 옮기지 않는다", () => {
+	it("서버가 실수로 본문을 같이 보내도 FULL이 아니면 화면 모델에 옮기지 않는다", () => {
 		const draft = toDraft({
-			draft_id: DRAFT_ID,
+			draft_no: DRAFT_NO,
 			case_no: "CASE-2022-000057",
 			status: "ACTIVE",
-			content_visible: false,
+			access: "META_ONLY",
 			narrative: [{ section: "METHOD", text: BODY_SNIPPET }],
 			facts: { currency: "KRW" },
 		})
 		expect(draft).not.toHaveProperty("narrative")
 		expect(draft).not.toHaveProperty("facts")
+		// access가 없거나 모르는 값이어도 본문을 열지 않아요.
+		expect(toDraft({ draft_no: DRAFT_NO, narrative: [] }).contentVisible).toBe(false)
 	})
 
 	it.each([
@@ -101,7 +171,7 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 		["inv02", "NOT_ASSIGNEE"],
 	])("%s가 수정 이력을 부르면 403 %s이고 본문이 없다", async (who, code) => {
 		resetCases(users[who])
-		const error = await captureError(() => strApi.getRevision(DRAFT_ID, 2))
+		const error = await captureError(() => strApi.getRevision(DRAFT_NO, 2))
 		expect(error.response.status).toBe(403)
 		expect(getErrorCode(error)).toBe(code)
 		expect(JSON.stringify(error.response.data)).not.toContain(BODY_SNIPPET)
@@ -112,7 +182,7 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 		const missing = await captureError(() => strApi.getDraft("DRF-000000"))
 		expect(getErrorCode(missing)).toBe("DRAFT_NOT_FOUND")
 		resetCases(null)
-		const anonymous = await captureError(() => strApi.getDraft(DRAFT_ID))
+		const anonymous = await captureError(() => strApi.getDraft(DRAFT_NO))
 		expect(anonymous.response.status).toBe(401)
 	})
 })

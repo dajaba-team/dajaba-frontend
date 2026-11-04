@@ -135,15 +135,15 @@ export const handlers = [
 		const item = cases.find((item) => item.id === params.id)
 		return item ? HttpResponse.json(visibleCase(item)) : new HttpResponse(null, { status: 404 })
 	}),
-	http.get(`${base}/api/v1/str-drafts/:draftId`, ({ params }) => {
+	http.get(`${base}/api/v1/str-drafts/:draftNo`, ({ params }) => {
 		if (!currentUser) return unauthenticated()
-		const draft = drafts.find((item) => item.draft_id === params.draftId)
+		const draft = drafts.find((item) => item.draft_no === params.draftNo)
 		return draft ? HttpResponse.json(visibleStrDraft(currentUser, draft)) : draftNotFound()
 	}),
 	// 목록은 본문 없이, `?revision_no=`면 그 한 행의 전·후 본문(명세 4번).
-	http.get(`${base}/api/v1/str-drafts/:draftId/revisions`, ({ params, request }) => {
+	http.get(`${base}/api/v1/str-drafts/:draftNo/revisions`, ({ params, request }) => {
 		if (!currentUser) return unauthenticated()
-		const draft = drafts.find((item) => item.draft_id === params.draftId)
+		const draft = drafts.find((item) => item.draft_no === params.draftNo)
 		if (!draft) return draftNotFound()
 		// TODO(SCRUM-110): 명세는 "수정 이력도 같은 규칙"이라고만 해요. 이력은 상태·날짜로 줄일 게 없어 403으로 둠 — 확인 필요
 		if (!canViewStrContent(currentUser, draft))
@@ -160,7 +160,7 @@ export const handlers = [
 		const revisionNo = new URL(request.url).searchParams.get("revision_no")
 		if (revisionNo == null)
 			return HttpResponse.json({
-				draft_id: draft.draft_id,
+				draft_no: draft.draft_no,
 				// 목록은 본문 없이 메타만(명세 4번).
 				items: draft.revisions.map((item) => ({
 					revision_no: item.revision_no,

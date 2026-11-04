@@ -100,15 +100,15 @@
 
 상세 응답: `id`, `title`, `status`, `evidence`, `memo`(string) · `assignee_name`(string|null) · `case_version`(number) · `allowed_actions`(string[], `SAVE_MEMO` 등) · `history`(string[]). 충돌은 409 `CASE_VERSION_CONFLICT`.
 
-### 〔초안〕 STR 초안 조회 — MSW 계약 [STR API 명세 2·4번, FE 코드 `strApi.js`·`mocks/strDrafts.js`, SCRUM-110]
+### 〔초안〕 STR 초안 조회 — MSW 계약 [STR API 명세 2·4번, 계약서 S2·S4·S5(11/4 채영), FE 코드 `strApi.js`·`mocks/strDrafts.js`, SCRUM-110]
 
 백엔드 str API가 아직 없어 **명세 예시 JSON 그대로** MSW가 답해요. 본문 열람 제한 규칙은 `06_features/str.md` §3.
 
-| 동작           | API                                                         | 응답                                                                                        | 프론트                |
-| -------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------- | --------------------- |
-| 초안 보기      | `GET /api/v1/str-drafts/{draft_id}`                         | 명세 1번 모양 또는 상태·날짜만의 제한 응답(`content_visible`), 없으면 404 `DRAFT_NOT_FOUND` | `strApi.getDraft`     |
-| 수정 이력 목록 | `GET /api/v1/str-drafts/{draft_id}/revisions`               | `{ draft_id, items }` (본문 없음). 열람 권한 없으면 403 `FORBIDDEN`·`NOT_ASSIGNEE`          | `strApi.getRevisions` |
-| 수정본 한 행   | `GET /api/v1/str-drafts/{draft_id}/revisions?revision_no=n` | `narrative_before`·`narrative_after`, 없는 번호 404                                         | `strApi.getRevision`  |
+| 동작           | API                                                         | 응답                                                                                                              | 프론트                |
+| -------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------- |
+| 초안 보기      | `GET /api/v1/str-drafts/{draft_no}`                         | 명세 1번 모양 또는 상태·날짜만의 제한 응답(`access: "META_ONLY"`, 본문 필드 `null`), 없으면 404 `DRAFT_NOT_FOUND` | `strApi.getDraft`     |
+| 수정 이력 목록 | `GET /api/v1/str-drafts/{draft_no}/revisions`               | `{ draft_no, items }` (본문 없음). 열람 권한 없으면 403 `FORBIDDEN`·`NOT_ASSIGNEE`                                | `strApi.getRevisions` |
+| 수정본 한 행   | `GET /api/v1/str-drafts/{draft_no}/revisions?revision_no=n` | `narrative_before`·`narrative_after`, 없는 번호 404                                                               | `strApi.getRevision`  |
 
 ### 실제 계약으로 바꿀 때 달라지는 것
 

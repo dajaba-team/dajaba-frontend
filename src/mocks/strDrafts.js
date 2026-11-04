@@ -1,4 +1,5 @@
-// STR API 명세 1·2·4·5번 응답 예시를 그대로 옮긴 MSW 시드예요. 필드 이름·타입을 지어내지 않아요.
+// STR API 명세 1·2·4·5번 응답 예시를 옮긴 MSW 시드예요. 필드 이름·타입을 지어내지 않아요.
+// 번호는 `draft_no`, 열람 구분은 `access`, 검증 결과는 계약서 S5(AI 응답 그대로) 모양 — 11/4 #기획 계약서 스레드.
 // `assignee_login_id`·`revisions`는 MSW 내부 판단용이라 응답에 넣지 않아요.
 const INSTRUMENT_TEXT =
 	"24시간 동안 31개 계좌로부터 ACH 입금 47건, 합계 3억 2천만 원 상당이 들어옴."
@@ -10,12 +11,22 @@ const instrument = {
 	evidence_ids: [5120331, 5120347, 5120402],
 }
 const method = (text) => ({ section: "METHOD", text, evidence_ids: [5121008, 5121011] })
+const codeCheck = (check, section, draftValue, sourceValue) => ({
+	check,
+	section,
+	draft_value: draftValue,
+	source_value: sourceValue,
+	match: true,
+	reason: null,
+})
+const llmCheck = (check, score) => ({ check, comment: "예시 코멘트", score })
 
 export function seedStrDrafts() {
 	return [
 		{
 			assignee_login_id: "inv01",
-			draft_id: "DRF-3b81e2",
+			draft_no: "DRF-000123",
+			access: "FULL",
 			generation_id: "GEN-예시",
 			case_no: "CASE-2022-000057",
 			case_status: "DRAFTED",
@@ -38,7 +49,7 @@ export function seedStrDrafts() {
 			current_revision_no: 2,
 			latest_verification: {
 				verification_id: "VRF-a71f02",
-				draft_id: "DRF-3b81e2",
+				draft_no: "DRF-000123",
 				generation_id: "GEN-예시",
 				revision_no: 2,
 				narrative_sha256: "예시-해시",
@@ -47,11 +58,21 @@ export function seedStrDrafts() {
 				status: "PASSED",
 				verifier_version: "str-verify-0.1.0",
 				produced_at: "2026-10-21T10:22:31Z",
+				// 검사 이름·필드는 계약서 S5 그대로, 값은 이 시드 본문에 맞춘 예시예요.
 				code_checks: [
-					{ section: "INSTRUMENT", result: "PASS", message: null },
-					{ section: "METHOD", result: "PASS", message: null },
+					codeCheck("AMOUNT_MATCH", "INSTRUMENT", "3억 2천만 원", "320000000"),
+					codeCheck("DATE_MATCH", "METHOD", "2022-09-02", "2022-09-02"),
+					codeCheck("COUNT_MATCH", "INSTRUMENT", "47", "47"),
+					codeCheck("ACCOUNT_ID_MATCH", "INSTRUMENT", null, null),
+					codeCheck("EVIDENCE_IN_SCOPE", "METHOD", null, null),
 				],
-				llm_checks: [{ section: "METHOD", result: "PASS", message: null }],
+				llm_checks: [
+					llmCheck("FIVE_W_ONE_H_COMPLETE", 4),
+					llmCheck("TYPOLOGY_CONSISTENT", 5),
+					llmCheck("NO_UNSUPPORTED_CLAIM", 4),
+					llmCheck("NO_SPECULATION", 5),
+					llmCheck("NO_INSTRUCTION_TEXT", 5),
+				],
 			},
 			revisions: [
 				{
@@ -83,19 +104,24 @@ export function canViewStrContent(user, draft) {
 	)
 }
 
-// 관리자·비담당 조사역은 상태·날짜만(11/3 확정). 허용 필드만 골라 만들어 본문 필드가 새로 생겨도 새지 않게 해요.
-// TODO(SCRUM-110): 제한 응답의 필드 목록과 `content_visible` 이름은 명세에 없음 — 채영님과 확인 필요
+// 관리자·비담당 조사역은 `access: "META_ONLY"`로 상태·날짜만(11/3 결정, 11/4 채영 필드 확정).
+// 허용 필드만 골라 만들어 본문 필드가 새로 생겨도 새지 않게 하고, 본문 키는 빼지 않고 null로 줘요(계약서 2.3).
 export function visibleStrDraft(user, draft) {
 	if (!canViewStrContent(user, draft))
 		return {
-			draft_id: draft.draft_id,
+			draft_no: draft.draft_no,
 			case_no: draft.case_no,
 			status: draft.status,
 			case_status: draft.case_status,
 			produced_at: draft.produced_at,
-			content_visible: false,
+			access: "META_ONLY",
+			facts: null,
+			narrative: null,
+			latest_verification: null,
+			last_rejection: null,
+			references: null,
 		}
 	// eslint-disable-next-line no-unused-vars
 	const { assignee_login_id, revisions, ...body } = draft
-	return { ...body, content_visible: true }
+	return body
 }
