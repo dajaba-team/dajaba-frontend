@@ -47,6 +47,15 @@ export function seedStrDrafts() {
 			},
 			narrative: [instrument, method(METHOD_AFTER)],
 			current_revision_no: 2,
+			// 11/4 채영이 S2에 더한 키. 값은 시드에 없는 정보라 비워 둬요(지어내지 않음, 계약서 2.3 null 규칙).
+			last_rejection: null,
+			suspicion_types: [],
+			suspicion_types_recommended: [],
+			suspicion_level_branch: null,
+			suspicion_level_hq: null,
+			allowed_actions: [],
+			report: null,
+			references: null,
 			latest_verification: {
 				verification_id: "VRF-a71f02",
 				draft_no: "DRF-000123",

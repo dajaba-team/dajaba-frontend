@@ -7,8 +7,10 @@ import { apiClient } from "../../../shared/api/apiClient"
 // (FR-APR-02, 권한 매트릭스 14번, 11/3 확정 — SCRUM-110).
 const draftPath = (draftNo) => `/api/v1/str-drafts/${encodeURIComponent(draftNo)}`
 
+// label은 서식 항목 제목(예: "의심스러운 거래자 관련", 11/4 채영). 없으면 null.
 const toSection = (data) => ({
 	section: data.section,
+	label: data.label ?? null,
 	text: data.text,
 	evidenceIds: data.evidence_ids ?? [],
 })
@@ -84,8 +86,28 @@ export function toDraft(data) {
 		latestVerification: data.latest_verification
 			? toVerification(data.latest_verification)
 			: null,
+		lastRejection: data.last_rejection ? toLastRejection(data.last_rejection) : null,
+		// 의심 유형·정도 이름은 11/4 채영 확정(Q6). 유형 코드 목록은 준혁님 룰 명세의 "서식 유형 번호"를 따라요.
+		suspicionTypes: data.suspicion_types ?? [],
+		suspicionTypesRecommended: data.suspicion_types_recommended ?? [],
+		suspicionLevelBranch: data.suspicion_level_branch ?? null,
+		suspicionLevelHq: data.suspicion_level_hq ?? null,
+		// 버튼은 서버가 준 목록으로만 그려요. 값: REVISE·VERIFY·SUBMIT·REGENERATE·CLOSE_WITH_DRAFT(조사역),
+		// APPROVE·REJECT·REPORT(승인자), PREVIEW_PDF·DOWNLOAD_PDF·REGENERATE_PDF (11/4 채영 Q3).
+		allowedActions: data.allowed_actions ?? [],
+		// TODO(SCRUM-110): 〔확인 필요 — 채영〕 report·references는 S2에 키만 정해지고 모양이 아직 없어요. 정해지면 옮겨요.
 	}
 }
+
+// 마지막 반려(없으면 null). 시각 이름은 rejected_at이 아니라 decided_at이에요(11/4 채영).
+const toLastRejection = (data) => ({
+	reasonCode: data.reason_code,
+	comment: data.comment,
+	revisionNo: data.revision_no,
+	decidedBy: data.decided_by,
+	decidedAt: data.decided_at,
+	narrativeUnchanged: data.narrative_unchanged,
+})
 
 const toRevisionSummary = (data) => ({
 	revisionNo: data.revision_no,

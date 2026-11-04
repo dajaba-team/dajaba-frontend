@@ -10,7 +10,7 @@
 | 경로 〔제안〕                                 | 보이는 것                                                 | 누가                    |
 | --------------------------------------------- | --------------------------------------------------------- | ----------------------- |
 | `/approvals`                                  | 승인 대기 케이스·초안 목록                                | APPROVER, ADMIN(조회만) |
-| `/approvals/:draftId` 또는 STR 화면 읽기 전용 | 대상 초안·수정본·최신 검증·이전 반려 사유, 승인·반려 버튼 | APPROVER                |
+| `/approvals/:draftNo` 또는 STR 화면 읽기 전용 | 대상 초안·수정본·최신 검증·이전 반려 사유, 승인·반려 버튼 | APPROVER                |
 
 - 메뉴는 APPROVER·ADMIN에게만. ADMIN에겐 버튼 없이 목록만.
 - **담당 조사역 본인이었던 케이스엔 승인·반려 버튼을 숨겨요.** 서버도 409 `SELF_APPROVAL`로 막아요.
@@ -31,11 +31,11 @@
 | #    | API                                                                        | 비고                                       |
 | ---- | -------------------------------------------------------------------------- | ------------------------------------------ |
 | 16   | `GET /approvals`                                                           | GET은 ADMIN·APPROVER (10/29 메서드별 권한) |
-| 7    | `POST /approvals/{draft_id}/approve`                                       | APPROVER, 담당 본인 제외                   |
-| 8    | `POST /approvals/{draft_id}/reject` `{case_version, reason_code, comment}` | APPROVER                                   |
-| 12-2 | `POST /approvals/{draft_id}/report`                                        | 모의 제출 〔초안〕                         |
+| 7    | `POST /approvals/{draft_no}/approve`                                       | APPROVER, 담당 본인 제외                   |
+| 8    | `POST /approvals/{draft_no}/reject` `{case_version, reason_code, comment}` | APPROVER                                   |
+| 12-2 | `POST /approvals/{draft_no}/report`                                        | 모의 제출 〔초안〕                         |
 
-경로 번호는 **`{draft_id}`** 로 정해졌어요(BE 미결 1, 10/30). 예전 프론트 문서·CASES 명세의 `{case_no}` 안은 쓰지 않아요.
+경로 번호는 초안 번호로 정해졌고(BE 미결 1, 10/30), 이름은 **`{draft_no}`**(`DRF-` + 6자리)예요(계약서 2.2, 11/4 채영). 예전 프론트 문서·CASES 명세의 `{case_no}` 안은 쓰지 않아요.
 
 ## 4. 테스트에 있어야 하는 것
 

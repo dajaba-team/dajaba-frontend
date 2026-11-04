@@ -42,8 +42,18 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 			expect(draft.narrative.map((s) => s.section)).toEqual(["INSTRUMENT", "METHOD"])
 			expect(draft.narrative[1]).toEqual({
 				section: "METHOD",
+				label: null,
 				text: expect.stringContaining("9월 2일"),
 				evidenceIds: [5121008, 5121011],
+			})
+			// 11/4 S2에 더해진 키 — 시드엔 값이 없어 비어 있어요.
+			expect(draft).toMatchObject({
+				lastRejection: null,
+				suspicionTypes: [],
+				suspicionTypesRecommended: [],
+				suspicionLevelBranch: null,
+				suspicionLevelHq: null,
+				allowedActions: [],
 			})
 			expect(draft.facts).toMatchObject({ currency: "KRW", inboundCount: 47 })
 			expect(draft.latestVerification).toMatchObject({
@@ -150,6 +160,43 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 			})
 		},
 	)
+
+	it("S2 추가 필드(label·last_rejection·의심 유형·정도·allowed_actions)를 옮긴다", () => {
+		const draft = toDraft({
+			draft_no: DRAFT_NO,
+			access: "FULL",
+			narrative: [{ section: "SUBJECT", label: "의심스러운 거래자 관련", text: "t" }],
+			last_rejection: {
+				reason_code: "NEED_REVISION",
+				comment: "근거 보완",
+				revision_no: 2,
+				decided_by: "apr01",
+				decided_at: "2026-10-22T09:00:00Z",
+				narrative_unchanged: false,
+			},
+			suspicion_types: ["VI-4"],
+			suspicion_types_recommended: ["VI-4"],
+			suspicion_level_branch: 4,
+			suspicion_level_hq: 3,
+			allowed_actions: ["REVISE", "VERIFY"],
+		})
+		expect(draft.narrative[0].label).toBe("의심스러운 거래자 관련")
+		expect(draft).toMatchObject({
+			lastRejection: {
+				reasonCode: "NEED_REVISION",
+				comment: "근거 보완",
+				revisionNo: 2,
+				decidedBy: "apr01",
+				decidedAt: "2026-10-22T09:00:00Z",
+				narrativeUnchanged: false,
+			},
+			suspicionTypes: ["VI-4"],
+			suspicionTypesRecommended: ["VI-4"],
+			suspicionLevelBranch: 4,
+			suspicionLevelHq: 3,
+			allowedActions: ["REVISE", "VERIFY"],
+		})
+	})
 
 	it("서버가 실수로 본문을 같이 보내도 FULL이 아니면 화면 모델에 옮기지 않는다", () => {
 		const draft = toDraft({

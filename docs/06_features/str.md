@@ -61,13 +61,15 @@ Query key 〔제안〕: `["draft", draftNo]`, `["draft", draftNo, "revisions"]`,
 
 검증 결과(`latest_verification`)는 AI 응답 그대로예요 [계약서 S5, 규약 §5.3]. `code_checks[]`는 `{ check, section, draft_value, source_value, match, reason }`(`reason`: `MISMATCH`·`UNPARSED`·`MISSING`·`OUT_OF_SCOPE`), `llm_checks[]`는 `{ check, comment, score }`(1~5점)이고 코드 검사가 실패하면 `llm_checks: null`. 프론트는 `null`을 빈 배열로 바꾸지 않아요.
 
+S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), `last_rejection { reason_code, comment, revision_no, decided_by, decided_at, narrative_unchanged }`(없으면 `null`), `suspicion_types`·`suspicion_types_recommended`(문자열 배열), `suspicion_level_branch`·`suspicion_level_hq`(1~5), `allowed_actions`. 프론트 `toDraft`가 camelCase로 옮기고, MSW 시드엔 키만 두고 값은 비워 뒀어요. 〔확인 필요 — 채영〕 `report`·`references`는 모양이 아직 없어 옮기지 않아요.
+
 〔확인 필요 — 채영〕 `facts`는 명세 1번 예시(단순화된 모양)로 두었어요. 실제 AI facts(통화별 `inbound`/`outbound`, `period`, `counterparties` 등)를 그대로 넘기는지, 화면용으로 줄이는지 답이 오면 `toFacts`를 맞춰요.
 
 ### 본문 열람 제한 〔SCRUM-110, FR-APR-02·NFR-APR-01·권한 매트릭스 14번 — 11/3 확정, 필드 11/4 채영〕
 
 본문을 볼 수 있는 사람은 **그 케이스의 담당 조사역**과 **승인자(APPROVER)**뿐이에요. **관리자와 비담당 조사역은 상태·날짜만** 받아요(ADMIN은 조사역·승인자 권한을 물려받지 않음). STR 명세 §2의 "담당이 아닌 조사역은 403 `NOT_ASSIGNEE`"는 채영님이 이 결정에 맞춰 고쳐요.
 
-| 누가                   | `GET /str-drafts/{id}`                                                                                                                                                                                                       | `GET /str-drafts/{id}/revisions`                                                                          |
+| 누가                   | `GET /str-drafts/{draft_no}`                                                                                                                                                                                                 | `GET /str-drafts/{draft_no}/revisions`                                                                    |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | 담당 조사역 · 승인자   | 200 명세 1번 모양 전체 + `access: "FULL"`                                                                                                                                                                                    | 200 목록 `{ draft_no, items }`(본문 없음), `?revision_no=`면 그 행의 `narrative_before`·`narrative_after` |
 | 관리자 · 비담당 조사역 | 200 **제한 응답** `access: "META_ONLY"` — `draft_no`·`case_no`·`status`·`case_status`·`produced_at`만 값이 있고 `facts`·`narrative`·`latest_verification`·`last_rejection`·`references`는 `null`(키는 빼지 않음, 계약서 2.3) | 403 — 관리자 `FORBIDDEN`, 비담당 조사역 `NOT_ASSIGNEE`                                                    |
