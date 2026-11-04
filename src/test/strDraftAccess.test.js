@@ -53,9 +53,10 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 				suspicionTypesRecommended: [],
 				suspicionLevelBranch: null,
 				suspicionLevelHq: null,
-				allowedActions: [],
+				availableActions: [],
 			})
-			expect(draft.facts).toMatchObject({ currency: "KRW", inboundCount: 47 })
+			// facts는 AI facts 그대로 — 키를 바꾸지 않아요(Q15).
+			expect(draft.facts).toMatchObject({ currency: "KRW", inbound_count: 47 })
 			expect(draft.latestVerification).toMatchObject({
 				verificationId: "VRF-a71f02",
 				revisionNo: 2,
@@ -161,7 +162,7 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 		},
 	)
 
-	it("S2 추가 필드(label·last_rejection·의심 유형·정도·allowed_actions)를 옮긴다", () => {
+	it("S2 추가 필드(label·last_rejection·의심 유형·정도·available_actions)를 옮긴다", () => {
 		const draft = toDraft({
 			draft_no: DRAFT_NO,
 			access: "FULL",
@@ -178,7 +179,7 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 			suspicion_types_recommended: ["VI-4"],
 			suspicion_level_branch: 4,
 			suspicion_level_hq: 3,
-			allowed_actions: ["REVISE", "VERIFY"],
+			available_actions: ["REVISE", "VERIFY"],
 		})
 		expect(draft.narrative[0].label).toBe("의심스러운 거래자 관련")
 		expect(draft).toMatchObject({
@@ -194,7 +195,7 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 			suspicionTypesRecommended: ["VI-4"],
 			suspicionLevelBranch: 4,
 			suspicionLevelHq: 3,
-			allowedActions: ["REVISE", "VERIFY"],
+			availableActions: ["REVISE", "VERIFY"],
 		})
 	})
 

@@ -145,7 +145,7 @@ export const handlers = [
 		if (!currentUser) return unauthenticated()
 		const draft = drafts.find((item) => item.draft_no === params.draftNo)
 		if (!draft) return draftNotFound()
-		// TODO(SCRUM-110): 명세는 "수정 이력도 같은 규칙"이라고만 해요. 이력은 상태·날짜로 줄일 게 없어 403으로 둠 — 확인 필요
+		// 수정 이력은 제한 응답 없이 403 — 관리자 FORBIDDEN, 비담당 조사역 NOT_ASSIGNEE (계약서 Q13, 11/4 채영)
 		if (!canViewStrContent(currentUser, draft))
 			return HttpResponse.json(
 				{
@@ -169,7 +169,7 @@ export const handlers = [
 					edited_at: item.edited_at,
 				})),
 			})
-		// 명세는 "없는 번호는 404"만 정함. 코드 이름 REVISION_NOT_FOUND는 〔확인 필요〕
+		// 없는 revision_no는 404 REVISION_NOT_FOUND (계약서 Q13, 11/4 채영)
 		const revision = draft.revisions.find((item) => item.revision_no === Number(revisionNo))
 		return revision
 			? HttpResponse.json(revision)

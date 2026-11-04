@@ -35,6 +35,7 @@ export function seedStrDrafts() {
 			version: 1,
 			generator_version: "str-gen-0.2.0",
 			produced_at: "2026-10-21T10:15:02Z",
+			// facts는 AI facts 그대로 넘어와요(Q15). 이 시드는 아직 명세 1번 예시 모양이라, AI facts 예시를 받으면 바꿔요.
 			facts: {
 				account_no_masked: "****9D80",
 				window_start: "2022-09-02T00:00:00",
@@ -53,7 +54,7 @@ export function seedStrDrafts() {
 			suspicion_types_recommended: [],
 			suspicion_level_branch: null,
 			suspicion_level_hq: null,
-			allowed_actions: [],
+			available_actions: [],
 			report: null,
 			references: null,
 			latest_verification: {

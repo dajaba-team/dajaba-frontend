@@ -61,9 +61,9 @@ Query key 〔제안〕: `["draft", draftNo]`, `["draft", draftNo, "revisions"]`,
 
 검증 결과(`latest_verification`)는 AI 응답 그대로예요 [계약서 S5, 규약 §5.3]. `code_checks[]`는 `{ check, section, draft_value, source_value, match, reason }`(`reason`: `MISMATCH`·`UNPARSED`·`MISSING`·`OUT_OF_SCOPE`), `llm_checks[]`는 `{ check, comment, score }`(1~5점)이고 코드 검사가 실패하면 `llm_checks: null`. 프론트는 `null`을 빈 배열로 바꾸지 않아요.
 
-S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), `last_rejection { reason_code, comment, revision_no, decided_by, decided_at, narrative_unchanged }`(없으면 `null`), `suspicion_types`·`suspicion_types_recommended`(문자열 배열), `suspicion_level_branch`·`suspicion_level_hq`(1~5), `allowed_actions`. 프론트 `toDraft`가 camelCase로 옮기고, MSW 시드엔 키만 두고 값은 비워 뒀어요. 〔확인 필요 — 채영〕 `report`·`references`는 모양이 아직 없어 옮기지 않아요.
+S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), `last_rejection { reason_code, comment, revision_no, decided_by, decided_at, narrative_unchanged }`(없으면 `null`), `suspicion_types`·`suspicion_types_recommended`(문자열 배열), `suspicion_level_branch`·`suspicion_level_hq`(1~5), `available_actions`(케이스 상세와 같은 이름, 계약서 Q16). 프론트 `toDraft`가 camelCase로 옮기고, MSW 시드엔 키만 두고 값은 비워 뒀어요. 〔확인 필요 — 채영〕 `report`·`references`는 모양이 아직 없어 옮기지 않아요.
 
-〔확인 필요 — 채영〕 `facts`는 명세 1번 예시(단순화된 모양)로 두었어요. 실제 AI facts(통화별 `inbound`/`outbound`, `period`, `counterparties` 등)를 그대로 넘기는지, 화면용으로 줄이는지 답이 오면 `toFacts`를 맞춰요.
+`facts`는 **AI facts 그대로** 넘어와요(통화별 `inbound`/`outbound`, `period` 등, 화면용으로 줄이지 않음) [계약서 Q15, 11/4 채영]. 프론트도 키를 camelCase로 바꾸지 않고 그대로 둬요 — 본문 `cites`가 `inbound.by_currency.KRW`처럼 원래 키 경로를 가리키고, `by_currency`의 키는 통화 값이라서요. MSW 시드는 아직 명세 1번 예시 모양이라 AI facts 예시를 받으면 바꿔요.
 
 ### 본문 열람 제한 〔SCRUM-110, FR-APR-02·NFR-APR-01·권한 매트릭스 14번 — 11/3 확정, 필드 11/4 채영〕
 
@@ -77,7 +77,7 @@ S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), 
 - 제한 응답도 `strView` 열람 기록 한 줄을 남겨요(BE `03_shared` §9).
 - 서버는 제한 응답을 **허용 필드만 골라** 만들어요. 프론트 `toDraft`도 `access`가 `"FULL"`이 아니면(없거나 모르는 값 포함) 본문 필드를 화면 모델로 옮기지 않아요.
 - 화면은 `contentVisible`로 "본문 보기"와 "상태·날짜만 보기"를 고르고, 역할로 다시 계산하지 않아요.
-- 〔확인 필요 — 채영〕 ① 수정 이력을 제한 응답 없이 403으로 둘지(명세: "같은 규칙") ② 없는 수정본 404의 코드 이름(MSW는 `REVISION_NOT_FOUND`). 제한 응답 필드·`access` 이름은 11/4에 정해졌어요.
+- 수정 이력은 제한 응답 없이 **403**(관리자 `FORBIDDEN`, 비담당 조사역 `NOT_ASSIGNEE`), 없는 `revision_no`는 **404 `REVISION_NOT_FOUND`**예요 [계약서 Q13, 11/4 채영].
 
 ## 4. 실패 처리 [BE 03 §2, BE flows 04]
 
