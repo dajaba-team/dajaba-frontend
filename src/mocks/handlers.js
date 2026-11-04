@@ -1,3 +1,4 @@
+import { canViewStrContent, seedStrDrafts, visibleStrDraft } from "./strDrafts"
 import { http, HttpResponse } from "msw"
 
 function seed() {
@@ -27,6 +28,7 @@ function seed() {
 	]
 }
 let cases = seed()
+let drafts = seedStrDrafts()
 let currentUser = null
 // MSW 예시 계정입니다. 실제 백엔드 비밀번호(DEV_USER_PASSWORD)와는 관계없습니다.
 export const MOCK_PASSWORD = "mock-password"
@@ -43,6 +45,7 @@ const MOCK_USERS = Object.fromEntries(
 )
 export function resetCases(user = null) {
 	cases = seed()
+	drafts = seedStrDrafts()
 	currentUser = user
 }
 // 예시 사용자도 역할·담당자 조건을 지켜야 개발 화면이 과도한 권한을 전제로 굳지 않습니다.
@@ -52,6 +55,11 @@ function canSaveMemo(item) {
 function visibleCase(item) {
 	return { ...item, allowed_actions: canSaveMemo(item) ? ["SAVE_MEMO"] : [] }
 }
+const draftNotFound = () =>
+	HttpResponse.json(
+		{ error: { code: "DRAFT_NOT_FOUND", message: "초안을 찾을 수 없습니다", details: {} } },
+		{ status: 404 },
+	)
 const unauthenticated = () =>
 	HttpResponse.json({ error: { code: "UNAUTHENTICATED" } }, { status: 401 })
 const base = new URL(import.meta.env.VITE_API_BASE_URL || "", window.location.origin).href.replace(
@@ -126,6 +134,55 @@ export const handlers = [
 		if (!currentUser) return unauthenticated()
 		const item = cases.find((item) => item.id === params.id)
 		return item ? HttpResponse.json(visibleCase(item)) : new HttpResponse(null, { status: 404 })
+	}),
+	http.get(`${base}/api/v1/str-drafts/:draftNo`, ({ params }) => {
+		if (!currentUser) return unauthenticated()
+		const draft = drafts.find((item) => item.draft_no === params.draftNo)
+		return draft ? HttpResponse.json(visibleStrDraft(currentUser, draft)) : draftNotFound()
+	}),
+	// 목록은 본문 없이, `?revision_no=`면 그 한 행의 전·후 본문(명세 4번).
+	http.get(`${base}/api/v1/str-drafts/:draftNo/revisions`, ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const draft = drafts.find((item) => item.draft_no === params.draftNo)
+		if (!draft) return draftNotFound()
+		// TODO(SCRUM-110): 명세는 "수정 이력도 같은 규칙"이라고만 해요. 이력은 상태·날짜로 줄일 게 없어 403으로 둠 — 확인 필요
+		if (!canViewStrContent(currentUser, draft))
+			return HttpResponse.json(
+				{
+					error: {
+						code: currentUser.role === "ADMIN" ? "FORBIDDEN" : "NOT_ASSIGNEE",
+						message: "권한이 없습니다",
+						details: {},
+					},
+				},
+				{ status: 403 },
+			)
+		const revisionNo = new URL(request.url).searchParams.get("revision_no")
+		if (revisionNo == null)
+			return HttpResponse.json({
+				draft_no: draft.draft_no,
+				// 목록은 본문 없이 메타만(명세 4번).
+				items: draft.revisions.map((item) => ({
+					revision_no: item.revision_no,
+					changed_sections: item.changed_sections,
+					edited_by: item.edited_by,
+					edited_at: item.edited_at,
+				})),
+			})
+		// 명세는 "없는 번호는 404"만 정함. 코드 이름 REVISION_NOT_FOUND는 〔확인 필요〕
+		const revision = draft.revisions.find((item) => item.revision_no === Number(revisionNo))
+		return revision
+			? HttpResponse.json(revision)
+			: HttpResponse.json(
+					{
+						error: {
+							code: "REVISION_NOT_FOUND",
+							message: "수정본이 없습니다",
+							details: {},
+						},
+					},
+					{ status: 404 },
+				)
 	}),
 	http.put(`${base}/api/cases/:id/memo`, async ({ params, request }) => {
 		if (!currentUser) return unauthenticated()
