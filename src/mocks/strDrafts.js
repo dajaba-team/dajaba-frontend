@@ -182,7 +182,97 @@ export function seedStrDrafts() {
 				},
 			],
 		},
+		// 케이스 1001의 지금 초안 — 서술부 7항목(narrative_v2, 11/6부터 새 초안). 본문은 AI_FACTS_EXAMPLE 값에 맞춘 예시예요.
+		// label은 null로 둬서 프론트 제목 표(sectionTitles)로 보이는지 확인해요.
+		aiOriginalDraft({
+			draft_no: "DRF-000124",
+			case_no: "CASE-2022-001001",
+			case_status: "DRAFTED",
+			status: "ACTIVE",
+			generator_version: "str-gen-0.2.0+narrative_v2",
+			produced_at: "2026-11-05T11:30:00Z",
+			narrative: NARRATIVE_V2,
+		}),
+		// 케이스 1003의 승인본 — 옛 6섹션(narrative_v1). 7항목 전환 뒤에도 그대로 남아 보여야 해요.
+		aiOriginalDraft({
+			draft_no: "DRF-000098",
+			case_no: "CASE-2022-001003",
+			case_status: "APPROVED",
+			status: "LOCKED",
+			generator_version: "str-gen-0.1.0",
+			produced_at: "2026-10-30T09:00:00Z",
+			narrative: NARRATIVE_V1,
+		}),
 	]
+}
+
+const v2 = (section, text, evidenceIds = []) => ({
+	section,
+	label: null,
+	text,
+	evidence_ids: evidenceIds,
+})
+const NARRATIVE_V2 = [
+	v2(
+		"SUBJECT",
+		"개인사업자 Sole Proprietorship #50438(소매업, 위험등급 낮음) 명의 계좌 010_8000EBD30.",
+	),
+	v2("DATE", "2022-09-02 00:14 ~ 22:51, 하루 동안.", [104221, 104301]),
+	v2("PLACE", "보고 기관 Portugal Bank #4507. 보낸 쪽 3개 계좌는 모두 타행이에요."),
+	v2("INSTRUMENT", "ACH 이체 3건, 합계 USD 42,750.50.", [104221, 104233, 104301]),
+	v2(
+		"METHOD",
+		"서로 다른 3개 계좌가 하루 안에 한 계좌로 입금(FAN_IN).\n건당 USD 12,500.00 ~ 16,800.50.",
+		[104221, 104233, 104301],
+	),
+	v2(
+		"GROUNDS",
+		"평소 매출 입금 계좌인데 처음 보는 상대 3곳에서 짧은 시간에 몰려 들어옴. 이전 경보 1건.",
+	),
+	v2("OPINION", "자금 출처 확인이 필요해 보여요. 최종 판단은 담당 조사역이 해요."),
+]
+const v1 = (section, text, evidenceIds = []) => ({ section, text, evidence_ids: evidenceIds })
+const NARRATIVE_V1 = [
+	v1("SUMMARY", "대상 계좌에 하루 동안 타행 3개 계좌에서 ACH 입금 3건."),
+	v1("WHO", "개인사업자 Sole Proprietorship #50438."),
+	v1("WHAT_WHEN_WHERE", "2022-09-02, Portugal Bank #4507 계좌로 USD 42,750.50.", [104221]),
+	v1("HOW", "여러 계좌에서 한 계좌로 모이는 입금.", [104221, 104233, 104301]),
+	v1("WHY_SUSPICIOUS", "평소 거래 상대가 아닌 계좌에서 짧은 시간에 몰려 들어옴."),
+	v1("CONCLUSION", "의심거래로 보고가 필요해 보여요."),
+]
+
+// AI 원문(수정본 1번)만 있는 초안. 키는 위 DRF-000123과 같은 S2 모양이에요.
+function aiOriginalDraft({ narrative, ...fields }) {
+	return {
+		assignee_login_id: "inv01",
+		access: "FULL",
+		generation_id: `GEN-${fields.draft_no}`,
+		case_version: 3,
+		version: 1,
+		facts: AI_FACTS_EXAMPLE,
+		narrative,
+		current_revision_no: 1,
+		last_rejection: null,
+		suspicion_types: [],
+		suspicion_types_recommended: [],
+		suspicion_level_branch: null,
+		suspicion_level_hq: null,
+		available_actions: [],
+		report: null,
+		references: null,
+		latest_verification: null,
+		revisions: [
+			{
+				revision_no: 1,
+				changed_sections: [],
+				edited_by: "SYSTEM",
+				edited_at: fields.produced_at,
+				narrative_before: [],
+				narrative_after: narrative,
+			},
+		],
+		...fields,
+	}
 }
 
 // 본문은 담당 조사역과 승인자만(FR-APR-02, 권한 매트릭스 14번). ADMIN은 조사역·승인자 권한을 물려받지 않아요.
