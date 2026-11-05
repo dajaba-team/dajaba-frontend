@@ -23,7 +23,7 @@
 | 11/3  | 화면 용어는 **에스컬레이션**(버튼·상태 모두, "상신" 안 씀)·**승인자**("책임자" 안 씀)                                                                                                     | API `/escalate`·BE docs·권한표가 모두 이 단어. 고칠 곳이 가장 적음                                                                                  | UI/UX 검토 11/2, BE 04 §1 |
 | 11/3  | 전체 경보 목록(`/admin/alerts`)은 관리자만 — 조사역·승인자는 안 봄. 관리자는 케이스가 안 된 저점수 경보까지 점검하고, 조사역·승인자는 경보·점수 이유를 케이스 상세에서 봄 (FR-DET-11)     | BE `SecurityConfig`가 `/api/v1/admin/**`를 ADMIN만 허용. 권한 매트릭스 2번(조사역·승인자 ×)도 이에 맞춰 고침                                        | 준혁·지윤 협의 11/3       |
 | 11/3  | STR 본문은 담당 조사역·승인자만. **관리자·비담당 조사역은 같은 경로의 제한 응답**(`access: "META_ONLY"`, 상태·날짜만, 본문 필드 `null` — 이름은 11/4 채영). 화면은 응답의 `access`로 고름 | Jira SCRUM-110 · BE `04_auth_user` §2·`03_shared` §9가 같은 규칙. STR 명세 §2의 "비담당 조사역 403 NOT_ASSIGNEE"는 채영님이 고침. 역할 재계산 안 함 | SCRUM-110, FR-APR-02      |
-| 11/4  | STR 초안 응답: 버튼 목록은 `available_actions`(케이스와 같은 이름), `facts`는 AI facts 그대로(키 변환 없음), 수정 이력은 비담당 403 `NOT_ASSIGNEE`·없는 번호 404 `REVISION_NOT_FOUND`     | 계약서 Q13·Q15·Q16 채영님 답. facts 키를 바꾸면 본문 `cites` 경로가 안 맞아요                                                                       | 계약서 v0.2 Q13·Q15·Q16   |
+| 11/4  | STR 초안 응답: 버튼 목록은 `available_actions`(케이스와 같은 이름), `facts`는 AI facts 그대로(키 변환 없음), 수정 이력은 비담당 403 `NOT_ASSIGNEE`·없는 번호 404 `REVISION_NOT_FOUND`     | 계약서 Q13·Q15·Q16 채영님 답. 본문 `cites`가 `inbound.amount.USD`처럼 AI fact 키 이름(snake_case)이라 키를 그대로 둬야 맞춰 볼 수 있어요            | 계약서 v0.2 Q13·Q15·Q16   |
 
 ## 2. 문서끼리 다른 곳 — 이 docs에서 고친 것
 

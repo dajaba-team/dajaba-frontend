@@ -68,7 +68,7 @@ export function toDraft(data) {
 		generatorVersion: data.generator_version,
 		currentRevisionNo: data.current_revision_no,
 		// facts는 AI facts를 그대로 받아요(계약서 Q15, 11/4 채영) — 화면용으로 줄이지 않고 키도 바꾸지 않아요.
-		// 본문 cites가 "inbound.by_currency.KRW"처럼 원래 키 경로를 가리키고, by_currency의 키는 통화 값이라서요.
+		// 본문 cites가 "inbound.amount.USD"·"counterparties.count"처럼 AI fact 키 이름(snake_case)이라, 키를 그대로 둬야 cites와 값을 바로 맞춰 볼 수 있어요.
 		// 숫자는 서버(AI)가 계산한 값이라 다시 계산하지 않아요.
 		facts: data.facts ?? null,
 		narrative: (data.narrative ?? []).map(toSection),
