@@ -13,6 +13,8 @@ function seed() {
 			evidence: "예시: 동일 계좌에서 짧은 시간 내 반복 이체가 발생했습니다.",
 			allowed_actions: ["SAVE_MEMO"],
 			history: ["케이스 생성", "예시 조사원에게 배정"],
+			// TODO(SCRUM-115): 〔확인 필요 — 케이스 상세 API〕 지금 초안 번호 필드 이름. 정해지면 맞춰요.
+			current_draft_no: "DRF-000124",
 		},
 		{
 			id: "1002",
@@ -24,6 +26,19 @@ function seed() {
 			evidence: "예시: 여러 계좌로 분산된 거래를 확인해야 합니다.",
 			allowed_actions: [],
 			history: ["케이스 생성"],
+			current_draft_no: null,
+		},
+		{
+			id: "1003",
+			title: "집중 입금 보고 건 (옛 6섹션 승인본)",
+			status: "APPROVED",
+			assignee_name: "예시 조사원",
+			case_version: 3,
+			memo: "",
+			evidence: "예시: 7항목 전환 전에 만든 6섹션 초안이 승인된 케이스예요.",
+			allowed_actions: [],
+			history: ["케이스 생성", "예시 조사원에게 배정", "STR 초안 승인"],
+			current_draft_no: "DRF-000098",
 		},
 	]
 }

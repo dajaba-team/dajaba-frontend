@@ -3,7 +3,7 @@
 > v0.1 · 2026-10-31 · 초안(팀 확인 중) · 정리 지윤
 
 - 프론트 폴더: `src/features/str/` · 백엔드 짝: `str` (BE `06_features/str.md`, STR 명세 〔초안〕)
-- 지금: `/cases/:caseId/str`에 **안내 화면만**. 시연(`/demo/cases/:caseId/str`)에서 편집·검증 흐름을 합성 데이터로 볼 수 있어요.
+- 지금: `/cases/:caseId/str`은 케이스의 지금 초안(`current_draft_no` 〔확인 필요 — 케이스 상세 API 필드 이름〕)을 불러와 **서술부를 읽기 전용으로** 그려요. 섹션은 서버가 준 목록·순서 그대로, 제목은 `label` → `features/str/sectionTitles.js`(7항목 + 옛 6섹션) → 섹션 이름 순서예요(SCRUM-115). 수정·검증·승인 요청은 아직이고, 시연(`/demo/cases/:caseId/str`)에서 합성 데이터로 볼 수 있어요.
 
 ## 1. 화면 — `/cases/:caseNo/str`
 
