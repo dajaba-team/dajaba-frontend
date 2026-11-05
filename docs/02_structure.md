@@ -32,6 +32,7 @@ src/
 │  ├─ api/apiClient.js         axios 인스턴스, 에러 코드 → 문구
 │  ├─ ui/                      AsyncState, 버튼·배지·모달 등
 │  ├─ styles/                  tokens.css, GlobalStyle.js
+│  ├─ str/sectionTitles.js     서술부 섹션 제목 표 — 실제 STR·시연 화면이 같이 씀
 │  └─ demo/                    /demo 전용 컨텍스트·라벨
 ├─ mocks/              MSW와 시연 데이터
 │  ├─ handlers.js, browser.js, server.js   개발·테스트용 API 대역

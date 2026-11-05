@@ -8,7 +8,7 @@ import Empty from "../../../shared/ui/dashboard/Empty.jsx"
 import { statusKo } from "../../../shared/demo/labels.js"
 import Badge from "../../../shared/ui/dashboard/Badge.jsx"
 import Icon from "../../../shared/ui/dashboard/Icon.jsx"
-import { narrativeItems, sectionLabel } from "../../../shared/demo/labels.js"
+import { narrativeItems, sectionTitle } from "../../../shared/str/sectionTitles.js"
 import Button from "../../../shared/ui/dashboard/Button.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
 import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
@@ -133,7 +133,7 @@ function StrEditor({ draft, isCurrent }) {
 							>
 								<div className="field-label">
 									<label htmlFor={`demo-section-${section.section}`}>
-										{sectionLabel(section)}
+										{sectionTitle(section)}
 									</label>
 									<code>{section.section}</code>
 									<span>{(texts[section.section] ?? "").length} / 5,000</span>
