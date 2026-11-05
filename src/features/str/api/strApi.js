@@ -15,20 +15,6 @@ const toSection = (data) => ({
 	evidenceIds: data.evidence_ids ?? [],
 })
 
-// 명세 1번 응답 예시의 facts. 숫자는 서버(AI)가 계산한 값 그대로 보여 주고 다시 계산하지 않아요.
-// TODO(SCRUM-110): 〔확인 필요 — 채영〕 명세 1번 예시는 단순화된 모양이라 실제 AI facts(통화별 inbound/outbound,
-// period, counterparties 등)와 달라요. 백엔드가 AI facts를 그대로 넘기는지, 화면용으로 줄이는지 답이 오면 맞춰요.
-const toFacts = (data) => ({
-	accountNoMasked: data.account_no_masked,
-	windowStart: data.window_start,
-	windowEnd: data.window_end,
-	inboundCount: data.inbound_count,
-	distinctSenders: data.distinct_senders,
-	totalAmount: data.total_amount,
-	currency: data.currency,
-	typology: data.typology,
-})
-
 // 검증 결과는 AI 응답 그대로 넘어와요(계약서 S5, 규약 §5.3).
 // 코드 검사 reason: MISMATCH·UNPARSED·MISSING·OUT_OF_SCOPE — 넷을 구분해서 보여 줘요. 값이 없으면 null(계약서 2.3).
 const toCodeCheck = (data) => ({
@@ -81,7 +67,10 @@ export function toDraft(data) {
 		version: data.version,
 		generatorVersion: data.generator_version,
 		currentRevisionNo: data.current_revision_no,
-		facts: data.facts ? toFacts(data.facts) : null,
+		// facts는 AI facts를 그대로 받아요(계약서 Q15, 11/4 채영) — 화면용으로 줄이지 않고 키도 바꾸지 않아요.
+		// 본문 cites가 "inbound.amount.USD"·"counterparties.count"처럼 AI fact 키 이름(snake_case)이라, 키를 그대로 둬야 cites와 값을 바로 맞춰 볼 수 있어요.
+		// 숫자는 서버(AI)가 계산한 값이라 다시 계산하지 않아요.
+		facts: data.facts ?? null,
 		narrative: (data.narrative ?? []).map(toSection),
 		latestVerification: data.latest_verification
 			? toVerification(data.latest_verification)
@@ -92,9 +81,10 @@ export function toDraft(data) {
 		suspicionTypesRecommended: data.suspicion_types_recommended ?? [],
 		suspicionLevelBranch: data.suspicion_level_branch ?? null,
 		suspicionLevelHq: data.suspicion_level_hq ?? null,
-		// 버튼은 서버가 준 목록으로만 그려요. 값: REVISE·VERIFY·SUBMIT·REGENERATE·CLOSE_WITH_DRAFT(조사역),
-		// APPROVE·REJECT·REPORT(승인자), PREVIEW_PDF·DOWNLOAD_PDF·REGENERATE_PDF (11/4 채영 Q3).
-		allowedActions: data.allowed_actions ?? [],
+		// 버튼은 서버가 준 목록으로만 그려요. 케이스 상세와 같은 이름 available_actions(계약서 Q16, 11/4 채영).
+		// 값: REVISE·VERIFY·SUBMIT·REGENERATE·CLOSE_WITH_DRAFT(조사역), APPROVE·REJECT·REPORT(승인자),
+		// PREVIEW_PDF·DOWNLOAD_PDF·REGENERATE_PDF.
+		availableActions: data.available_actions ?? [],
 		// TODO(SCRUM-110): 〔확인 필요 — 채영〕 report·references는 S2에 키만 정해지고 모양이 아직 없어요. 정해지면 옮겨요.
 	}
 }
