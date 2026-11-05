@@ -63,7 +63,7 @@ Query key 〔제안〕: `["draft", draftNo]`, `["draft", draftNo, "revisions"]`,
 
 S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), `last_rejection { reason_code, comment, revision_no, decided_by, decided_at, narrative_unchanged }`(없으면 `null`), `suspicion_types`·`suspicion_types_recommended`(문자열 배열), `suspicion_level_branch`·`suspicion_level_hq`(1~5), `available_actions`(케이스 상세와 같은 이름, 계약서 Q16). 프론트 `toDraft`가 camelCase로 옮기고, MSW 시드엔 키만 두고 값은 비워 뒀어요. 〔확인 필요 — 채영〕 `report`·`references`는 모양이 아직 없어 옮기지 않아요.
 
-`facts`는 **AI facts 그대로** 넘어와요(통화별 `inbound`/`outbound`, `period` 등, 화면용으로 줄이지 않음) [계약서 Q15, 11/4 채영]. 프론트도 키를 camelCase로 바꾸지 않고 그대로 둬요 — 본문 `cites`가 `inbound.amount.USD`·`counterparties.count`처럼 AI fact 키 이름(snake_case)이라, 키를 그대로 둬야 `cites`와 값을 바로 맞춰 볼 수 있어요. MSW 시드는 아직 명세 1번 예시 모양이라 AI facts 예시를 받으면 바꿔요.
+`facts`는 **AI facts 그대로** 넘어와요(통화별 `inbound`/`outbound`, `period` 등, 화면용으로 줄이지 않음) [계약서 Q15, 11/4 채영]. 프론트도 키를 camelCase로 바꾸지 않고 그대로 둬요 — 본문 `cites`가 `inbound.amount.USD`·`counterparties.count`처럼 AI fact 키 이름(snake_case)이라, 키를 그대로 둬야 `cites`와 값을 바로 맞춰 볼 수 있어요. MSW 시드의 `facts`는 AI 리포 `contracts/examples/draft_response.json`의 `facts`를 그대로 옮겼어요(규약 §6.4).
 
 ### 본문 열람 제한 〔SCRUM-110, FR-APR-02·NFR-APR-01·권한 매트릭스 14번 — 11/3 확정, 필드 11/4 채영〕
 

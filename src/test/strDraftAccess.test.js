@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { strApi, toDraft } from "../features/str/api/strApi"
 import { resetCases } from "../mocks/handlers"
+import { AI_FACTS_EXAMPLE } from "../mocks/strDrafts"
 import { apiClient, getErrorCode } from "../shared/api/apiClient"
 
 const DRAFT_NO = "DRF-000123"
@@ -55,8 +56,8 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 				suspicionLevelHq: null,
 				availableActions: [],
 			})
-			// facts는 AI facts 그대로 — 키를 바꾸지 않아요(Q15).
-			expect(draft.facts).toMatchObject({ currency: "KRW", inbound_count: 47 })
+			// facts는 AI facts 그대로 — 받은 그대로 넘기는지만 봐요(Q15). 모양이 바뀌어도 이 단언은 안 흔들려요.
+			expect(draft.facts).toEqual(AI_FACTS_EXAMPLE)
 			expect(draft.latestVerification).toMatchObject({
 				verificationId: "VRF-a71f02",
 				revisionNo: 2,
@@ -206,7 +207,7 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 			status: "ACTIVE",
 			access: "META_ONLY",
 			narrative: [{ section: "METHOD", text: BODY_SNIPPET }],
-			facts: { currency: "KRW" },
+			facts: { period: AI_FACTS_EXAMPLE.period },
 		})
 		expect(draft).not.toHaveProperty("narrative")
 		expect(draft).not.toHaveProperty("facts")

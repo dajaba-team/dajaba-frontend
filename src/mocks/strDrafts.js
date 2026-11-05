@@ -11,6 +11,95 @@ const instrument = {
 	evidence_ids: [5120331, 5120347, 5120402],
 }
 const method = (text) => ({ section: "METHOD", text, evidence_ids: [5121008, 5121011] })
+// facts는 AI facts 그대로 넘어와요(계약서 Q15). AI 리포 contracts/examples/draft_response.json의
+// facts를 그대로 옮겼어요(규약 §6.4 — 양쪽 계약 예시가 같은 파일). 통화는 ISO 코드(USD)예요.
+// 본문(narrative)은 STR API 명세 예시라 facts 값과 맞지 않아요 — 시드 본문은 열람 제한 확인용이에요.
+export const AI_FACTS_EXAMPLE = {
+	reporting_institution: "Portugal Bank #4507",
+	subject: {
+		entity_id: "80062E240",
+		entity_name: "Sole Proprietorship #50438",
+		entity_type: "SOLE_PROPRIETORSHIP",
+		account_key: "010_8000EBD30",
+	},
+	period: {
+		start: "2022-09-02T00:14:00",
+		end: "2022-09-02T22:51:00",
+	},
+	inbound: {
+		count: 3,
+		by_currency: [
+			{
+				currency: "USD",
+				total: "42750.50",
+				count: 3,
+				transaction_ids: [104221, 104233, 104301],
+			},
+		],
+		transaction_ids: [104221, 104233, 104301],
+	},
+	outbound: {
+		count: 0,
+		by_currency: [],
+		transaction_ids: [],
+	},
+	internal: {
+		count: 0,
+		transaction_ids: [],
+	},
+	indirect: {
+		count: 0,
+		transaction_ids: [],
+	},
+	paths: null,
+	excluded_self_transfer_count: 0,
+	direction: "INBOUND",
+	counterparties: {
+		count: 3,
+		transaction_ids: [104221, 104233, 104301],
+	},
+	counterparty_banks: {
+		same_bank_accounts: 0,
+		other_bank_accounts: 3,
+	},
+	payment_formats: ["ACH"],
+	payment_format_counts: [
+		{
+			format: "ACH",
+			count: 3,
+		},
+	],
+	amount_range: [
+		{
+			currency: "USD",
+			min: "12500.00",
+			max: "16800.50",
+		},
+	],
+	typology: "FAN_IN",
+	typology_source: "RULE",
+	customer: {
+		industry: "RETAIL",
+		risk_level: "LOW",
+		account_purpose: "SALES_DEPOSIT",
+		onboarded_at: "2021-03-14",
+		country_code: "PT",
+	},
+	prior_alert_count: 1,
+	observations: [
+		{
+			name: "account_in_counterparties_24h",
+			value: 3,
+			unit: "count",
+			window_start: "2022-09-02T00:00:00",
+			window_end: "2022-09-03T00:00:00",
+			basis: "distinct_inbound_counterparties",
+			baseline: null,
+		},
+	],
+	model_signals: ["account_in_counterparties_24h"],
+	unmapped_currencies: [],
+}
 const codeCheck = (check, section, draftValue, sourceValue) => ({
 	check,
 	section,
@@ -35,17 +124,7 @@ export function seedStrDrafts() {
 			version: 1,
 			generator_version: "str-gen-0.2.0",
 			produced_at: "2026-10-21T10:15:02Z",
-			// facts는 AI facts 그대로 넘어와요(Q15). 이 시드는 아직 명세 1번 예시 모양이라, AI facts 예시를 받으면 바꿔요.
-			facts: {
-				account_no_masked: "****9D80",
-				window_start: "2022-09-02T00:00:00",
-				window_end: "2022-09-03T00:00:00",
-				inbound_count: 47,
-				distinct_senders: 31,
-				total_amount: 320000000,
-				currency: "KRW",
-				typology: "FAN_IN_THEN_FAN_OUT",
-			},
+			facts: AI_FACTS_EXAMPLE,
 			narrative: [instrument, method(METHOD_AFTER)],
 			current_revision_no: 2,
 			// 11/4 채영이 S2에 더한 키. 값은 시드에 없는 정보라 비워 둬요(지어내지 않음, 계약서 2.3 null 규칙).
