@@ -1,0 +1,68 @@
+/* 기능별 클래스는 str 안에 두고 공통 요소 스타일을 덮어쓰지 않습니다. */
+.str-page-heading {
+	margin-block: var(--space-3) var(--space-5);
+}
+.str-page-heading h1 {
+	margin-block: 0 var(--space-2);
+}
+.str-page-heading p,
+.str-panel-head p {
+	margin: 0;
+	color: var(--color-muted);
+}
+.str-panel {
+	background: var(--color-surface);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-card);
+	box-shadow: var(--shadow-card);
+	padding: var(--space-4);
+}
+.str-panel-head {
+	margin-block-end: var(--space-4);
+}
+.str-panel-head h2 {
+	margin-block: 0 var(--space-1);
+}
+.str-sections {
+	display: grid;
+	gap: var(--space-4);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.str-section {
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-control);
+	padding: var(--space-4);
+}
+.str-section header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--space-2);
+}
+.str-section h2 {
+	margin: 0;
+	font-size: var(--font-body);
+}
+.str-section code {
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+/* AI 문장의 줄바꿈을 그대로 보여 줍니다. */
+.str-section-text {
+	margin-block: var(--space-2);
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+.str-section-evidence {
+	margin: 0;
+	color: var(--color-muted);
+	font-size: var(--font-small);
+	overflow-wrap: anywhere;
+}
+.str-restricted {
+	padding: var(--space-4);
+	border-radius: var(--radius-control);
+	background: var(--color-soft);
+}

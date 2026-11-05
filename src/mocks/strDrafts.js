@@ -11,6 +11,95 @@ const instrument = {
 	evidence_ids: [5120331, 5120347, 5120402],
 }
 const method = (text) => ({ section: "METHOD", text, evidence_ids: [5121008, 5121011] })
+// facts는 AI facts 그대로 넘어와요(계약서 Q15). AI 리포 contracts/examples/draft_response.json의
+// facts를 그대로 옮겼어요(규약 §6.4 — 양쪽 계약 예시가 같은 파일). 통화는 ISO 코드(USD)예요.
+// 본문(narrative)은 STR API 명세 예시라 facts 값과 맞지 않아요 — 시드 본문은 열람 제한 확인용이에요.
+export const AI_FACTS_EXAMPLE = {
+	reporting_institution: "Portugal Bank #4507",
+	subject: {
+		entity_id: "80062E240",
+		entity_name: "Sole Proprietorship #50438",
+		entity_type: "SOLE_PROPRIETORSHIP",
+		account_key: "010_8000EBD30",
+	},
+	period: {
+		start: "2022-09-02T00:14:00",
+		end: "2022-09-02T22:51:00",
+	},
+	inbound: {
+		count: 3,
+		by_currency: [
+			{
+				currency: "USD",
+				total: "42750.50",
+				count: 3,
+				transaction_ids: [104221, 104233, 104301],
+			},
+		],
+		transaction_ids: [104221, 104233, 104301],
+	},
+	outbound: {
+		count: 0,
+		by_currency: [],
+		transaction_ids: [],
+	},
+	internal: {
+		count: 0,
+		transaction_ids: [],
+	},
+	indirect: {
+		count: 0,
+		transaction_ids: [],
+	},
+	paths: null,
+	excluded_self_transfer_count: 0,
+	direction: "INBOUND",
+	counterparties: {
+		count: 3,
+		transaction_ids: [104221, 104233, 104301],
+	},
+	counterparty_banks: {
+		same_bank_accounts: 0,
+		other_bank_accounts: 3,
+	},
+	payment_formats: ["ACH"],
+	payment_format_counts: [
+		{
+			format: "ACH",
+			count: 3,
+		},
+	],
+	amount_range: [
+		{
+			currency: "USD",
+			min: "12500.00",
+			max: "16800.50",
+		},
+	],
+	typology: "FAN_IN",
+	typology_source: "RULE",
+	customer: {
+		industry: "RETAIL",
+		risk_level: "LOW",
+		account_purpose: "SALES_DEPOSIT",
+		onboarded_at: "2021-03-14",
+		country_code: "PT",
+	},
+	prior_alert_count: 1,
+	observations: [
+		{
+			name: "account_in_counterparties_24h",
+			value: 3,
+			unit: "count",
+			window_start: "2022-09-02T00:00:00",
+			window_end: "2022-09-03T00:00:00",
+			basis: "distinct_inbound_counterparties",
+			baseline: null,
+		},
+	],
+	model_signals: ["account_in_counterparties_24h"],
+	unmapped_currencies: [],
+}
 const codeCheck = (check, section, draftValue, sourceValue) => ({
 	check,
 	section,
@@ -35,16 +124,7 @@ export function seedStrDrafts() {
 			version: 1,
 			generator_version: "str-gen-0.2.0",
 			produced_at: "2026-10-21T10:15:02Z",
-			facts: {
-				account_no_masked: "****9D80",
-				window_start: "2022-09-02T00:00:00",
-				window_end: "2022-09-03T00:00:00",
-				inbound_count: 47,
-				distinct_senders: 31,
-				total_amount: 320000000,
-				currency: "KRW",
-				typology: "FAN_IN_THEN_FAN_OUT",
-			},
+			facts: AI_FACTS_EXAMPLE,
 			narrative: [instrument, method(METHOD_AFTER)],
 			current_revision_no: 2,
 			// 11/4 채영이 S2에 더한 키. 값은 시드에 없는 정보라 비워 둬요(지어내지 않음, 계약서 2.3 null 규칙).
@@ -53,7 +133,7 @@ export function seedStrDrafts() {
 			suspicion_types_recommended: [],
 			suspicion_level_branch: null,
 			suspicion_level_hq: null,
-			allowed_actions: [],
+			available_actions: [],
 			report: null,
 			references: null,
 			latest_verification: {
@@ -102,7 +182,97 @@ export function seedStrDrafts() {
 				},
 			],
 		},
+		// 케이스 1001의 지금 초안 — 서술부 7항목(narrative_v2, 11/6부터 새 초안). 본문은 AI_FACTS_EXAMPLE 값에 맞춘 예시예요.
+		// label은 null로 둬서 프론트 제목 표(sectionTitles)로 보이는지 확인해요.
+		aiOriginalDraft({
+			draft_no: "DRF-000124",
+			case_no: "CASE-2022-001001",
+			case_status: "DRAFTED",
+			status: "ACTIVE",
+			generator_version: "str-gen-0.2.0+narrative_v2",
+			produced_at: "2026-11-05T11:30:00Z",
+			narrative: NARRATIVE_V2,
+		}),
+		// 케이스 1003의 승인본 — 옛 6섹션(narrative_v1). 7항목 전환 뒤에도 그대로 남아 보여야 해요.
+		aiOriginalDraft({
+			draft_no: "DRF-000098",
+			case_no: "CASE-2022-001003",
+			case_status: "APPROVED",
+			status: "LOCKED",
+			generator_version: "str-gen-0.1.0",
+			produced_at: "2026-10-30T09:00:00Z",
+			narrative: NARRATIVE_V1,
+		}),
 	]
+}
+
+const v2 = (section, text, evidenceIds = []) => ({
+	section,
+	label: null,
+	text,
+	evidence_ids: evidenceIds,
+})
+const NARRATIVE_V2 = [
+	v2(
+		"SUBJECT",
+		"개인사업자 Sole Proprietorship #50438(소매업, 위험등급 낮음) 명의 계좌 010_8000EBD30.",
+	),
+	v2("DATE", "2022-09-02 00:14 ~ 22:51, 하루 동안.", [104221, 104301]),
+	v2("PLACE", "보고 기관 Portugal Bank #4507. 보낸 쪽 3개 계좌는 모두 타행이에요."),
+	v2("INSTRUMENT", "ACH 이체 3건, 합계 USD 42,750.50.", [104221, 104233, 104301]),
+	v2(
+		"METHOD",
+		"서로 다른 3개 계좌가 하루 안에 한 계좌로 입금(FAN_IN).\n건당 USD 12,500.00 ~ 16,800.50.",
+		[104221, 104233, 104301],
+	),
+	v2(
+		"GROUNDS",
+		"평소 매출 입금 계좌인데 처음 보는 상대 3곳에서 짧은 시간에 몰려 들어옴. 이전 경보 1건.",
+	),
+	v2("OPINION", "자금 출처 확인이 필요해 보여요. 최종 판단은 담당 조사역이 해요."),
+]
+const v1 = (section, text, evidenceIds = []) => ({ section, text, evidence_ids: evidenceIds })
+const NARRATIVE_V1 = [
+	v1("SUMMARY", "대상 계좌에 하루 동안 타행 3개 계좌에서 ACH 입금 3건."),
+	v1("WHO", "개인사업자 Sole Proprietorship #50438."),
+	v1("WHAT_WHEN_WHERE", "2022-09-02, Portugal Bank #4507 계좌로 USD 42,750.50.", [104221]),
+	v1("HOW", "여러 계좌에서 한 계좌로 모이는 입금.", [104221, 104233, 104301]),
+	v1("WHY_SUSPICIOUS", "평소 거래 상대가 아닌 계좌에서 짧은 시간에 몰려 들어옴."),
+	v1("CONCLUSION", "의심거래로 보고가 필요해 보여요."),
+]
+
+// AI 원문(수정본 1번)만 있는 초안. 키는 위 DRF-000123과 같은 S2 모양이에요.
+function aiOriginalDraft({ narrative, ...fields }) {
+	return {
+		assignee_login_id: "inv01",
+		access: "FULL",
+		generation_id: `GEN-${fields.draft_no}`,
+		case_version: 3,
+		version: 1,
+		facts: AI_FACTS_EXAMPLE,
+		narrative,
+		current_revision_no: 1,
+		last_rejection: null,
+		suspicion_types: [],
+		suspicion_types_recommended: [],
+		suspicion_level_branch: null,
+		suspicion_level_hq: null,
+		available_actions: [],
+		report: null,
+		references: null,
+		latest_verification: null,
+		revisions: [
+			{
+				revision_no: 1,
+				changed_sections: [],
+				edited_by: "SYSTEM",
+				edited_at: fields.produced_at,
+				narrative_before: [],
+				narrative_after: narrative,
+			},
+		],
+		...fields,
+	}
 }
 
 // 본문은 담당 조사역과 승인자만(FR-APR-02, 권한 매트릭스 14번). ADMIN은 조사역·승인자 권한을 물려받지 않아요.
