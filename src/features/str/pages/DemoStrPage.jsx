@@ -8,7 +8,7 @@ import Empty from "../../../shared/ui/dashboard/Empty.jsx"
 import { statusKo } from "../../../shared/demo/labels.js"
 import Badge from "../../../shared/ui/dashboard/Badge.jsx"
 import Icon from "../../../shared/ui/dashboard/Icon.jsx"
-import { sectionKo } from "../../../shared/demo/labels.js"
+import { narrativeItems, sectionLabel } from "../../../shared/demo/labels.js"
 import Button from "../../../shared/ui/dashboard/Button.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
 import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
@@ -133,7 +133,7 @@ function StrEditor({ draft, isCurrent }) {
 							>
 								<div className="field-label">
 									<label htmlFor={`demo-section-${section.section}`}>
-										{sectionKo[section.section] ?? section.section}
+										{sectionLabel(section)}
 									</label>
 									<code>{section.section}</code>
 									<span>{(texts[section.section] ?? "").length} / 5,000</span>
@@ -165,13 +165,13 @@ function StrEditor({ draft, isCurrent }) {
 							</div>
 						))}
 						<div className="checklist">
-							<h3>5W1H 완전성 보조 체크리스트</h3>
+							<h3>서술 7항목 보조 체크리스트</h3>
 							<p>
-								서버가 정확히 6개 section을 반환한다고 가정하지 않습니다. 공식 제출
+								서버가 정확히 7개 section을 반환한다고 가정하지 않습니다. 공식 제출
 								서식 적합성 검증 화면이 아닙니다.
 							</p>
 							<div>
-								{["WHO", "WHEN", "WHERE", "WHAT", "WHY", "HOW"].map((code) => (
+								{narrativeItems.map(([code]) => (
 									<Badge
 										key={code}
 										tone={

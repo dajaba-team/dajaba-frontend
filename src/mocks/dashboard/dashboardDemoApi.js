@@ -223,24 +223,46 @@ export class DashboardDemoApi {
 			},
 			sections: [
 				{
-					section: "SUMMARY",
-					text: "대상 계좌에서 단기간 다수 유입 후 급속 이체가 확인되어 의심거래로 검토합니다.",
-					evidence_ids: ["TX-220902-4701", "TX-220902-4718", "TX-220902-4721"],
-				},
-				{
-					section: "WHO",
+					section: "SUBJECT",
+					label: "거래자",
 					text: "대상 계좌 010_****8842의 고객 정보는 현재 확인되지 않았으며 거래 상대 계좌는 33개입니다.",
 					evidence_ids: ["TX-220902-4701"],
 				},
 				{
-					section: "WHEN",
+					section: "DATE",
+					label: "일자",
 					text: "거래 시간 창은 2022년 9월 2일 08시부터 9월 3일 08시까지입니다.",
 					evidence_ids: ["TX-220902-4701", "TX-220902-4721"],
 				},
 				{
-					section: "HOW",
+					section: "PLACE",
+					label: "장소",
+					text: "대상 계좌 010_****8842에서 거래가 이루어졌으며, 상대 계좌 33개는 모두 타행 계좌입니다.",
+					evidence_ids: ["TX-220902-4701", "TX-220902-4718"],
+				},
+				{
+					section: "INSTRUMENT",
+					label: "수단",
+					text: "결제 수단은 계좌이체 47건이며, 유입 USD 320,482 · 유출 USD 309,200입니다.",
+					evidence_ids: ["TX-220902-4701", "TX-220902-4718", "TX-220902-4721"],
+				},
+				{
+					section: "METHOD",
+					label: "방법",
 					text: "9월 3일 입금 이후 USD 309,200이 두 계좌로 빠르게 송금되었습니다.",
 					evidence_ids: ["TX-220902-4718", "TX-220902-4721"],
+				},
+				{
+					section: "GROUNDS",
+					label: "사유",
+					text: "대상 계좌에서 단기간 다수 유입 후 급속 이체가 확인되어 의심거래로 검토합니다.",
+					evidence_ids: ["TX-220902-4701", "TX-220902-4718", "TX-220902-4721"],
+				},
+				{
+					section: "OPINION",
+					label: "종합의견",
+					text: "통과형 패턴에 부합하여 자금세탁이 의심되며, 조사역의 최종 판단이 필요합니다.",
+					evidence_ids: ["TX-220902-4718"],
 				},
 			],
 			latest_verification: null,
@@ -321,8 +343,8 @@ export class DashboardDemoApi {
 			(entry) => entry.draft_id === this.case().current_draft_id,
 		)
 		if (!draft) error(404, "DRAFT_NOT_FOUND", "초안이 없습니다.")
-		const how = draft.sections.find((entry) => entry.section === "HOW").text
-		const passed = !how.includes("9월 3일")
+		const method = draft.sections.find((entry) => entry.section === "METHOD").text
+		const passed = !method.includes("9월 3일")
 		draft.latest_verification = {
 			verification_id: stale ? "VRF-stale-02" : passed ? "VRF-current-03" : "VRF-a71f02",
 			revision_no: draft.revision_no,
@@ -334,13 +356,13 @@ export class DashboardDemoApi {
 				passed
 					? {
 							id: "DATE_MATCH",
-							section: "HOW",
+							section: "METHOD",
 							result: "PASS",
 							message: "본문 날짜와 원본 거래일이 일치합니다.",
 						}
 					: {
 							id: "DATE_MATCH",
-							section: "HOW",
+							section: "METHOD",
 							result: "FAIL",
 							message: "본문 날짜 9월 3일 ≠ 원본 거래일 9월 2일",
 						},
@@ -348,7 +370,7 @@ export class DashboardDemoApi {
 			llm_checks: [
 				{
 					id: "GROUNDING",
-					section: "SUMMARY",
+					section: "GROUNDS",
 					result: "PASS",
 					message: "주요 서술이 단락 근거와 연결됩니다.",
 				},

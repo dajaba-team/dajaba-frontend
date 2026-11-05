@@ -4,7 +4,7 @@ import PageHeading from "../../../shared/ui/dashboard/PageHeading.jsx"
 import Empty from "../../../shared/ui/dashboard/Empty.jsx"
 import { statusKo } from "../../../shared/demo/labels.js"
 import Badge from "../../../shared/ui/dashboard/Badge.jsx"
-import { sectionKo } from "../../../shared/demo/labels.js"
+import { sectionLabel } from "../../../shared/demo/labels.js"
 import Button from "../../../shared/ui/dashboard/Button.jsx"
 import Modal from "../../../shared/ui/dashboard/Modal.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
@@ -64,7 +64,7 @@ export default function Approvals() {
 								{draft?.sections.map((section) => (
 									<article className="readonly-section" key={section.section}>
 										<code>{section.section}</code>
-										<h3>{sectionKo[section.section] ?? section.section}</h3>
+										<h3>{sectionLabel(section)}</h3>
 										<p>{section.text}</p>
 										<div className="evidence-row">
 											{section.evidence_ids.map((id) => (
