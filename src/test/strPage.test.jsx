@@ -5,7 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query"
 import App from "../app/App"
 import { createQueryClient } from "../app/queryClient"
 import { resetCases } from "../mocks/handlers"
-import { sectionTitle } from "../features/str/sectionTitles"
+import { sectionTitle } from "../shared/str/sectionTitles"
 
 const users = {
 	inv01: { id: "1", login_id: "inv01", display_name: "예시 inv01", role: "INVESTIGATOR" },
@@ -69,6 +69,8 @@ describe("STR 화면 — 서버가 준 서술부 목록대로 그리기 (SCRUM-1
 			"의심스러운 거래자 관련",
 		)
 		expect(sectionTitle({ section: "SUBJECT", label: null })).toBe("거래자")
+		expect(sectionTitle({ section: "SUBJECT", label: "" })).toBe("거래자") // 빈 label도 표로
+		expect(sectionTitle({ section: "HOW", label: null })).toBe("어떻게") // 옛 6섹션
 		expect(sectionTitle({ section: "NEW_ITEM", label: null })).toBe("NEW_ITEM")
 	})
 

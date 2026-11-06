@@ -1,4 +1,4 @@
-import { sectionTitle } from "../sectionTitles"
+import { sectionTitle } from "../../../shared/str/sectionTitles"
 
 // 서술부 본문. 서버가 준 narrative 목록·순서 그대로 그리고, 섹션 개수(6·7)나 이름을 가정하지 않아요(SCRUM-115).
 // AI 본문은 글자로만 그려요(dangerouslySetInnerHTML 금지, docs/06_features/str.md §1).
