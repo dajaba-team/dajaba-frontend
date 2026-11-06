@@ -3,7 +3,7 @@
 > v0.1 · 2026-10-31 · 초안(팀 확인 중) · 정리 지윤
 
 - 프론트 폴더: `src/features/cases/` · 백엔드 짝: `cases` (BE `06_features/cases.md`, CASES 명세 v0.5 〔초안〕)
-- 지금: 목록·상세·메모가 〔임시〕 `/api/cases` + MSW로 동작. 배정·에스컬레이션·종료·거래·요약은 아직.
+- 지금: 목록·상세·배정·에스컬레이션·종료(초안 없음)가 실제 `/api/v1/cases`(BE `CaseController`, SCRUM-106)에 붙어 있어요(SCRUM-103). 메모(05)는 계약대로 만들었지만 **백엔드 API가 아직 없어** MSW만 답해요. 초안 있는 종료는 SCRUM-112, 거래·요약은 아직.
 
 ## 1. 화면
 
@@ -37,17 +37,17 @@
 
 | ID    | API                                                         | 화면                                                     | 프론트                                                                     |
 | ----- | ----------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 01    | `GET /cases` (status 복수·`assignee=me`·from/to·정렬)       | 목록                                                     | 〔임시〕 `GET /api/cases`                                                  |
-| 02    | `GET /cases/{case_no}` 통합 상세 (+ `available_actions`)    | 상세                                                     | 〔임시〕 `GET /api/cases/:id`                                              |
-| 03    | `POST /cases/{case_no}/assign`                              | 내게 배정 / 담당자 지정                                  | 없음                                                                       |
+| 01    | `GET /cases` (status 복수·`assignee=me`·from/to·정렬)       | 목록                                                     | `casesApi.list` ✅                                                         |
+| 02    | `GET /cases/{case_no}` 통합 상세 (+ `available_actions`)    | 상세                                                     | `casesApi.detail` ✅                                                       |
+| 03    | `POST /cases/{case_no}/assign`                              | 내게 배정 / 담당자 지정                                  | `casesApi.assign` ✅                                                       |
 | 04    | `POST /cases/{case_no}/reassign`                            | 담당자 교체(ADMIN)                                       | 없음 〔확인 필요: 본문 `{assignee_id}` vs `{assignee, comment, version}`〕 |
-| 05    | `PUT /cases/{case_no}/notes`                                | 메모 (NOTE 행 추가, 같은 내용 no-op, 빈 문자열 = 비우기) | 〔임시〕 `PUT /api/cases/:id/memo`                                         |
-| 06    | `POST /cases/{case_no}/close`                               | 종료 (초안 없을 때)                                      | 없음                                                                       |
-| 07    | `POST /cases/{case_no}/escalate` (사유 필수)                | 에스컬레이션                                             | 없음                                                                       |
+| 05    | `PUT /cases/{case_no}/notes`                                | 메모 (NOTE 행 추가, 같은 내용 no-op, 빈 문자열 = 비우기) | `casesApi.saveNotes` — BE 없음, MSW만                                      |
+| 06    | `POST /cases/{case_no}/close`                               | 종료 (초안 없을 때)                                      | `casesApi.close` ✅                                                        |
+| 07    | `POST /cases/{case_no}/escalate` (사유 필수)                | 에스컬레이션                                             | `casesApi.escalate` ✅                                                     |
 | 08    | `GET /cases/{case_no}/transactions?scope=EVIDENCE\|CONTEXT` | 근거 거래                                                | 없음                                                                       |
 | 09    | `GET /cases/{case_no}/evidence/{transaction_id}`            | 거래 원본                                                | 없음                                                                       |
 | 10    | `GET /cases/{case_no}/graph`                                | 그래프 (후속)                                            | 없음                                                                       |
-| 11    | `GET /cases/{case_no}/histories`                            | 이력                                                     | 〔임시〕 상세 안 `history`                                                 |
+| 11    | `GET /cases/{case_no}/histories`                            | 이력                                                     | 상세 안 `history`(최근 20건)                                               |
 | 12·13 | `POST …/refresh-summary`, `GET …/summary`                   | AI 요약                                                  | 없음                                                                       |
 | 15    | `GET /cases/{case_no}/note-histories`                       | 메모 이력                                                | 없음                                                                       |
 
@@ -67,7 +67,7 @@ Query key 〔제안〕: `["cases", filters]`, `["case", caseNo]`, `["case", case
 지금 들어 있는 동작이에요. 실제 API로 바꿔도 유지해요.
 
 - 메모 입력은 background refetch·409로 **덮어쓰지 않아요.** 쓰기 시작한 기준 `version`을 같이 들고 있어요.
-- `CONCURRENT_UPDATE`(지금은 〔임시〕 `CASE_VERSION_CONFLICT`)면 입력 유지 → 최신 내용을 따로 불러와 나란히 비교 → 사용자가 고른 뒤 **새 버전으로 명시적 재저장**.
+- `CONCURRENT_UPDATE`면 입력 유지 → 최신 내용을 따로 불러와 나란히 비교 → 사용자가 고른 뒤 **새 버전으로 명시적 재저장**.
 - 다른 409(`INVALID_CASE_TRANSITION` 등)엔 충돌 비교 화면을 띄우지 않고 코드별 안내 + 재조회.
 - 400 `INVALID_REQUEST`의 필드 오류를 입력칸에. 메모는 최대 10,000자(BE 01 §7).
 - 미저장 메모가 있으면 새로고침·탭 닫기 때 확인(`beforeunload`). **앱 안 경로 이동 확인은 아직** 〔후속〕.

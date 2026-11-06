@@ -40,31 +40,31 @@
 
 ## 3. 에러 코드 → 화면 처리 [BE 03 §2, BE 04 §5, FE 코드 `apiClient.js`]
 
-| HTTP | `code`                                                                                  | 화면에서                                                                                        | 지금 코드                 |
-| ---- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------- |
-| 400  | `INVALID_REQUEST`                                                                       | `details` 필드 오류를 해당 입력칸에. 입력 유지                                                  | 메모에서 처리             |
-| 401  | `UNAUTHENTICATED`                                                                       | 업무 캐시 정리 → 로그인 안내, **지금 URL 기억**. 실패한 쓰기를 다시 보내지 않음                 | 처리 (`queryClient.js`)   |
-| 401  | `LOGIN_FAILED`                                                                          | "아이디 또는 비밀번호가 맞지 않아요." 한 가지 문구. 세션 끊김 안내와 구분                       | 처리 (`apiClient`)        |
-| 403  | `FORBIDDEN`                                                                             | 화면 유지, "실행 권한이 없어요" 토스트                                                          | 처리                      |
-| 403  | `CSRF_INVALID`                                                                          | 입력 유지, "현재 사용자를 다시 확인한 뒤 시도" — 권한 부족과 다른 문구. 자동 반복 없음          | 처리                      |
-| 403  | `NOT_ASSIGNEE`                                                                          | "담당자만 할 수 있어요" + 상세 재조회                                                           | 아직 (서버 문구로 떨어짐) |
-| 404  | `CASE_NOT_FOUND`, `DRAFT_NOT_FOUND` …                                                   | 대상 없음 안내 + 목록으로                                                                       | 처리 (404 공통)           |
-| 409  | `CONCURRENT_UPDATE`                                                                     | **입력·기준 버전 유지**, 최신 내용을 따로 불러 비교, 사용자가 고른 뒤 새 버전으로 명시적 재저장 | 처리                      |
-| 409  | `INVALID_CASE_TRANSITION`                                                               | "현재 상태에서 할 수 없어요" + 상세 재조회                                                      | 처리                      |
-| 409  | `SELF_APPROVAL`                                                                         | "본인이 담당한 케이스는 승인할 수 없어요"                                                       | 문구만                    |
-| 409  | `NARRATIVE_UNCHANGED`                                                                   | "반려된 본문을 고친 뒤 다시 요청해 주세요" (재조회 없이 편집 유지)                              | 문구만                    |
-| 409  | `DRAFT_IN_PROGRESS`                                                                     | "초안을 만드는 중이에요" — AI 장애(502)와 다른 안내. 자동 재시도 없음                           | 문구만                    |
-| 409  | `DRAFT_NOT_VERIFIED`, `DRAFT_LOCKED`, `DRAFT_SUPERSEDED`, `VERIFY_IN_PROGRESS` 〔초안〕 | 코드별 안내 + 초안 재조회                                                                       | 아직                      |
-| 409  | `BATCH_RUNNING`, `BATCH_ALREADY_DONE`                                                   | 배치 화면 안내 + 상태 재조회                                                                    | 아직                      |
-| 409  | 그 밖                                                                                   | 일반 업무 안내 + 재조회. **`CONCURRENT_UPDATE` 충돌 화면을 띄우지 않음**                        | 처리                      |
-| 502  | `AI_UNAVAILABLE`, `AI_TIMEOUT`, `AI_BAD_RESPONSE`, `LLM_*`, `MODEL_UNAVAILABLE` …       | 그 영역(요약·초안·검증)에만 실패 안내 + 수동 다시 시도. 나머지 화면은 계속 씀                   | 문구만 (502 공통)         |
+| HTTP | `code`                                                                                  | 화면에서                                                                                        | 지금 코드               |
+| ---- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------- |
+| 400  | `INVALID_REQUEST`                                                                       | `details` 필드 오류를 해당 입력칸에. 입력 유지                                                  | 메모에서 처리           |
+| 401  | `UNAUTHENTICATED`                                                                       | 업무 캐시 정리 → 로그인 안내, **지금 URL 기억**. 실패한 쓰기를 다시 보내지 않음                 | 처리 (`queryClient.js`) |
+| 401  | `LOGIN_FAILED`                                                                          | "아이디 또는 비밀번호가 맞지 않아요." 한 가지 문구. 세션 끊김 안내와 구분                       | 처리 (`apiClient`)      |
+| 403  | `FORBIDDEN`                                                                             | 화면 유지, "실행 권한이 없어요" 토스트                                                          | 처리                    |
+| 403  | `CSRF_INVALID`                                                                          | 입력 유지, "현재 사용자를 다시 확인한 뒤 시도" — 권한 부족과 다른 문구. 자동 반복 없음          | 처리                    |
+| 403  | `NOT_ASSIGNEE`                                                                          | "담당자만 할 수 있어요" + 상세 재조회                                                           | 처리                    |
+| 404  | `CASE_NOT_FOUND`, `DRAFT_NOT_FOUND` …                                                   | 대상 없음 안내 + 목록으로                                                                       | 처리 (404 공통)         |
+| 409  | `CONCURRENT_UPDATE`                                                                     | **입력·기준 버전 유지**, 최신 내용을 따로 불러 비교, 사용자가 고른 뒤 새 버전으로 명시적 재저장 | 처리                    |
+| 409  | `INVALID_CASE_TRANSITION`                                                               | "현재 상태에서 할 수 없어요" + 상세 재조회                                                      | 처리                    |
+| 409  | `SELF_APPROVAL`                                                                         | "본인이 담당한 케이스는 승인할 수 없어요"                                                       | 문구만                  |
+| 409  | `NARRATIVE_UNCHANGED`                                                                   | "반려된 본문을 고친 뒤 다시 요청해 주세요" (재조회 없이 편집 유지)                              | 문구만                  |
+| 409  | `DRAFT_IN_PROGRESS`                                                                     | "초안을 만드는 중이에요" — AI 장애(502)와 다른 안내. 자동 재시도 없음                           | 문구만                  |
+| 409  | `DRAFT_NOT_VERIFIED`, `DRAFT_LOCKED`, `DRAFT_SUPERSEDED`, `VERIFY_IN_PROGRESS` 〔초안〕 | 코드별 안내 + 초안 재조회                                                                       | 아직                    |
+| 409  | `BATCH_RUNNING`, `BATCH_ALREADY_DONE`                                                   | 배치 화면 안내 + 상태 재조회                                                                    | 아직                    |
+| 409  | 그 밖                                                                                   | 일반 업무 안내 + 재조회. **`CONCURRENT_UPDATE` 충돌 화면을 띄우지 않음**                        | 처리                    |
+| 502  | `AI_UNAVAILABLE`, `AI_TIMEOUT`, `AI_BAD_RESPONSE`, `LLM_*`, `MODEL_UNAVAILABLE` …       | 그 영역(요약·초안·검증)에만 실패 안내 + 수동 다시 시도. 나머지 화면은 계속 씀                   | 문구만 (502 공통)       |
 
 표에 코드별 문구가 없는 응답은 서버가 준 `error.message`를 먼저 보여 주고, 없을 때만 상태별 기본 문구(403 "실행 권한이 없어요" 등)를 써요.
 | 500 | `INTERNAL_ERROR` | 일반 실패 안내 | 처리 |
 | (응답 없음) | timeout·네트워크 | "성공했는지 모름" — **쓰기였다면 최신 상태를 먼저 조회**하고 다시 할지 판단 | 처리 |
 
 - 코드 목록 전체와 확정 여부는 BE 03 §2 표. 새 코드를 처리하면 `getErrorMessage`와 이 표에 같이 추가해요.
-- `INVALID_TRANSITION`·`CASE_VERSION_CONFLICT`는 **옛 이름·MSW 전용**이에요. `apiClient.js`가 호환으로 받고 있지만 새 코드에서 쓰지 않아요. 실제 cases API로 바꿀 때 지워요(FE-1).
+- 옛 MSW 이름 `INVALID_TRANSITION`·`CASE_VERSION_CONFLICT`와 최상위 `code` 호환은 실제 cases API로 바꾸면서 지웠어요(FE-1, SCRUM-103).
 - 403은 "토스트 + 화면 유지", 409는 "메시지 + 재조회"가 기본이에요(BE flows 05). 위 표가 그 위에 코드별로 덧붙인 것.
 
 ## 4. 긴 AI 요청 [BE 08 10/29, 안건 17·21·23]
@@ -88,17 +88,20 @@
 | 로그인      | `POST /api/v1/auth/login` `{login_id, password}` (JSON) | 200 `{ id, login_id, display_name, role }`, 틀리면 401 `LOGIN_FAILED`, 빈 값 400 `INVALID_REQUEST` | `authApi.login`               |
 | 로그아웃    | `POST /api/v1/auth/logout`                              | 204 (본문 없음)                                                                                    | `authApi.logout`              |
 
-### 〔임시〕 케이스 — MSW 전용 계약 [FE 코드 `casesApi.js`·`handlers.js`]
+### 케이스 — 실제 백엔드와 같은 것 [계약서 v0.2 C1·C2·A1·A3·A4·A5, BE `CaseController`(SCRUM-106), FE 코드 `casesApi.js`·`mocks/cases.js`, SCRUM-103]
 
-화면을 먼저 만들려고 정한 계약이에요. **실제 백엔드 명세가 아니에요.**
+| 동작         | API                                                              | 응답                                                                    | 프론트               |
+| ------------ | ---------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------- |
+| 목록         | `GET /api/v1/cases?status=&assignee=me&page=(0부터)&size=`       | `{ items, page, size, total }` — 화면에는 page 1부터, `totalPages` 계산 | `casesApi.list`      |
+| 상세         | `GET /api/v1/cases/{case_no}`                                    | C2 모양 + `available_actions`, 없으면 404 `CASE_NOT_FOUND`              | `casesApi.detail`    |
+| 배정         | `POST …/assign` `{version}` · 관리자 `{assignee, version}`       | 공통 변경 응답 M → 상세·목록 다시 조회                                  | `casesApi.assign`    |
+| 에스컬레이션 | `POST …/escalate` `{comment, version}`                           | M                                                                       | `casesApi.escalate`  |
+| 종료(초안 X) | `POST …/close` `{close_reason, comment, version}`                | M                                                                       | `casesApi.close`     |
+| 메모         | `PUT …/notes` `{investigator_notes, version}` — **BE 아직 없음** | M (MSW만)                                                               | `casesApi.saveNotes` |
 
-| 동작 | 임시 API                  | 요청                        | 성공 후                            |
-| ---- | ------------------------- | --------------------------- | ---------------------------------- |
-| 목록 | `GET /api/cases`          | `status`, `page`(**1부터**) | `{ items, has_next }` 표시         |
-| 상세 | `GET /api/cases/:id`      | 문자열 ID                   | 상세 표시                          |
-| 메모 | `PUT /api/cases/:id/memo` | `{ memo, case_version }`    | 응답 상세로 캐시 교체, 목록 무효화 |
-
-상세 응답: `id`, `title`, `status`, `evidence`, `memo`(string) · `assignee_name`(string|null) · `case_version`(number) · `allowed_actions`(string[], `SAVE_MEMO` 등) · `history`(string[]). 충돌은 409 `CASE_VERSION_CONFLICT`.
+- 계좌는 서버가 가린 `account_no`와 구별용 `account_ref`만 와요. 버튼은 `available_actions`만 보고 켜요(`CaseActions`).
+- 변경 응답(M)은 상세 전체가 아니라서 성공 뒤 상세·목록을 무효화해 다시 불러요(`useCaseCommand`). `CONCURRENT_UPDATE`·`INVALID_CASE_TRANSITION`·`NOT_ASSIGNEE`면 입력을 두고 상세만 다시 불러요.
+- 400 `details`의 필드 이름은 지금 백엔드가 Java 이름(camelCase, 예: `investigatorNotes`)으로 줘요(BE #66 To Reviewers). 메모 칸은 두 이름을 다 읽어요.
 
 ### 〔초안〕 STR 초안 조회 — MSW 계약 [STR API 명세 2·4번, 계약서 S2·S4·S5(11/4 채영), FE 코드 `strApi.js`·`mocks/strDrafts.js`, SCRUM-110]
 
@@ -109,17 +112,3 @@
 | 초안 보기      | `GET /api/v1/str-drafts/{draft_no}`                         | 명세 1번 모양 또는 상태·날짜만의 제한 응답(`access: "META_ONLY"`, 본문 필드 `null`), 없으면 404 `DRAFT_NOT_FOUND` | `strApi.getDraft`     |
 | 수정 이력 목록 | `GET /api/v1/str-drafts/{draft_no}/revisions`               | `{ draft_no, items }` (본문 없음). 열람 권한 없으면 403 `FORBIDDEN`·`NOT_ASSIGNEE`                                | `strApi.getRevisions` |
 | 수정본 한 행   | `GET /api/v1/str-drafts/{draft_no}/revisions?revision_no=n` | `narrative_before`·`narrative_after`, 없는 번호 404                                                               | `strApi.getRevision`  |
-
-### 실제 계약으로 바꿀 때 달라지는 것
-
-| 항목      | 〔임시〕 지금                        | 실제 (백엔드)                                                                                                           | 출처                              |
-| --------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| 경로      | `/api/cases`, `/api/cases/:id`       | `/api/v1/cases`, `/api/v1/cases/{case_no}`                                                                              | BE 04 §4 2·3번                    |
-| 페이지    | `page` 1부터, `has_next`             | `page` 0부터, `{items, page, size, total}`                                                                              | BE `PageResponse`                 |
-| 메모      | `PUT …/memo` 한 칸 교체, 문자열 이력 | `PUT /cases/{case_no}/notes` → `case_history` NOTE 행 추가 〔초안〕                                                     | BE 04 §4 8번, BE 미결 8           |
-| 이력      | `string[]`                           | actor·action·시각·버전이 있는 객체 〔초안〕                                                                             | BE cases                          |
-| 충돌 코드 | `CASE_VERSION_CONFLICT`              | `CONCURRENT_UPDATE`                                                                                                     | BE 03 §2                          |
-| 버튼 근거 | `allowed_actions`                    | 상세 응답 `available_actions` 〔초안 — CASES 명세 API-02〕 또는 `role` + `assignee` + `status` 계산 〔확인 필요: FE-4〕 | BE cases API 02, BE 04 §4 읽는 법 |
-| 계좌      | (없음)                               | 화면엔 가린 값(`010_****BD30`)만, 여러 계좌 구별은 `account_ref`. 원본 `account_key`는 쓰지 않음                        | BE 미결 19 (10/30)                |
-
-바꿀 때는 `casesApi.js` · `useCases.js` · `handlers.js` · `cases.test.jsx` · 이 절을 **한 PR에서** 고쳐요. 기능별로 붙을 API 목록은 `06_features/`에.
