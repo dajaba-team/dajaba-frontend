@@ -42,8 +42,8 @@ export default function AppRouter() {
 			)}
 			<Route element={<AppLayout />}>
 				<Route path="cases" element={<CaseListPage />} />
-				<Route path="cases/:caseId" element={<CaseDetailPage />} />
-				<Route path="cases/:caseId/str" element={<StrPage />} />
+				<Route path="cases/:caseNo" element={<CaseDetailPage />} />
+				<Route path="cases/:caseNo/str" element={<StrPage />} />
 				<Route
 					path="*"
 					element={

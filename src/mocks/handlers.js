@@ -1,48 +1,8 @@
 import { canViewStrContent, seedStrDrafts, visibleStrDraft } from "./strDrafts"
+import { applyCommand, changeResponse, detailResponse, listResponse, seedCases } from "./cases"
 import { http, HttpResponse } from "msw"
 
-function seed() {
-	return [
-		{
-			id: "1001",
-			title: "반복 고액 이체 조사",
-			status: "REVIEWING",
-			assignee_name: "예시 조사원",
-			case_version: 1,
-			memo: "거래 목적 확인 필요",
-			evidence: "예시: 동일 계좌에서 짧은 시간 내 반복 이체가 발생했습니다.",
-			allowed_actions: ["SAVE_MEMO"],
-			history: ["케이스 생성", "예시 조사원에게 배정"],
-			// TODO(SCRUM-115): 〔확인 필요 — 케이스 상세 API〕 지금 초안 번호 필드 이름. 정해지면 맞춰요.
-			current_draft_no: "DRF-000124",
-		},
-		{
-			id: "1002",
-			title: "다수 계좌 분산 거래",
-			status: "OPEN",
-			assignee_name: null,
-			case_version: 1,
-			memo: "",
-			evidence: "예시: 여러 계좌로 분산된 거래를 확인해야 합니다.",
-			allowed_actions: [],
-			history: ["케이스 생성"],
-			current_draft_no: null,
-		},
-		{
-			id: "1003",
-			title: "집중 입금 보고 건 (옛 6섹션 승인본)",
-			status: "APPROVED",
-			assignee_name: "예시 조사원",
-			case_version: 3,
-			memo: "",
-			evidence: "예시: 7항목 전환 전에 만든 6섹션 초안이 승인된 케이스예요.",
-			allowed_actions: [],
-			history: ["케이스 생성", "예시 조사원에게 배정", "STR 초안 승인"],
-			current_draft_no: "DRF-000098",
-		},
-	]
-}
-let cases = seed()
+let cases = seedCases()
 let drafts = seedStrDrafts()
 let currentUser = null
 // MSW 예시 계정입니다. 실제 백엔드 비밀번호(DEV_USER_PASSWORD)와는 관계없습니다.
@@ -59,16 +19,9 @@ const MOCK_USERS = Object.fromEntries(
 	]),
 )
 export function resetCases(user = null) {
-	cases = seed()
+	cases = seedCases()
 	drafts = seedStrDrafts()
 	currentUser = user
-}
-// 예시 사용자도 역할·담당자 조건을 지켜야 개발 화면이 과도한 권한을 전제로 굳지 않습니다.
-function canSaveMemo(item) {
-	return currentUser?.login_id === "inv01" && item.status === "REVIEWING" && item.id === "1001"
-}
-function visibleCase(item) {
-	return { ...item, allowed_actions: canSaveMemo(item) ? ["SAVE_MEMO"] : [] }
 }
 const draftNotFound = () =>
 	HttpResponse.json(
@@ -134,22 +87,43 @@ export const handlers = [
 			},
 		}),
 	),
-	http.get(`${base}/api/cases`, ({ request }) => {
+	// 케이스 — 계약서 C1·C2·A1·A3·A4·A5 (실제 백엔드 CaseController와 같은 경로, 메모 A3만 백엔드 준비 중)
+	http.get(`${base}/api/v1/cases`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
-		const url = new URL(request.url)
-		const status = url.searchParams.get("status")
-		const page = Math.max(1, Number(url.searchParams.get("page")) || 1)
-		const filtered = cases.filter((item) => !status || item.status === status)
-		return HttpResponse.json({
-			items: filtered.slice((page - 1) * 10, page * 10).map(visibleCase),
-			has_next: filtered.length > page * 10,
-		})
+		return HttpResponse.json(listResponse(cases, new URL(request.url)))
 	}),
-	http.get(`${base}/api/cases/:id`, ({ params }) => {
+	http.get(`${base}/api/v1/cases/:caseNo`, ({ params }) => {
 		if (!currentUser) return unauthenticated()
-		const item = cases.find((item) => item.id === params.id)
-		return item ? HttpResponse.json(visibleCase(item)) : new HttpResponse(null, { status: 404 })
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		return item
+			? HttpResponse.json(detailResponse(currentUser, item))
+			: HttpResponse.json(
+					{
+						error: {
+							code: "CASE_NOT_FOUND",
+							message: "케이스가 없습니다",
+							details: {},
+						},
+					},
+					{ status: 404 },
+				)
 	}),
+	...[
+		["post", "assign"],
+		["post", "escalate"],
+		["post", "close"],
+		["put", "notes"],
+	].map(([method, command]) =>
+		http[method](`${base}/api/v1/cases/:caseNo/${command}`, async ({ params, request }) => {
+			if (!currentUser) return unauthenticated()
+			const item = cases.find((entry) => entry.case_no === params.caseNo)
+			const body = await request.json().catch(() => null)
+			const result = applyCommand(currentUser, item, command, body, MOCK_USERS)
+			return result.item
+				? HttpResponse.json(changeResponse(result.item))
+				: HttpResponse.json(result.body, { status: result.status })
+		}),
+	),
 	http.get(`${base}/api/v1/str-drafts/:draftNo`, ({ params }) => {
 		if (!currentUser) return unauthenticated()
 		const draft = drafts.find((item) => item.draft_no === params.draftNo)
@@ -198,19 +172,5 @@ export const handlers = [
 					},
 					{ status: 404 },
 				)
-	}),
-	http.put(`${base}/api/cases/:id/memo`, async ({ params, request }) => {
-		if (!currentUser) return unauthenticated()
-		const item = cases.find((item) => item.id === params.id)
-		if (!item) return new HttpResponse(null, { status: 404 })
-		if (!canSaveMemo(item)) return new HttpResponse(null, { status: 403 })
-		const body = await request.json()
-		if (body.case_version !== item.case_version)
-			return HttpResponse.json({ error: { code: "CONCURRENT_UPDATE" } }, { status: 409 })
-		if (typeof body.memo !== "string") return new HttpResponse(null, { status: 400 })
-		item.memo = body.memo
-		item.case_version += 1
-		item.history.push(`조사 메모 저장 (버전 ${item.case_version})`)
-		return HttpResponse.json(visibleCase(item))
 	}),
 ]

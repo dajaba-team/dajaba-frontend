@@ -1,0 +1,182 @@
+import { useId, useState } from "react"
+import { useCaseCommand } from "../hooks/useCases"
+import { useSession } from "../../auth/hooks/useSession"
+import { CLOSE_REASON_LABELS } from "../labels"
+import { getErrorMessage } from "../../../shared/api/apiClient"
+
+const COMMENT_MAX = 2000
+
+// 버튼은 서버가 준 availableActions만 보고 켜요. 누르면 서버가 다시 검사해요(계약서 §4).
+// 이 화면이 다루는 것: ASSIGN·ESCALATE·CLOSE. CLOSE_WITH_DRAFT(초안 있는 종료)는 SCRUM-112.
+export default function CaseActions({ detail }) {
+	const session = useSession()
+	const [open, setOpen] = useState(null)
+	const actions = detail.availableActions
+	const has = (action) => actions.includes(action)
+	if (!has("ASSIGN") && !has("ESCALATE") && !has("CLOSE") && !has("CLOSE_WITH_DRAFT")) return null
+	const isAdmin = session.data?.role === "ADMIN"
+	return (
+		<section className="case-actions" aria-labelledby="case-actions-title">
+			<h2 id="case-actions-title">다음 작업</h2>
+			<div className="case-action-buttons">
+				{has("ASSIGN") && !isAdmin && <SelfAssign detail={detail} />}
+				{has("ASSIGN") && isAdmin && (
+					<button type="button" onClick={() => setOpen("assign")} disabled={!!open}>
+						담당자 배정
+					</button>
+				)}
+				{has("ESCALATE") && (
+					<button type="button" onClick={() => setOpen("escalate")} disabled={!!open}>
+						에스컬레이션
+					</button>
+				)}
+				{has("CLOSE") && (
+					<button type="button" onClick={() => setOpen("close")} disabled={!!open}>
+						종료
+					</button>
+				)}
+			</div>
+			{has("CLOSE_WITH_DRAFT") && (
+				<p className="case-action-note">초안이 있는 케이스의 종료는 준비 중이에요.</p>
+			)}
+			{open === "assign" && <AssignForm detail={detail} onDone={() => setOpen(null)} />}
+			{open === "escalate" && <EscalateForm detail={detail} onDone={() => setOpen(null)} />}
+			{open === "close" && <CloseForm detail={detail} onDone={() => setOpen(null)} />}
+		</section>
+	)
+}
+
+function SelfAssign({ detail }) {
+	const command = useCaseCommand(detail.caseNo, "assign")
+	return (
+		<>
+			<button
+				type="button"
+				disabled={command.isPending}
+				onClick={() => command.mutate({ version: detail.version })}
+			>
+				{command.isPending ? "배정 중…" : "담당 맡기"}
+			</button>
+			{command.isError && <p role="alert">{getErrorMessage(command.error)}</p>}
+		</>
+	)
+}
+
+// 확인 단계가 있는 작업 공통 틀. 실패해도 입력은 남기고 안내만 보여 줘요.
+function ActionForm({ title, submitLabel, command, onSubmit, onDone, canSubmit, children }) {
+	const titleId = useId()
+	return (
+		<form
+			className="case-action-form"
+			aria-labelledby={titleId}
+			onSubmit={(event) => {
+				event.preventDefault()
+				if (command.isPending || !canSubmit) return
+				command.mutate(onSubmit(), { onSuccess: onDone })
+			}}
+		>
+			<h3 id={titleId}>{title}</h3>
+			{children}
+			{command.isError && <p role="alert">{getErrorMessage(command.error)}</p>}
+			<div className="case-action-buttons">
+				<button type="submit" disabled={command.isPending || !canSubmit}>
+					{command.isPending ? "처리 중…" : submitLabel}
+				</button>
+				<button type="button" onClick={onDone} disabled={command.isPending}>
+					취소
+				</button>
+			</div>
+		</form>
+	)
+}
+
+function CommentField({ label, value, onChange }) {
+	const id = useId()
+	return (
+		<div className="case-field">
+			<label htmlFor={id}>{label}</label>
+			<textarea
+				id={id}
+				value={value}
+				maxLength={COMMENT_MAX}
+				required
+				onChange={(event) => onChange(event.target.value)}
+			/>
+			<small>
+				{value.length.toLocaleString()} / {COMMENT_MAX.toLocaleString()}
+			</small>
+		</div>
+	)
+}
+
+function AssignForm({ detail, onDone }) {
+	const command = useCaseCommand(detail.caseNo, "assign")
+	const [assignee, setAssignee] = useState("")
+	return (
+		<ActionForm
+			title="담당자 배정"
+			submitLabel="배정"
+			command={command}
+			canSubmit={assignee.trim() !== ""}
+			onSubmit={() => ({ version: detail.version, assignee: assignee.trim() })}
+			onDone={onDone}
+		>
+			<label className="case-field">
+				배정할 조사역 아이디
+				<input value={assignee} onChange={(event) => setAssignee(event.target.value)} />
+			</label>
+		</ActionForm>
+	)
+}
+
+function EscalateForm({ detail, onDone }) {
+	const command = useCaseCommand(detail.caseNo, "escalate")
+	const [comment, setComment] = useState("")
+	return (
+		<ActionForm
+			title="에스컬레이션"
+			submitLabel="에스컬레이션 실행"
+			command={command}
+			canSubmit={comment.trim() !== ""}
+			onSubmit={() => ({ version: detail.version, comment })}
+			onDone={onDone}
+		>
+			<p>성공해도 STR 초안은 자동으로 만들지 않아요. 초안 생성은 따로 요청해요.</p>
+			<CommentField label="에스컬레이션 사유" value={comment} onChange={setComment} />
+		</ActionForm>
+	)
+}
+
+function CloseForm({ detail, onDone }) {
+	const command = useCaseCommand(detail.caseNo, "close")
+	const [closeReason, setCloseReason] = useState("")
+	const [comment, setComment] = useState("")
+	return (
+		<ActionForm
+			title="케이스 종료"
+			submitLabel="종료 실행"
+			command={command}
+			canSubmit={closeReason !== "" && comment.trim() !== ""}
+			onSubmit={() => ({ version: detail.version, closeReason, comment })}
+			onDone={onDone}
+		>
+			<p>종료한 케이스는 다시 열 수 없어요. 종료는 범죄가 없다는 확정이 아니에요.</p>
+			<fieldset className="case-field">
+				<legend>종료 사유</legend>
+				{Object.entries(CLOSE_REASON_LABELS).map(([value, label]) => (
+					<label key={value}>
+						<input
+							type="radio"
+							name="close-reason"
+							value={value}
+							checked={closeReason === value}
+							onChange={() => setCloseReason(value)}
+						/>{" "}
+						{label}
+					</label>
+				))}
+			</fieldset>
+			<CommentField label="종료 설명" value={comment} onChange={setComment} />
+		</ActionForm>
+	)
+}

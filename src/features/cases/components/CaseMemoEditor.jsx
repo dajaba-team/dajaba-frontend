@@ -1,38 +1,26 @@
 import { useEffect, useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { casesApi } from "../api/casesApi"
-import { getErrorCode, getErrorMessage, isVersionConflict } from "../../../shared/api/apiClient"
+import { useCaseCommand } from "../hooks/useCases"
+import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
 
+// 메모 저장 — 계약서 A3 `PUT /cases/{case_no}/notes { investigator_notes, version }` → 공통 변경 응답 M.
+// 성공하면 useCaseCommand가 상세를 다시 불러요. 충돌(409 CONCURRENT_UPDATE)이어도 쓰던 메모는 그대로 둬요.
 export default function CaseMemoEditor({ detail, onRefresh }) {
-	const client = useQueryClient()
-	// 미저장 내용과 작성 기준 버전을 보존하여 재조회가 사용자의 입력을 덮어쓰지 않게 합니다.
-	const [draft, setDraft] = useState({
-		memo: detail.memo || "",
-		version: detail.case_version,
-	})
+	// 쓰기 시작하면 그때의 내용·기준 버전을 붙잡아 재조회가 입력을 덮어쓰지 않게 합니다.
+	// 쓰기 전(draft = null)에는 서버 값을 그대로 따라가요 — 배정·에스컬레이션으로 버전이 올라도 충돌이 아니에요.
+	const [draft, setDraft] = useState(null)
+	const editing = draft !== null
+	const memo = editing ? draft.memo : detail.investigatorNotes || ""
 	const [confirmedVersion, setConfirmedVersion] = useState(null)
-	const mutation = useMutation({
-		mutationFn: casesApi.saveMemo,
-		// 로그아웃 이후 완료된 저장 응답으로 업무 캐시를 다시 채우지 않습니다.
-		onMutate: () => ({ session: client.getQueryData(["auth", "me"]) }),
-		onSuccess: async (saved, _variables, context) => {
-			if (context.session !== client.getQueryData(["auth", "me"])) return
-			setDraft({ memo: saved.memo, version: saved.case_version })
-			setConfirmedVersion(null)
-			client.setQueryData(["case", detail.id], saved)
-			await client.invalidateQueries({ queryKey: ["cases"] })
-		},
-		onError: (error) => {
-			if (isVersionConflict(error)) void onRefresh()
-		},
-	})
-	const changed = detail.case_version !== draft.version
-	const confirmed = confirmedVersion === detail.case_version
-	const fieldError =
+	const mutation = useCaseCommand(detail.caseNo, "saveNotes")
+	const changed = editing && detail.version !== draft.version
+	const confirmed = confirmedVersion === detail.version
+	// 400 details는 서버 필드 이름(investigator_notes 또는 Java 이름 investigatorNotes)으로 와요.
+	const details =
 		getErrorCode(mutation.error || {}) === "INVALID_REQUEST"
-			? mutation.error.response.data.error.details?.memo
+			? mutation.error.response.data.error.details
 			: null
-	const dirty = draft.memo !== (detail.memo || "")
+	const fieldError = details?.investigator_notes ?? details?.investigatorNotes ?? null
+	const dirty = editing && draft.memo !== (detail.investigatorNotes || "")
 	useEffect(() => {
 		if (!dirty) return
 		const warnBeforeLeaving = (event) => {
@@ -50,11 +38,18 @@ export default function CaseMemoEditor({ detail, onRefresh }) {
 				onSubmit={(event) => {
 					event.preventDefault()
 					if (mutation.isPending || (changed && !confirmed)) return
-					mutation.mutate({
-						id: detail.id,
-						memo: draft.memo,
-						case_version: confirmed ? detail.case_version : draft.version,
-					})
+					mutation.mutate(
+						{
+							investigatorNotes: memo,
+							version: !editing || confirmed ? detail.version : draft.version,
+						},
+						{
+							onSuccess: () => {
+								setDraft(null)
+								setConfirmedVersion(null)
+							},
+						},
+					)
 				}}
 			>
 				<label htmlFor="memo">메모 내용</label>
@@ -62,10 +57,13 @@ export default function CaseMemoEditor({ detail, onRefresh }) {
 					id="memo"
 					aria-invalid={typeof fieldError === "string" || undefined}
 					aria-describedby={typeof fieldError === "string" ? "memo-error" : undefined}
-					value={draft.memo}
+					value={memo}
 					disabled={mutation.isPending}
 					onChange={(event) => {
-						setDraft({ ...draft, memo: event.target.value })
+						setDraft({
+							memo: event.target.value,
+							version: editing ? draft.version : detail.version,
+						})
 						mutation.reset()
 					}}
 				/>
@@ -78,15 +76,15 @@ export default function CaseMemoEditor({ detail, onRefresh }) {
 				)}
 				{changed && (
 					<aside>
-						<h3>서버의 최신 메모 (버전 {detail.case_version})</h3>
-						<p className="preserve-lines">{detail.memo || "메모 없음"}</p>
+						<h3>서버의 최신 메모 (버전 {detail.version})</h3>
+						<p className="preserve-lines">{detail.investigatorNotes || "메모 없음"}</p>
 						<label>
 							<input
 								type="checkbox"
 								checked={confirmed}
 								onChange={(event) =>
 									setConfirmedVersion(
-										event.target.checked ? detail.case_version : null,
+										event.target.checked ? detail.version : null,
 									)
 								}
 							/>{" "}

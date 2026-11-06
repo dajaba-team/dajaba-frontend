@@ -6,18 +6,16 @@ import { formatSystemTime } from "../../../shared/format/time"
 import StrNarrative from "../components/StrNarrative"
 import "../styles/str.css"
 
-// 케이스 → 지금 초안 번호(current_draft_no) → 초안 조회(STR 명세 2번) 순서로 불러와요.
-// TODO(SCRUM-115): 〔확인 필요 — 케이스 상세 API〕 케이스 상세가 지금 초안 번호를 주는 필드 이름이 아직 없어요.
-// MSW에는 `current_draft_no`로 두었고, 케이스 상세 API(SCRUM-102·106)를 정할 때 같이 확정해요.
+// 케이스 → 지금 초안 번호(current_draft_no, 계약서 C2·Q14) → 초안 조회(STR 명세 2번) 순서로 불러와요.
 export default function StrPage() {
-	const { caseId } = useParams()
-	const caseQuery = useCaseDetail(caseId)
-	const draftNo = caseQuery.data?.current_draft_no ?? null
+	const { caseNo } = useParams()
+	const caseQuery = useCaseDetail(caseNo)
+	const draftNo = caseQuery.data?.currentDraftNo ?? null
 	const draftQuery = useStrDraft(draftNo)
 	const draft = draftQuery.data
 	return (
 		<>
-			<Link to={`/cases/${caseId}`}>← 케이스 상세</Link>
+			<Link to={`/cases/${encodeURIComponent(caseNo)}`}>← 케이스 상세</Link>
 			<div className="str-page-heading">
 				<h1>STR 초안</h1>
 				{draft && (
