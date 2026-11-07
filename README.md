@@ -72,7 +72,7 @@ CI(`.github/workflows/ci.yml`)는 lint → format:check → test:run → build�
 
 1. **API는 `features/{기능}/api/`에서만 부르고, snake_case는 그 경계에서 한 번 바꾼다.** 컴포넌트는 `apiClient`를 직접 모른다.
 2. **서버 데이터는 TanStack Query에만.** Zustand·컴포넌트 상태에 복사하지 않는다. 쓰기는 자동 재시도·낙관적 상태 변경 없이, 성공 응답 뒤에 캐시를 고친다.
-3. **버튼은 `role` + 담당자 + `status`로 숨기지만, 판단은 서버가 한다.** 에러는 `error.code`로 분기하고 실패해도 사용자 입력은 지우지 않는다.
+3. **버튼은 서버가 준 `available_actions`만 보고 켠다**(화면이 role·담당자·상태로 계산하지 않음). 판단은 서버가 다시 한다. 에러는 `error.code`로 분기하고 실패해도 사용자 입력은 지우지 않는다.
 
 자세한 건 [`docs/01_code_rules.md`](docs/01_code_rules.md) → [`docs/02_structure.md`](docs/02_structure.md).
 
