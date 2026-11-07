@@ -20,13 +20,14 @@ describe("서버 실패 안내", () => {
 		expect(isVersionConflict(failure(409, "INVALID_TRANSITION"))).toBe(false)
 		expect(isVersionConflict(failure(409, "CONCURRENT_UPDATE"))).toBe(true)
 		expect(getErrorMessage(failure(409, "SELF_APPROVAL"))).toContain("본인이 담당")
+		expect(getErrorMessage(failure(403, "NOT_ASSIGNEE", "server"))).toContain("담당자만")
 	})
 	it("초안 생성 중 409는 AI 장애와 다르게 안내한다", () => {
 		expect(getErrorMessage(failure(409, "DRAFT_IN_PROGRESS"))).toContain("초안을 만드는 중")
 	})
 	it("코드별 문구가 없으면 서버 문구를 먼저 보여 준다", () => {
-		expect(getErrorMessage(failure(403, "NOT_ASSIGNEE", "담당자만 할 수 있어요"))).toBe(
-			"담당자만 할 수 있어요",
+		expect(getErrorMessage(failure(404, "USER_NOT_FOUND", "사용자가 없습니다"))).toBe(
+			"사용자가 없습니다",
 		)
 		expect(getErrorMessage(failure(403, "FORBIDDEN"))).toBe("실행 권한이 없어요.")
 		expect(getErrorMessage(failure(403, "CSRF_INVALID", "csrf"))).toContain("보안 토큰")

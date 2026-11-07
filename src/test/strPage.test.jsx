@@ -32,7 +32,7 @@ const sectionHeadings = async () => {
 
 describe("STR 화면 — 서버가 준 서술부 목록대로 그리기 (SCRUM-115)", () => {
 	it("새 초안은 서술부 7항목을 서버 순서대로 보여 준다", async () => {
-		renderStr("1001")
+		renderStr("CASE-2022-001001")
 		expect(await sectionHeadings()).toEqual([
 			"거래자",
 			"일자",
@@ -52,7 +52,7 @@ describe("STR 화면 — 서버가 준 서술부 목록대로 그리기 (SCRUM-1
 	})
 
 	it("7항목 전환 전에 만든 6섹션 승인본도 그대로 보여 준다", async () => {
-		renderStr("1003")
+		renderStr("CASE-2022-001003")
 		expect(await sectionHeadings()).toEqual([
 			"요약",
 			"누가",
@@ -75,7 +75,7 @@ describe("STR 화면 — 서버가 준 서술부 목록대로 그리기 (SCRUM-1
 	})
 
 	it("관리자는 본문 없이 상태만 보고, 본문 문장은 화면에 없다", async () => {
-		renderStr("1001", "admin")
+		renderStr("CASE-2022-001001", "admin")
 		expect(await screen.findByRole("note")).toHaveTextContent(
 			"본문은 담당 조사역과 승인자만 볼 수 있어요",
 		)
@@ -85,7 +85,7 @@ describe("STR 화면 — 서버가 준 서술부 목록대로 그리기 (SCRUM-1
 	})
 
 	it("초안이 없는 케이스는 없다고 알려 준다", async () => {
-		renderStr("1002")
+		renderStr("CASE-2022-001002")
 		expect(await screen.findByText("이 케이스에는 아직 STR 초안이 없어요.")).toBeInTheDocument()
 	})
 })

@@ -73,15 +73,15 @@ app  →  features  →  shared
 
 ## 3. 라우트 [FE 코드 `router.jsx`]
 
-| 경로                 | 화면                                                                                       | 지금                |
-| -------------------- | ------------------------------------------------------------------------------------------ | ------------------- |
-| `/`                  | 개발 모드: `/dev/connection`으로 이동 · 운영: `/cases`로 이동 (`router.jsx`의 `HOME_PATH`) | 있음                |
-| `/cases`             | `CaseListPage`                                                                             | 있음 (〔임시〕 API) |
-| `/cases/:caseId`     | `CaseDetailPage`                                                                           | 있음 (〔임시〕 API) |
-| `/cases/:caseId/str` | `StrPage`                                                                                  | 안내 화면만         |
-| `*`                  | 페이지 없음 안내                                                                           | 있음                |
-| `/demo/*`            | 시연 묶음 (`DashboardDemoRouter`)                                                          | 개발 모드만         |
-| `/dev/connection`    | 백엔드 연동 확인 (`ConnectionCheckPage`, `AppLayout` 밖 — 로그인 전에도 열림)              | 개발 모드만         |
+| 경로                 | 화면                                                                                       | 지금            |
+| -------------------- | ------------------------------------------------------------------------------------------ | --------------- |
+| `/`                  | 개발 모드: `/dev/connection`으로 이동 · 운영: `/cases`로 이동 (`router.jsx`의 `HOME_PATH`) | 있음            |
+| `/cases`             | `CaseListPage`                                                                             | 있음 (실제 API) |
+| `/cases/:caseNo`     | `CaseDetailPage`                                                                           | 있음 (실제 API) |
+| `/cases/:caseId/str` | `StrPage`                                                                                  | 안내 화면만     |
+| `*`                  | 페이지 없음 안내                                                                           | 있음            |
+| `/demo/*`            | 시연 묶음 (`DashboardDemoRouter`)                                                          | 개발 모드만     |
+| `/dev/connection`    | 백엔드 연동 확인 (`ConnectionCheckPage`, `AppLayout` 밖 — 로그인 전에도 열림)              | 개발 모드만     |
 
 앞으로 붙을 경로(`/login`, `/approvals`, `/admin/*`)는 `06_features/`에 있어요. 경로를 새로 만들면 이 표와 해당 `06_features` 파일을 같이 고쳐요.
 

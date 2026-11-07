@@ -13,15 +13,11 @@ export const apiClient = axios.create({
 })
 
 export function getErrorCode(error) {
-	// 최상위 code는 기존 MSW 계약만을 위한 호환 경로입니다.
-	return error.response?.data?.error?.code || error.response?.data?.code
+	return error.response?.data?.error?.code
 }
 
 export function isVersionConflict(error) {
-	return (
-		error.response?.status === 409 &&
-		["CONCURRENT_UPDATE", "CASE_VERSION_CONFLICT"].includes(getErrorCode(error))
-	)
+	return error.response?.status === 409 && getErrorCode(error) === "CONCURRENT_UPDATE"
 }
 
 export function getErrorMessage(error) {
@@ -34,8 +30,9 @@ export function getErrorMessage(error) {
 	}
 	if (code === "CSRF_INVALID")
 		return "보안 토큰을 확인하지 못했습니다. 작성 내용은 유지됩니다. 현재 사용자를 다시 확인한 후 시도해 주세요."
-	if (["INVALID_CASE_TRANSITION", "INVALID_TRANSITION"].includes(code))
+	if (code === "INVALID_CASE_TRANSITION")
 		return "현재 상태에서 실행할 수 없습니다. 최신 상태를 확인해 주세요."
+	if (code === "NOT_ASSIGNEE") return "담당자만 할 수 있어요. 최신 상태를 확인해 주세요."
 	// AI 초안 생성이 이미 진행 중이라는 뜻이라 AI 장애(502)와 다르게 안내합니다.
 	if (code === "DRAFT_IN_PROGRESS") return "초안을 만드는 중이에요. 잠시 후 상태를 확인해 주세요."
 	if (code === "SELF_APPROVAL") return "본인이 담당한 케이스는 승인할 수 없습니다."
