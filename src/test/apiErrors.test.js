@@ -32,6 +32,14 @@ describe("서버 실패 안내", () => {
 		expect(getErrorMessage(failure(403, "FORBIDDEN"))).toBe("실행 권한이 없어요.")
 		expect(getErrorMessage(failure(403, "CSRF_INVALID", "csrf"))).toContain("보안 토큰")
 	})
+	it("주소가 없는 404는 대상 없음과 다르게 안내한다", () => {
+		expect(getErrorMessage(failure(404, "NOT_FOUND", "요청한 주소가 없습니다"))).toBe(
+			"아직 서버에 없는 기능이에요. 작성 내용은 유지됩니다.",
+		)
+		expect(getErrorMessage(failure(404, "CASE_NOT_FOUND", "케이스가 없습니다"))).toBe(
+			"케이스가 없습니다",
+		)
+	})
 	it("응답 유실 시 저장 실패를 단정하거나 자동 재시도를 유도하지 않는다", () => {
 		expect(getErrorMessage({ code: "ETIMEDOUT" })).toContain("최신 내용을 확인")
 	})

@@ -14,6 +14,8 @@ export default function CaseActions({ detail }) {
 	const actions = detail.availableActions
 	const has = (action) => actions.includes(action)
 	if (!has("ASSIGN") && !has("ESCALATE") && !has("CLOSE") && !has("CLOSE_WITH_DRAFT")) return null
+	// 409 뒤 상세를 다시 불러 그 동작이 빠졌으면(예: 다른 사람이 먼저 종료) 열린 폼도 닫아요.
+	const shown = open && has(open.toUpperCase()) ? open : null
 	const isAdmin = session.data?.role === "ADMIN"
 	return (
 		<section className="case-actions" aria-labelledby="case-actions-title">
@@ -21,17 +23,17 @@ export default function CaseActions({ detail }) {
 			<div className="case-action-buttons">
 				{has("ASSIGN") && !isAdmin && <SelfAssign detail={detail} />}
 				{has("ASSIGN") && isAdmin && (
-					<button type="button" onClick={() => setOpen("assign")} disabled={!!open}>
+					<button type="button" onClick={() => setOpen("assign")} disabled={!!shown}>
 						담당자 배정
 					</button>
 				)}
 				{has("ESCALATE") && (
-					<button type="button" onClick={() => setOpen("escalate")} disabled={!!open}>
+					<button type="button" onClick={() => setOpen("escalate")} disabled={!!shown}>
 						에스컬레이션
 					</button>
 				)}
 				{has("CLOSE") && (
-					<button type="button" onClick={() => setOpen("close")} disabled={!!open}>
+					<button type="button" onClick={() => setOpen("close")} disabled={!!shown}>
 						종료
 					</button>
 				)}
@@ -39,9 +41,9 @@ export default function CaseActions({ detail }) {
 			{has("CLOSE_WITH_DRAFT") && (
 				<p className="case-action-note">초안이 있는 케이스의 종료는 준비 중이에요.</p>
 			)}
-			{open === "assign" && <AssignForm detail={detail} onDone={() => setOpen(null)} />}
-			{open === "escalate" && <EscalateForm detail={detail} onDone={() => setOpen(null)} />}
-			{open === "close" && <CloseForm detail={detail} onDone={() => setOpen(null)} />}
+			{shown === "assign" && <AssignForm detail={detail} onDone={() => setOpen(null)} />}
+			{shown === "escalate" && <EscalateForm detail={detail} onDone={() => setOpen(null)} />}
+			{shown === "close" && <CloseForm detail={detail} onDone={() => setOpen(null)} />}
 		</section>
 	)
 }
