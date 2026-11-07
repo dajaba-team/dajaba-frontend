@@ -1,13 +1,13 @@
 # 프론트 docs — 문서 지도
 
-> v0.1 · 2026-10-31 · 초안(팀 확인 중) · 정리 지윤
+> v0.2 · 2026-11-07 · 초안(팀 확인 중) · 정리 지윤 · 11/7 보강 진희
 
 다자바 프론트엔드(`dajaba-frontend`)의 규칙과 화면 설계를 **한곳에 모아 둔 요약본**이에요. 백엔드 `docs/`와 노션의 설계·규약·회의 결정 중 화면에 닿는 것만 골라 프론트 말로 다시 적었어요. 화면을 만들거나 PR을 리뷰할 때 백엔드 문서를 처음부터 뒤지지 않아도 되게 하려는 문서예요.
 
 - **API·권한·상태 전이의 정본은 백엔드예요.** 노션 설계 문서 → 백엔드 `docs/` → 백엔드 코드 순으로 맞아요. 이 문서와 다르면 백엔드가 맞고, 이 문서를 고쳐요.
 - **화면·컴포넌트·상태 관리 규칙의 정본은 이 문서와 프론트 코드예요.**
 - 규칙 한 줄마다 `[출처]`를 달았어요. 출처 약어는 아래 표에 있어요.
-- 마지막 동기화: **2026-10-31 (토)** — 백엔드 develop `abe1f0b` 기준 · 정리: 지윤
+- 마지막 동기화: **2026-11-07** — 백엔드 develop `6a9fa09` · 계약서 v0.2(11/7) · UI/UX v1.4 기준 · 정리: 지윤 · 11/7 보강 진희
 
 ## 읽는 법 — 확정 vs 초안
 
@@ -47,23 +47,25 @@
 | `08_decisions.md` 미결 표       | 각자 **자기 줄**                                                         |
 | 그 밖(README · 01~05 · 07 · 09) | 지윤                                                                     |
 
+화면은 그 백엔드 기능 담당자가 같이 만들어요 — 준혁 `admin/batches`·`alerts`·`rules` / 지윤 `cases` / 채영 `str`·`approvals` / 진희 공통 틀(`app/`·`shared/ui`)·계정 관리·감사 기록. [11/7]
+
 - 백엔드 API·권한이 바뀐 걸 알면 **같은 주에 `03_api.md`·해당 `06_features` 파일을 PR로 갱신**해요.
 - docs만 고치는 PR도 다른 PR과 똑같이 1명 Approve 뒤 머지해요. 문서 맨 위 버전·날짜를 같이 올려요.
 - 남의 파일에서 틀린 곳을 찾으면 직접 고치지 말고 담당자에게 알려 주세요(PR 코멘트나 #개발).
 
 ## 출처
 
-| 약어                | 문서                                                                                                                                                                                                     | 기준                              |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| BE README           | 백엔드 리포 `README.md`                                                                                                                                                                                  | develop `abe1f0b` (10/31)         |
-| BE 01~08            | 백엔드 `docs/01_code_rules.md` ~ `08_decisions.md`                                                                                                                                                       | v0.1 (10/29), `04`는 10/30 반영본 |
-| BE cases · str · sd | 백엔드 `docs/06_features/cases.md` · `str.md` · `source_detection.md` 〔초안〕                                                                                                                           | 10/29                             |
-| BE flows n          | 백엔드 `docs/flows/0n_*.md`                                                                                                                                                                              | develop                           |
-| BE 코드             | `PageResponse`, `ErrorResponse`, `GlobalExceptionHandler`, `SecurityConfig`, `CaseStatus`, `RejectionReasonCode`, `CloseReason`, `StrDraftStatus`, `Role`, `BatchType`, `BatchStatus`, `application.yml` | develop `abe1f0b`                 |
-| 계정·권한           | 노션 「AML 계정·권한 안내」 v0.2 (백엔드 `04_auth_user.md`로 읽음)                                                                                                                                       | 10/30                             |
-| 안건 n              | 노션 「10/27 규약 회의 안건」 n번 (백엔드 `08_decisions.md`로 읽음)                                                                                                                                      | 10/27                             |
-| 컨벤션              | 노션 「Project Convention」 (백엔드 `01_code_rules.md` §10으로 읽음)                                                                                                                                     | 10/28                             |
-| FE 코드             | 프론트 `src/`                                                                                                                                                                                            | 이 리포 10/31                     |
+| 약어                | 문서                                                                                                                                                                                                     | 기준                                                           |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| BE README           | 백엔드 리포 `README.md`                                                                                                                                                                                  | develop `6a9fa09` · 계약서 v0.2(11/7) · 규약 v0.4 · UI/UX v1.4 |
+| BE 01~08            | 백엔드 `docs/01_code_rules.md` ~ `08_decisions.md`                                                                                                                                                       | v0.1 (10/29), `04`는 10/30 반영본                              |
+| BE cases · str · sd | 백엔드 `docs/06_features/cases.md` · `str.md` · `source_detection.md` 〔초안〕                                                                                                                           | 10/29                                                          |
+| BE flows n          | 백엔드 `docs/flows/0n_*.md`                                                                                                                                                                              | develop                                                        |
+| BE 코드             | `PageResponse`, `ErrorResponse`, `GlobalExceptionHandler`, `SecurityConfig`, `CaseStatus`, `RejectionReasonCode`, `CloseReason`, `StrDraftStatus`, `Role`, `BatchType`, `BatchStatus`, `application.yml` | develop `abe1f0b`                                              |
+| 계정·권한           | 노션 「AML 계정·권한 안내」 v0.2 (백엔드 `04_auth_user.md`로 읽음)                                                                                                                                       | 10/30                                                          |
+| 안건 n              | 노션 「10/27 규약 회의 안건」 n번 (백엔드 `08_decisions.md`로 읽음)                                                                                                                                      | 10/27                                                          |
+| 컨벤션              | 노션 「Project Convention」 (백엔드 `01_code_rules.md` §10으로 읽음)                                                                                                                                     | 10/28                                                          |
+| FE 코드             | 프론트 `src/`                                                                                                                                                                                            | 이 리포 10/31                                                  |
 
 노션 원문은 이 정리에서 직접 열지 않았어요. 노션 → 백엔드 docs로 옮겨진 내용을 기준으로 했고, 백엔드 docs가 노션보다 늦으면 노션이 맞아요.
 
