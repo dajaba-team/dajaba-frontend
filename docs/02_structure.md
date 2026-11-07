@@ -8,10 +8,12 @@
 src/
 ├─ main.jsx            진입점. 개발 + VITE_USE_MOCKS=true 일 때만 MSW 시작
 ├─ app/                앱 전체를 엮는 곳 — 기능을 알아도 됨
-│  ├─ App.jsx, router.jsx      라우트 표 (실제 화면 + 개발 전용 /demo)
+│  ├─ App.jsx, router.jsx      라우트 표 + ToastProvider 감쌈, `/`는 역할별 홈으로 리디렉션
 │  ├─ queryClient.js           QueryClient, 401·계정 전환 시 업무 캐시 정리
-│  ├─ layouts/                 AppLayout (사이드바·헤더·로그인 패널 자리)
-│  ├─ routes/ providers/ navigation/   /demo 전용 라우터·Provider·메뉴
+│  ├─ layouts/                 AppLayout (사이드바·헤더·로그인 패널·GuideBar 자리)
+│  ├─ navigation/              appNavigation.js (실제 역할별 메뉴 표) + demoNavigation.js (/demo)
+│  ├─ routes/                  RequireRole.jsx (역할 가드) + DashboardDemoRouter.jsx (/demo)
+│  ├─ providers/               /demo 전용 Provider
 │  └─ styles/                  레이아웃 CSS
 ├─ features/           업무 기능 — 백엔드 기능 폴더와 이름을 맞춤
 │  ├─ auth/            로그인·세션        (BE user)
@@ -30,7 +32,7 @@ src/
 │       styles/      그 기능 CSS
 ├─ shared/             기능을 모르는 공통 — 아무 데서나 import
 │  ├─ api/apiClient.js         axios 인스턴스, 에러 코드 → 문구
-│  ├─ ui/                      AsyncState, 버튼·배지·모달 등
+│  ├─ ui/                      AsyncState, `dashboard/`(버튼·배지·모달·빈 상태), GuideBar+useGuide, toast/, ConfirmDialog, ActionBar
 │  ├─ styles/                  tokens.css, GlobalStyle.js
 │  ├─ str/sectionTitles.js     서술부 섹션 제목 표 — 실제 STR·시연 화면이 같이 씀
 │  └─ demo/                    /demo 전용 컨텍스트·라벨
