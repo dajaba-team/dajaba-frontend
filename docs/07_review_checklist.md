@@ -41,7 +41,7 @@
 - [ ] 경로의 사람이 보는 번호에 `encodeURIComponent`
 - [ ] 변경 요청에 `version` (또는 `case_version`)
 - [ ] `null`·빈 배열을 깨지지 않게 그림
-- [ ] 〔임시〕 필드(`has_next`, `allowed_actions`, `CASE_VERSION_CONFLICT`)를 새 코드에 퍼뜨리지 않음
+- [ ] 〔임시〕 필드(`has_next`, `CASE_VERSION_CONFLICT`)를 새 코드에 퍼뜨리지 않음(`allowed_actions`는 §5 — `available_actions`만)
 - [ ] API 계약을 바꿨으면 `handlers.js`·테스트·`03_api.md`도 같은 PR
 - [ ] AI 요청(요약·생성·검증)은 전용 timeout, 중복 클릭 막기, 자동 재시도·폴링 없음
 - [ ] 금액·등급·HIGH 기준·다음 상태를 프론트에서 계산하지 않음
@@ -57,7 +57,7 @@
 
 ## 5. 권한·에러 [`04_auth_session.md`, `03_api.md` §3]
 
-- [ ] 버튼 노출이 `role` + 담당자 + `status` (+ 초안 상태·검증)로 계산됨. 권한 표 번호와 맞음
+- [ ] 버튼 노출이 응답의 `available_actions`만 보고 정해짐(화면이 role·담당자·상태로 계산하지 않음). 권한 표는 기대 동선 확인용 [계약서 Q3·Q16, 11/4]
 - [ ] ADMIN에게 조사·승인 버튼이 보이지 않음, STR 본문이 담당·승인자에게만
 - [ ] 승인자 본인 담당 케이스에 승인 버튼이 없음
 - [ ] 에러 분기가 `error.code` 기준, 문구는 `getErrorMessage`
