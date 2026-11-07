@@ -38,6 +38,8 @@ export function getErrorMessage(error) {
 	if (code === "SELF_APPROVAL") return "본인이 담당한 케이스는 승인할 수 없습니다."
 	if (code === "NARRATIVE_UNCHANGED") return "반려된 본문을 보완한 후 다시 요청해 주세요."
 	if (code === "INVALID_REQUEST") return "입력 값이 올바른지 확인해 주세요."
+	// NOT_FOUND는 주소 자체가 없다는 뜻(아직 서버에 없는 API)이에요. CASE_NOT_FOUND처럼 대상이 없는 것과 달라요.
+	if (code === "NOT_FOUND") return "아직 서버에 없는 기능이에요. 작성 내용은 유지됩니다."
 	// 코드별 문구가 없으면 서버 문구를 먼저 쓰고, 없을 때만 상태별 기본 문구를 씁니다.
 	const serverMessage = error.response?.data?.error?.message
 	if (serverMessage) return serverMessage

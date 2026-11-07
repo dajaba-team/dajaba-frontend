@@ -225,6 +225,77 @@ describe("케이스 조사", () => {
 		await waitFor(() => expect(detailRequests).toBe(2))
 		server.events.removeAllListeners()
 	})
+	it("다른 사람이 먼저 에스컬레이션해 그 동작이 빠지면 열린 폼을 닫는다", async () => {
+		let escalatedByOther = false
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}`, () =>
+				HttpResponse.json(
+					escalatedByOther
+						? detailJson({
+								status: "ESCALATED",
+								version: 2,
+								available_actions: ["UPDATE_NOTES", "CLOSE"],
+							})
+						: detailJson(),
+				),
+			),
+			http.post(
+				"*/escalate",
+				() => {
+					escalatedByOther = true
+					return HttpResponse.json(
+						{
+							error: {
+								code: "INVALID_CASE_TRANSITION",
+								message: "조사 중에만 에스컬레이션할 수 있습니다",
+								details: {},
+							},
+						},
+						{ status: 409 },
+					)
+				},
+				{ once: true },
+			),
+		)
+		const user = renderApp(`/cases/${REVIEWING}`)
+		await user.click(await screen.findByRole("button", { name: "에스컬레이션" }))
+		await user.type(screen.getByLabelText("에스컬레이션 사유"), "작성 중인 사유")
+		await user.click(screen.getByRole("button", { name: "에스컬레이션 실행" }))
+		expect(
+			await screen.findByText("에스컬레이션됨", { selector: ".case-status" }),
+		).toBeInTheDocument()
+		expect(screen.getByRole("button", { name: "종료" })).toBeEnabled()
+		expect(screen.queryByLabelText("에스컬레이션 사유")).not.toBeInTheDocument()
+		expect(screen.queryByRole("button", { name: "에스컬레이션 실행" })).not.toBeInTheDocument()
+	})
+	it("메모 API가 아직 없으면(404 NOT_FOUND) 케이스가 없다고 하지 않고 입력을 남긴다", async () => {
+		server.use(
+			http.put(
+				"*/notes",
+				() =>
+					HttpResponse.json(
+						{
+							error: {
+								code: "NOT_FOUND",
+								message: "요청한 주소가 없습니다",
+								details: {},
+							},
+						},
+						{ status: 404 },
+					),
+				{ once: true },
+			),
+		)
+		const user = renderApp(`/cases/${REVIEWING}`)
+		const memo = await screen.findByLabelText("메모 내용")
+		await user.clear(memo)
+		await user.type(memo, "새 메모")
+		await user.click(screen.getByRole("button", { name: "메모 저장" }))
+		expect(await screen.findByRole("alert")).toHaveTextContent("아직 서버에 없는 기능이에요")
+		expect(screen.queryByText(/대상을 찾을 수 없습니다/)).not.toBeInTheDocument()
+		expect(screen.getByText(REVIEWING, { exact: false })).toBeInTheDocument()
+		expect(memo).toHaveValue("새 메모")
+	})
 	it("에스컬레이션으로 버전이 올라도 손대지 않은 메모는 충돌로 보지 않는다", async () => {
 		const bodies = recordBodies("/notes")
 		const user = renderApp(`/cases/${REVIEWING}`)
