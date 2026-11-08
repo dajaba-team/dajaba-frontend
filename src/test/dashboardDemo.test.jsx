@@ -17,6 +17,7 @@ function NavigationProbe() {
 			</output>
 			<button onClick={() => navigate(-1)}>이전 경로</button>
 			<button onClick={() => navigate("/demo/admin/batches")}>관리자 경로 직접 접근</button>
+			<button onClick={() => navigate("/demo/approvals")}>승인함 경로 직접 접근</button>
 		</>
 	)
 }
@@ -65,6 +66,23 @@ describe("대시보드 URL과 화면 분리", () => {
 			await screen.findByRole("heading", { name: "접근 권한이 없습니다." }),
 		).toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "실행" })).not.toBeInTheDocument()
+	})
+	it("관리자는 승인함 메뉴로 목록을 연다 (SCRUM-120)", async () => {
+		const user = renderDemo()
+		await role(user, "ADMIN")
+		await user.click(await screen.findByRole("link", { name: "승인함" }))
+		expect(await screen.findByRole("heading", { name: "승인함" })).toBeInTheDocument()
+		expect(screen.getByTestId("location")).toHaveTextContent("/demo/approvals")
+	})
+	it("조사역에겐 승인함이 제한이고 주소로 직접 들어와도 막힌다", async () => {
+		const user = renderDemo()
+		await role(user, "INVESTIGATOR")
+		expect(screen.queryByRole("link", { name: "승인함" })).not.toBeInTheDocument()
+		expect(screen.getByTitle("관리자·책임자 전용 메뉴")).toHaveTextContent("승인함제한")
+		await user.click(screen.getByRole("button", { name: "승인함 경로 직접 접근" }))
+		expect(
+			await screen.findByRole("heading", { name: "접근 권한이 없습니다." }),
+		).toBeInTheDocument()
 	})
 	it("경보 검색과 점수 필터를 URL에 보관한다", async () => {
 		const user = renderDemo("/demo/admin/alerts")
@@ -129,7 +147,16 @@ describe("이관한 업무 시연", () => {
 		)
 		await user.click(screen.getByRole("button", { name: "책임자 승인 요청" }))
 		await screen.findByText("승인 대기 · 편집 잠금")
+		// 관리자: 승인 대기 건은 보이지만 본문과 승인·반려 버튼은 없음 (SCRUM-120)
+		await role(user, "ADMIN")
+		await user.click(screen.getByRole("link", { name: "승인함" }))
+		expect(await screen.findByText("열람 전용")).toBeInTheDocument()
+		expect(screen.getByText("CASE-2022-000057")).toBeInTheDocument()
+		expect(screen.queryByRole("heading", { name: "제출 STR 본문" })).not.toBeInTheDocument()
+		expect(screen.queryByRole("button", { name: "승인 확인" })).not.toBeInTheDocument()
+		expect(screen.queryByRole("button", { name: "보완 요청으로 반려" })).not.toBeInTheDocument()
 		await role(user, "APPROVER")
+		expect(await screen.findByRole("heading", { name: "제출 STR 본문" })).toBeInTheDocument()
 		await user.click(await screen.findByRole("button", { name: "승인 확인" }))
 		await user.click(
 			within(await screen.findByRole("dialog")).getByRole("button", { name: "승인 및 잠금" }),

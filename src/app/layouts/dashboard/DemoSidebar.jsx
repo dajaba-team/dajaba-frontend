@@ -24,7 +24,7 @@ export default function DemoSidebar() {
 			<nav className="nav" aria-label="대시보드 시연 메뉴">
 				<p className="nav-label">업무 공간</p>
 				{demoNavigation.map((item) => {
-					const denied = item.role && item.role !== role
+					const denied = item.roles && !item.roles.includes(role)
 					const content = (
 						<>
 							<Icon name={item.icon} />
@@ -37,7 +37,7 @@ export default function DemoSidebar() {
 							key={item.id}
 							className="nav-item is-disabled"
 							aria-disabled="true"
-							title={`${roleKo[item.role]} 전용 메뉴`}
+							title={`${item.roles.map((entry) => roleKo[entry]).join("·")} 전용 메뉴`}
 						>
 							{content}
 						</span>

@@ -3,7 +3,7 @@
 > v0.1 · 2026-10-31 · 초안(팀 확인 중) · 정리 지윤
 
 - 프론트 폴더: `src/features/approvals/` · 백엔드 짝: `str` 승인 API (BE `06_features/str.md`)
-- 지금: 시연(`/demo/approvals`, APPROVER 역할)만. 실제 화면 없음.
+- 지금: 시연(`/demo/approvals`)만 — APPROVER는 본문·승인·반려, ADMIN은 목록만(본문·버튼 없음, SCRUM-120). 실제 화면 없음.
 
 ## 1. 화면
 

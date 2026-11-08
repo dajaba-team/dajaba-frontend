@@ -14,10 +14,13 @@ export default function Approvals() {
 	const draft = db.drafts.find((entry) => entry.draft_id === item.current_draft_id)
 	const [modal, setModal] = useState(null)
 	const [comment, setComment] = useState("")
+	// 관리자는 승인 대기 목록만 열람해요(GET /approvals는 ADMIN·APPROVER, 권한 18번 · NFR-AUTH-03).
+	// 승인·반려는 책임자만이고, STR 본문도 담당 조사역·책임자만이라 관리자에겐 본문을 그리지 않아요(SCRUM-110).
+	const canDecide = role === "APPROVER"
 	return (
 		<main className="page">
 			<PageHeading
-				eyebrow="APPROVER"
+				eyebrow={canDecide ? "APPROVER" : "ADMIN · 열람 전용"}
 				title="승인함"
 				description="GET /api/v1/cases?status=PENDING_APPROVAL 기반으로 구성한 승인 대기 목록입니다."
 			/>
@@ -52,52 +55,52 @@ export default function Approvals() {
 							<Badge tone="green">통과 · {draft?.submitted_verification_id}</Badge>
 						</div>
 					</section>
-					<div className="approval-layout">
-						<section className="panel document">
-							<div className="section-head">
-								<div>
-									<h2>제출 STR 본문</h2>
-									<p>읽기 전용 · 제출 수정본 고정</p>
+					{canDecide ? (
+						<div className="approval-layout">
+							<section className="panel document">
+								<div className="section-head">
+									<div>
+										<h2>제출 STR 본문</h2>
+										<p>읽기 전용 · 제출 수정본 고정</p>
+									</div>
 								</div>
-							</div>
-							<div className="document-body">
-								{draft?.sections.map((section) => (
-									<article className="readonly-section" key={section.section}>
-										<code>{section.section}</code>
-										<h3>{sectionTitle(section)}</h3>
-										<p>{section.text}</p>
-										<div className="evidence-row">
-											{section.evidence_ids.map((id) => (
-												<code key={id}>{id}</code>
-											))}
-										</div>
-									</article>
-								))}
-							</div>
+								<div className="document-body">
+									{draft?.sections.map((section) => (
+										<article className="readonly-section" key={section.section}>
+											<code>{section.section}</code>
+											<h3>{sectionTitle(section)}</h3>
+											<p>{section.text}</p>
+											<div className="evidence-row">
+												{section.evidence_ids.map((id) => (
+													<code key={id}>{id}</code>
+												))}
+											</div>
+										</article>
+									))}
+								</div>
+							</section>
+							<aside className="panel decision-card">
+								<h2>책임자 결정</h2>
+								<p>
+									승인 전 현재 초안·수정본·검증 ID를 확인하세요. 승인 요청은
+									감독기관 제출이 아닙니다.
+								</p>
+								<div className="stack">
+									<Button onClick={() => setModal("approve")}>승인 확인</Button>
+									<Button variant="danger" onClick={() => setModal("reject")}>
+										보완 요청으로 반려
+									</Button>
+								</div>
+							</aside>
+						</div>
+					) : (
+						<section className="panel">
+							<Empty
+								title="열람 전용"
+								text="관리자는 승인 대기 목록만 볼 수 있습니다. STR 본문과 승인·반려는 책임자 화면에서 처리합니다."
+							/>
 						</section>
-						<aside className="panel decision-card">
-							<h2>책임자 결정</h2>
-							<p>
-								승인 전 현재 초안·수정본·검증 ID를 확인하세요. 승인 요청은 감독기관
-								제출이 아닙니다.
-							</p>
-							<div className="stack">
-								<Button
-									onClick={() => setModal("approve")}
-									disabled={role !== "APPROVER"}
-								>
-									승인 확인
-								</Button>
-								<Button
-									variant="danger"
-									onClick={() => setModal("reject")}
-									disabled={role !== "APPROVER"}
-								>
-									보완 요청으로 반려
-								</Button>
-							</div>
-						</aside>
-					</div>
+					)}
 				</>
 			)}
 			{modal === "approve" && (
