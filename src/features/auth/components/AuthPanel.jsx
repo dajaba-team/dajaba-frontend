@@ -80,6 +80,15 @@ export default function AuthPanel() {
 					</button>
 				</>
 			)}
+			{me.isError && !me.data && (
+				// 401이 아닌 실패(네트워크·500)는 로그인 여부를 모르는 상태 — 다시 확인할 길을 줘요(SCRUM-173).
+				<div className="auth-error">
+					<p role="alert">{getErrorMessage(me.error)}</p>
+					<button type="button" disabled={me.isFetching} onClick={() => me.refetch()}>
+						{me.isFetching ? "확인 중…" : "다시 확인"}
+					</button>
+				</div>
+			)}
 			{me.data === null && (
 				<form
 					className="login-form"
