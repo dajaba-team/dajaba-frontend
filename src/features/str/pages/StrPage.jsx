@@ -4,6 +4,7 @@ import { useStrDraft } from "../hooks/useStrDraft"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
 import StrNarrative from "../components/StrNarrative"
+import { revisionLabel } from "../../../shared/str/revisionLabel"
 import "../styles/str.css"
 
 // 케이스 → 지금 초안 번호(current_draft_no, 계약서 C2·Q14) → 초안 조회(STR 명세 2번) 순서로 불러와요.
@@ -39,9 +40,8 @@ export default function StrPage() {
 					<div className="str-panel-head">
 						<h2 id="str-narrative-heading">서술부</h2>
 						<p>
-							{draft.narrative.length}개 항목 · 수정본 {draft.currentRevisionNo}번
-							{draft.currentRevisionNo === 1 && " (AI 원문)"} ·{" "}
-							{draft.generatorVersion}
+							{draft.narrative.length}개 항목 ·{" "}
+							{revisionLabel(draft.currentRevisionNo)} · {draft.generatorVersion}
 						</p>
 					</div>
 					<StrNarrative narrative={draft.narrative} />
