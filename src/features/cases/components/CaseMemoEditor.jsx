@@ -14,12 +14,12 @@ export default function CaseMemoEditor({ detail, onRefresh }) {
 	const mutation = useCaseCommand(detail.caseNo, "saveNotes")
 	const changed = editing && detail.version !== draft.version
 	const confirmed = confirmedVersion === detail.version
-	// 400 details는 서버 필드 이름(investigator_notes 또는 Java 이름 investigatorNotes)으로 와요.
+	// 400 details는 요청 JSON 이름(investigator_notes)으로 와요(BE SCRUM-167).
 	const details =
 		getErrorCode(mutation.error || {}) === "INVALID_REQUEST"
 			? mutation.error.response.data.error.details
 			: null
-	const fieldError = details?.investigator_notes ?? details?.investigatorNotes ?? null
+	const fieldError = details?.investigator_notes ?? null
 	const dirty = editing && draft.memo !== (detail.investigatorNotes || "")
 	useEffect(() => {
 		if (!dirty) return
