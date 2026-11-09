@@ -13,6 +13,18 @@
 
 로그인·세션·역할은 [`../04_auth_session.md`](../04_auth_session.md)에 있어요. 업무 개요·평가·감사 기록 화면은 지금 `/demo`에만 있고 백엔드 API가 정해지면 파일을 추가해요.
 
+## 새 화면 붙이는 법 [SCRUM-159 ②, 11/7]
+
+공통 틀(메뉴·안내 띠·알림·확인창·`RequireRole`)이 깔려 있어요. 새 화면은 아래 다섯 줄만.
+
+1. 페이지 컴포넌트 — `src/features/{기능}/pages/{Name}Page.jsx`. 데이터는 `features/{기능}/api/`와 `useQuery`로.
+2. 라우트 — `src/app/router.jsx`에 한 줄. 역할 제한은 `<Route element={<RequireRole roles={["ADMIN"]} />}>` 안에.
+3. 메뉴 켜기 — `src/app/navigation/appNavigation.js`의 내 메뉴 줄 `ready: false` → `ready: true`. 자리에 없으면 한 줄 추가(`id`·`path`·`label`·`roles`).
+4. 안내 띠 문구 — 페이지 안에서 `useGuide("이 화면에서 할 일 한 줄")`. 화면을 떠나면 역할 기본 문구로 돌아가요. 상태별 문구는 그 기능 폴더에 두고(`features/cases/guide.js` 같은 곳) 상세 화면에서 `useGuide(guideForCase(status))`로.
+5. 결과 알림·확인창 — `const { show } = useToast()`로 "저장했어요"/"저장 실패"를 띄우고, 되돌릴 수 없는 버튼은 `ConfirmDialog`(제목·본문·[취소]·[확인]). 사유 입력이 있는 확인창은 `shared/ui/dashboard/Modal`을 직접 써요.
+
+버튼은 서버 응답의 `available_actions`만 보고 켜요 — 역할·담당·상태로 화면이 계산하지 않아요. → `../01_code_rules.md` §1, `../04_auth_session.md` §4.
+
 ## 케이스 상태 한 장 [BE 코드 `CaseStatus`·`RejectionReasonCode`]
 
 모든 화면이 같이 보는 상태 8개예요. **전이 판단은 서버가 해요.** 프론트는 지금 상태를 보여 주고 버튼만 고르면 돼요.
