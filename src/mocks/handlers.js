@@ -88,7 +88,7 @@ export const handlers = [
 			},
 		}),
 	),
-	// 케이스 — 계약서 C1·C2·A1·A3·A4·A5·A6 (실제 백엔드 CaseController와 같은 경로, 메모 A3·초안 있는 종료 A6은 백엔드 준비 중)
+	// 케이스 — 계약서 C1·C2·A1·A3·A4·A5·A6 (요약 A7·C7은 아래, 실제 백엔드 CaseController와 같은 경로, 메모 A3·초안 있는 종료 A6은 백엔드 준비 중)
 	http.get(`${base}/api/v1/cases`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
 		return HttpResponse.json(listResponse(cases, new URL(request.url)))
@@ -133,6 +133,33 @@ export const handlers = [
 				: HttpResponse.json(result.body, { status: result.status })
 		}),
 	),
+	// AI 조사 요약 — 계약서 A7(201 { case_no, summary, case_version })·C7(조회 3역할, 없으면 summary: null)
+	http.post(`${base}/api/v1/cases/:caseNo/refresh-summary`, async ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		const body = await request.json().catch(() => null)
+		const result = applyCommand(currentUser, item, "refresh-summary", body, MOCK_USERS)
+		return result.item
+			? HttpResponse.json(
+					{
+						case_no: result.item.case_no,
+						summary: result.item.latest_summary,
+						case_version: result.item.version,
+					},
+					{ status: 201 },
+				)
+			: HttpResponse.json(result.body, { status: result.status })
+	}),
+	http.get(`${base}/api/v1/cases/:caseNo/summary`, ({ params }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		if (!item)
+			return HttpResponse.json(
+				{ error: { code: "CASE_NOT_FOUND", message: "케이스가 없습니다", details: {} } },
+				{ status: 404 },
+			)
+		return HttpResponse.json({ case_no: item.case_no, summary: item.latest_summary ?? null })
+	}),
 	http.get(`${base}/api/v1/str-drafts/:draftNo`, ({ params }) => {
 		if (!currentUser) return unauthenticated()
 		const draft = drafts.find((item) => item.draft_no === params.draftNo)
