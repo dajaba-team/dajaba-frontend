@@ -14,9 +14,11 @@ export default function CaseActions({ detail }) {
 	const [open, setOpen] = useState(null)
 	const actions = detail.availableActions
 	const has = (action) => actions.includes(action)
-	if (!has("ASSIGN") && !has("ESCALATE") && !has("CLOSE") && !has("CLOSE_WITH_DRAFT")) return null
 	// 409 뒤 상세를 다시 불러 그 동작이 빠졌으면(예: 다른 사람이 먼저 종료) 열린 폼도 닫아요.
+	// open도 같이 비워서, 나중에 그 동작이 다시 생겨도 예전 폼이 저절로 열리지 않게 해요(#12 리뷰).
 	const shown = open && has(open.toUpperCase()) ? open : null
+	if (open && !shown) setOpen(null)
+	if (!has("ASSIGN") && !has("ESCALATE") && !has("CLOSE") && !has("CLOSE_WITH_DRAFT")) return null
 	const isAdmin = session.data?.role === "ADMIN"
 	return (
 		<section className="case-actions" aria-labelledby="case-actions-title">

@@ -5,6 +5,7 @@ import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
 import CaseMemoEditor from "../components/CaseMemoEditor"
 import CaseActions from "../components/CaseActions"
+import CaseSummaryPanel from "../components/CaseSummaryPanel"
 import {
 	CLOSE_REASON_LABELS,
 	HISTORY_LABELS,
@@ -15,7 +16,8 @@ import {
 } from "../labels"
 
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
-// 경보·최근 점수는 서버 alert·latest_score(SCRUM-152). 근거 거래·AI 요약은 아직 null이라 칸이 채워지면 붙여요.
+// 경보·최근 점수는 서버 alert·latest_score(SCRUM-152), AI 조사 요약은 latest_summary(SCRUM-175).
+// 근거 거래는 아직 null이라 칸이 채워지면 붙여요.
 
 // 케이스 score(생성 때 스냅샷)가 오면 그 값, 없으면 경보의 최근 점수. 모델 점수라 범죄 확률이 아니에요.
 function scoreText(detail) {
@@ -98,6 +100,7 @@ export default function CaseDetailPage() {
 					</section>
 					<AlertPanel alert={detail.alert} />
 					<CaseActions detail={detail} />
+					<CaseSummaryPanel detail={detail} />
 					{detail.availableActions.includes("UPDATE_NOTES") ? (
 						<CaseMemoEditor
 							key={detail.caseNo}
