@@ -488,7 +488,9 @@ describe("케이스 조사", () => {
 			within(panel).getByText("2022-10-31 00:00:00 ~ 2022-11-01 00:00:00"),
 		).toBeInTheDocument()
 		expect(within(panel).getByText("15건")).toBeInTheDocument()
-		expect(screen.getByText("0.91 · 범죄 확률 아님 (모델 xgb-2022.11)")).toBeInTheDocument()
+		expect(
+			screen.getByText("0.91 · 등급 HIGH · 범죄 확률 아님 (모델 xgb-2022.11)"),
+		).toBeInTheDocument()
 	})
 	it("점수 전·산출 실패면 점수 대신 상태를 보여 준다", async () => {
 		const latest = { score: null, model_version: null, reasons: [] }

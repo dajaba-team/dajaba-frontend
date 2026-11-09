@@ -103,7 +103,7 @@
 | 요약 생성·갱신 | `POST …/refresh-summary` `{version}` (A7, 담당만)                                             | 201 `{case_no, summary, case_version}` → 상세 다시 조회. 실패(502 `SUMMARY_CODE_CHECK_FAILED` 등)면 기존 요약 그대로 | `casesApi.refreshSummary` |
 | 현재 요약      | `GET …/summary` (C7, 조회 3역할)                                                              | `{case_no, summary}` — 없으면 `summary: null`. 상세 `latest_summary`와 같은 값                                       | `casesApi.summary`        |
 
-- 상세 `alert`·`latest_score`는 BE `GetAlertSummary`(SCRUM-152)로 채워져 와요. `latest_score.score_status`가 PENDING·FAILED면 점수 칸은 null이라 화면은 상태(산출 전·산출 실패)를 보여 줘요. `score`·`score_band`(생성 스냅샷)는 아직 null이라 점수 칸은 `latest_score.score`를 대신 써요.
+- 상세 `alert`·`latest_score`는 BE `GetAlertSummary`(SCRUM-152)로 채워져 와요. `latest_score.score_status`가 PENDING·FAILED면 점수 칸은 null이라 화면은 상태(산출 전·산출 실패)를 보여 줘요. 맨 위 `score`·`score_band`·`policy_version`은 계약서 Q2 MVP대로 `latest_score`와 같은 값으로 와요(BE #78 리뷰). `latest_score.score_band`는 서버가 지금 운영 정책으로 계산하고, 정책이 없으면 null이라 화면은 등급 없이 점수만 보여 줘요.
 
 - AI 조사 요약 칸(`CaseSummaryPanel`, SCRUM-175)은 상세 `latest_summary`를 그대로 보여 줘요. `is_current`가 true면 "현재 입력 기준", false면 "입력 변경됨", null이면 다시 생성 안내. 버튼은 `REFRESH_SUMMARY`가 있을 때만 — 요약이 없으면 [요약 생성], 있으면 [요약 갱신]. 실패는 그 칸에만 보여 주고, 기존 요약은 "이전에 만든 요약"으로 구분해요. 갱신하면 `case_version`이 +1이라 상세를 다시 불러요.
 - 계좌는 서버가 가린 `account_no`와 구별용 `account_ref`만 와요. 버튼은 `available_actions`만 보고 켜요(`CaseActions`).
