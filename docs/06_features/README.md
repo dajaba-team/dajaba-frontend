@@ -1,6 +1,6 @@
 # 06. 기능별 정리
 
-> v0.1 · 2026-10-31 · 초안(팀 확인 중) · 정리 지윤
+> v0.2 · 2026-11-08 · 초안(팀 확인 중) · 정리 지윤 · 11/8 상태 9개(SCRUM-172)
 
 화면마다 **경로 · 보이는 것 · 상태별 버튼 · 쓰는 API · 실패 처리 · 지금 상태**를 모았어요. 각자 자기 파일만 고치면 되도록 기능별로 나눴어요. 백엔드 `docs/06_features/`와 짝이에요.
 
@@ -27,7 +27,7 @@
 
 ## 케이스 상태 한 장 [BE 코드 `CaseStatus`·`RejectionReasonCode`]
 
-모든 화면이 같이 보는 상태 8개예요. **전이 판단은 서버가 해요.** 프론트는 지금 상태를 보여 주고 버튼만 고르면 돼요.
+모든 화면이 같이 보는 상태 9개예요. **전이 판단은 서버가 해요.** 프론트는 지금 상태를 보여 주고 버튼만 고르면 돼요.
 
 ```mermaid
 stateDiagram-v2
@@ -44,7 +44,8 @@ stateDiagram-v2
     PENDING_APPROVAL --> REJECTED: 반려(코드+사유)
     REJECTED --> DRAFTED: NEED_REVISION 보완
     REJECTED --> CLOSED: NOT_REPORTABLE 종료
-    APPROVED --> [*]
+    APPROVED --> REPORTED: 모의 제출
+    REPORTED --> [*]
     CLOSED --> [*]
 ```
 
@@ -55,11 +56,13 @@ stateDiagram-v2
 | `ESCALATED`        | 에스컬레이션됨 (보고 검토)               |         |
 | `DRAFTED`          | 초안 작성 중                             |         |
 | `PENDING_APPROVAL` | 승인 대기                                |         |
-| `APPROVED`         | 내부 승인 완료 (기관 제출 아님)          | ○       |
+| `APPROVED`         | 내부 승인 완료 (기관 제출 아님)          |         |
+| `REPORTED`         | 보고됨 (모의 제출, 실제 기관 전송 없음)  | ○       |
 | `REJECTED`         | 반려 — 반려 코드에 따라 다음 행동이 갈림 |         |
 | `CLOSED`           | 종결 (범죄 없음 확정이 아님)             | ○       |
 
 - `PENDING_APPROVAL → CLOSED`는 없어요(안건 24). 승인 대기 중엔 조사역 화면이 읽기 전용.
+- `APPROVED → REPORTED`는 승인자의 모의 제출(`POST /approvals/{draft_no}/report`, 〔초안〕)이에요. 끝 상태는 `REPORTED`·`CLOSED` 둘 [CASES 명세 v0.7, BE `CaseStatus`·V006 CHECK].
 - 종결 사유 `close_reason`: `FALSE_POSITIVE`(오탐) · `DUPLICATE`(중복 경보) · `NO_ACTION`(추가 조치 불필요) + 코멘트. [BE 코드 `CloseReason`]
 - STR 초안 상태는 따로 3개: `ACTIVE`(수정·검증 가능) · `SUPERSEDED`(재생성·종결로 대체) · `LOCKED`(승인됨). [BE 코드 `StrDraftStatus`]
 - 그림 전체는 BE flows 06 「화면과 상태의 대응」 표가 정본이에요.
