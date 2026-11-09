@@ -497,7 +497,11 @@ describe("케이스 조사", () => {
 				HttpResponse.json(
 					detailJson({
 						alert: null,
-						latest_score: { ...latest, status: "FAILED", failure_code: "AI_TIMEOUT" },
+						latest_score: {
+							...latest,
+							score_status: "FAILED",
+							failure_code: "AI_TIMEOUT",
+						},
 					}),
 				),
 			),

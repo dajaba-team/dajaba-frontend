@@ -38,7 +38,7 @@ export const HISTORY_LABELS = {
 	NOTE: "메모 저장",
 }
 
-// alerts.score_status (BE AlertSummary.Score.status)
+// alerts.score_status — 상세 latest_score.score_status
 export const SCORE_STATUS_LABELS = {
 	PENDING: "산출 전",
 	SCORED: "산출 완료",
