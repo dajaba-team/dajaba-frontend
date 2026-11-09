@@ -2,19 +2,58 @@ import { Link, useParams } from "react-router"
 import "../styles/cases.css"
 import { useCaseDetail } from "../hooks/useCases"
 import { AsyncState } from "../../../shared/ui/AsyncState"
-import { formatSystemTime } from "../../../shared/format/time"
+import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
 import CaseMemoEditor from "../components/CaseMemoEditor"
 import CaseActions from "../components/CaseActions"
 import {
 	CLOSE_REASON_LABELS,
 	HISTORY_LABELS,
 	REJECTION_LABELS,
+	SCORE_STATUS_LABELS,
 	STATUS_LABELS,
 	labelOf,
 } from "../labels"
 
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
-// 점수·경보·근거 거래·AI 요약은 서버가 아직 null로 줘요(SCRUM-152 등) — 칸이 채워지면 여기에 붙여요.
+// 경보·최근 점수는 서버 alert·latest_score(SCRUM-152). 근거 거래·AI 요약은 아직 null이라 칸이 채워지면 붙여요.
+
+// 케이스 score(생성 때 스냅샷)가 오면 그 값, 없으면 경보의 최근 점수. 모델 점수라 범죄 확률이 아니에요.
+function scoreText(detail) {
+	if (detail.score != null) return `${detail.score} · 범죄 확률 아님`
+	const latest = detail.latestScore
+	if (!latest) return "산출 정보 없음"
+	if (latest.status === "SCORED" && latest.score != null)
+		return `${latest.score} · 범죄 확률 아님 (모델 ${latest.modelVersion ?? "-"})`
+	const label = labelOf(SCORE_STATUS_LABELS, latest.status)
+	return latest.failureCode ? `${label} (${latest.failureCode})` : label
+}
+
+function AlertPanel({ alert }) {
+	return (
+		<section className="case-panel case-summary" aria-labelledby="alert-title">
+			<h2 id="alert-title">연결 경보</h2>
+			{alert ? (
+				<dl>
+					<dt>경보 번호</dt>
+					<dd>{alert.alertNo}</dd>
+					<dt>탐지 규칙</dt>
+					<dd>{alert.ruleId}</dd>
+					<dt>배치 기준일</dt>
+					<dd>{alert.batchDate}</dd>
+					<dt>거래 시간 창</dt>
+					<dd>
+						{formatDataTime(alert.windowStart)} ~ {formatDataTime(alert.windowEnd)}
+					</dd>
+					<dt>묶인 거래</dt>
+					<dd>{alert.transactionCount}건</dd>
+				</dl>
+			) : (
+				<p>경보 정보 없음</p>
+			)}
+		</section>
+	)
+}
+
 export default function CaseDetailPage() {
 	const { caseNo } = useParams()
 	const query = useCaseDetail(caseNo)
@@ -40,7 +79,7 @@ export default function CaseDetailPage() {
 							<dt>계좌</dt>
 							<dd>{detail.accountNo}</dd>
 							<dt>조사 우선순위 점수</dt>
-							<dd>{detail.score ?? "산출 정보 없음"}</dd>
+							<dd>{scoreText(detail)}</dd>
 							<dt>생성</dt>
 							<dd>{formatSystemTime(detail.createdAt)}</dd>
 							{detail.rejectionReasonCode && (
@@ -57,6 +96,7 @@ export default function CaseDetailPage() {
 							)}
 						</dl>
 					</section>
+					<AlertPanel alert={detail.alert} />
 					<CaseActions detail={detail} />
 					{detail.availableActions.includes("UPDATE_NOTES") ? (
 						<CaseMemoEditor

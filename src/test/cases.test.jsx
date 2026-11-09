@@ -478,6 +478,34 @@ describe("케이스 조사", () => {
 		expect(bodies).toEqual([{ investigator_notes: "내가 작성 중인 메모", version: 2 }])
 		server.events.removeAllListeners()
 	})
+	it("상세에 연결 경보와 최근 모델 점수를 보여 준다", async () => {
+		renderApp(`/cases/${REVIEWING}`)
+		const panel = await screen.findByRole("region", { name: "연결 경보" })
+		expect(within(panel).getByText("ALT-20221101-000104")).toBeInTheDocument()
+		expect(within(panel).getByText("R02_FAN_IN_24H")).toBeInTheDocument()
+		// 데이터 시각은 시간대를 붙이지 않고 받은 그대로(T만 공백)
+		expect(
+			within(panel).getByText("2022-10-31 00:00:00 ~ 2022-11-01 00:00:00"),
+		).toBeInTheDocument()
+		expect(within(panel).getByText("15건")).toBeInTheDocument()
+		expect(screen.getByText("0.91 · 범죄 확률 아님 (모델 xgb-2022.11)")).toBeInTheDocument()
+	})
+	it("점수 전·산출 실패면 점수 대신 상태를 보여 준다", async () => {
+		const latest = { score: null, model_version: null, reasons: [] }
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}`, () =>
+				HttpResponse.json(
+					detailJson({
+						alert: null,
+						latest_score: { ...latest, status: "FAILED", failure_code: "AI_TIMEOUT" },
+					}),
+				),
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		expect(await screen.findByText("산출 실패 (AI_TIMEOUT)")).toBeInTheDocument()
+		expect(screen.getByText("경보 정보 없음")).toBeInTheDocument()
+	})
 	it("없는 케이스는 404 안내를, 조회 오류는 다시 불러오기를 보여 준다", async () => {
 		server.use(
 			http.get(`*/api/v1/cases/${REVIEWING}`, () => new HttpResponse(null, { status: 500 }), {

@@ -32,9 +32,39 @@ const toHistory = (data) => ({
 	createdAt: data.created_at,
 })
 
-// 아직 서버가 null로 주는 칸(alert·latest_score·aggregates·latest_summary 등)은 화면을 만들 때 옮겨요.
+// 연결 경보 (C2 alert). window_*·reference_ts는 데이터 시각, batch_date는 날짜 — 시간대를 붙이지 않아요.
+const toAlert = (data) =>
+	data
+		? {
+				alertNo: data.alert_no,
+				ruleId: data.rule_id,
+				batchDate: data.batch_date,
+				windowStart: data.window_start,
+				windowEnd: data.window_end,
+				referenceTs: data.reference_ts,
+				transactionCount: data.transaction_count,
+			}
+		: null
+
+// 경보의 최근 점수 (C2 latest_score). status는 PENDING·SCORED·FAILED, 점수 전·실패면 score 칸은 null, reasons는 [].
+const toLatestScore = (data) =>
+	data
+		? {
+				status: data.status,
+				score: data.score ?? null,
+				failureCode: data.failure_code ?? null,
+				modelVersion: data.model_version ?? null,
+				featureVersion: data.feature_version ?? null,
+				dataQualityStatus: data.data_quality_status ?? null,
+				reasons: data.reasons ?? [],
+			}
+		: null
+
+// 아직 서버가 null로 주는 칸(aggregates·latest_summary 등)은 화면을 만들 때 옮겨요.
 const toCaseDetail = (data) => ({
 	...toCaseSummary(data),
+	alert: toAlert(data.alert),
+	latestScore: toLatestScore(data.latest_score),
 	updatedAt: data.updated_at ?? null,
 	closeReason: data.close_reason ?? null,
 	investigatorNotes: data.investigator_notes ?? null,

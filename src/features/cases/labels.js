@@ -38,4 +38,11 @@ export const HISTORY_LABELS = {
 	NOTE: "메모 저장",
 }
 
+// alerts.score_status (BE AlertSummary.Score.status)
+export const SCORE_STATUS_LABELS = {
+	PENDING: "산출 전",
+	SCORED: "산출 완료",
+	FAILED: "산출 실패",
+}
+
 export const labelOf = (labels, value) => (value == null ? "" : (labels[value] ?? value))

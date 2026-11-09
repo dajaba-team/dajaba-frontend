@@ -14,6 +14,33 @@ const history = (action, from, to, by, minute, comment = null) => ({
 	created_at: at(minute),
 })
 const user = (loginId) => ({ login_id: loginId, display_name: `예시 ${loginId}` })
+const alertOf = (index) => ({
+	alert_no: `ALT-20221101-00010${index + 1}`,
+	rule_id: "R02_FAN_IN_24H",
+	batch_date: "2022-11-01",
+	window_start: "2022-10-31T00:00:00",
+	window_end: "2022-11-01T00:00:00",
+	reference_ts: "2022-11-01T00:00:00",
+	transaction_count: 12 + index,
+})
+const scored = (score) => ({
+	status: "SCORED",
+	score,
+	failure_code: null,
+	model_version: "xgb-2022.11",
+	feature_version: "f1",
+	data_quality_status: "OK",
+	reasons: [],
+})
+const PENDING_SCORE = {
+	status: "PENDING",
+	score: null,
+	failure_code: null,
+	model_version: null,
+	feature_version: null,
+	data_quality_status: null,
+	reasons: [],
+}
 
 export function seedCases() {
 	return [
@@ -77,7 +104,13 @@ export function seedCases() {
 				history("OPEN", null, "OPEN", "system", 2),
 			],
 		},
-	].map((item, index) => ({ ...item, created_at: at(index), updated_at: at(index + 10) }))
+	].map((item, index) => ({
+		latest_score: index === 1 ? PENDING_SCORE : scored([0.94, null, 0.92, 0.91][index]),
+		...item,
+		alert: alertOf(index),
+		created_at: at(index),
+		updated_at: at(index + 10),
+	}))
 }
 
 const EDITABLE = ["REVIEWING", "ESCALATED", "DRAFTED"]
@@ -144,11 +177,11 @@ export function detailResponse(viewer, item) {
 	return {
 		...summaryOf(item),
 		updated_at: item.updated_at,
-		alert: null,
+		alert: item.alert ?? null,
 		customer: null,
 		investigator_notes: item.investigator_notes,
 		close_reason: item.close_reason,
-		latest_score: null,
+		latest_score: item.latest_score ?? null,
 		aggregates: null,
 		latest_summary: null,
 		current_draft_no: item.current_draft_no,

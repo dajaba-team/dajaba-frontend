@@ -101,6 +101,8 @@
 | 종료(초안 O) | `POST …/close-with-draft` `{close_reason, comment, version}` — **BE 아직 없음**(str 컨트롤러) | M (MSW만). 서버가 초안을 `SUPERSEDED`로 바꿈 〔초안〕                   | `casesApi.closeWithDraft` |
 | 메모         | `PUT …/notes` `{investigator_notes, version}` — **BE 아직 없음**                              | M (MSW만)                                                               | `casesApi.saveNotes`      |
 
+- 상세 `alert`·`latest_score`는 BE `GetAlertSummary`(SCRUM-152)로 채워져 와요. `latest_score.status`가 PENDING·FAILED면 점수 칸은 null이라 화면은 상태(산출 전·산출 실패)를 보여 줘요. `score`·`score_band`(생성 스냅샷)는 아직 null이라 점수 칸은 `latest_score.score`를 대신 써요.
+
 - 계좌는 서버가 가린 `account_no`와 구별용 `account_ref`만 와요. 버튼은 `available_actions`만 보고 켜요(`CaseActions`).
 - 종료 버튼은 하나예요. `available_actions`에 `CLOSE`가 있으면 `close`, `CLOSE_WITH_DRAFT`가 있으면 `close-with-draft`를 불러요 — 초안이 있는지 화면이 따로 판단하지 않아요(SCRUM-112). 백엔드가 아직 없으면 404 `NOT_FOUND` 안내 + 입력 유지.
 - 변경 응답(M)은 상세 전체가 아니라서 성공 뒤 상세·목록을 무효화해 다시 불러요(`useCaseCommand`). `CONCURRENT_UPDATE`·`INVALID_CASE_TRANSITION`·`NOT_ASSIGNEE`면 입력을 두고 상세만 다시 불러요.
