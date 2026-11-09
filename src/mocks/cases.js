@@ -1,4 +1,5 @@
-// 케이스 MSW 대역 — 계약서 v0.2 C1·C2·A1·A3·A4·A5, 백엔드 CaseController(SCRUM-106)와 같은 모양.
+// 케이스 MSW 대역 — 계약서 v0.2 C1·C2·A1·A3·A4·A5·A6, 백엔드 CaseController(SCRUM-106)와 같은 모양.
+// A6 close-with-draft(str 컨트롤러)는 백엔드가 아직 없어 CloseCase와 같은 순서로 만들었어요 〔초안〕.
 // 버튼(available_actions)·오류 순서는 백엔드 CaseAction·유스케이스와 맞췄어요: 404 → version 409 → 담당 403 → 상태 409.
 // 계좌는 가린 값과 account_ref만 둬요. 원본 account_key는 예시 데이터에도 넣지 않아요(01_code_rules §6-3).
 
@@ -185,7 +186,7 @@ export function applyCommand(viewer, item, command, body, users) {
 	if (command === "escalate" && blank(body.comment))
 		return fail(400, "INVALID_REQUEST", "사유를 입력해 주세요")
 	if (
-		command === "close" &&
+		(command === "close" || command === "close-with-draft") &&
 		(blank(body.comment) ||
 			!["FALSE_POSITIVE", "DUPLICATE", "NO_ACTION"].includes(body.close_reason))
 	)
@@ -233,17 +234,23 @@ export function applyCommand(viewer, item, command, body, users) {
 					"조사 중에만 에스컬레이션할 수 있습니다",
 				)
 			move("ESCALATE", "ESCALATED", body.comment)
-		} else if (command === "close") {
+		} else if (command === "close" || command === "close-with-draft") {
 			const closable =
 				["REVIEWING", "ESCALATED", "DRAFTED"].includes(item.status) ||
 				(item.status === "REJECTED" && item.rejection_reason_code === "NOT_REPORTABLE")
 			if (!closable)
 				return fail(409, "INVALID_CASE_TRANSITION", "지금 상태에서 종료할 수 없습니다")
-			if (item.current_draft_no)
+			if (command === "close" && item.current_draft_no)
 				return fail(
 					409,
 					"CLOSE_REQUIRES_STR",
 					"초안이 있는 케이스는 close-with-draft 로 종료합니다",
+				)
+			if (command === "close-with-draft" && !item.current_draft_no)
+				return fail(
+					409,
+					"INVALID_CASE_TRANSITION",
+					"초안이 없는 케이스는 close 로 종료합니다",
 				)
 			item.close_reason = body.close_reason
 			move("CLOSE", "CLOSED", body.comment)

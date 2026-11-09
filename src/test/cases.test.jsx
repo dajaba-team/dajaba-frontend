@@ -332,13 +332,79 @@ describe("케이스 조사", () => {
 		await user.click(screen.getByRole("button", { name: "배정" }))
 		expect(await screen.findByText(/담당자 예시 inv02/)).toBeInTheDocument()
 	})
-	it("초안이 있는 케이스는 종료 대신 안내를 보여 주고 STR 화면으로 간다", async () => {
+	it("초안이 있는 케이스는 같은 [종료] 버튼으로 close-with-draft를 부른다", async () => {
+		const closeBodies = recordBodies("/close")
+		const draftBodies = recordBodies("/close-with-draft")
 		const user = renderApp("/cases/CASE-2022-001001")
-		expect(
-			await screen.findByText("초안이 있는 케이스의 종료는 준비 중이에요."),
-		).toBeInTheDocument()
+		await user.click(await screen.findByRole("button", { name: "종료" }))
+		expect(screen.getByText(/DRF-000124/)).toHaveTextContent("대체됨")
+		await user.click(screen.getByRole("radio", { name: "중복 경보" }))
+		await user.type(screen.getByLabelText("종료 설명"), "같은 경보가 다른 케이스로 조사 중")
+		await user.click(screen.getByRole("button", { name: "종료 실행" }))
+		expect(await screen.findByText("종료", { selector: ".case-status" })).toBeInTheDocument()
+		expect(screen.getByText("중복 경보")).toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "종료" })).not.toBeInTheDocument()
-		await user.click(screen.getByRole("link", { name: /STR 화면으로/ }))
+		expect(draftBodies).toEqual([
+			{ close_reason: "DUPLICATE", comment: "같은 경보가 다른 케이스로 조사 중", version: 3 },
+		])
+		expect(closeBodies).toEqual([])
+		server.events.removeAllListeners()
+	})
+	it("'보고 안 함' 반려 케이스도 종료할 수 있고 종료 사유는 세 값 중에서 고른다", async () => {
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}`, () =>
+				HttpResponse.json(
+					detailJson({
+						status: "REJECTED",
+						rejection_reason_code: "NOT_REPORTABLE",
+						current_draft_no: "DRF-000124",
+						version: 7,
+						available_actions: ["CLOSE_WITH_DRAFT"],
+					}),
+				),
+			),
+		)
+		const user = renderApp(`/cases/${REVIEWING}`)
+		await user.click(await screen.findByRole("button", { name: "종료" }))
+		expect(screen.getByText(/보고 안 함.*으로 반려한 케이스예요/)).toBeInTheDocument()
+		expect(screen.getAllByRole("radio").map((radio) => radio.value)).toEqual([
+			"FALSE_POSITIVE",
+			"DUPLICATE",
+			"NO_ACTION",
+		])
+	})
+	it("초안 있는 종료 API가 아직 없으면(404 NOT_FOUND) 사유·설명을 남기고 다시 시도할 수 있다", async () => {
+		server.use(
+			http.post(
+				"*/close-with-draft",
+				() =>
+					HttpResponse.json(
+						{
+							error: {
+								code: "NOT_FOUND",
+								message: "요청한 주소가 없습니다",
+								details: {},
+							},
+						},
+						{ status: 404 },
+					),
+				{ once: true },
+			),
+		)
+		const user = renderApp("/cases/CASE-2022-001001")
+		await user.click(await screen.findByRole("button", { name: "종료" }))
+		await user.click(screen.getByRole("radio", { name: "오탐" }))
+		await user.type(screen.getByLabelText("종료 설명"), "정상 급여 이체")
+		await user.click(screen.getByRole("button", { name: "종료 실행" }))
+		expect(await screen.findByRole("alert")).toHaveTextContent("아직 서버에 없는 기능이에요")
+		expect(screen.getByRole("radio", { name: "오탐" })).toBeChecked()
+		expect(screen.getByLabelText("종료 설명")).toHaveValue("정상 급여 이체")
+		await user.click(screen.getByRole("button", { name: "종료 실행" }))
+		expect(await screen.findByText("종료", { selector: ".case-status" })).toBeInTheDocument()
+	})
+	it("초안이 있는 케이스에서 STR 화면으로 갈 수 있다", async () => {
+		const user = renderApp("/cases/CASE-2022-001001")
+		await user.click(await screen.findByRole("link", { name: /STR 화면으로/ }))
 		expect(screen.getByRole("heading", { name: "STR 초안" })).toBeInTheDocument()
 	})
 	it("메모를 저장하면 새 버전으로 다시 불러온다", async () => {

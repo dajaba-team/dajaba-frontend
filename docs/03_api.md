@@ -1,6 +1,6 @@
 # 03. API 연동
 
-> v0.1 · 2026-10-31 · 초안(팀 확인 중) · 정리 지윤
+> v0.2 · 2026-11-08 · 초안(팀 확인 중) · 정리 지윤 · 11/8 초안 있는 종료(SCRUM-112)
 
 백엔드 API를 화면에 붙일 때 보는 문서예요. 백엔드 쪽 규칙은 [BE 03 §2·§3]이 정본이고, 여기는 **프론트가 그걸 어떻게 받는지**를 적어요.
 
@@ -89,18 +89,20 @@
 | 로그인      | `POST /api/v1/auth/login` `{login_id, password}` (JSON) | 200 `{ id, login_id, display_name, role }`, 틀리면 401 `LOGIN_FAILED`, 빈 값 400 `INVALID_REQUEST` | `authApi.login`               |
 | 로그아웃    | `POST /api/v1/auth/logout`                              | 204 (본문 없음)                                                                                    | `authApi.logout`              |
 
-### 케이스 — 실제 백엔드와 같은 것 [계약서 v0.2 C1·C2·A1·A3·A4·A5, BE `CaseController`(SCRUM-106), FE 코드 `casesApi.js`·`mocks/cases.js`, SCRUM-103]
+### 케이스 — 실제 백엔드와 같은 것 [계약서 v0.2 C1·C2·A1·A3·A4·A5·A6, BE `CaseController`(SCRUM-106), FE 코드 `casesApi.js`·`mocks/cases.js`, SCRUM-103·112]
 
-| 동작         | API                                                              | 응답                                                                    | 프론트               |
-| ------------ | ---------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------- |
-| 목록         | `GET /api/v1/cases?status=&assignee=me&page=(0부터)&size=`       | `{ items, page, size, total }` — 화면에는 page 1부터, `totalPages` 계산 | `casesApi.list`      |
-| 상세         | `GET /api/v1/cases/{case_no}`                                    | C2 모양 + `available_actions`, 없으면 404 `CASE_NOT_FOUND`              | `casesApi.detail`    |
-| 배정         | `POST …/assign` `{version}` · 관리자 `{assignee, version}`       | 공통 변경 응답 M → 상세·목록 다시 조회                                  | `casesApi.assign`    |
-| 에스컬레이션 | `POST …/escalate` `{comment, version}`                           | M                                                                       | `casesApi.escalate`  |
-| 종료(초안 X) | `POST …/close` `{close_reason, comment, version}`                | M                                                                       | `casesApi.close`     |
-| 메모         | `PUT …/notes` `{investigator_notes, version}` — **BE 아직 없음** | M (MSW만)                                                               | `casesApi.saveNotes` |
+| 동작         | API                                                                                           | 응답                                                                    | 프론트                    |
+| ------------ | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------- |
+| 목록         | `GET /api/v1/cases?status=&assignee=me&page=(0부터)&size=`                                    | `{ items, page, size, total }` — 화면에는 page 1부터, `totalPages` 계산 | `casesApi.list`           |
+| 상세         | `GET /api/v1/cases/{case_no}`                                                                 | C2 모양 + `available_actions`, 없으면 404 `CASE_NOT_FOUND`              | `casesApi.detail`         |
+| 배정         | `POST …/assign` `{version}` · 관리자 `{assignee, version}`                                    | 공통 변경 응답 M → 상세·목록 다시 조회                                  | `casesApi.assign`         |
+| 에스컬레이션 | `POST …/escalate` `{comment, version}`                                                        | M                                                                       | `casesApi.escalate`       |
+| 종료(초안 X) | `POST …/close` `{close_reason, comment, version}`                                             | M. 초안이 있으면 409 `CLOSE_REQUIRES_STR`                               | `casesApi.close`          |
+| 종료(초안 O) | `POST …/close-with-draft` `{close_reason, comment, version}` — **BE 아직 없음**(str 컨트롤러) | M (MSW만). 서버가 초안을 `SUPERSEDED`로 바꿈 〔초안〕                   | `casesApi.closeWithDraft` |
+| 메모         | `PUT …/notes` `{investigator_notes, version}` — **BE 아직 없음**                              | M (MSW만)                                                               | `casesApi.saveNotes`      |
 
 - 계좌는 서버가 가린 `account_no`와 구별용 `account_ref`만 와요. 버튼은 `available_actions`만 보고 켜요(`CaseActions`).
+- 종료 버튼은 하나예요. `available_actions`에 `CLOSE`가 있으면 `close`, `CLOSE_WITH_DRAFT`가 있으면 `close-with-draft`를 불러요 — 초안이 있는지 화면이 따로 판단하지 않아요(SCRUM-112). 백엔드가 아직 없으면 404 `NOT_FOUND` 안내 + 입력 유지.
 - 변경 응답(M)은 상세 전체가 아니라서 성공 뒤 상세·목록을 무효화해 다시 불러요(`useCaseCommand`). `CONCURRENT_UPDATE`·`INVALID_CASE_TRANSITION`·`NOT_ASSIGNEE`면 입력을 두고 상세만 다시 불러요.
 - 400 `details`의 필드 이름은 지금 백엔드가 Java 이름(camelCase, 예: `investigatorNotes`)으로 줘요(BE #66 To Reviewers). 메모 칸은 두 이름을 다 읽어요.
 

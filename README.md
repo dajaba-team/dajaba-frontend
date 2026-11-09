@@ -50,18 +50,18 @@ CI(`.github/workflows/ci.yml`)는 lint → format:check → test:run → build�
 
 ## 지금 들어 있는 것 (W1 뼈대, 10/31)
 
-| 묶음      | 파일                                                                                                                        | 상태                                                         |
-| --------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| 앱 뼈대   | `src/app/` — 라우터, `QueryClient`(401·계정 전환 시 업무 캐시 제거), `AppLayout`                                            | 진짜                                                         |
-| 공통 API  | `src/shared/api/apiClient.js` — axios, 쿠키·CSRF, 에러 코드 → 안내 문구                                                     | 진짜. AI 전용 timeout(90초+)은 아직                          |
-| 인증      | `src/features/auth/` — `GET /auth/me`, `POST /auth/login`(아이디·비밀번호), 로그아웃                                        | **실제 백엔드 API** (BE PR #20)                              |
-| 케이스    | `src/features/cases/` — 목록(상태·내 담당 필터·페이지 URL), 상세, 배정·에스컬레이션·종료, 메모 저장(충돌 시 입력 보존·비교) | 실제 `/api/v1/cases` (BE SCRUM-106). 메모만 BE 준비 중 — MSW |
-| STR       | `src/features/str/pages/StrPage.jsx`                                                                                        | 경로와 안내 화면만                                           |
-| 시연      | `/demo/*` — `src/mocks/dashboard/`, 각 기능의 `Demo*Page.jsx`                                                               | 개발 전용, 합성 데이터                                       |
-| 연동 확인 | `/dev/connection` — `src/features/connection/` (health · api-docs · me · 로그인 · 로그아웃)                                 | 개발 전용, 실제 백엔드 또는 MSW                              |
-| 목업      | `src/mocks/handlers.js`·`cases.js`(MSW)                                                                                     | 인증·케이스 모두 백엔드와 같은 모양                          |
-| 테스트    | `src/test/` — 사용자 흐름 25개 (인증·캐시 정리·목록·상세·메모 충돌·CSRF·시연)                                               | Vitest + Testing Library + MSW                               |
-| 배포      | `vercel.json`(SPA rewrite)                                                                                                  | Vercel 연결·보호 규칙은 아직                                 |
+| 묶음      | 파일                                                                                                                                             | 상태                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| 앱 뼈대   | `src/app/` — 라우터, `QueryClient`(401·계정 전환 시 업무 캐시 제거), `AppLayout`                                                                 | 진짜                                                                        |
+| 공통 API  | `src/shared/api/apiClient.js` — axios, 쿠키·CSRF, 에러 코드 → 안내 문구                                                                          | 진짜. AI 전용 timeout(90초+)은 아직                                         |
+| 인증      | `src/features/auth/` — `GET /auth/me`, `POST /auth/login`(아이디·비밀번호), 로그아웃                                                             | **실제 백엔드 API** (BE PR #20)                                             |
+| 케이스    | `src/features/cases/` — 목록(상태·내 담당 필터·페이지 URL), 상세, 배정·에스컬레이션·종료(초안 있는 종료 포함), 메모 저장(충돌 시 입력 보존·비교) | 실제 `/api/v1/cases` (BE SCRUM-106). 메모·초안 있는 종료만 BE 준비 중 — MSW |
+| STR       | `src/features/str/pages/StrPage.jsx`                                                                                                             | 경로와 안내 화면만                                                          |
+| 시연      | `/demo/*` — `src/mocks/dashboard/`, 각 기능의 `Demo*Page.jsx`                                                                                    | 개발 전용, 합성 데이터                                                      |
+| 연동 확인 | `/dev/connection` — `src/features/connection/` (health · api-docs · me · 로그인 · 로그아웃)                                                      | 개발 전용, 실제 백엔드 또는 MSW                                             |
+| 목업      | `src/mocks/handlers.js`·`cases.js`(MSW)                                                                                                          | 인증·케이스 모두 백엔드와 같은 모양                                         |
+| 테스트    | `src/test/` — 사용자 흐름 25개 (인증·캐시 정리·목록·상세·메모 충돌·CSRF·시연)                                                                    | Vitest + Testing Library + MSW                                              |
+| 배포      | `vercel.json`(SPA rewrite)                                                                                                                       | Vercel 연결·보호 규칙은 아직                                                |
 
 ### 목업인 범위
 

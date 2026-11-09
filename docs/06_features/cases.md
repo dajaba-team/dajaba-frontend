@@ -1,9 +1,9 @@
 # cases — 케이스 목록·상세·조사
 
-> v0.1 · 2026-10-31 · 초안(팀 확인 중) · 정리 지윤
+> v0.2 · 2026-11-08 · 초안(팀 확인 중) · 정리 지윤 · 11/8 초안 있는 종료(SCRUM-112)
 
 - 프론트 폴더: `src/features/cases/` · 백엔드 짝: `cases` (BE `06_features/cases.md`, CASES 명세 v0.5 〔초안〕)
-- 지금: 목록·상세·배정·에스컬레이션·종료(초안 없음)가 실제 `/api/v1/cases`(BE `CaseController`, SCRUM-106)에 붙어 있어요(SCRUM-103). 메모(05)는 계약대로 만들었지만 **백엔드 API가 아직 없어** MSW만 답해요. 초안 있는 종료는 SCRUM-112, 거래·요약은 아직.
+- 지금: 목록·상세·배정·에스컬레이션·종료(초안 없음)가 실제 `/api/v1/cases`(BE `CaseController`, SCRUM-106)에 붙어 있어요(SCRUM-103). 메모(05)와 초안 있는 종료(A6)는 계약대로 만들었지만 **백엔드 API가 아직 없어** MSW만 답해요(SCRUM-112). 거래·요약은 아직.
 
 ## 1. 화면
 
@@ -31,6 +31,7 @@
 | `APPROVED` · `CLOSED`         | 이력만                                           | 이력만      | 이력만   | 이력만      |
 
 - 종료·에스컬레이션은 **사유 입력 + 확인 단계**. 성공 응답 뒤에 상태·이력을 바꿔요. 요청 중엔 같은 버튼 막기.
+- [종료]는 버튼 하나 — `CLOSE`면 `close`, `CLOSE_WITH_DRAFT`면 `close-with-draft`. 초안 있는 종료 확인창엔 "초안이 대체됨으로 바뀐다", `NOT_REPORTABLE` 반려 건엔 "반려 코드는 이력에 있고 종료 사유는 세 값 중에서"를 같이 보여 줘요 [BE cases.md 11/3 #39 리뷰 1번].
 - 〔확인 필요: 메모·요약을 편집할 수 있는 상태 범위 — REVIEWING만인지 ESCALATED·DRAFTED까지인지 (BE cases 확인 필요)〕
 
 ## 3. API 〔초안 — CASES 명세 v0.5, BE `06_features/cases.md`〕
@@ -51,7 +52,7 @@
 | 12·13 | `POST …/refresh-summary`, `GET …/summary`                   | AI 요약                                                  | 없음                                                                       |
 | 15    | `GET /cases/{case_no}/note-histories`                       | 메모 이력                                                | 없음                                                                       |
 
-초안 있는 종료 `POST /cases/{case_no}/close-with-draft`는 str 컨트롤러예요(→ `str.md`). 모든 변경 요청에 `version`.
+초안 있는 종료 `POST /cases/{case_no}/close-with-draft` `{close_reason, comment, version}`는 str 컨트롤러예요(→ `str.md`). 프론트는 `casesApi.closeWithDraft`(MSW만 — BE 아직 없음). 모든 변경 요청에 `version`.
 
 Query key 〔제안〕: `["cases", filters]`, `["case", caseNo]`, `["case", caseNo, "transactions", scope, page, size]`, `["case", caseNo, "summary"]`, `["case", caseNo, "histories"]`.
 
