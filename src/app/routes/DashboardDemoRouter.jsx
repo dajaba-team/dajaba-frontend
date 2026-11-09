@@ -13,13 +13,13 @@ import Approvals from "../../features/approvals/pages/DemoApprovalsPage"
 import Evaluation from "../../features/evaluation/pages/DemoEvaluationPage"
 import Audit from "../../features/audit/pages/DemoAuditPage"
 
-function RoleBoundary({ role: requiredRole }) {
+function RoleBoundary({ roles }) {
 	const { role } = useDashboardDemo()
-	if (role !== requiredRole)
+	if (!roles.includes(role))
 		return (
 			<section className="page">
 				<h1>접근 권한이 없습니다.</h1>
-				<p>이 시연 메뉴는 {requiredRole} 역할에서 사용할 수 있습니다.</p>
+				<p>이 시연 메뉴는 {roles.join("·")} 역할에서 사용할 수 있습니다.</p>
 				<Link to="/demo/overview">업무 개요로 이동</Link>
 			</section>
 		)
@@ -48,7 +48,7 @@ export default function DashboardDemoRouter() {
 				<Route element={<DashboardDemoLayout />}>
 					<Route index element={<Navigate to="/demo/overview" replace />} />
 					<Route path="overview" element={<Overview />} />
-					<Route element={<RoleBoundary role="ADMIN" />}>
+					<Route element={<RoleBoundary roles={["ADMIN"]} />}>
 						<Route path="admin/batches" element={<Batches />} />
 						<Route path="admin/alerts" element={<Alerts />} />
 						<Route path="admin/rules" element={<Rules />} />
@@ -59,7 +59,7 @@ export default function DashboardDemoRouter() {
 						<Route path="str" element={<StrEditor />} />
 					</Route>
 					<Route path="str" element={<CurrentStrRedirect />} />
-					<Route element={<RoleBoundary role="APPROVER" />}>
+					<Route element={<RoleBoundary roles={["ADMIN", "APPROVER"]} />}>
 						<Route path="approvals" element={<Approvals />} />
 					</Route>
 					<Route path="evaluation" element={<Evaluation />} />
