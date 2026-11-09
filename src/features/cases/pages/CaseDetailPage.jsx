@@ -17,13 +17,17 @@ import {
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
 // 경보·최근 점수는 서버 alert·latest_score(SCRUM-152). 근거 거래·AI 요약은 아직 null이라 칸이 채워지면 붙여요.
 
-// 케이스 score(생성 때 스냅샷)가 오면 그 값, 없으면 경보의 최근 점수. 모델 점수라 범죄 확률이 아니에요.
+// 맨 위 score·scoreBand는 계약서 Q2 MVP대로 latest_score와 같은 값이에요(#78 리뷰). 혹시 비면 latest_score로.
+// 모델 점수라 범죄 확률이 아니에요. 등급은 서버 값(HIGH·MEDIUM·LOW) 그대로 — 정책이 없으면 등급 없이 점수만.
 function scoreText(detail) {
-	if (detail.score != null) return `${detail.score} · 범죄 확률 아님`
 	const latest = detail.latestScore
+	const score = detail.score ?? latest?.score ?? null
+	if (score != null) {
+		const band = detail.scoreBand ?? latest?.scoreBand ?? null
+		const text = [score, band && `등급 ${band}`, "범죄 확률 아님"].filter(Boolean).join(" · ")
+		return latest?.modelVersion ? `${text} (모델 ${latest.modelVersion})` : text
+	}
 	if (!latest) return "산출 정보 없음"
-	if (latest.scoreStatus === "SCORED" && latest.score != null)
-		return `${latest.score} · 범죄 확률 아님 (모델 ${latest.modelVersion ?? "-"})`
 	const label = labelOf(SCORE_STATUS_LABELS, latest.scoreStatus)
 	return latest.failureCode ? `${label} (${latest.failureCode})` : label
 }

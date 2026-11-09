@@ -26,6 +26,7 @@ const alertOf = (index) => ({
 const scored = (score) => ({
 	score_status: "SCORED",
 	score,
+	score_band: "HIGH", // 예시 정책 경계 0.9 이상
 	failure_code: null,
 	model_version: "xgb-2022.11",
 	feature_version: "f1",
@@ -35,6 +36,7 @@ const scored = (score) => ({
 const PENDING_SCORE = {
 	score_status: "PENDING",
 	score: null,
+	score_band: null,
 	failure_code: null,
 	model_version: null,
 	feature_version: null,
@@ -174,8 +176,13 @@ export function listResponse(items, url) {
 }
 
 export function detailResponse(viewer, item) {
+	// 맨 위 score·score_band·policy_version은 계약서 Q2 MVP대로 latest_score와 같은 값 (BE GetCaseDetail)
+	const latest = item.latest_score ?? null
 	return {
 		...summaryOf(item),
+		score: latest?.score ?? null,
+		score_band: latest?.score_band ?? null,
+		policy_version: latest?.score_band ? "mock-policy" : null,
 		updated_at: item.updated_at,
 		alert: item.alert ?? null,
 		customer: null,

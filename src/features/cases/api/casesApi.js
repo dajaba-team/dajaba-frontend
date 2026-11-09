@@ -52,6 +52,7 @@ const toLatestScore = (data) =>
 		? {
 				scoreStatus: data.score_status,
 				score: data.score ?? null,
+				scoreBand: data.score_band ?? null,
 				failureCode: data.failure_code ?? null,
 				modelVersion: data.model_version ?? null,
 				featureVersion: data.feature_version ?? null,
