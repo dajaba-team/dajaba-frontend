@@ -210,7 +210,8 @@ export class DashboardDemoApi {
 			case_no: item.case_no,
 			status: "ACTIVE",
 			version: 0,
-			revision_no: null,
+			// 1번 = AI 원문, 사람이 처음 고친 본이 2번(IF-VRF-02, BE PR #14)
+			revision_no: 1,
 			generated_model: "str-narrative-1.6",
 			generated_at: now(),
 			facts: {
@@ -308,7 +309,7 @@ export class DashboardDemoApi {
 			currentSection.text = text
 		})
 		draft.version += 1
-		draft.revision_no = (draft.revision_no ?? 0) + 1
+		draft.revision_no += 1
 		if (draft.latest_verification) draft.latest_verification.is_current = false
 		this.db.revisions.unshift({
 			revision_no: draft.revision_no,
@@ -320,7 +321,7 @@ export class DashboardDemoApi {
 		})
 		this.history(
 			"STR",
-			`STR 본문 수정 #${draft.revision_no}`,
+			`STR 본문 수정 · 수정본 ${draft.revision_no}번`,
 			Object.keys(changed).join(", "),
 			"inv01",
 		)
