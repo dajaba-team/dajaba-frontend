@@ -6,10 +6,10 @@ import { apiClient, getErrorCode } from "../shared/api/apiClient"
 
 const DRAFT_NO = "DRF-000123"
 const users = {
-	inv01: { id: "1", login_id: "inv01", display_name: "예시 inv01", role: "INVESTIGATOR" },
-	inv02: { id: "2", login_id: "inv02", display_name: "예시 inv02", role: "INVESTIGATOR" },
-	apr01: { id: "3", login_id: "apr01", display_name: "예시 apr01", role: "APPROVER" },
-	admin: { id: "4", login_id: "admin", display_name: "예시 admin", role: "ADMIN" },
+	inv01: { id: 1, login_id: "inv01", display_name: "예시 inv01", role: "INVESTIGATOR" },
+	inv02: { id: 2, login_id: "inv02", display_name: "예시 inv02", role: "INVESTIGATOR" },
+	apr01: { id: 3, login_id: "apr01", display_name: "예시 apr01", role: "APPROVER" },
+	admin: { id: 4, login_id: "admin", display_name: "예시 admin", role: "ADMIN" },
 }
 // 시드 본문(명세 예시)의 문장 조각. 제한 응답 어디에도 나오면 안 돼요.
 const BODY_SNIPPET = "타행 두 계좌로 빠져나감"

@@ -10,8 +10,8 @@ import { MOCK_PASSWORD, resetCases } from "../mocks/handlers"
 import { server } from "../mocks/server"
 
 const USERS = {
-	inv01: { id: "1", login_id: "inv01", display_name: "예시 inv01", role: "INVESTIGATOR" },
-	admin: { id: "4", login_id: "admin", display_name: "예시 admin", role: "ADMIN" },
+	inv01: { id: 1, login_id: "inv01", display_name: "예시 inv01", role: "INVESTIGATOR" },
+	admin: { id: 4, login_id: "admin", display_name: "예시 admin", role: "ADMIN" },
 }
 
 function renderApp(path = "/cases", authenticated = true, who = "inv01") {
@@ -73,6 +73,27 @@ async function login(user, loginId, password = MOCK_PASSWORD) {
 }
 
 describe("인증 통신", () => {
+	it("현재 사용자 확인이 401이 아닌 오류면 안내와 다시 확인 버튼을 보여 준다", async () => {
+		resetCases(null)
+		server.use(
+			http.get(
+				"*/api/v1/auth/me",
+				() =>
+					HttpResponse.json(
+						{ error: { code: "INTERNAL_ERROR", message: "서버 오류", details: {} } },
+						{ status: 500 },
+					),
+				{ once: true },
+			),
+		)
+		const user = renderApp("/cases", false)
+		expect(await screen.findByRole("alert")).toBeInTheDocument()
+		expect(screen.getByText("로그인 상태를 확인하지 못했습니다.")).toBeInTheDocument()
+		expect(screen.queryByLabelText("아이디")).not.toBeInTheDocument()
+		await user.click(screen.getByRole("button", { name: "다시 확인" }))
+		expect(await screen.findByLabelText("아이디")).toBeInTheDocument()
+		expect(screen.queryByRole("button", { name: "다시 확인" })).not.toBeInTheDocument()
+	})
 	it("아이디·비밀번호를 JSON으로 보내 로그인하고 현재 사용자를 다시 조회한다", async () => {
 		let body
 		server.events.on("request:start", async ({ request }) => {

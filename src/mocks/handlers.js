@@ -9,10 +9,11 @@ let currentUser = null
 export const MOCK_PASSWORD = "mock-password"
 const MOCK_USERS = Object.fromEntries(
 	[
-		["1", "inv01", "INVESTIGATOR"],
-		["2", "inv02", "INVESTIGATOR"],
-		["3", "apr01", "APPROVER"],
-		["4", "admin", "ADMIN"],
+		// id는 백엔드처럼 숫자(Long)예요(SCRUM-173).
+		[1, "inv01", "INVESTIGATOR"],
+		[2, "inv02", "INVESTIGATOR"],
+		[3, "apr01", "APPROVER"],
+		[4, "admin", "ADMIN"],
 	].map(([id, loginId, role]) => [
 		loginId,
 		{ id, login_id: loginId, display_name: `예시 ${loginId}`, role },
