@@ -10,6 +10,12 @@
 	border: var(--border-width) solid var(--color-border);
 	border-radius: var(--radius-control);
 }
+.auth-error {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
 .auth-panel form {
 	display: flex;
 	align-items: center;
@@ -121,4 +127,93 @@
 .login-form [role="alert"],
 .login-form small {
 	flex-basis: 100%;
+}
+
+/* SCRUM-159 ② 공통 틀 — 안내 띠·알림·작업 바·확인창 */
+.guide-bar {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-3) var(--space-4);
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: 6px;
+	margin-block-end: var(--space-4);
+}
+.guide-bar-text {
+	flex: 1;
+}
+.guide-bar-full {
+	flex-shrink: 0;
+}
+.guide-flow section + section {
+	margin-block-start: var(--space-3);
+}
+.guide-flow h3 {
+	margin-block-end: var(--space-1);
+}
+.guide-flow .small {
+	color: var(--color-text-muted);
+	font-size: 0.9em;
+}
+
+.toast-area {
+	position: fixed;
+	inset-block-end: var(--space-4);
+	inset-inline-end: var(--space-4);
+	z-index: 10;
+	pointer-events: none;
+}
+.toast {
+	padding: var(--space-3) var(--space-4);
+	border-radius: 6px;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	box-shadow: 0 6px 16px rgba(32, 48, 68, 0.12);
+	pointer-events: auto;
+}
+.toast.is-error {
+	border-color: #c0392b;
+	color: #8a2a1e;
+	background: #fdeded;
+}
+
+.action-bar {
+	position: sticky;
+	inset-block-end: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	padding: var(--space-3) var(--space-4);
+	background: var(--color-surface);
+	border-top: 1px solid var(--color-border);
+	margin-block-start: var(--space-6);
+}
+.action-bar-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+	align-items: center;
+}
+.action-bar-primary {
+	display: flex;
+	gap: var(--space-2);
+}
+.action-bar-secondaries {
+	display: flex;
+	gap: var(--space-2);
+	margin-inline-start: auto;
+}
+.action-bar-reason {
+	margin: 0;
+	color: var(--color-text-muted);
+	font-size: 0.9em;
+}
+
+.confirm-dialog-body {
+	margin-block-end: var(--space-2);
+}
+.confirm-dialog-error {
+	margin-block-start: var(--space-2);
+	color: #8a2a1e;
 }

@@ -1,6 +1,8 @@
 import { apiClient } from "../../../shared/api/apiClient"
 
 // 연동 확인 전용 호출입니다. 업무 화면과 달리 응답을 정규화하지 않고 상태 코드·시간·원본을 그대로 돌려줍니다.
+// 실패해도 axios error 객체는 돌려주지 않아요 — error.config.data에 로그인 본문(비밀번호)이 남아요(SCRUM-173).
+// 원인을 알 수 있게 오류 이름·코드만 남깁니다.
 async function probe(request) {
 	const started = performance.now()
 	try {
@@ -12,7 +14,7 @@ async function probe(request) {
 			status: error.response?.status ?? null,
 			ms: elapsed(started),
 			data: error.response?.data ?? null,
-			error,
+			failure: { name: error.name ?? null, code: error.code ?? null },
 		}
 	}
 }

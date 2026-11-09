@@ -9,10 +9,11 @@ let currentUser = null
 export const MOCK_PASSWORD = "mock-password"
 const MOCK_USERS = Object.fromEntries(
 	[
-		["1", "inv01", "INVESTIGATOR"],
-		["2", "inv02", "INVESTIGATOR"],
-		["3", "apr01", "APPROVER"],
-		["4", "admin", "ADMIN"],
+		// id는 백엔드처럼 숫자(Long)예요(SCRUM-173).
+		[1, "inv01", "INVESTIGATOR"],
+		[2, "inv02", "INVESTIGATOR"],
+		[3, "apr01", "APPROVER"],
+		[4, "admin", "ADMIN"],
 	].map(([id, loginId, role]) => [
 		loginId,
 		{ id, login_id: loginId, display_name: `예시 ${loginId}`, role },
@@ -87,7 +88,7 @@ export const handlers = [
 			},
 		}),
 	),
-	// 케이스 — 계약서 C1·C2·A1·A3·A4·A5 (실제 백엔드 CaseController와 같은 경로, 메모 A3만 백엔드 준비 중)
+	// 케이스 — 계약서 C1·C2·A1·A3·A4·A5·A6 (실제 백엔드 CaseController와 같은 경로, 메모 A3·초안 있는 종료 A6은 백엔드 준비 중)
 	http.get(`${base}/api/v1/cases`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
 		return HttpResponse.json(listResponse(cases, new URL(request.url)))
@@ -112,6 +113,7 @@ export const handlers = [
 		["post", "assign"],
 		["post", "escalate"],
 		["post", "close"],
+		["post", "close-with-draft"],
 		["put", "notes"],
 	].map(([method, command]) =>
 		http[method](`${base}/api/v1/cases/:caseNo/${command}`, async ({ params, request }) => {
@@ -119,6 +121,13 @@ export const handlers = [
 			const item = cases.find((entry) => entry.case_no === params.caseNo)
 			const body = await request.json().catch(() => null)
 			const result = applyCommand(currentUser, item, command, body, MOCK_USERS)
+			// 초안 있는 종료는 같은 트랜잭션에서 초안을 SUPERSEDED로 바꿔요(BE CloseRequiresStrException 주석).
+			if (result.item && command === "close-with-draft") {
+				const draft = drafts.find(
+					(entry) => entry.draft_no === result.item.current_draft_no,
+				)
+				if (draft) Object.assign(draft, { status: "SUPERSEDED", case_status: "CLOSED" })
+			}
 			return result.item
 				? HttpResponse.json(changeResponse(result.item))
 				: HttpResponse.json(result.body, { status: result.status })

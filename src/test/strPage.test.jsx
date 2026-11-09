@@ -8,8 +8,8 @@ import { resetCases } from "../mocks/handlers"
 import { sectionTitle } from "../shared/str/sectionTitles"
 
 const users = {
-	inv01: { id: "1", login_id: "inv01", display_name: "예시 inv01", role: "INVESTIGATOR" },
-	admin: { id: "4", login_id: "admin", display_name: "예시 admin", role: "ADMIN" },
+	inv01: { id: 1, login_id: "inv01", display_name: "예시 inv01", role: "INVESTIGATOR" },
+	admin: { id: 4, login_id: "admin", display_name: "예시 admin", role: "ADMIN" },
 }
 
 function renderStr(caseId, who = "inv01") {

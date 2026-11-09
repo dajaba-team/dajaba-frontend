@@ -9,6 +9,7 @@ import { statusKo } from "../../../shared/demo/labels.js"
 import Badge from "../../../shared/ui/dashboard/Badge.jsx"
 import Icon from "../../../shared/ui/dashboard/Icon.jsx"
 import { narrativeItems, sectionTitle } from "../../../shared/str/sectionTitles.js"
+import { AI_ORIGINAL_REVISION_NO, revisionLabel } from "../../../shared/str/revisionLabel.js"
 import Button from "../../../shared/ui/dashboard/Button.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
 import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
@@ -80,7 +81,7 @@ function StrEditor({ draft, isCurrent }) {
 			<PageHeading
 				eyebrow={`${item.case_no} · ${draft.draft_id}`}
 				title="STR 보고서 편집"
-				description={`케이스 ${statusKo[item.status]} · 초안 ${draft.status} · draft v${draft.version} · revision ${draft.revision_no ?? "AI 원문"}`}
+				description={`케이스 ${statusKo[item.status]} · 초안 ${draft.status} · draft v${draft.version} · ${revisionLabel(draft.revision_no)}`}
 				action={
 					<div className="heading-actions">
 						<Badge tone={draft.status === "LOCKED" ? "green" : "purple"}>
@@ -223,7 +224,7 @@ function StrEditor({ draft, isCurrent }) {
 								<span>verification_id</span>
 								<code>{verification.verification_id}</code>
 								<span>revision_no</span>
-								<code>{verification.revision_no ?? "AI 원문"}</code>
+								<code>{revisionLabel(verification.revision_no)}</code>
 								<span>verifier</span>
 								<code>{verification.verifier_version}</code>
 								<span>produced_at</span>
@@ -277,13 +278,13 @@ function StrEditor({ draft, isCurrent }) {
 						{historyOpen && (
 							<div className="revision-list">
 								<div>
-									<strong>AI 원문</strong>
-									<small>revision_no=null · 본문 없음이 아님</small>
+									<strong>{revisionLabel(AI_ORIGINAL_REVISION_NO)}</strong>
+									<small>AI가 생성한 첫 본문 · 처음 고친 본이 2번</small>
 								</div>
 								{db.revisions.map((revision) => (
 									<details key={revision.revision_no}>
 										<summary>
-											수정 #{revision.revision_no} ·{" "}
+											{revisionLabel(revision.revision_no)} ·{" "}
 											{revision.changed_sections.join(", ")}
 										</summary>
 										{revision.changed_sections.map((section) => (

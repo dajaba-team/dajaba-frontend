@@ -1,7 +1,8 @@
 import { apiClient } from "../../../shared/api/apiClient"
 
-// 케이스 API — 프론트 API 계약서 v0.2 C1·C2·A1·A3·A4·A5, CASES 명세 API-01·02·03·05·06·07.
-// 백엔드 CaseController(SCRUM-106)와 같은 경로·모양이에요. 메모(A3 PUT …/notes)만 백엔드가 아직 없어 MSW가 답해요.
+// 케이스 API — 프론트 API 계약서 v0.2 C1·C2·A1·A3·A4·A5·A6, CASES 명세 API-01·02·03·05·06·07.
+// 백엔드 CaseController(SCRUM-106)와 같은 경로·모양이에요. 메모(A3 PUT …/notes)와 초안 있는 종료(A6, str 컨트롤러)는
+// 백엔드가 아직 없어 MSW가 답해요.
 // 서버는 snake_case, 화면은 camelCase — 변환은 여기서 한 번만 해요.
 const casePath = (caseNo) => `/api/v1/cases/${encodeURIComponent(caseNo)}`
 
@@ -83,11 +84,22 @@ export const casesApi = {
 		),
 	escalate: async ({ caseNo, version, comment }) =>
 		toChange((await apiClient.post(`${casePath(caseNo)}/escalate`, { comment, version })).data),
-	/** 초안 없는 종료(A5). 초안 있는 종료(A6 close-with-draft)는 SCRUM-112. */
+	/** 초안 없는 종료(A5). 초안이 있으면 서버가 409 CLOSE_REQUIRES_STR. */
 	close: async ({ caseNo, version, closeReason, comment }) =>
 		toChange(
 			(
 				await apiClient.post(`${casePath(caseNo)}/close`, {
+					close_reason: closeReason,
+					comment,
+					version,
+				})
+			).data,
+		),
+	/** 초안 있는 종료(A6) — 본문은 close와 같고, 서버가 초안을 SUPERSEDED로 바꿔요. */
+	closeWithDraft: async ({ caseNo, version, closeReason, comment }) =>
+		toChange(
+			(
+				await apiClient.post(`${casePath(caseNo)}/close-with-draft`, {
 					close_reason: closeReason,
 					comment,
 					version,

@@ -7,7 +7,8 @@ import { getErrorMessage } from "../../../shared/api/apiClient"
 const COMMENT_MAX = 2000
 
 // 버튼은 서버가 준 availableActions만 보고 켜요. 누르면 서버가 다시 검사해요(계약서 §4).
-// 이 화면이 다루는 것: ASSIGN·ESCALATE·CLOSE. CLOSE_WITH_DRAFT(초안 있는 종료)는 SCRUM-112.
+// 이 화면이 다루는 것: ASSIGN·ESCALATE·CLOSE·CLOSE_WITH_DRAFT. 종료는 버튼 하나 — 초안이 있으면 서버가
+// CLOSE 대신 CLOSE_WITH_DRAFT를 줘요(SCRUM-112).
 export default function CaseActions({ detail }) {
 	const session = useSession()
 	const [open, setOpen] = useState(null)
@@ -32,18 +33,24 @@ export default function CaseActions({ detail }) {
 						에스컬레이션
 					</button>
 				)}
-				{has("CLOSE") && (
-					<button type="button" onClick={() => setOpen("close")} disabled={!!shown}>
+				{(has("CLOSE") || has("CLOSE_WITH_DRAFT")) && (
+					<button
+						type="button"
+						onClick={() => setOpen(has("CLOSE") ? "close" : "close_with_draft")}
+						disabled={!!shown}
+					>
 						종료
 					</button>
 				)}
 			</div>
-			{has("CLOSE_WITH_DRAFT") && (
-				<p className="case-action-note">초안이 있는 케이스의 종료는 준비 중이에요.</p>
-			)}
 			{shown === "assign" && <AssignForm detail={detail} onDone={() => setOpen(null)} />}
 			{shown === "escalate" && <EscalateForm detail={detail} onDone={() => setOpen(null)} />}
-			{shown === "close" && <CloseForm detail={detail} onDone={() => setOpen(null)} />}
+			{shown === "close" && (
+				<CloseForm detail={detail} name="close" onDone={() => setOpen(null)} />
+			)}
+			{shown === "close_with_draft" && (
+				<CloseForm detail={detail} name="closeWithDraft" onDone={() => setOpen(null)} />
+			)}
 		</section>
 	)
 }
@@ -149,8 +156,9 @@ function EscalateForm({ detail, onDone }) {
 	)
 }
 
-function CloseForm({ detail, onDone }) {
-	const command = useCaseCommand(detail.caseNo, "close")
+// name: "close"(초안 없음, A5) 또는 "closeWithDraft"(초안 있음, A6). 요청 본문은 같아요.
+function CloseForm({ detail, name, onDone }) {
+	const command = useCaseCommand(detail.caseNo, name)
 	const [closeReason, setCloseReason] = useState("")
 	const [comment, setComment] = useState("")
 	return (
@@ -163,6 +171,18 @@ function CloseForm({ detail, onDone }) {
 			onDone={onDone}
 		>
 			<p>종료한 케이스는 다시 열 수 없어요. 종료는 범죄가 없다는 확정이 아니에요.</p>
+			{name === "closeWithDraft" && (
+				<p className="case-action-note">
+					작성한 STR 초안({detail.currentDraftNo})은 대체됨으로 바뀌어 더는 고치거나 승인
+					요청할 수 없어요. 초안 내용은 이력으로 남아요.
+				</p>
+			)}
+			{detail.rejectionReasonCode === "NOT_REPORTABLE" && (
+				<p className="case-action-note">
+					승인자가 &lsquo;보고 안 함&rsquo;으로 반려한 케이스예요. 반려 코드는 이력에 남아
+					있으니 종료 사유는 아래에서 골라요(보통 &lsquo;추가 조치 불필요&rsquo;).
+				</p>
+			)}
 			<fieldset className="case-field">
 				<legend>종료 사유</legend>
 				{Object.entries(CLOSE_REASON_LABELS).map(([value, label]) => (

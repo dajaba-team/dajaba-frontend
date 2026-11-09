@@ -131,6 +131,8 @@ describe("이관한 업무 시연", () => {
 			within(await screen.findByRole("dialog")).getByRole("button", { name: "생성 시작" }),
 		)
 		await screen.findByRole("heading", { name: "STR 보고서 편집" })
+		// 수정본 번호: 1번 = AI 원문, 처음 고친 본 = 2번 (SCRUM-119, IF-VRF-02)
+		expect(screen.getByText(/draft v0 · 수정본 1번 \(AI 원문\)$/)).toBeInTheDocument()
 		expect(screen.getByText("검증 결과 없음")).toBeInTheDocument()
 		expect(screen.getByRole("button", { name: "책임자 승인 요청" })).toBeDisabled()
 		await user.click(screen.getByRole("button", { name: "저장된 본문 검증" }))
@@ -141,6 +143,7 @@ describe("이관한 업무 시연", () => {
 		expect(screen.getByRole("button", { name: "저장된 본문 검증" })).toBeDisabled()
 		await user.click(screen.getByRole("button", { name: "변경 단락 저장" }))
 		await screen.findByText("과거 수정본")
+		expect(screen.getByText(/draft v1 · 수정본 2번$/)).toBeInTheDocument()
 		await user.click(screen.getByRole("button", { name: "저장된 본문 검증" }))
 		await waitFor(() =>
 			expect(screen.getByRole("button", { name: "책임자 승인 요청" })).toBeEnabled(),
@@ -157,6 +160,7 @@ describe("이관한 업무 시연", () => {
 		expect(screen.queryByRole("button", { name: "보완 요청으로 반려" })).not.toBeInTheDocument()
 		await role(user, "APPROVER")
 		expect(await screen.findByRole("heading", { name: "제출 STR 본문" })).toBeInTheDocument()
+		expect(await screen.findByText("수정본 2번")).toBeInTheDocument()
 		await user.click(await screen.findByRole("button", { name: "승인 확인" }))
 		await user.click(
 			within(await screen.findByRole("dialog")).getByRole("button", { name: "승인 및 잠금" }),

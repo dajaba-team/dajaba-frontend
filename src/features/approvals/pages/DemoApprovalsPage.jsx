@@ -5,6 +5,7 @@ import Empty from "../../../shared/ui/dashboard/Empty.jsx"
 import { statusKo } from "../../../shared/demo/labels.js"
 import Badge from "../../../shared/ui/dashboard/Badge.jsx"
 import { sectionTitle } from "../../../shared/str/sectionTitles.js"
+import { revisionLabel } from "../../../shared/str/revisionLabel.js"
 import Button from "../../../shared/ui/dashboard/Button.jsx"
 import Modal from "../../../shared/ui/dashboard/Modal.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
@@ -48,7 +49,7 @@ export default function Approvals() {
 						</div>
 						<div>
 							<span>수정본</span>
-							<strong>#{item.submitted_revision_no ?? "AI 원문"}</strong>
+							<strong>{revisionLabel(item.submitted_revision_no)}</strong>
 						</div>
 						<div>
 							<span>검증</span>
