@@ -24,7 +24,7 @@ const alertOf = (index) => ({
 	transaction_count: 12 + index,
 })
 const scored = (score) => ({
-	status: "SCORED",
+	score_status: "SCORED",
 	score,
 	failure_code: null,
 	model_version: "xgb-2022.11",
@@ -33,7 +33,7 @@ const scored = (score) => ({
 	reasons: [],
 })
 const PENDING_SCORE = {
-	status: "PENDING",
+	score_status: "PENDING",
 	score: null,
 	failure_code: null,
 	model_version: null,

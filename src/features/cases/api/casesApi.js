@@ -46,11 +46,11 @@ const toAlert = (data) =>
 			}
 		: null
 
-// 경보의 최근 점수 (C2 latest_score). status는 PENDING·SCORED·FAILED, 점수 전·실패면 score 칸은 null, reasons는 [].
+// 경보의 최근 점수 (C2 latest_score). score_status는 PENDING·SCORED·FAILED, 점수 전·실패면 score 칸은 null, reasons는 [].
 const toLatestScore = (data) =>
 	data
 		? {
-				status: data.status,
+				scoreStatus: data.score_status,
 				score: data.score ?? null,
 				failureCode: data.failure_code ?? null,
 				modelVersion: data.model_version ?? null,

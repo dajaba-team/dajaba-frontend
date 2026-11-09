@@ -24,9 +24,9 @@ function scoreText(detail) {
 	if (detail.score != null) return `${detail.score} · 범죄 확률 아님`
 	const latest = detail.latestScore
 	if (!latest) return "산출 정보 없음"
-	if (latest.status === "SCORED" && latest.score != null)
+	if (latest.scoreStatus === "SCORED" && latest.score != null)
 		return `${latest.score} · 범죄 확률 아님 (모델 ${latest.modelVersion ?? "-"})`
-	const label = labelOf(SCORE_STATUS_LABELS, latest.status)
+	const label = labelOf(SCORE_STATUS_LABELS, latest.scoreStatus)
 	return latest.failureCode ? `${label} (${latest.failureCode})` : label
 }
 
