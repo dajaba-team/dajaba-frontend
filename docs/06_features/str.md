@@ -3,21 +3,21 @@
 > v0.1 · 2026-10-31 · 초안(팀 확인 중) · 정리 지윤
 
 - 프론트 폴더: `src/features/str/` · 백엔드 짝: `str` (BE `06_features/str.md`, STR 명세 〔초안〕)
-- 지금(11/11): `/cases/:caseNo/str`이 초안 생성·재생성(S1), 조회(S2), 항목 수정·저장(S3), 수정 이력(S4), 동시 수정 비교, 제한 열람·승인 대기·반려·잠금 안내를 그려요 — BE develop에 있는 API만. 저장본 검증(S5), VI부 유형·지점 정도 + 승인 요청(S6), STR 화면의 초안 있는 종료(A6)는 다음 PR(BE 전이라 MSW)로 나눠요. 케이스 상세에도 `GENERATE_DRAFT`면 [STR 초안 생성] 버튼이 생겨요. 섹션은 서버가 준 목록·순서 그대로, 제목은 `label` → `shared/str/sectionTitles.js` → 섹션 이름 순서예요(SCRUM-115).
-- 검증 결과 패널(SCRUM-116, `components/VerificationPanel.jsx`)은 S2 `latest_verification`을 읽기 전용으로 보여 줘요 — 검증 실행 버튼(S5)은 다음 PR.
-- 코드: `api/strApi.js`(변환·요청) · `model/strRules.js`(버튼·입력 검사·상태 안내 — 순수 함수) · `hooks/useStrDraft.js`(`useStrCommand`) · `components/Str*` · `pages/StrPage.jsx`. MSW: `mocks/strCommands.js`.
+- 지금(11/11): `/cases/:caseNo/str`이 화면 설계 STR-01~04를 다 그려요(S1~S4는 #34, 이 PR이 S5·S6·A6) — 초안 생성·재생성(S1), 조회(S2), 항목 수정·저장(S3), 수정 이력(S4), 저장본 검증(S5), VI부 유형·지점 정도 + 승인 요청(S6), 초안 있는 종료(A6), 동시 수정 비교, 제한 열람·승인 대기·반려·잠금 안내. 케이스 상세에도 `GENERATE_DRAFT`면 [STR 초안 생성] 버튼이 생겨요. 섹션은 서버가 준 목록·순서 그대로, 제목은 `label` → `shared/str/sectionTitles.js` → 섹션 이름 순서예요(SCRUM-115).
+- 검증 결과 패널(SCRUM-116, `components/VerificationPanel.jsx`)은 S2 `latest_verification`을 읽기 전용으로 보여 줘요. 검증 실행(S5)은 `StrVerificationPanel`의 [저장본 검증] 버튼이에요.
+- 코드: `api/strApi.js`(변환·요청) · `model/strRules.js`(버튼·검증 상태·승인 요청 막힘 이유 — 순수 함수) · `hooks/useStrDraft.js`(`useStrCommand`) · `components/Str*` · `pages/StrPage.jsx`. MSW: `mocks/strCommands.js`.
 
 ### 백엔드 연결 상태 (단계별)
 
-| 단계 | API                                                    | BE                                                                                                                              | 프론트                                     |
-| ---- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| 1    | S1 `POST /cases/{case_no}/str-drafts` `{case_version}` | develop (SCRUM-183). 요청 이름 `case_version`(#89에서 고침)                                                                     | `strApi.createDraft` (timeout 100초)       |
-| 2    | S2 `GET /str-drafts/{draft_no}`                        | develop (SCRUM-205 #84)                                                                                                         | `strApi.getDraft` — 아래 "S2 차이" 흡수    |
-| 3    | S3 `PUT …/revisions`                                   | develop (SCRUM-184 #91). 고친 단락만, NFC 5,000자. 응답에 저장된 `narrative` 전체·`needs_verification`·`version`·`case_version` | `strApi.saveRevision`                      |
-| 4    | S4 `GET …/revisions`                                   | develop (SCRUM-184 #91). 목록 `{draft_no, current_revision_no, items[{…, ai_original}]}`, `?revision_no=`는 평평한 전·후 본문   | `strApi.getRevisions`·`getRevision`        |
-| 5    | S5 `POST …/verify`                                     | 없음                                                                                                                            | 다음 PR                                    |
-| 6    | S6 `POST …/submit`                                     | 없음                                                                                                                            | 다음 PR                                    |
-| -    | A6 `POST /cases/{case_no}/close-with-draft`            | 없음                                                                                                                            | 다음 PR (케이스 상세의 종료는 지금도 있음) |
+| 단계 | API                                                    | BE                                                                                                                              | 프론트                                             |
+| ---- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| 1    | S1 `POST /cases/{case_no}/str-drafts` `{case_version}` | develop (SCRUM-183). 요청 이름 `case_version`(#89에서 고침)                                                                     | `strApi.createDraft` (timeout 100초)               |
+| 2    | S2 `GET /str-drafts/{draft_no}`                        | develop (SCRUM-205 #84)                                                                                                         | `strApi.getDraft` — 아래 "S2 차이" 흡수            |
+| 3    | S3 `PUT …/revisions`                                   | develop (SCRUM-184 #91). 고친 단락만, NFC 5,000자. 응답에 저장된 `narrative` 전체·`needs_verification`·`version`·`case_version` | `strApi.saveRevision`                              |
+| 4    | S4 `GET …/revisions`                                   | develop (SCRUM-184 #91). 목록 `{draft_no, current_revision_no, items[{…, ai_original}]}`, `?revision_no=`는 평평한 전·후 본문   | `strApi.getRevisions`·`getRevision`                |
+| 5    | S5 `POST …/verify`                                     | 없음                                                                                                                            | `strApi.verify` (timeout 100초)                    |
+| 6    | S6 `POST …/submit`                                     | 없음                                                                                                                            | `strApi.submit`                                    |
+| -    | A6 `POST /cases/{case_no}/close-with-draft`            | 없음                                                                                                                            | `casesApi.closeWithDraft` (STR 화면에서도 같은 폼) |
 
 BE가 한 단계씩 붙으면 프론트 코드는 그대로예요(경로·모양을 계약서대로 미리 맞춰 둠). `VITE_USE_MOCKS=true`면 전부 MSW가 답해요.
 

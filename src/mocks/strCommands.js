@@ -1,5 +1,7 @@
-// STR 변경 API(S1·S3)의 MSW 동작. 백엔드 str 문서(BE docs/06_features/str.md)의 검사 순서를 따라요:
+// STR 변경 API(S1·S3·S5·S6)의 MSW 동작. 백엔드 str 문서(BE docs/06_features/str.md)의 검사 순서를 따라요:
 // 케이스 404 → version 409 CONCURRENT_UPDATE → 담당 403 NOT_ASSIGNEE → 상태 409.
+// 검증(S5)은 AI를 흉내 내요 — 본문에 "9월 3일"이 있으면 날짜 대조 불일치(UI/UX 검토 자료 시나리오: 원본은 9월 2일),
+// "검증불가"가 있으면 VERIFY_UNAVAILABLE. 그 밖은 통과.
 import { availableActions as caseActions } from "./cases"
 
 const fail = (status, code, message, details = {}) => ({
@@ -49,8 +51,12 @@ export function draftActions(viewer, item, draft) {
 	if (!item || item.current_draft_no !== draft.draft_no || draft.status !== "ACTIVE") return []
 	const base = caseActions(viewer, item)
 	const actions = []
-	// 검증·승인 요청·초안 있는 종료(VERIFY·SUBMIT·CLOSE_WITH_DRAFT)는 S5·S6 화면과 같이 붙여요.
-	if (base.includes("GENERATE_DRAFT")) actions.push("REVISE", "REGENERATE")
+	if (base.includes("GENERATE_DRAFT")) {
+		actions.push("REVISE", "VERIFY")
+		if (item.status === "DRAFTED") actions.push("SUBMIT")
+		actions.push("REGENERATE")
+	}
+	if (base.includes("CLOSE_WITH_DRAFT")) actions.push("CLOSE_WITH_DRAFT")
 	return actions
 }
 
@@ -171,4 +177,132 @@ export function saveRevision(viewer, item, draft, body) {
 		case_version: item.version,
 		case_status: item.status,
 	})
+}
+
+const codeCheck = (check, section, draftValue, sourceValue, match, reason = null) => ({
+	check,
+	section,
+	draft_value: draftValue,
+	source_value: sourceValue,
+	match,
+	reason,
+})
+const LLM = [
+	"FIVE_W_ONE_H_COMPLETE",
+	"TYPOLOGY_CONSISTENT",
+	"NO_UNSUPPORTED_CLAIM",
+	"NO_SPECULATION",
+	"NO_INSTRUCTION_TEXT",
+]
+
+/** S5 POST /str-drafts/{draft_no}/verify {} — 지금 저장된 수정본을 검증. 결과를 최신 검증으로 저장. */
+export function verifyDraft(viewer, item, draft) {
+	if (!item) return fail(404, "CASE_NOT_FOUND", "케이스가 없습니다")
+	if (!isAssignee(viewer, item)) return fail(403, "NOT_ASSIGNEE", "담당자만 할 수 있습니다")
+	const error = checkActiveDraft(draft)
+	if (error) return error
+	const all = draft.narrative.map((section) => section.text).join("\n")
+	const base = {
+		verification_id: `VRF-${draft.draft_no.slice(4)}-${draft.current_revision_no}-${Date.now() % 100000}`,
+		draft_no: draft.draft_no,
+		generation_id: draft.generation_id,
+		revision_no: draft.current_revision_no,
+		narrative_sha256: `mock-${draft.draft_no}-${draft.current_revision_no}`,
+		verifier_version: "str-verify-mock",
+		produced_at: now(),
+	}
+	let result
+	if (all.includes("검증불가")) {
+		result = {
+			...base,
+			passed: false,
+			status: "VERIFY_UNAVAILABLE",
+			code_checks: [],
+			llm_checks: null,
+		}
+	} else {
+		const dateWrong = all.includes("9월 3일")
+		const dateSection =
+			draft.narrative.find((s) => s.text.includes("9월 3일"))?.section ??
+			draft.narrative.find((s) => s.section === "DATE")?.section ??
+			draft.narrative[0]?.section
+		const codeChecks = [
+			codeCheck("AMOUNT_MATCH", "INSTRUMENT", null, null, true),
+			dateWrong
+				? codeCheck(
+						"DATE_MATCH",
+						dateSection,
+						"2022-09-03",
+						"2022-09-02",
+						false,
+						"MISMATCH",
+					)
+				: codeCheck("DATE_MATCH", dateSection, "2022-09-02", "2022-09-02", true),
+			codeCheck("COUNT_MATCH", "INSTRUMENT", null, null, true),
+			codeCheck("ACCOUNT_ID_MATCH", "SUBJECT", null, null, true),
+			codeCheck("EVIDENCE_IN_SCOPE", null, null, null, true),
+		]
+		if (draft.narrative.some((s) => s.section === "OPINION"))
+			codeChecks.push(codeCheck("OPINION_PRESENT", "OPINION", null, null, true))
+		result = dateWrong
+			? {
+					...base,
+					passed: false,
+					status: "CODE_FAILED",
+					code_checks: codeChecks,
+					llm_checks: null,
+				}
+			: {
+					...base,
+					passed: true,
+					status: "PASSED",
+					code_checks: codeChecks,
+					llm_checks: LLM.map((check) => ({ check, comment: "예시 코멘트", score: 4 })),
+				}
+	}
+	draft.latest_verification = result
+	return ok({ ...result, is_current: true })
+}
+
+const sameNarrative = (a, b) =>
+	JSON.stringify(a.map(({ section, text }) => [section, text])) ===
+	JSON.stringify(b.map(({ section, text }) => [section, text]))
+
+/** S6 POST /str-drafts/{draft_no}/submit {case_version, verification_id, suspicion_types, suspicion_level_branch} */
+export function submitDraft(viewer, item, draft, body) {
+	const error = checkCase(viewer, item, body?.case_version) ?? checkActiveDraft(draft)
+	if (error) return error
+	if (item.status !== "DRAFTED")
+		return fail(409, "INVALID_CASE_TRANSITION", "초안 작성됨 상태에서만 요청할 수 있습니다", {
+			action: "SUBMIT",
+		})
+	const types = body.suspicion_types
+	const level = body.suspicion_level_branch
+	const fieldErrors = {}
+	if (!Array.isArray(types) || !types.length)
+		fieldErrors.suspicion_types = "1개 이상 선택해 주세요"
+	if (!Number.isInteger(level) || level < 1 || level > 5)
+		fieldErrors.suspicion_level_branch = "1~5 중 선택해 주세요"
+	if (Object.keys(fieldErrors).length)
+		return fail(400, "INVALID_REQUEST", "입력 값을 확인해 주세요", fieldErrors)
+	// ApprovalGate — 최신 검증이 이 수정본·통과·같은 id여야 해요.
+	const latest = draft.latest_verification
+	if (
+		!latest ||
+		latest.revision_no !== draft.current_revision_no ||
+		latest.status !== "PASSED" ||
+		latest.verification_id !== body.verification_id
+	)
+		return fail(409, "DRAFT_NOT_VERIFIED", "지금 본문을 통과한 검증이 없습니다")
+	if (draft.rejected_narrative && sameNarrative(draft.rejected_narrative, draft.narrative))
+		return fail(409, "NARRATIVE_UNCHANGED", "반려 당시와 본문이 같습니다")
+	draft.suspicion_types = [...types]
+	draft.suspicion_level_branch = level
+	Object.assign(item, {
+		status: "PENDING_APPROVAL",
+		version: item.version + 1,
+		updated_at: now(),
+	})
+	pushHistory(item, "SUBMIT_FOR_APPROVAL", "DRAFTED", "PENDING_APPROVAL", viewer.login_id)
+	return ok({ case_no: item.case_no, case_status: item.status, case_version: item.version })
 }

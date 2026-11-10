@@ -1,5 +1,5 @@
 import { canViewStrContent, seedStrDrafts, visibleStrDraft } from "./strDrafts"
-import { createDraft, draftActions, saveRevision } from "./strCommands"
+import { createDraft, draftActions, saveRevision, submitDraft, verifyDraft } from "./strCommands"
 import {
 	applyCommand,
 	changeResponse,
@@ -591,14 +591,23 @@ export const handlers = [
 			? HttpResponse.json(visibleStrDraft(currentUser, draft, caseOf(draft), draftActions))
 			: draftNotFound()
 	}),
-	// S3 — BE develop(SCRUM-184 #91)과 같은 계약으로 MSW가 답해요.
-	http.put(`${base}/api/v1/str-drafts/:draftNo/revisions`, async ({ params, request }) => {
-		if (!currentUser) return unauthenticated()
-		const draft = drafts.find((item) => item.draft_no === params.draftNo)
-		if (!draft) return draftNotFound()
-		const body = await request.json().catch(() => null)
-		return reply(saveRevision(currentUser, caseOf(draft), draft, body))
-	}),
+	// S3는 BE develop(SCRUM-184 #91)과 같은 계약, S5·S6은 BE 아직 없음 — 계약서·BE str.md 모양으로 MSW가 답해요.
+	...[
+		["put", "revisions", saveRevision],
+		["post", "verify", verifyDraft],
+		["post", "submit", submitDraft],
+	].map(([method, command, run]) =>
+		http[method](
+			`${base}/api/v1/str-drafts/:draftNo/${command}`,
+			async ({ params, request }) => {
+				if (!currentUser) return unauthenticated()
+				const draft = drafts.find((item) => item.draft_no === params.draftNo)
+				if (!draft) return draftNotFound()
+				const body = await request.json().catch(() => null)
+				return reply(run(currentUser, caseOf(draft), draft, body))
+			},
+		),
+	),
 	// 목록은 본문 없이, `?revision_no=`면 그 한 행의 전·후 본문(명세 4번).
 	http.get(`${base}/api/v1/str-drafts/:draftNo/revisions`, ({ params, request }) => {
 		if (!currentUser) return unauthenticated()

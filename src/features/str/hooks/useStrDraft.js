@@ -36,13 +36,15 @@ const REFETCH_ON = [
 	"INVALID_CASE_TRANSITION",
 	"NOT_ASSIGNEE",
 	"DRAFT_IN_PROGRESS",
+	"DRAFT_NOT_VERIFIED",
 	"DRAFT_LOCKED",
 	"DRAFT_SUPERSEDED",
 	"DRAFT_REQUEST_CLOSED",
+	"VERIFY_IN_PROGRESS",
 ]
 
 /**
- * STR 변경 작업 — name: createDraft(S1)·saveRevision(S3).
+ * STR 변경 작업 — name: createDraft(S1)·saveRevision(S3)·verify(S5)·submit(S6).
  * 성공하면 케이스·초안을 다시 읽어요(응답이 상세 전체가 아니라서). 낙관적 변경·자동 재시도 없음.
  * 응답이 없으면(timeout·네트워크) 성공했는지 모르니 최신 상태를 먼저 읽어요 — 같은 초안이 두 번 생기지 않게(BE 미결 21).
  */
