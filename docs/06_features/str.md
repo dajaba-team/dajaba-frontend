@@ -4,6 +4,7 @@
 
 - 프론트 폴더: `src/features/str/` · 백엔드 짝: `str` (BE `06_features/str.md`, STR 명세 〔초안〕)
 - 지금: `/cases/:caseId/str`은 케이스의 지금 초안(`current_draft_no` 〔확인 필요 — 케이스 상세 API 필드 이름〕)을 불러와 **서술부를 읽기 전용으로** 그려요. 섹션은 서버가 준 목록·순서 그대로, 제목은 `label` → `shared/str/sectionTitles.js`(7항목 + 옛 6섹션, 시연 화면과 같은 표, label이 빈 값이어도 표로) → 섹션 이름 순서예요(SCRUM-115). 수정·검증·승인 요청은 아직이고, 시연(`/demo/cases/:caseId/str`)에서 합성 데이터로 볼 수 있어요.
+- **남은 STR 화면 이슈(SCRUM-114·116·117·118·121)는 실제 `/cases/:caseNo/str` 화면에 만들어요(11/10).** `DemoStrPage`는 없앨 예정이라 고치지 않아요.
 
 ## 1. 화면 — `/cases/:caseNo/str`
 

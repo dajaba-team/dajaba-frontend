@@ -11,7 +11,7 @@
 | [`approvals.md`](approvals.md) | 승인함 · 승인 · 반려 · 모의 제출                                             | `features/approvals`                | `str` 승인 API (채영)                    | 채영 [11/7]                                                |
 | [`admin.md`](admin.md)         | 데이터·배치 운영 · 경보 점검 · 탐지 룰 · 계정 관리 · 감사 기록               | `features/admin`, `alerts`, `rules` | `source`·`detection`(준혁), `user`(진희) | 준혁(배치·경보·탐지 룰) · 진희(계정 관리·감사 기록) [11/7] |
 
-로그인·세션·역할은 [`../04_auth_session.md`](../04_auth_session.md)에 있어요. 업무 개요·평가·감사 기록 화면은 지금 `/demo`에만 있고 백엔드 API가 정해지면 파일을 추가해요.
+로그인·세션·역할은 [`../04_auth_session.md`](../04_auth_session.md)에 있어요. 업무 개요·평가·감사 기록 화면은 지금 `/demo`에만 있고 백엔드 API가 정해지면 파일을 추가해요. `/demo`는 없앨 예정이에요(11/10) — 새 화면은 실제 화면으로 만들고 시연은 고치지 않아요([`../08_decisions.md`](../08_decisions.md) §1).
 
 ## 새 화면 붙이는 법 [SCRUM-159 ②, 11/7]
 

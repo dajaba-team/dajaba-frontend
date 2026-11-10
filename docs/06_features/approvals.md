@@ -4,6 +4,7 @@
 
 - 프론트 폴더: `src/features/approvals/` · 백엔드 짝: `str` 승인 API (BE `06_features/str.md`)
 - 지금: 시연(`/demo/approvals`)만 — APPROVER는 본문·승인·반려, ADMIN은 목록만(본문·버튼 없음, SCRUM-120). 실제 화면 없음.
+- **실제 화면으로 새로 만들어요(11/10).** 반려 버튼 분리(SCRUM-113)·승인 완료 화면(SCRUM-111)도 실제 `/approvals` 화면 기준이에요. 시연은 없앨 예정이라 고치지 않아요.
 
 ## 1. 화면
 
