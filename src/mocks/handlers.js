@@ -16,6 +16,8 @@ import { http, HttpResponse } from "msw"
 let cases = seedCases()
 let drafts = seedStrDrafts()
 let currentUser = null
+// 배치 실행 (B4·B5) — 접수하면 RUNNING, 첫 상태 조회에서 끝나요. 같은 날짜가 성공했으면 409 BATCH_ALREADY_DONE.
+let batchRuns = []
 // MSW 예시 계정입니다. 실제 백엔드 비밀번호(DEV_USER_PASSWORD)와는 관계없습니다.
 export const MOCK_PASSWORD = "mock-password"
 const MOCK_USERS = Object.fromEntries(
@@ -34,6 +36,7 @@ export function resetCases(user = null) {
 	cases = seedCases()
 	drafts = seedStrDrafts()
 	currentUser = user
+	batchRuns = []
 }
 const draftNotFound = () =>
 	HttpResponse.json(
@@ -47,6 +50,59 @@ const base = new URL(import.meta.env.VITE_API_BASE_URL || "", window.location.or
 	"",
 )
 export const handlers = [
+	http.post(`${base}/api/v1/admin/batches/open-cases`, ({ request }) => {
+		if (!currentUser) return unauthenticated()
+		if (currentUser.role !== "ADMIN")
+			return HttpResponse.json(
+				{ error: { code: "FORBIDDEN", message: "권한이 없습니다", details: {} } },
+				{ status: 403 },
+			)
+		const date = new URL(request.url).searchParams.get("date")
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? ""))
+			return HttpResponse.json(
+				{ error: { code: "INVALID_REQUEST", message: "date 가 필요합니다", details: {} } },
+				{ status: 400 },
+			)
+		if (batchRuns.some((run) => run.batch_date === date && run.status === "SUCCEEDED"))
+			return HttpResponse.json(
+				{
+					error: {
+						code: "BATCH_ALREADY_DONE",
+						message: "이미 성공한 날짜입니다",
+						details: {},
+					},
+				},
+				{ status: 409 },
+			)
+		const run = {
+			batch_run_id: 100 + batchRuns.length,
+			batch_type: "OPEN_CASES",
+			batch_date: date,
+			status: "RUNNING",
+		}
+		batchRuns.push(run)
+		return HttpResponse.json(run, { status: 202 })
+	}),
+	http.get(`${base}/api/v1/admin/batches/:batchRunId`, ({ params }) => {
+		if (!currentUser) return unauthenticated()
+		const run = batchRuns.find((item) => String(item.batch_run_id) === params.batchRunId)
+		if (!run)
+			return HttpResponse.json(
+				{ error: { code: "NOT_FOUND", message: "요청한 주소가 없습니다", details: {} } },
+				{ status: 404 },
+			)
+		if (run.status === "RUNNING")
+			Object.assign(run, {
+				status: "SUCCEEDED",
+				started_at: "2026-11-02T03:00:00Z",
+				finished_at: "2026-11-02T03:00:05Z",
+				rows_in: 2,
+				rows_out: 1,
+				error_message: null,
+				triggered_by: { login_id: currentUser.login_id },
+			})
+		return HttpResponse.json(run)
+	}),
 	http.get(`${base}/api/v1/auth/me`, () =>
 		currentUser
 			? HttpResponse.json(currentUser)
