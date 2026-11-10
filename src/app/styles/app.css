@@ -161,7 +161,8 @@
 	position: fixed;
 	inset-block-end: var(--space-4);
 	inset-inline-end: var(--space-4);
-	z-index: 10;
+	/* 모달 위로 떠요(모달 50). 영역 자체는 pointer-events:none 이라 배경 차단은 그대로. */
+	z-index: 60;
 	pointer-events: none;
 }
 .toast {
