@@ -82,7 +82,175 @@ const base = new URL(import.meta.env.VITE_API_BASE_URL || "", window.location.or
 	/\/$/,
 	"",
 )
+// 감사 기록(SCRUM-170) 예시 — 메타만. AI 호출 기록은 BE AiCallLogView(#69), 접근 기록은 access_logs 칸 + 공통 목록〔가정, SCRUM-168 전〕.
+const AI_CALLS = [
+	{
+		id: 6,
+		endpoint: "/v1/cases/summary",
+		request_id: "req-006",
+		attempt: 1,
+		status_code: null,
+		error_code: "AI_TIMEOUT",
+		duration_ms: 90000,
+		ai_version: null,
+		generation_id: null,
+		target_type: "CASE",
+		target_id: "CASE-2022-001004",
+		created_at: "2026-11-02T03:10:00Z",
+	},
+	{
+		id: 5,
+		endpoint: "/v1/str/verify",
+		request_id: "req-005",
+		attempt: 1,
+		status_code: 200,
+		error_code: null,
+		duration_ms: 4200,
+		ai_version: "verifier-v2",
+		generation_id: "g-124",
+		target_type: "DRAFT",
+		target_id: "DRF-000124",
+		created_at: "2026-11-02T02:40:00Z",
+	},
+	{
+		id: 4,
+		endpoint: "/v1/str/drafts",
+		request_id: "req-004",
+		attempt: 2,
+		status_code: 200,
+		error_code: null,
+		duration_ms: 31000,
+		ai_version: "narrative_v2",
+		generation_id: "g-124",
+		target_type: "DRAFT",
+		target_id: "DRF-000124",
+		created_at: "2026-11-02T02:30:00Z",
+	},
+	{
+		id: 3,
+		endpoint: "/v1/str/drafts",
+		request_id: "req-004",
+		attempt: 1,
+		status_code: 503,
+		error_code: "AI_UNAVAILABLE",
+		duration_ms: 1200,
+		ai_version: null,
+		generation_id: null,
+		target_type: "DRAFT",
+		target_id: "DRF-000124",
+		created_at: "2026-11-02T02:29:00Z",
+	},
+	{
+		id: 2,
+		endpoint: "/v1/scores",
+		request_id: "req-002",
+		attempt: 1,
+		status_code: 200,
+		error_code: null,
+		duration_ms: 8800,
+		ai_version: "xgb-2022.11",
+		generation_id: null,
+		target_type: "BATCH_RUN",
+		target_id: "17",
+		created_at: "2026-11-01T01:00:00Z",
+	},
+	{
+		id: 1,
+		endpoint: "/v1/health",
+		request_id: "req-001",
+		attempt: 1,
+		status_code: 200,
+		error_code: null,
+		duration_ms: 40,
+		ai_version: null,
+		generation_id: null,
+		target_type: null,
+		target_id: null,
+		created_at: "2026-11-01T00:00:00Z",
+	},
+]
+const ACCESS_LOGS = [
+	{
+		id: 5,
+		login_id: "admin",
+		action: "ROLE_CHANGED",
+		target_type: "USER",
+		target_id: 2,
+		created_at: "2026-11-02T04:00:00Z",
+	},
+	{
+		id: 4,
+		login_id: "inv01",
+		action: "STR_VIEW",
+		target_type: "STR_DRAFT",
+		target_id: 124,
+		created_at: "2026-11-02T02:50:00Z",
+	},
+	{
+		id: 3,
+		login_id: "inv01",
+		action: "VIEW",
+		target_type: "CASE",
+		target_id: 1004,
+		created_at: "2026-11-02T02:00:00Z",
+	},
+	{
+		id: 2,
+		login_id: "nobody",
+		action: "LOGIN_FAIL",
+		target_type: null,
+		target_id: null,
+		created_at: "2026-11-01T09:00:00Z",
+	},
+	{
+		id: 1,
+		login_id: "inv01",
+		action: "LOGIN_OK",
+		target_type: null,
+		target_id: null,
+		created_at: "2026-11-01T08:59:00Z",
+	},
+]
+const pageOf = (all, url) => {
+	const page = Number(url.searchParams.get("page") ?? 0)
+	const size = Number(url.searchParams.get("size") ?? 20)
+	return { items: all.slice(page * size, (page + 1) * size), page, size, total: all.length }
+}
+// 필터는 전부 선택·AND, from 포함·to 제외(계약서 5.9). 값이 같은 칸만.
+const byFilters = (rows, url, keys) =>
+	rows.filter((row) => {
+		const p = url.searchParams
+		if (p.get("from") && row.created_at < p.get("from")) return false
+		if (p.get("to") && row.created_at >= p.get("to")) return false
+		if (p.get("outcome") === "SUCCESS" && row.error_code) return false
+		if (p.get("outcome") === "FAILURE" && !row.error_code) return false
+		return keys.every((key) => !p.get(key) || String(row[key]) === p.get(key))
+	})
+
 export const handlers = [
+	http.get(`${base}/api/v1/admin/ai-calls`, ({ request }) => {
+		if (!currentUser) return unauthenticated()
+		const denied = adminOnly()
+		if (denied) return denied
+		const url = new URL(request.url)
+		const rows = byFilters(AI_CALLS, url, [
+			"endpoint",
+			"request_id",
+			"target_type",
+			"target_id",
+			"error_code",
+		])
+		return HttpResponse.json(pageOf(rows, url))
+	}),
+	http.get(`${base}/api/v1/admin/access-logs`, ({ request }) => {
+		if (!currentUser) return unauthenticated()
+		const denied = adminOnly()
+		if (denied) return denied
+		const url = new URL(request.url)
+		return HttpResponse.json(
+			pageOf(byFilters(ACCESS_LOGS, url, ["login_id", "action", "target_type"]), url),
+		)
+	}),
 	http.post(`${base}/api/v1/admin/batches/open-cases`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
 		if (currentUser.role !== "ADMIN")

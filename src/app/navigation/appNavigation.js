@@ -55,6 +55,7 @@ export const appNavigation = [
 		screenId: "ADM-05",
 		roles: ["ADMIN"],
 		roleOrder: { ADMIN: 5 },
+		// 화면은 있어요(SCRUM-170). 접근 기록 API(SCRUM-168)가 머지될 때 true 로 켜요 — 계정 관리와 같은 이유
 		ready: false,
 	},
 	{
