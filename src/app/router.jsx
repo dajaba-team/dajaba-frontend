@@ -5,6 +5,7 @@ import RequireRole from "./routes/RequireRole"
 import CaseListPage from "../features/cases/pages/CaseListPage"
 import CaseDetailPage from "../features/cases/pages/CaseDetailPage"
 import StrPage from "../features/str/pages/StrPage"
+import AdminAccountsPage from "../features/admin/users/pages/AdminAccountsPage"
 import AdminBatchesPage from "../features/admin/batches/pages/AdminBatchesPage"
 import { useSession } from "../features/auth/hooks/useSession"
 import { homePathFor } from "./navigation/appNavigation"
@@ -68,6 +69,7 @@ export default function AppRouter() {
 				<Route path="cases/:caseNo" element={<CaseDetailPage />} />
 				<Route path="cases/:caseNo/str" element={<StrPage />} />
 				<Route element={<RequireRole roles={["ADMIN"]} />}>
+					<Route path="admin/accounts" element={<AdminAccountsPage />} />
 					{/* 케이스 생성 카드(SCRUM-180). 메뉴 ready 는 화면 틀 PR(준혁)에서 켜요 */}
 					<Route path="admin/batches" element={<AdminBatchesPage />} />
 					<Route path="admin/*" element={<NotYetPage />} />

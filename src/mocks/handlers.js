@@ -32,10 +32,43 @@ const MOCK_USERS = Object.fromEntries(
 		{ id, login_id: loginId, display_name: `예시 ${loginId}`, role },
 	]),
 )
+// 계정 관리(계약서 5.8) — 로그인용 MOCK_USERS 와 따로 바뀌는 목록. SYSTEM 은 비활성·로그인 불가(BE V003).
+// BE 에서는 id 1 이지만 예시 계정 id(1~4, SCRUM-173)와 겹치지 않게 MSW 에서는 100 — 화면은 id 가 아니라 role 로 가려요.
+const seedAccounts = () => [
+	{ id: 100, login_id: "system", display_name: "SYSTEM", role: "SYSTEM", is_active: false },
+	...Object.values(MOCK_USERS).map((u) => ({ ...u, is_active: true })),
+]
+let accounts = seedAccounts()
+const ACTIVE_CASE = ["REVIEWING", "ESCALATED", "DRAFTED", "PENDING_APPROVAL", "REJECTED"]
+const accountView = (u) => ({
+	id: u.id,
+	login_id: u.login_id,
+	display_name: u.display_name,
+	role: u.role,
+	is_active: u.is_active,
+	// 조사역 행만 진행 중 담당 건수(BE ActiveCaseCounter, 미결 33)
+	active_case_count:
+		u.role === "INVESTIGATOR"
+			? cases.filter(
+					(c) => c.assignee?.login_id === u.login_id && ACTIVE_CASE.includes(c.status),
+				).length
+			: null,
+})
+const adminOnly = () =>
+	currentUser?.role === "ADMIN"
+		? null
+		: HttpResponse.json(
+				{ error: { code: "FORBIDDEN", message: "권한이 없습니다", details: {} } },
+				{ status: 403 },
+			)
+const accountFail = (status, code, message, details = {}) =>
+	HttpResponse.json({ error: { code, message, details } }, { status })
+
 export function resetCases(user = null) {
 	cases = seedCases()
 	drafts = seedStrDrafts()
 	currentUser = user
+	accounts = seedAccounts()
 	batchRuns = []
 }
 const draftNotFound = () =>
@@ -176,29 +209,88 @@ export const handlers = [
 					{ status: 404 },
 				)
 	}),
-	// BE GET /admin/users (SCRUM-135 ①) — ADMIN만, role·is_active 필터, display_name 오름차순
+	// BE GET /admin/users (SCRUM-135 ①) — ADMIN만, role·is_active 필터(미지정이면 활성만), display_name 오름차순
 	http.get(`${base}/api/v1/admin/users`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
-		if (currentUser.role !== "ADMIN")
-			return HttpResponse.json(
-				{ error: { code: "FORBIDDEN", message: "권한이 없습니다", details: {} } },
-				{ status: 403 },
-			)
+		const denied = adminOnly()
+		if (denied) return denied
 		const url = new URL(request.url)
 		const role = url.searchParams.get("role")
 		const active = url.searchParams.get("is_active") !== "false"
-		const items = Object.values(MOCK_USERS)
-			.filter((u) => (!role || u.role === role) && (u.is_active !== false) === active)
-			.sort((a, b) => a.display_name.localeCompare(b.display_name))
-			.map((u) => ({
-				id: u.id,
-				login_id: u.login_id,
-				display_name: u.display_name,
-				role: u.role,
-				is_active: u.is_active !== false,
-				active_case_count: null,
-			}))
-		return HttpResponse.json({ items, page: 0, size: 100, total: items.length })
+		const page = Number(url.searchParams.get("page") ?? 0)
+		const size = Number(url.searchParams.get("size") ?? 20)
+		const all = accounts
+			.filter((u) => (!role || u.role === role) && u.is_active === active)
+			.sort((a, b) => a.display_name.localeCompare(b.display_name) || a.id - b.id)
+			.map(accountView)
+		return HttpResponse.json({
+			items: all.slice(page * size, (page + 1) * size),
+			page,
+			size,
+			total: all.length,
+		})
+	}),
+	// SCRUM-135 ② 계약서 5.8 모양 — BE 머지 전 MSW 먼저
+	http.post(`${base}/api/v1/admin/users`, async ({ request }) => {
+		if (!currentUser) return unauthenticated()
+		const denied = adminOnly()
+		if (denied) return denied
+		const body = await request.json().catch(() => ({}))
+		const details = {}
+		if (!/^[A-Za-z0-9_-]{3,64}$/.test(body.login_id ?? ""))
+			details.login_id = "영문·숫자·_·- 3~64자"
+		if (!body.display_name?.trim() || body.display_name.trim().length > 50)
+			details.display_name = "1~50자"
+		if ((body.initial_password ?? "").length < 8 || body.initial_password.length > 128)
+			details.initial_password = "8~128자"
+		if (!["INVESTIGATOR", "APPROVER", "ADMIN"].includes(body.role)) details.role = "역할"
+		if (Object.keys(details).length)
+			return accountFail(400, "INVALID_REQUEST", "입력 값을 확인해 주세요", details)
+		if (accounts.some((u) => u.login_id === body.login_id))
+			return accountFail(409, "LOGIN_ID_TAKEN", "이미 쓰는 아이디입니다")
+		const user = {
+			id: Math.max(...accounts.map((u) => u.id)) + 1,
+			login_id: body.login_id,
+			display_name: body.display_name.trim(),
+			role: body.role,
+			is_active: true,
+		}
+		accounts.push(user)
+		return HttpResponse.json(accountView(user), { status: 201 })
+	}),
+	http.post(`${base}/api/v1/admin/users/:id/:verb`, async ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const denied = adminOnly()
+		if (denied) return denied
+		const user = accounts.find((u) => String(u.id) === params.id)
+		if (!user) return accountFail(404, "USER_NOT_FOUND", "사용자가 없습니다")
+		const body = await request.json().catch(() => ({}))
+		if (params.verb === "change-role") {
+			const swap = { INVESTIGATOR: "APPROVER", APPROVER: "INVESTIGATOR" }
+			if (swap[user.role] !== body.role)
+				return accountFail(400, "INVALID_REQUEST", "조사역 ↔ 승인자만 바꿀 수 있습니다", {
+					role: "조사역 ↔ 승인자만",
+				})
+			const count = accountView(user).active_case_count
+			if (count > 0)
+				return accountFail(
+					409,
+					"ASSIGNEE_HAS_ACTIVE_CASES",
+					"진행 중인 담당 케이스가 있습니다",
+					{
+						active_case_count: count,
+					},
+				)
+			user.role = body.role
+		} else if (params.verb === "deactivate") user.is_active = false
+		else if (params.verb === "activate") user.is_active = true
+		else if (params.verb === "reset-password") {
+			if ((body.new_password ?? "").length < 8 || body.new_password.length > 128)
+				return accountFail(400, "INVALID_REQUEST", "입력 값을 확인해 주세요", {
+					new_password: "8~128자",
+				})
+		} else return accountFail(404, "NOT_FOUND", "요청한 주소가 없습니다")
+		return HttpResponse.json(accountView(user))
 	}),
 	// 근거 거래(C3)·원본(C4)·그래프(C5)·이력 전체(C6) — BE CaseTransactions·ListCaseHistories(SCRUM-179)와 같은 모양
 	...[

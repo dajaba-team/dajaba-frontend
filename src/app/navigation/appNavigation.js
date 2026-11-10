@@ -64,6 +64,7 @@ export const appNavigation = [
 		screenId: "ADM-03",
 		roles: ["ADMIN"],
 		roleOrder: { ADMIN: 6 },
+		// 화면은 있어요(SCRUM-169). 발급·역할 변경·비활성화·초기화 API(SCRUM-135 ②)가 머지될 때 true 로 켜요(#28 리뷰)
 		ready: false,
 	},
 ]
