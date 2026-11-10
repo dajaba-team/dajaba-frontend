@@ -4,20 +4,32 @@ import { sectionTitle } from "../../../shared/str/sectionTitles"
 import {
 	CODE_CHECKS,
 	CODE_REASON_LABELS,
+	HIDDEN_CHECKS,
 	LLM_CHECKS,
 	LLM_PASS_SCORE,
+	LLM_SKIPPED_NOTES,
 	VERIFICATION_STATUS_LABELS,
 } from "../verificationLabels"
 
-// 검증 결과 패널 (SCRUM-116). 코드 검사 5개·AI 평가 5개를 늘 다 보여 주고, 실패한 항목을 위로 올려요.
+// 검증 결과 패널 (SCRUM-116). 표의 코드 검사 6개·AI 평가 5개를 늘 다 보여 주고, 실패한 항목을 위로 올려요.
+// 표에 없는 검사 이름이 응답에 오면 이름 그대로 표 뒤에 보여 줘요(옛 GROUNDING만 뺌).
 // 통과·실패 판단은 서버 passed·status 그대로예요 — 화면은 줄마다 표시만 하고 전체 결과를 다시 계산하지 않아요.
 // 검증을 다시 돌리는 버튼·검증 못 함 유지는 SCRUM-117에서 붙여요.
 
-const PASS_RULE = `통과 기준: 코드 검사 5개 전부 통과 + AI 평가 전부 ${LLM_PASS_SCORE}점 이상`
+const PASS_RULE = `통과 기준: 코드 검사 전부 통과 + AI 평가 전부 ${LLM_PASS_SCORE}점 이상`
+
+// 표 항목 + 응답에만 있는 이름(이름을 그대로 제목으로). 숨기면 "실패"인데 실패 항목이 안 보여요.
+function withUnlisted(table, rows) {
+	const listed = new Set(table.map(([check]) => check))
+	const extra = [...new Set((rows ?? []).map((row) => row.check))].filter(
+		(check) => !listed.has(check) && !HIDDEN_CHECKS.includes(check),
+	)
+	return [...table, ...extra.map((check) => [check, check])]
+}
 
 // 같은 검사가 여러 줄 올 수 있어요(DATE_MATCH는 날짜 하나당 한 줄). 한 줄이라도 틀리면 그 검사는 실패.
 function codeCheckItems(codeChecks) {
-	return CODE_CHECKS.map(([check, label]) => {
+	return withUnlisted(CODE_CHECKS, codeChecks).map(([check, label]) => {
 		const rows = codeChecks.filter((row) => row.check === check)
 		const failedRows = rows.filter((row) => row.match === false)
 		const state = rows.length === 0 ? "NONE" : failedRows.length > 0 ? "FAIL" : "PASS"
@@ -25,9 +37,9 @@ function codeCheckItems(codeChecks) {
 	})
 }
 
-// llmChecks가 null이면 평가를 안 돌린 것(코드 검사 실패) — "0개"와 다르게 "평가 안 함"으로 보여 줘요.
+// llmChecks가 null이면 평가 결과가 없는 것(코드 검사 실패 또는 평가 서비스 오류) — "0개"와 다르게 "평가 안 함"으로 보여 줘요.
 function llmCheckItems(llmChecks) {
-	return LLM_CHECKS.map(([check, label]) => {
+	return withUnlisted(LLM_CHECKS, llmChecks).map(([check, label]) => {
 		const row = llmChecks?.find((item) => item.check === check) ?? null
 		const state =
 			llmChecks == null
@@ -50,6 +62,10 @@ const failedFirst = (items) => [
 const CODE_STATE_TEXT = { PASS: "통과", FAIL: "실패", NONE: "검사 없음" }
 const LLM_STATE_TEXT = { PASS: "통과", FAIL: "미달", NONE: "결과 없음", SKIPPED: "평가 안 함" }
 
+// 줄의 section이 null이면 초안 전체를 본 검사예요(건수·근거 범위 등).
+const rowSection = (section) =>
+	section == null ? "초안 전체" : sectionTitle({ section, label: null })
+
 const valueText = (value) => (value == null || value === "" ? "-" : String(value))
 
 function CodeCheckRow({ item }) {
@@ -57,14 +73,14 @@ function CodeCheckRow({ item }) {
 		<li className={`str-check str-check--${item.state.toLowerCase()}`}>
 			<div className="str-check-head">
 				<strong>{item.label}</strong>
-				<code>{item.check}</code>
+				{item.label !== item.check && <code>{item.check}</code>}
 				<span className="str-check-state">{CODE_STATE_TEXT[item.state]}</span>
 			</div>
 			{item.state === "NONE" && (
 				<p className="str-check-note">이번 검증에서 검사한 값이 없어요.</p>
 			)}
 			{item.state === "PASS" && (
-				<p className="str-check-note">{item.rows.length}곳 모두 원본과 같아요.</p>
+				<p className="str-check-note">검사한 {item.rows.length}곳 모두 통과했어요.</p>
 			)}
 			{item.failedRows.length > 0 && (
 				<ul className="str-check-rows">
@@ -73,8 +89,8 @@ function CodeCheckRow({ item }) {
 							<span className="str-check-reason">
 								{CODE_REASON_LABELS[row.reason] ?? row.reason ?? "불일치"}
 							</span>{" "}
-							· {sectionTitle({ section: row.section, label: null })} · 본문{" "}
-							{valueText(row.draftValue)} · 원본 {valueText(row.sourceValue)}
+							· {rowSection(row.section)} · 본문 {valueText(row.draftValue)} · 원본{" "}
+							{valueText(row.sourceValue)}
 						</li>
 					))}
 				</ul>
@@ -83,19 +99,21 @@ function CodeCheckRow({ item }) {
 	)
 }
 
-function LlmCheckRow({ item }) {
+function LlmCheckRow({ item, status }) {
 	return (
 		<li className={`str-check str-check--${item.state.toLowerCase()}`}>
 			<div className="str-check-head">
 				<strong>{item.label}</strong>
-				<code>{item.check}</code>
+				{item.label !== item.check && <code>{item.check}</code>}
 				<span className="str-check-state">
 					{item.row?.score != null && `${item.row.score}점 · `}
 					{LLM_STATE_TEXT[item.state]}
 				</span>
 			</div>
 			{item.state === "SKIPPED" && (
-				<p className="str-check-note">코드 검사가 실패해서 AI 평가를 돌리지 않았어요.</p>
+				<p className="str-check-note">
+					{LLM_SKIPPED_NOTES[status] ?? "AI 평가 결과가 없어요."}
+				</p>
 			)}
 			{item.row?.comment && <p className="str-check-note">{item.row.comment}</p>}
 		</li>
@@ -152,7 +170,7 @@ export default function VerificationPanel({ verification, currentRevisionNo }) {
 			<h3>AI 평가</h3>
 			<ul className="str-checks" aria-label="AI 평가">
 				{llmItems.map((item) => (
-					<LlmCheckRow key={item.check} item={item} />
+					<LlmCheckRow key={item.check} item={item} status={verification.status} />
 				))}
 			</ul>
 		</section>
