@@ -7,9 +7,7 @@ import { AI_REQUEST_TIMEOUT_MS, apiClient } from "../../../shared/api/apiClient"
 //   S2 GET  /str-drafts/{draft_no}             — BE develop 구현(SCRUM-205 #84). 아래 "S2 실제 응답과 다른 점" 참고
 //   S3 PUT  /str-drafts/{draft_no}/revisions   — BE develop 구현(SCRUM-184 #91)
 //   S4 GET  /str-drafts/{draft_no}/revisions   — BE develop 구현(SCRUM-184 #91). 목록·?revision_no= 한 행
-//   S5 POST /str-drafts/{draft_no}/verify      — BE 아직 없음
-//   S6 POST /str-drafts/{draft_no}/submit      — BE 아직 없음
-// 아직 없는 API는 계약서 모양 그대로 MSW(`src/mocks/handlers.js`)가 답해요. BE가 붙으면 이 파일은 그대로 써요.
+// 검증(S5)·승인 요청(S6)은 BE가 아직 없어 다음 PR에서 붙여요. S2의 latest_verification은 여기서 읽기만 해요.
 const draftPath = (draftNo) => `/api/v1/str-drafts/${encodeURIComponent(draftNo)}`
 const casePath = (caseNo) => `/api/v1/cases/${encodeURIComponent(caseNo)}`
 
@@ -128,12 +126,6 @@ const toSaved = (data) => ({
 	caseStatus: data.case_status ?? null,
 })
 
-const toSubmitted = (data) => ({
-	caseNo: data.case_no ?? null,
-	caseStatus: data.case_status ?? data.status ?? null,
-	caseVersion: data.case_version ?? data.version ?? null,
-})
-
 export const strApi = {
 	/** S1 — 생성·재생성. 응답 {case_no, case_status, case_version, draft_no}. AI를 기다려서 전용 timeout. */
 	createDraft: async ({ caseNo, caseVersion }) => {
@@ -179,31 +171,4 @@ export const strApi = {
 			narrativeAfter: (data.narrative_after ?? []).map(toSection),
 		}
 	},
-	/** S5 — body {}. 서버가 지금 저장된 수정본을 검증해요. 응답은 검증 결과(AI 응답 그대로). */
-	verify: async ({ draftNo }) => {
-		const { data } = await apiClient.post(
-			`${draftPath(draftNo)}/verify`,
-			{},
-			{ timeout: AI_REQUEST_TIMEOUT_MS },
-		)
-		return toVerification(data, data.revision_no ?? null)
-	},
-	/** S6 — 승인 요청. 서버가 ApprovalGate로 다시 검사해요(본문 해시). */
-	submit: async ({
-		draftNo,
-		caseVersion,
-		verificationId,
-		suspicionTypes,
-		suspicionLevelBranch,
-	}) =>
-		toSubmitted(
-			(
-				await apiClient.post(`${draftPath(draftNo)}/submit`, {
-					case_version: caseVersion,
-					verification_id: verificationId,
-					suspicion_types: suspicionTypes,
-					suspicion_level_branch: suspicionLevelBranch,
-				})
-			).data,
-		),
 }

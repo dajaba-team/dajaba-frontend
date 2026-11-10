@@ -12,7 +12,7 @@ export const apiClient = axios.create({
 	xsrfHeaderName: "X-XSRF-TOKEN",
 })
 
-// AI를 기다리는 요청(초안 생성·검증)은 백엔드 한도 90초(재시도 포함) + 여유. 03_api.md §4, FE-8 〔확인 필요: 프록시 한도〕
+// AI를 기다리는 요청(초안 생성)은 백엔드 한도 90초(재시도 포함) + 여유. 03_api.md §4, FE-8 〔확인 필요: 프록시 한도〕
 export const AI_REQUEST_TIMEOUT_MS = 100_000
 
 export function isNoResponse(error) {
@@ -46,15 +46,12 @@ export function getErrorMessage(error) {
 	if (code === "DRAFT_IN_PROGRESS") return "초안을 만드는 중이에요. 잠시 후 상태를 확인해 주세요."
 	if (code === "SELF_APPROVAL") return "본인이 담당한 케이스는 승인할 수 없습니다."
 	if (code === "NARRATIVE_UNCHANGED") return "반려된 본문을 보완한 후 다시 요청해 주세요."
-	// STR 초안·검증·승인 요청 (BE str 도메인 예외 이름 → UPPER_SNAKE)
-	if (code === "DRAFT_NOT_VERIFIED")
-		return "지금 저장된 본문의 검증 통과가 필요해요. 저장본을 다시 검증해 주세요."
+	// STR 초안 (BE str 도메인 예외 이름 → UPPER_SNAKE)
 	if (code === "DRAFT_LOCKED") return "승인된 초안이라 더는 고칠 수 없어요."
 	if (code === "DRAFT_SUPERSEDED")
 		return "다른 초안으로 바뀌었어요. 작성 내용은 유지됩니다. 현재 초안을 확인해 주세요."
 	if (code === "DRAFT_REQUEST_CLOSED")
 		return "이미 끝난 초안 요청이에요. 현재 초안을 확인해 주세요."
-	if (code === "VERIFY_IN_PROGRESS") return "검증 중이에요. 잠시 후 결과를 확인해 주세요."
 	if (code === "INVALID_SECTION_TEXT")
 		return "비어 있거나 너무 긴 항목이 있어요. 각 항목은 1~5,000자로 써 주세요."
 	if (code === "REVISION_NOT_FOUND") return "해당 수정본을 찾을 수 없어요."

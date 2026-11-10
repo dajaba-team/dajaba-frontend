@@ -108,53 +108,29 @@ describe("STR 화면 — 서버가 준 서술부 목록대로 그리기 (SCRUM-1
 	})
 })
 
-describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02, MSW)", () => {
-	it("고친 뒤엔 저장 전까지 검증·승인 요청을 막고, 불일치를 고쳐 통과하면 승인 요청한다", async () => {
+describe("STR 작성 흐름 — 항목 수정·저장 (STR-01, S3)", () => {
+	it("고치면 미저장으로 표시하고, 저장하면 새 수정본이 되고 이력에 남는다", async () => {
 		const user = renderStr("CASE-2022-001001")
 		const date = await sectionBox("일자")
-		await replaceText(user, date, "2022년 9월 3일 하루 동안.")
+		await replaceText(user, date, "2022년 9월 2일 하루 동안.")
 		expect(screen.getByText("미저장 변경이 있어요")).toBeInTheDocument()
-		expect(screen.getByRole("button", { name: "저장본 검증" })).toBeDisabled()
-		expect(screen.getByText("먼저 변경 내용을 저장해 주세요.")).toBeInTheDocument()
 
 		await user.click(screen.getByRole("button", { name: "변경 저장" }))
 		expect(await screen.findByText(/7개 항목 · 수정본 2번/)).toBeInTheDocument()
+		expect(screen.getByText("저장했어요.")).toBeInTheDocument()
+		expect(screen.getByText("저장본과 같아요")).toBeInTheDocument()
+
+		await user.click(screen.getByRole("button", { name: "수정 이력" }))
 		expect(
-			screen.getByText("아직 검증하지 않았어요. 저장한 본문을 검증해 주세요."),
+			await screen.findByText(/수정본 2번/, { selector: "button, li *" }),
 		).toBeInTheDocument()
+	})
 
-		await user.click(screen.getByRole("button", { name: "저장본 검증" }))
-		expect(await screen.findByText(/코드 대조에서 맞지 않는 항목이 있어요/)).toBeInTheDocument()
-		expect(
-			screen.getByText("코드 대조가 실패해 AI 평가는 실행하지 않았어요."),
-		).toBeInTheDocument()
-		// 일자 항목 아래 본문 값·원본 값
-		expect(
-			within(screen.getByRole("article", { name: "일자" })).getByRole("note"),
-		).toHaveTextContent("본문 2022-09-03 / 원본 2022-09-02")
-		expect(screen.getByRole("button", { name: "승인 요청" })).toBeDisabled()
-
-		await replaceText(user, await sectionBox("일자"), "2022년 9월 2일 하루 동안.")
-		await user.click(screen.getByRole("button", { name: "변경 저장" }))
-		expect(await screen.findByText(/7개 항목 · 수정본 3번/)).toBeInTheDocument()
-		await user.click(screen.getByRole("button", { name: "저장본 검증" }))
-		expect(await screen.findByText("현재 저장본 검증 통과")).toBeInTheDocument()
-
-		// VI부 — 유형·지점 정도는 기본값 없음
-		expect(screen.getByText("의심 유형을 1개 이상 선택해 주세요.")).toBeInTheDocument()
-		await user.click(screen.getByText("유형 선택 열기"))
-		await user.click(screen.getAllByRole("checkbox")[0])
-		expect(screen.getByText("지점 의심 정도를 선택해 주세요.")).toBeInTheDocument()
-		await user.click(screen.getByRole("radio", { name: "3" }))
-
-		await user.click(screen.getByRole("button", { name: "승인 요청" }))
-		const confirm = screen.getByRole("region", { name: "승인 요청 확인" })
-		await user.click(within(confirm).getByRole("button", { name: "승인 요청" }))
-		expect(
-			await screen.findByText("승인 대기 중이라 본문을 수정할 수 없어요."),
-		).toBeInTheDocument()
-		expect(screen.queryByRole("textbox")).not.toBeInTheDocument()
-		expect(screen.queryByRole("button", { name: "변경 저장" })).not.toBeInTheDocument()
+	it("빈 항목은 저장 버튼이 꺼진다", async () => {
+		const user = renderStr("CASE-2022-001001")
+		await user.clear(await sectionBox("장소"))
+		expect(screen.getByText("빈 항목은 저장할 수 없어요.")).toBeInTheDocument()
+		expect(screen.getByRole("button", { name: "변경 저장" })).toBeDisabled()
 	})
 
 	it("다른 곳에서 먼저 저장했으면(409) 내 입력을 두고 최신 본문과 비교한다", async () => {
@@ -181,7 +157,7 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		renderStr("CASE-2022-001001", "admin")
 		await screen.findByRole("note")
 		expect(screen.queryByRole("textbox")).not.toBeInTheDocument()
-		expect(screen.queryByRole("button", { name: "저장본 검증" })).not.toBeInTheDocument()
+		expect(screen.queryByRole("button", { name: "변경 저장" })).not.toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "수정 이력" })).not.toBeInTheDocument()
 	})
 })
@@ -203,9 +179,7 @@ describe("STR 초안 생성 (S1)", () => {
 		expect(
 			await screen.findByText(/DRF-000125 · 초안 ACTIVE · 케이스 DRAFTED/),
 		).toBeInTheDocument()
-		expect(
-			screen.getByText("아직 검증하지 않았어요. 저장한 본문을 검증해 주세요."),
-		).toBeInTheDocument()
+		expect(await sectionBox("일자")).toBeInTheDocument() // 바로 고칠 수 있어요
 	})
 
 	it("만드는 중(409 DRAFT_IN_PROGRESS)은 장애가 아니라 진행 중으로 안내한다", async () => {

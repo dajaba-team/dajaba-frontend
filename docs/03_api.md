@@ -56,7 +56,7 @@
 | 409  | `SELF_APPROVAL`                                                                         | "본인이 담당한 케이스는 승인할 수 없어요"                                                                                | 문구만                                 |
 | 409  | `NARRATIVE_UNCHANGED`                                                                   | "반려된 본문을 고친 뒤 다시 요청해 주세요" (재조회 없이 편집 유지)                                                       | 문구만                                 |
 | 409  | `DRAFT_IN_PROGRESS`                                                                     | "초안을 만드는 중이에요" — AI 장애(502)와 다른 안내. 자동 재시도 없음                                                    | 문구만                                 |
-| 409  | `DRAFT_NOT_VERIFIED`, `DRAFT_LOCKED`, `DRAFT_SUPERSEDED`, `VERIFY_IN_PROGRESS` 〔초안〕 | 코드별 안내 + 케이스·초안 재조회, 입력 유지                                                                              | 처리 (`useStrCommand`)                 |
+| 409  | `DRAFT_NOT_VERIFIED`, `DRAFT_LOCKED`, `DRAFT_SUPERSEDED`, `VERIFY_IN_PROGRESS` 〔초안〕 | 코드별 안내 + 케이스·초안 재조회, 입력 유지                                                                              | 일부 (`LOCKED`·`SUPERSEDED`)           |
 | 409  | `BATCH_RUNNING`, `BATCH_ALREADY_DONE`                                                   | 배치 화면 안내 + 상태 재조회                                                                                             | 케이스 생성 카드 확인창 안 (SCRUM-180) |
 | 409  | 그 밖                                                                                   | 일반 업무 안내 + 재조회. **`CONCURRENT_UPDATE` 충돌 화면을 띄우지 않음**                                                 | 처리                                   |
 | 502  | `AI_UNAVAILABLE`, `AI_TIMEOUT`, `AI_BAD_RESPONSE`, `LLM_*`, `MODEL_UNAVAILABLE` …       | 그 영역(요약·초안·검증)에만 실패 안내 + 수동 다시 시도. 나머지 화면은 계속 씀                                            | 문구만 (502 공통)                      |
@@ -75,7 +75,7 @@
 
 요약 갱신·초안 생성·검증은 백엔드가 AI를 부르고 기다려요. **백엔드 쪽 한도가 재시도 포함 전체 90초**예요.
 
-- 지금 `apiClient` timeout은 15초라 AI 요청엔 짧아요. AI 요청(초안 생성·검증)은 요청마다 `AI_REQUEST_TIMEOUT_MS`(100초)로 보내요 〔확인 필요: 프록시·Vercel 한도 포함 최종 값 — FE-8〕.
+- 지금 `apiClient` timeout은 15초라 AI 요청엔 짧아요. AI 요청(초안 생성)은 요청마다 `AI_REQUEST_TIMEOUT_MS`(100초)로 보내요 〔확인 필요: 프록시·Vercel 한도 포함 최종 값 — FE-8〕.
 - 요청 중엔 진행 안내 + **같은 버튼 다시 누르기 막기**. 자동 재시도·폴링 없음.
 - 화면을 떠나도 서버 작업은 계속될 수 있어요. "취소됐다"고 표시하지 않아요.
 - 응답이 없거나 timeout이면 **최신 초안·검증·상태를 먼저 조회**하고 나서 다시 할지 정해요(같은 초안이 두 번 생길 수 있음 — BE 미결 21).

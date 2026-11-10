@@ -1,6 +1,5 @@
 import { sectionTitle } from "../../../shared/str/sectionTitles"
 import { SECTION_MAX, sectionError, textLength } from "../model/strRules"
-import { CHECK_LABELS, CHECK_REASON_LABELS, labelOf } from "../labels"
 
 // 서술부 본문. 서버가 준 narrative 목록·순서 그대로 그리고, 섹션 개수(6·7)나 이름을 가정하지 않아요(SCRUM-115).
 // AI 본문은 글자로만 그려요(dangerouslySetInnerHTML 금지, docs/06_features/str.md §1).
@@ -11,14 +10,7 @@ import { CHECK_LABELS, CHECK_REASON_LABELS, labelOf } from "../labels"
 //   editable        true면 textarea
 //   inputs          {section: text} — 편집 중 값(없는 섹션은 저장본)
 //   onChange        (section, text) => void
-//   failedChecks    검증에서 떨어진 코드 검사(현재 저장본 기준일 때만 넘겨요) — 해당 항목 아래 본문 값·원본 값
-export default function StrNarrative({
-	narrative,
-	editable = false,
-	inputs = {},
-	onChange,
-	failedChecks = [],
-}) {
+export default function StrNarrative({ narrative, editable = false, inputs = {}, onChange }) {
 	if (narrative.length === 0) return <p>본문이 비어 있어요.</p>
 	return (
 		<>
@@ -35,7 +27,6 @@ export default function StrNarrative({
 					const value = inputs[section.section] ?? section.text
 					const changed = value !== section.text
 					const error = editable ? sectionError(value) : null
-					const checks = failedChecks.filter((check) => check.section === section.section)
 					return (
 						<li key={section.section} id={`str-section-${section.section}`}>
 							<article className="str-section" aria-labelledby={headingId}>
@@ -63,20 +54,6 @@ export default function StrNarrative({
 								) : (
 									<p className="str-section-text">{section.text}</p>
 								)}
-								{checks.map((check, index) => (
-									<p
-										key={`${check.check}-${index}`}
-										className="str-section-check"
-										role="note"
-									>
-										<strong>
-											{labelOf(CHECK_LABELS, check.check)} ·{" "}
-											{labelOf(CHECK_REASON_LABELS, check.reason)}
-										</strong>{" "}
-										본문 {check.draftValue ?? "-"} / 원본{" "}
-										{check.sourceValue ?? "-"}
-									</p>
-								))}
 								<p className="str-section-evidence">
 									{section.evidenceIds.length > 0
 										? `근거 거래 ${section.evidenceIds.length}건 · ${section.evidenceIds.join(", ")}`

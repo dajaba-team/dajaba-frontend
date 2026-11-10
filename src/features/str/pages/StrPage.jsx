@@ -1,37 +1,25 @@
 import { useEffect, useState } from "react"
 import { Link, useParams } from "react-router"
-import { useQueryClient } from "@tanstack/react-query"
 import { useCaseDetail } from "../../cases/hooks/useCases"
-import { draftKey, useStrCommand, useStrDraft } from "../hooks/useStrDraft"
+import { useStrCommand, useStrDraft } from "../hooks/useStrDraft"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
 import { revisionLabel } from "../../../shared/str/revisionLabel"
 import { sectionTitle } from "../../../shared/str/sectionTitles"
-import { suspicionTypeLabel } from "../../../shared/str/suspicionTypes"
 import { getErrorCode, getErrorMessage, isVersionConflict } from "../../../shared/api/apiClient"
 import { STATUS_LABELS, REJECTION_LABELS } from "../../cases/labels"
-import { CloseForm } from "../../cases/components/CaseActions"
 import StrNarrative from "../components/StrNarrative"
 import StrFacts from "../components/StrFacts"
-import StrVerificationPanel from "../components/StrVerificationPanel"
-import StrSuspicionPanel from "../components/StrSuspicionPanel"
 import StrRevisionHistory from "../components/StrRevisionHistory"
 import StrGenerateForm from "../components/StrGenerateForm"
-import {
-	changedSections,
-	sectionError,
-	stateNotice,
-	strActionsFor,
-	submitBlockReason,
-	verificationState,
-} from "../model/strRules"
+import { changedSections, sectionError, stateNotice, strActionsFor } from "../model/strRules"
 import { DRAFT_STATUS_LABELS, labelOf } from "../labels"
 import "../../cases/styles/cases.css"
 import "../styles/str.css"
 
 // STR 작성 화면 /cases/:caseNo/str (화면 설계 STR-01~04).
 // 케이스 상세(C2) → 지금 초안 번호(current_draft_no) → 초안(S2) 순서로 불러와요.
-// 순서: 초안 생성(≤90초) → 항목 수정·저장(S3) → 저장본 검증(S5, ≤90초) → 통과면 VI부 입력 후 승인 요청(S6).
+// 순서: 초안 생성(≤90초) → 항목 수정·저장(S3) → 수정 이력(S4). 검증(S5)·승인 요청(S6)·초안 있는 종료(A6)는 BE가 붙으면 다음 PR에서.
 export default function StrPage() {
 	const { caseNo } = useParams()
 	const caseQuery = useCaseDetail(caseNo)
@@ -91,7 +79,6 @@ export default function StrPage() {
 }
 
 function StrWorkspace({ draft, detail }) {
-	const client = useQueryClient()
 	const actions = strActionsFor(draft, detail)
 	const can = (action) => actions.includes(action)
 	const editable = can("REVISE")
@@ -102,16 +89,10 @@ function StrWorkspace({ draft, detail }) {
 	const dirty = changes.length > 0
 	const invalid = changes.some((item) => sectionError(item.text))
 
-	// VI부 — 서버 값으로 시작, 승인 요청 때 보냄(따로 저장 API 없음).
-	const [types, setTypes] = useState(draft.suspicionTypes)
-	const [level, setLevel] = useState(draft.suspicionLevelBranch)
-
-	const [panel, setPanel] = useState(null) // "history" | "regenerate" | "close" | "submit"
+	const [panel, setPanel] = useState(null) // "history" | "regenerate"
 	const caseVersion = detail.version ?? draft.caseVersion
 
 	const save = useStrCommand(detail.caseNo, draft.draftNo, "saveRevision")
-	const verify = useStrCommand(detail.caseNo, draft.draftNo, "verify")
-	const submit = useStrCommand(detail.caseNo, draft.draftNo, "submit")
 	const conflict = save.isError && isVersionConflict(save.error)
 
 	// 미저장 편집이 있으면 창 닫기·새로고침 전에 브라우저가 확인해요.
@@ -122,21 +103,6 @@ function StrWorkspace({ draft, detail }) {
 		return () => window.removeEventListener("beforeunload", warn)
 	}, [dirty])
 
-	const verification = draft.latestVerification
-	const vState = verificationState(verification, { dirty })
-	// 검증 실패 위치 표시는 "현재 저장본 기준" 결과일 때만(예전 결과로 지금 본문을 표시하지 않음).
-	const failedChecks =
-		!dirty && verification?.isCurrent
-			? verification.codeChecks.filter((check) => !check.match)
-			: []
-	const blockReason = submitBlockReason({
-		actions,
-		caseStatus: detail.status,
-		dirty,
-		verification,
-		types,
-		level,
-	})
 	const notice = stateNotice(draft, detail)
 	const rejection = draft.lastRejection
 	const rejectionCode = rejection?.reasonCode ?? detail.rejectionReasonCode
@@ -188,63 +154,39 @@ function StrWorkspace({ draft, detail }) {
 
 			<StrFacts facts={draft.facts} />
 
-			<div className="str-grid">
-				<section className="str-panel" aria-labelledby="str-narrative-heading">
-					<div className="str-panel-head">
-						<h2 id="str-narrative-heading">서술부</h2>
-						<p>
-							{draft.narrative.length}개 항목 ·{" "}
-							{revisionLabel(draft.currentRevisionNo)}
-							{editable
-								? " · 문장만 고칠 수 있어요(숫자·근거는 서버가 관리)"
-								: " · 읽기 전용"}
-						</p>
-					</div>
-					<StrNarrative
-						narrative={draft.narrative}
-						editable={editable}
-						inputs={inputs}
-						onChange={(section, text) =>
-							setInputs((prev) => ({ ...prev, [section]: text }))
-						}
-						failedChecks={failedChecks}
-					/>
-					{conflict && (
-						<ConflictCompare
-							narrative={draft.narrative}
-							changes={changes}
-							onUseLatest={() => {
-								setInputs({})
-								save.reset()
-							}}
-							onKeepMine={() => {
-								save.reset()
-								doSave()
-							}}
-						/>
-					)}
-				</section>
-
-				<div className="str-aside">
-					<StrVerificationPanel
-						verification={verification}
-						dirty={dirty}
-						canVerify={can("VERIFY")}
-						verifying={verify.isPending}
-						verifyError={verify.isError ? getErrorMessage(verify.error) : null}
-						onVerify={() => !dirty && !verify.isPending && verify.mutate({})}
-						narrative={draft.narrative}
-					/>
-					<StrSuspicionPanel
-						editable={editable}
-						types={types}
-						level={level}
-						recommended={draft.suspicionTypesRecommended}
-						onTypesChange={setTypes}
-						onLevelChange={setLevel}
-					/>
+			<section className="str-panel" aria-labelledby="str-narrative-heading">
+				<div className="str-panel-head">
+					<h2 id="str-narrative-heading">서술부</h2>
+					<p>
+						{draft.narrative.length}개 항목 · {revisionLabel(draft.currentRevisionNo)}
+						{editable
+							? " · 문장만 고칠 수 있어요(숫자·근거는 서버가 관리)"
+							: " · 읽기 전용"}
+					</p>
 				</div>
-			</div>
+				<StrNarrative
+					narrative={draft.narrative}
+					editable={editable}
+					inputs={inputs}
+					onChange={(section, text) =>
+						setInputs((prev) => ({ ...prev, [section]: text }))
+					}
+				/>
+				{conflict && (
+					<ConflictCompare
+						narrative={draft.narrative}
+						changes={changes}
+						onUseLatest={() => {
+							setInputs({})
+							save.reset()
+						}}
+						onKeepMine={() => {
+							save.reset()
+							doSave()
+						}}
+					/>
+				)}
+			</section>
 
 			<section className="str-actionbar" aria-label="STR 작업">
 				{editable && (
@@ -256,16 +198,6 @@ function StrWorkspace({ draft, detail }) {
 						{save.isPending ? "저장 중…" : "변경 저장"}
 					</button>
 				)}
-				{can("SUBMIT") && (
-					<button
-						type="button"
-						className="primary"
-						onClick={() => setPanel("submit")}
-						disabled={Boolean(blockReason) || submit.isPending || panel === "submit"}
-					>
-						승인 요청
-					</button>
-				)}
 				{can("REGENERATE") && (
 					<button
 						type="button"
@@ -275,18 +207,6 @@ function StrWorkspace({ draft, detail }) {
 						다시 생성
 					</button>
 				)}
-				{can("CLOSE_WITH_DRAFT") && (
-					<button
-						type="button"
-						onClick={() => setPanel("close")}
-						disabled={panel === "close"}
-					>
-						종료
-					</button>
-				)}
-				{(editable || can("SUBMIT")) && blockReason && (
-					<span className="str-block-reason">{blockReason}</span>
-				)}
 			</section>
 			{save.isError && !conflict && (
 				<p role="alert">
@@ -295,50 +215,14 @@ function StrWorkspace({ draft, detail }) {
 						" 작성 내용은 유지돼요."}
 				</p>
 			)}
-			{save.isSuccess && !dirty && (
-				<p role="status">저장했어요. 저장본을 다시 검증해 주세요.</p>
-			)}
+			{save.isSuccess && !dirty && <p role="status">저장했어요.</p>}
 
-			{panel === "submit" && (
-				<SubmitConfirm
-					draft={draft}
-					verification={verification}
-					types={types}
-					level={level}
-					command={submit}
-					blocked={Boolean(blockReason) || vState !== "PASSED"}
-					onConfirm={() =>
-						submit.mutate(
-							{
-								caseVersion,
-								verificationId: verification.verificationId,
-								suspicionTypes: types,
-								suspicionLevelBranch: level,
-							},
-							{ onSuccess: () => setPanel(null) },
-						)
-					}
-					onCancel={() => {
-						submit.reset()
-						setPanel(null)
-					}}
-				/>
-			)}
-			{submit.isSuccess && <p role="status">승인 요청을 보냈어요. 승인자 결정을 기다려요.</p>}
 			{panel === "regenerate" && (
 				<StrGenerateForm
 					detail={detail}
 					regenerate
 					blockedReason={dirty ? "변경한 내용을 먼저 저장하거나 되돌려 주세요." : null}
 					onDone={() => setPanel(null)}
-				/>
-			)}
-			{panel === "close" && (
-				<CloseForm
-					detail={detail}
-					name="closeWithDraft"
-					onDone={() => setPanel(null)}
-					onClosed={() => client.invalidateQueries({ queryKey: draftKey(draft.draftNo) })}
 				/>
 			)}
 		</>
@@ -380,49 +264,6 @@ function ConflictCompare({ narrative, changes, onUseLatest, onKeepMine }) {
 				</button>
 				<button type="button" onClick={onKeepMine}>
 					내 입력 유지하고 다시 저장
-				</button>
-			</div>
-		</section>
-	)
-}
-
-function SubmitConfirm({
-	draft,
-	verification,
-	types,
-	level,
-	command,
-	blocked,
-	onConfirm,
-	onCancel,
-}) {
-	return (
-		<section className="case-action-form" aria-label="승인 요청 확인">
-			<h3>승인 요청</h3>
-			<p>
-				현재 저장본 <strong>{revisionLabel(draft.currentRevisionNo)}</strong>을 승인
-				요청해요. 검증 {verification?.verificationId ?? "-"} (
-				{revisionLabel(verification?.revisionNo)}) 기준이에요.
-			</p>
-			<p>
-				의심 유형 {types.map(suspicionTypeLabel).join(", ") || "-"} · 지점 의심 정도{" "}
-				{level ?? "-"}
-			</p>
-			<p className="case-action-note">
-				승인 대기 중에는 본문을 고칠 수 없어요. 승인자가 보완 요청하면 다시 고칠 수 있어요.
-			</p>
-			{command.isError && <p role="alert">{getErrorMessage(command.error)}</p>}
-			<div className="case-action-buttons">
-				<button
-					type="button"
-					className="primary"
-					onClick={onConfirm}
-					disabled={blocked || command.isPending}
-				>
-					{command.isPending ? "요청 중…" : "승인 요청"}
-				</button>
-				<button type="button" onClick={onCancel} disabled={command.isPending}>
-					계속 편집
 				</button>
 			</div>
 		</section>
