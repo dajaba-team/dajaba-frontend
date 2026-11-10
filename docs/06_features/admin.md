@@ -33,7 +33,7 @@
 
 ## 4. 계정 관리 — `/admin/accounts` (ADM-03) [BE 04 §7, 계약서 5.8] — 화면 SCRUM-169
 
-화면: `features/admin/users/pages/AdminAccountsPage.jsx`, 확인창 `components/AccountDialogs.jsx`, 입력 규칙 `accountRules.js`. 메뉴 "계정 관리" `ready: true`, 라우트 `RequireRole` ADMIN. API는 목록만 BE에 있고(SCRUM-135 ①) 나머지는 SCRUM-135 ②(진희) 전까지 계약서 5.8 모양 MSW.
+화면: `features/admin/users/pages/AdminAccountsPage.jsx`, 확인창 `components/AccountDialogs.jsx`, 입력 규칙 `accountRules.js`. 라우트 `RequireRole` ADMIN. 메뉴 "계정 관리"는 SCRUM-135 ② API가 머지될 때 `ready: true`로 켜요(#28 리뷰) — 그 전엔 주소로만 들어가고 실서버에선 변경 버튼이 404예요. API는 목록만 BE에 있고(SCRUM-135 ①) 나머지는 SCRUM-135 ②(진희) 전까지 계약서 5.8 모양 MSW.
 
 - 목록: 역할·상태(기본 활성) 필터, 조사역 행에 `active_case_count` + [케이스 보기](`/cases?assignee=login_id`). 내 계정·SYSTEM 행 버튼 없음, 관리자 행 역할 변경 없음, 삭제 없음
 - 발급: 입력 규칙을 화면에서 먼저 검사, 409 `LOGIN_ID_TAKEN`은 아이디 칸 아래, 성공 뒤 비밀번호 비움·다시 안 보임
