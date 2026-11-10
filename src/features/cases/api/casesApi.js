@@ -1,7 +1,7 @@
 import { apiClient } from "../../../shared/api/apiClient"
 
-// 케이스 API — 프론트 API 계약서 v0.2 C1·C2·A1·A3·A4·A5·A6, CASES 명세 API-01·02·03·05·06·07.
-// 백엔드 CaseController(SCRUM-106)와 같은 경로·모양이에요. 메모(A3 PUT …/notes)·메모 이력(C8)은 SCRUM-176으로 붙었어요.
+// 케이스 API — 프론트 API 계약서 v0.2 C1~C8·A1~A7, CASES 명세 API-01~13·15.
+// 백엔드 CaseController(SCRUM-106)와 같은 경로·모양이에요. 메모(A3)·메모 이력(C8)은 SCRUM-176, 요약(A7·C7)은 SCRUM-175.
 // 초안 있는 종료(A6, str 컨트롤러)는 백엔드가 아직 없어 MSW가 답해요.
 // 서버는 snake_case, 화면은 camelCase — 변환은 여기서 한 번만 해요.
 const casePath = (caseNo) => `/api/v1/cases/${encodeURIComponent(caseNo)}`
@@ -97,11 +97,26 @@ const toTransaction = (data) => ({
 	scope: data.scope,
 })
 
+// AI 조사 요약 한 건 (A7·C7·상세 latest_summary 같은 모양). isCurrent: 지금 입력과 같은가, 판정 못 하면 null.
+// modelFocus("모델이 주목한 점")는 관측 사실(summaryLines)과 섞지 않으려고 따로 둬요.
+const toSummary = (data) =>
+	data
+		? {
+				summaryLines: data.summary_lines ?? [],
+				modelFocus: data.model_focus ?? null,
+				producedAt: data.produced_at ?? null,
+				generatorVersion: data.generator_version ?? null,
+				basedOnCaseVersion: data.based_on_case_version ?? null,
+				isCurrent: data.is_current ?? null,
+			}
+		: null
+
 // 아직 서버가 null로 주는 칸(current_draft 등)은 화면을 만들 때 옮겨요.
 const toCaseDetail = (data) => ({
 	...toCaseSummary(data),
 	alert: toAlert(data.alert),
 	latestScore: toLatestScore(data.latest_score),
+	latestSummary: toSummary(data.latest_summary),
 	updatedAt: data.updated_at ?? null,
 	closeReason: data.close_reason ?? null,
 	investigatorNotes: data.investigator_notes ?? null,
@@ -276,6 +291,20 @@ export const casesApi = {
 		}
 	},
 	/** 메모 저장(A3). 같은 내용이면 서버가 그대로 두고(version 안 오름), 빈 문자열은 비우기. */
+	/** AI 조사 요약 생성·갱신(A7) → 201 { case_no, summary, case_version }. 실패(502 등)면 기존 요약은 그대로예요. */
+	refreshSummary: async ({ caseNo, version }) => {
+		const { data } = await apiClient.post(`${casePath(caseNo)}/refresh-summary`, { version })
+		return {
+			caseNo: data.case_no,
+			summary: toSummary(data.summary),
+			version: data.case_version,
+		}
+	},
+	/** 현재 요약(C7). 요약이 없으면 summary: null. 화면은 상세의 latestSummary를 쓰고, 이건 따로 확인할 때 써요. */
+	summary: async (caseNo, signal) => {
+		const { data } = await apiClient.get(`${casePath(caseNo)}/summary`, { signal })
+		return { caseNo: data.case_no, summary: toSummary(data.summary) }
+	},
 	saveNotes: async ({ caseNo, version, investigatorNotes }) =>
 		toChange(
 			(

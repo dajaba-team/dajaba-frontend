@@ -619,6 +619,75 @@ describe("케이스 조사", () => {
 		expect(await screen.findByText("산출 실패 (AI_TIMEOUT)")).toBeInTheDocument()
 		expect(screen.getByText("경보 정보 없음")).toBeInTheDocument()
 	})
+	it("요약이 없으면 [요약 생성]으로 만들고 현재 입력 기준 배지를 보여 준다", async () => {
+		const bodies = recordBodies("/refresh-summary")
+		const user = renderApp(`/cases/${REVIEWING}`)
+		const panel = await screen.findByRole("region", { name: "AI 조사 요약" })
+		expect(within(panel).getByText("아직 만든 요약이 없습니다.")).toBeInTheDocument()
+		expect(
+			within(panel).getByText("요약 실패가 거래 열람·메모·상태 변경을 막지 않습니다."),
+		).toBeInTheDocument()
+		await user.click(within(panel).getByRole("button", { name: "요약 생성" }))
+		expect(await within(panel).findByText("현재 입력 기준")).toBeInTheDocument()
+		expect(within(panel).getByText(/모델이 주목한 점/)).toBeInTheDocument()
+		expect(within(panel).getByRole("button", { name: "요약 갱신" })).toBeInTheDocument()
+		expect(bodies).toEqual([{ version: 1 }])
+		// 요약 갱신은 version을 올려요 — 상세를 다시 불러 새 버전을 보여 줘요
+		expect(await screen.findByText(/버전 2/)).toBeInTheDocument()
+	})
+	it("입력이 바뀐 요약은 '입력 변경됨'으로 보여 준다", async () => {
+		renderApp("/cases/CASE-2022-001001")
+		const panel = await screen.findByRole("region", { name: "AI 조사 요약" })
+		expect(await within(panel).findByText("입력 변경됨")).toBeInTheDocument()
+		expect(within(panel).getByRole("button", { name: "요약 갱신" })).toBeInTheDocument()
+	})
+	it("요약 실패는 그 칸에만 보여 주고 기존 요약은 이전 요약으로 남기며 다른 작업은 그대로 된다", async () => {
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}`, () =>
+				HttpResponse.json(
+					detailJson({
+						latest_summary: {
+							summary_lines: ["예전 요약 첫 줄"],
+							model_focus: null,
+							produced_at: "2026-11-02T01:20:00Z",
+							generator_version: "p-1",
+							based_on_case_version: 0,
+							is_current: true,
+						},
+					}),
+				),
+			),
+			http.post(`*/api/v1/cases/${REVIEWING}/refresh-summary`, () =>
+				HttpResponse.json(
+					{
+						error: {
+							code: "SUMMARY_CODE_CHECK_FAILED",
+							message: "코드 검사 실패",
+							details: { failed_checks: ["AMOUNT_MATCH"] },
+						},
+					},
+					{ status: 502 },
+				),
+			),
+		)
+		const user = renderApp(`/cases/${REVIEWING}`)
+		const panel = await screen.findByRole("region", { name: "AI 조사 요약" })
+		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))
+		expect(await within(panel).findByRole("alert")).toHaveTextContent(
+			"AI 요약이 원본 데이터 검사를 통과하지 못해 저장하지 않았어요.",
+		)
+		expect(within(panel).getByRole("group", { name: "이전에 만든 요약" })).toHaveTextContent(
+			"예전 요약 첫 줄",
+		)
+		// 다른 작업 버튼·메모 칸은 그대로
+		expect(screen.getByRole("button", { name: "에스컬레이션" })).toBeEnabled()
+		expect(screen.getByRole("textbox", { name: "메모 내용" })).toBeEnabled()
+	})
+	it("요약 버튼은 REFRESH_SUMMARY가 있을 때만 보여 준다", async () => {
+		renderApp("/cases/CASE-2022-001003")
+		const panel = await screen.findByRole("region", { name: "AI 조사 요약" })
+		expect(within(panel).queryByRole("button")).not.toBeInTheDocument()
+	})
 	it("없는 케이스는 404 안내를, 조회 오류는 다시 불러오기를 보여 준다", async () => {
 		server.use(
 			http.get(`*/api/v1/cases/${REVIEWING}`, () => new HttpResponse(null, { status: 500 }), {

@@ -82,6 +82,16 @@ export function seedCases() {
 			rejection_reason_code: null,
 			close_reason: null,
 			version: 3,
+			// 요약을 만든 뒤 점수가 바뀐 예 — "입력 변경됨"
+			latest_summary: {
+				summary_lines: ["(예시) 24시간 동안 12개 계좌에서 입금이 몰렸습니다."],
+				model_focus: null,
+				produced_at: "2026-11-02T01:25:00Z",
+				generator_version: "mock-0.0.1",
+				based_on_case_version: 2,
+				is_current: false,
+				input_sha256: "1".repeat(64),
+			},
 			history: [
 				history("ATTACH_DRAFT", "ESCALATED", "DRAFTED", "inv01", 30),
 				history("ESCALATE", "REVIEWING", "ESCALATED", "inv01", 20, "STR 검토 필요"),
@@ -216,7 +226,7 @@ export function detailResponse(viewer, item) {
 		close_reason: item.close_reason,
 		latest_score: item.latest_score ?? null,
 		aggregates: aggregatesOf(item.transactions ?? []),
-		latest_summary: null,
+		latest_summary: item.latest_summary ?? null,
 		current_draft_no: item.current_draft_no,
 		current_draft: null,
 		prior_alerts: [],
@@ -336,9 +346,9 @@ export const changeResponse = (item) => ({
 	updated_at: item.updated_at,
 })
 
-const fail = (status, code, message) => ({
+const fail = (status, code, message, details = {}) => ({
 	status,
-	body: { error: { code, message, details: {} } },
+	body: { error: { code, message, details } },
 })
 const blank = (text) => typeof text !== "string" || !text.trim() || text.length > 2000
 
@@ -401,7 +411,29 @@ export function applyCommand(viewer, item, command, body, users) {
 	} else {
 		if (item.assignee?.login_id !== viewer.login_id)
 			return fail(403, "NOT_ASSIGNEE", "담당 조사역만 할 수 있습니다")
-		if (command === "notes") {
+		if (command === "refresh-summary") {
+			if (!availableActions(viewer, item).includes("REFRESH_SUMMARY"))
+				return fail(
+					409,
+					"INVALID_CASE_TRANSITION",
+					"지금 상태에서 요약을 만들 수 없습니다",
+					{
+						action: "REFRESH_SUMMARY",
+					},
+				)
+			item.latest_summary = {
+				summary_lines: [
+					`(예시) ${item.account_no} 계좌로 단기간 여러 계좌의 입금이 몰렸습니다.`,
+					"(예시) 근거 거래를 확인해 주세요.",
+				],
+				model_focus: "(예시) 모델은 account_in_counterparties_24h 신호를 가장 크게 봄",
+				produced_at: now,
+				generator_version: "mock-0.0.1",
+				based_on_case_version: item.version,
+				is_current: true,
+				input_sha256: "0".repeat(64),
+			}
+		} else if (command === "notes") {
 			if (!availableActions(viewer, item).includes("UPDATE_NOTES"))
 				return fail(409, "INVALID_CASE_TRANSITION", "지금 상태에서 메모를 고칠 수 없습니다")
 			// 같은 내용(메모가 없을 때 빈 문자열 포함)이면 그대로 — version 안 오름 (BE UpdateCaseNotes)

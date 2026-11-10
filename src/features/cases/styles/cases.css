@@ -183,3 +183,33 @@
 	font-size: 11px;
 	fill: currentColor;
 }
+/* AI 조사 요약 (SCRUM-175) — 배지는 글자로도 상태를 말해서 색만으로 구분하지 않아요. */
+.case-ai-summary {
+	margin-block: var(--space-5);
+}
+.case-ai-summary > h2,
+.case-ai-summary > [role="group"],
+.case-ai-summary > button {
+	margin: var(--space-4);
+}
+.case-ai-summary-note {
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.case-ai-summary-lines {
+	margin: 0;
+	padding-inline-start: var(--space-5);
+}
+.summary-badge {
+	display: inline-flex;
+	padding: var(--space-1) var(--space-2);
+	border-radius: var(--radius-control);
+	background: var(--color-soft);
+	font-size: var(--font-small);
+}
+.summary-badge.is-current {
+	color: var(--color-pass);
+}
+.summary-badge.is-stale {
+	color: var(--color-fail);
+}
