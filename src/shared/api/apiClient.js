@@ -12,6 +12,13 @@ export const apiClient = axios.create({
 	xsrfHeaderName: "X-XSRF-TOKEN",
 })
 
+// AI를 기다리는 요청(초안 생성·검증)은 백엔드 한도 90초(재시도 포함) + 여유. 03_api.md §4, FE-8 〔확인 필요: 프록시 한도〕
+export const AI_REQUEST_TIMEOUT_MS = 100_000
+
+export function isNoResponse(error) {
+	return !error?.response && ["ECONNABORTED", "ETIMEDOUT", "ERR_NETWORK"].includes(error?.code)
+}
+
 export function getErrorCode(error) {
 	return error.response?.data?.error?.code
 }
@@ -39,6 +46,18 @@ export function getErrorMessage(error) {
 	if (code === "DRAFT_IN_PROGRESS") return "초안을 만드는 중이에요. 잠시 후 상태를 확인해 주세요."
 	if (code === "SELF_APPROVAL") return "본인이 담당한 케이스는 승인할 수 없습니다."
 	if (code === "NARRATIVE_UNCHANGED") return "반려된 본문을 보완한 후 다시 요청해 주세요."
+	// STR 초안·검증·승인 요청 (BE str 도메인 예외 이름 → UPPER_SNAKE)
+	if (code === "DRAFT_NOT_VERIFIED")
+		return "지금 저장된 본문의 검증 통과가 필요해요. 저장본을 다시 검증해 주세요."
+	if (code === "DRAFT_LOCKED") return "승인된 초안이라 더는 고칠 수 없어요."
+	if (code === "DRAFT_SUPERSEDED")
+		return "다른 초안으로 바뀌었어요. 작성 내용은 유지됩니다. 현재 초안을 확인해 주세요."
+	if (code === "DRAFT_REQUEST_CLOSED")
+		return "이미 끝난 초안 요청이에요. 현재 초안을 확인해 주세요."
+	if (code === "VERIFY_IN_PROGRESS") return "검증 중이에요. 잠시 후 결과를 확인해 주세요."
+	if (code === "INVALID_SECTION_TEXT")
+		return "비어 있거나 너무 긴 항목이 있어요. 각 항목은 1~5,000자로 써 주세요."
+	if (code === "REVISION_NOT_FOUND") return "해당 수정본을 찾을 수 없어요."
 	if (code === "INVALID_REQUEST") return "입력 값이 올바른지 확인해 주세요."
 	// NOT_FOUND는 주소 자체가 없다는 뜻(아직 서버에 없는 API)이에요. CASE_NOT_FOUND처럼 대상이 없는 것과 달라요.
 	// 조회에서도 같은 문구가 떠서 "입력 유지" 안내는 넣지 않아요. 입력이 남는 건 입력칸이 보여 줘요(#12 리뷰).
@@ -56,7 +75,7 @@ export function getErrorMessage(error) {
 		return "현재 업무 상태에서 처리할 수 없습니다. 최신 상태를 확인해 주세요."
 	if (error.response?.status === 502)
 		return "AI 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."
-	if (!error.response && ["ECONNABORTED", "ETIMEDOUT", "ERR_NETWORK"].includes(error.code)) {
+	if (isNoResponse(error)) {
 		return "서버 응답을 확인하지 못했습니다. 저장 요청이었다면 최신 내용을 확인한 후 다시 시도해 주세요."
 	}
 	return "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."

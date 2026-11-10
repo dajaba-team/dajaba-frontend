@@ -4,28 +4,32 @@ import { useSession } from "../../auth/hooks/useSession"
 import { CLOSE_REASON_LABELS } from "../labels"
 import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
 import ReassignDialog from "./ReassignDialog"
+import StrGenerateForm from "../../str/components/StrGenerateForm"
 
 const COMMENT_MAX = 2000
 
 // 버튼은 서버가 준 availableActions만 보고 켜요. 누르면 서버가 다시 검사해요(계약서 §4).
-// 이 화면이 다루는 것: ASSIGN·REASSIGN·ESCALATE·CLOSE·CLOSE_WITH_DRAFT. 종료는 버튼 하나 — 초안이 있으면 서버가
-// CLOSE 대신 CLOSE_WITH_DRAFT를 줘요(SCRUM-112).
+// 이 화면이 다루는 것: ASSIGN·REASSIGN·ESCALATE·CLOSE·CLOSE_WITH_DRAFT·GENERATE_DRAFT. 종료는 버튼 하나 — 초안이 있으면 서버가
+// CLOSE 대신 CLOSE_WITH_DRAFT를 줘요(SCRUM-112). 초안 생성은 초안이 없을 때만 여기서 — 재생성은 STR 화면에서(미저장 편집 확인).
 export default function CaseActions({ detail }) {
 	const session = useSession()
 	const [open, setOpen] = useState(null)
 	const [reassigning, setReassigning] = useState(false)
 	const actions = detail.availableActions
 	const has = (action) => actions.includes(action)
+	const canGenerate = has("GENERATE_DRAFT") && !detail.currentDraftNo
 	// 409 뒤 상세를 다시 불러 그 동작이 빠졌으면(예: 다른 사람이 먼저 종료) 열린 폼도 닫아요.
 	// open도 같이 비워서, 나중에 그 동작이 다시 생겨도 예전 폼이 저절로 열리지 않게 해요(#12 리뷰).
-	const shown = open && has(open.toUpperCase()) ? open : null
+	// 초안 생성 폼은 성공 뒤 current_draft_no가 생겨도 결과 안내를 보여 주려고 열어 둬요.
+	const shown = open === "generate_draft" || (open && has(open.toUpperCase())) ? open : null
 	if (open && !shown) setOpen(null)
 	if (
 		!has("ASSIGN") &&
 		!has("REASSIGN") &&
 		!has("ESCALATE") &&
 		!has("CLOSE") &&
-		!has("CLOSE_WITH_DRAFT")
+		!has("CLOSE_WITH_DRAFT") &&
+		!canGenerate
 	)
 		return null
 	const isAdmin = session.data?.role === "ADMIN"
@@ -47,6 +51,15 @@ export default function CaseActions({ detail }) {
 				{has("ESCALATE") && (
 					<button type="button" onClick={() => setOpen("escalate")} disabled={!!shown}>
 						에스컬레이션
+					</button>
+				)}
+				{canGenerate && (
+					<button
+						type="button"
+						onClick={() => setOpen("generate_draft")}
+						disabled={!!shown}
+					>
+						STR 초안 생성
 					</button>
 				)}
 				{(has("CLOSE") || has("CLOSE_WITH_DRAFT")) && (
@@ -74,6 +87,9 @@ export default function CaseActions({ detail }) {
 			)}
 			{shown === "close_with_draft" && (
 				<CloseForm detail={detail} name="closeWithDraft" onDone={() => setOpen(null)} />
+			)}
+			{shown === "generate_draft" && (
+				<StrGenerateForm detail={detail} onDone={() => setOpen(null)} />
 			)}
 		</section>
 	)
@@ -103,6 +119,7 @@ function ActionForm({
 	command,
 	onSubmit,
 	onDone,
+	onSuccess,
 	canSubmit,
 	fieldError = false,
 	children,
@@ -115,7 +132,12 @@ function ActionForm({
 			onSubmit={(event) => {
 				event.preventDefault()
 				if (command.isPending || !canSubmit) return
-				command.mutate(onSubmit(), { onSuccess: onDone })
+				command.mutate(onSubmit(), {
+					onSuccess: () => {
+						onSuccess?.()
+						onDone()
+					},
+				})
 			}}
 		>
 			<h3 id={titleId}>{title}</h3>
@@ -212,7 +234,8 @@ function EscalateForm({ detail, onDone }) {
 }
 
 // name: "close"(초안 없음, A5) 또는 "closeWithDraft"(초안 있음, A6). 요청 본문은 같아요.
-function CloseForm({ detail, name, onDone }) {
+// STR 화면(초안 있는 종료)에서도 같은 폼을 써요.
+export function CloseForm({ detail, name, onDone, onClosed }) {
 	const command = useCaseCommand(detail.caseNo, name)
 	const [closeReason, setCloseReason] = useState("")
 	const [comment, setComment] = useState("")
@@ -224,6 +247,7 @@ function CloseForm({ detail, name, onDone }) {
 			canSubmit={closeReason !== "" && comment.trim() !== ""}
 			onSubmit={() => ({ version: detail.version, closeReason, comment })}
 			onDone={onDone}
+			onSuccess={onClosed}
 		>
 			<p>종료한 케이스는 다시 열 수 없어요. 종료는 범죄가 없다는 확정이 아니에요.</p>
 			{name === "closeWithDraft" && (

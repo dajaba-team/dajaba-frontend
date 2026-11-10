@@ -3,8 +3,28 @@
 > v0.1 · 2026-10-31 · 초안(팀 확인 중) · 정리 지윤
 
 - 프론트 폴더: `src/features/str/` · 백엔드 짝: `str` (BE `06_features/str.md`, STR 명세 〔초안〕)
-- 지금: `/cases/:caseId/str`은 케이스의 지금 초안(`current_draft_no` 〔확인 필요 — 케이스 상세 API 필드 이름〕)을 불러와 **서술부를 읽기 전용으로** 그려요. 섹션은 서버가 준 목록·순서 그대로, 제목은 `label` → `shared/str/sectionTitles.js`(7항목 + 옛 6섹션, 시연 화면과 같은 표, label이 빈 값이어도 표로) → 섹션 이름 순서예요(SCRUM-115). 수정·검증·승인 요청은 아직이고, 시연(`/demo/cases/:caseId/str`)에서 합성 데이터로 볼 수 있어요.
-- **남은 STR 화면 이슈(SCRUM-114·116·117·118·121)는 실제 `/cases/:caseNo/str` 화면에 만들어요(11/10).** `DemoStrPage`는 없앨 예정이라 고치지 않아요.
+- 지금(11/10): `/cases/:caseNo/str`이 화면 설계 STR-01~04를 다 그려요 — 초안 생성·재생성(S1), 조회(S2), 항목 수정·저장(S3), 수정 이력(S4), 저장본 검증(S5), VI부 유형·지점 정도 + 승인 요청(S6), 초안 있는 종료(A6), 동시 수정 비교, 제한 열람·승인 대기·반려·잠금 안내. 케이스 상세에도 `GENERATE_DRAFT`면 [STR 초안 생성] 버튼이 생겨요. 섹션은 서버가 준 목록·순서 그대로, 제목은 `label` → `shared/str/sectionTitles.js` → 섹션 이름 순서예요(SCRUM-115).
+- 코드: `api/strApi.js`(변환·요청) · `model/strRules.js`(버튼·검증 상태·승인 요청 막힘 이유 — 순수 함수) · `hooks/useStrDraft.js`(`useStrCommand`) · `components/Str*` · `pages/StrPage.jsx`. MSW: `mocks/strCommands.js`.
+
+### 백엔드 연결 상태 (단계별)
+
+| 단계 | API                                                    | BE                                                                                                                          | 프론트                                             |
+| ---- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| 1    | S1 `POST /cases/{case_no}/str-drafts` `{case_version}` | develop (SCRUM-183). **요청 이름이 `caseVersion`으로 고정돼 400** → BE `fix/str-create-case-version`에서 `case_version`으로 | `strApi.createDraft` (timeout 100초)               |
+| 2    | S2 `GET /str-drafts/{draft_no}`                        | `feat/SCRUM-205` 리뷰 중                                                                                                    | `strApi.getDraft` — 아래 "S2 차이" 흡수            |
+| 3    | S3 `PUT …/revisions`                                   | 없음 → 404 `NOT_FOUND` 안내 + 입력 유지                                                                                     | `strApi.saveRevision`                              |
+| 4    | S4 `GET …/revisions`                                   | 없음                                                                                                                        | `strApi.getRevisions`·`getRevision`                |
+| 5    | S5 `POST …/verify`                                     | 없음                                                                                                                        | `strApi.verify` (timeout 100초)                    |
+| 6    | S6 `POST …/submit`                                     | 없음                                                                                                                        | `strApi.submit`                                    |
+| -    | A6 `POST /cases/{case_no}/close-with-draft`            | 없음                                                                                                                        | `casesApi.closeWithDraft` (STR 화면에서도 같은 폼) |
+
+BE가 한 단계씩 붙으면 프론트 코드는 그대로예요(경로·모양을 계약서대로 미리 맞춰 둠). `VITE_USE_MOCKS=true`면 전부 MSW가 답해요.
+
+**S2 차이 (SCRUM-205 기준)** — `available_actions`·`case_status`·`generation_id`·`generator_version`·`narrative[].label`·`last_rejection`·`suspicion_*`가 아직 없고, `latest_verification`은 AI payload + `revision_no`(`is_current` 없음)예요. 프론트는:
+
+- `available_actions` 키가 없으면 `null`로 두고, 그동안만 케이스 C2 `available_actions`(`GENERATE_DRAFT`·`CLOSE_WITH_DRAFT`)에서 STR 버튼을 옮겨 와요(`strActionsFor` — 임시 다리, S2가 주면 자동으로 안 탐).
+- `is_current`가 없으면 `latest_verification.revision_no === current_revision_no`로 봐요(승인 요청 조건과 같은 기준, 최종 판단은 서버 ApprovalGate).
+- 나머지는 `null`/`[]`로 두고 지어내지 않아요.
 
 ## 1. 화면 — `/cases/:caseNo/str`
 
@@ -42,15 +62,15 @@
 
 ## 3. API 〔초안 — STR 명세, BE `06_features/str.md`〕
 
-| #   | API                                                                    | 화면             | 프론트                      |
-| --- | ---------------------------------------------------------------------- | ---------------- | --------------------------- |
-| 1   | `POST /cases/{case_no}/str-drafts` (최대 90초)                         | 초안 생성·재생성 | 없음                        |
-| 2   | `GET /str-drafts/{draft_no}`                                           | 초안 보기        | `strApi.getDraft` (MSW)     |
-| 3   | `PUT /str-drafts/{draft_no}/revisions` (고친 섹션만)                   | 섹션 저장        | 없음                        |
-| 4   | `GET /str-drafts/{draft_no}/revisions?revision_no=`                    | 수정 이력        | `strApi.getRevisions` (MSW) |
-| 5   | `POST /str-drafts/{draft_no}/verify` (body `{}`)                       | 검증             | 없음                        |
-| 6   | `POST /str-drafts/{draft_no}/submit` `{case_version, verification_id}` | 승인 요청        | 없음                        |
-| 9   | `POST /cases/{case_no}/close-with-draft`                               | 초안 있는 종료   | 없음                        |
+| #   | API                                                                                                             | 화면             | 프론트                      |
+| --- | --------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------------- |
+| 1   | `POST /cases/{case_no}/str-drafts` (최대 90초)                                                                  | 초안 생성·재생성 | `strApi.createDraft`        |
+| 2   | `GET /str-drafts/{draft_no}`                                                                                    | 초안 보기        | `strApi.getDraft` (MSW)     |
+| 3   | `PUT /str-drafts/{draft_no}/revisions` (고친 섹션만)                                                            | 섹션 저장        | `strApi.saveRevision` (MSW) |
+| 4   | `GET /str-drafts/{draft_no}/revisions?revision_no=`                                                             | 수정 이력        | `strApi.getRevisions` (MSW) |
+| 5   | `POST /str-drafts/{draft_no}/verify` (body `{}`)                                                                | 검증             | `strApi.verify` (MSW)       |
+| 6   | `POST /str-drafts/{draft_no}/submit` `{case_version, verification_id, suspicion_types, suspicion_level_branch}` | 승인 요청        | `strApi.submit` (MSW)       |
+| 9   | `POST /cases/{case_no}/close-with-draft`                                                                        | 초안 있는 종료   | `casesApi.closeWithDraft`   |
 
 승인·반려(7·8)는 `approvals.md`. 확정본 PDF는 STR 명세 〔후속〕.
 
@@ -90,6 +110,10 @@ S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), 
 | 409 `CONCURRENT_UPDATE`                                             | 편집 내용 유지 + 최신 수정본 비교 (cases 메모와 같은 방식)                                          |
 | 502 `AI_*`·`LLM_*`                                                  | 생성·검증 영역에만 실패 안내 + 수동 다시 시도. **검증 통신 실패를 "내용 부적합"으로 표시하지 않음** |
 | 응답 없음·timeout                                                   | 최신 초안·검증 상태를 먼저 조회 (같은 초안이 두 번 생길 수 있음 — BE 미결 21)                       |
+
+**VI부 유형 목록** — `shared/str/suspicionTypes.js`(UI/UX 검토 자료 v1.3의 5분류 38항목). 코드는 `DEMO_` 접두사 그대로예요 〔확인 필요 — 준혁·채영: 룰 명세 "서식 유형 번호"로 교체〕. 추천은 표시만, 자동 체크 없음.
+
+**MSW 검증 흉내** — 본문에 "9월 3일"이 있으면 날짜 대조 불일치(`CODE_FAILED`, `llm_checks: null`), "검증불가"가 있으면 `VERIFY_UNAVAILABLE`, 그 밖은 통과.
 
 ## 5. 테스트에 있어야 하는 것
 

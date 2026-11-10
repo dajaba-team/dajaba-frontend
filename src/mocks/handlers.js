@@ -1,4 +1,5 @@
 import { canViewStrContent, seedStrDrafts, visibleStrDraft } from "./strDrafts"
+import { createDraft, draftActions, saveRevision, submitDraft, verifyDraft } from "./strCommands"
 import {
 	applyCommand,
 	changeResponse,
@@ -76,6 +77,8 @@ const draftNotFound = () =>
 		{ error: { code: "DRAFT_NOT_FOUND", message: "초안을 찾을 수 없습니다", details: {} } },
 		{ status: 404 },
 	)
+const caseOf = (draft) => cases.find((entry) => entry.case_no === draft.case_no) ?? null
+const reply = ({ status, body }) => HttpResponse.json(body, { status })
 const unauthenticated = () =>
 	HttpResponse.json({ error: { code: "UNAUTHENTICATED" } }, { status: 401 })
 const base = new URL(import.meta.env.VITE_API_BASE_URL || "", window.location.origin).href.replace(
@@ -573,11 +576,38 @@ export const handlers = [
 			)
 		return HttpResponse.json({ case_no: item.case_no, summary: item.latest_summary ?? null })
 	}),
+	// S1 초안 생성 — BE develop에 있어요(SCRUM-183). MSW는 같은 계약으로 답해요. 새 초안 본문은 7항목 예시를 복사.
+	http.post(`${base}/api/v1/cases/:caseNo/str-drafts`, async ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		const body = await request.json().catch(() => null)
+		const template = drafts.find((entry) => entry.draft_no === "DRF-000124")
+		return reply(createDraft(currentUser, item, body, drafts, template))
+	}),
 	http.get(`${base}/api/v1/str-drafts/:draftNo`, ({ params }) => {
 		if (!currentUser) return unauthenticated()
 		const draft = drafts.find((item) => item.draft_no === params.draftNo)
-		return draft ? HttpResponse.json(visibleStrDraft(currentUser, draft)) : draftNotFound()
+		return draft
+			? HttpResponse.json(visibleStrDraft(currentUser, draft, caseOf(draft), draftActions))
+			: draftNotFound()
 	}),
+	// S3·S5·S6 — BE 아직 없음. 계약서·BE str.md 모양으로 MSW가 답해요.
+	...[
+		["put", "revisions", saveRevision],
+		["post", "verify", verifyDraft],
+		["post", "submit", submitDraft],
+	].map(([method, command, run]) =>
+		http[method](
+			`${base}/api/v1/str-drafts/:draftNo/${command}`,
+			async ({ params, request }) => {
+				if (!currentUser) return unauthenticated()
+				const draft = drafts.find((item) => item.draft_no === params.draftNo)
+				if (!draft) return draftNotFound()
+				const body = await request.json().catch(() => null)
+				return reply(run(currentUser, caseOf(draft), draft, body))
+			},
+		),
+	),
 	// 목록은 본문 없이, `?revision_no=`면 그 한 행의 전·후 본문(명세 4번).
 	http.get(`${base}/api/v1/str-drafts/:draftNo/revisions`, ({ params, request }) => {
 		if (!currentUser) return unauthenticated()

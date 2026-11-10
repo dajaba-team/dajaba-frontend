@@ -45,6 +45,7 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 				section: "METHOD",
 				label: null,
 				text: expect.stringContaining("9월 2일"),
+				cites: [],
 				evidenceIds: [5121008, 5121011],
 			})
 			// 11/4 S2에 더해진 키 — 시드엔 값이 없어 비어 있어요.
@@ -198,6 +199,34 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 			suspicionLevelHq: 3,
 			availableActions: ["REVISE", "VERIFY"],
 		})
+	})
+
+	it("S2 실제 응답(BE SCRUM-205) 모양 — available_actions 없음은 null, is_current 없음은 수정본 번호로", () => {
+		const draft = toDraft({
+			draft_no: DRAFT_NO,
+			access: "FULL",
+			case_no: "CASE-2022-000057",
+			status: "ACTIVE",
+			version: 0,
+			case_version: 2,
+			produced_at: "2026-11-10T00:00:00Z",
+			facts: { subject: { account_no: "10_****BD30", account_ref: "ACR-0123456789AB" } },
+			narrative: [{ section: "DATE", text: "t", cites: ["period"], evidence_ids: [104221] }],
+			current_revision_no: 2,
+			latest_verification: {
+				verification_id: "VRF-1",
+				revision_no: 1,
+				status: "PASSED",
+				passed: true,
+				code_checks: [],
+				llm_checks: [],
+			},
+		})
+		expect(draft.availableActions).toBeNull()
+		expect(draft.caseStatus).toBeNull()
+		expect(draft.narrative[0]).toMatchObject({ label: null, cites: ["period"] })
+		// 수정본 1번을 검증했는데 지금은 2번 — 예전 통과는 지금 본문의 통과가 아니에요.
+		expect(draft.latestVerification.isCurrent).toBe(false)
 	})
 
 	it("서버가 실수로 본문을 같이 보내도 FULL이 아니면 화면 모델에 옮기지 않는다", () => {

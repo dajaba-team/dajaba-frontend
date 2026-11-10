@@ -1,119 +1,171 @@
-import { apiClient } from "../../../shared/api/apiClient"
+import { AI_REQUEST_TIMEOUT_MS, apiClient } from "../../../shared/api/apiClient"
 
-// STR API 명세 2번 `GET /str-drafts/{draft_no}`, 4번 `GET /str-drafts/{draft_no}/revisions`.
-// 경로·응답의 번호는 `draft_no`(`DRF-` + 6자리)예요. DB 숫자 id는 밖으로 안 나와요(계약서 2.2).
-// 백엔드 str API가 아직 없어 MSW(`src/mocks/handlers.js`)가 명세 예시 그대로 답합니다.
-// 본문은 담당 조사역·승인자만 받아요. 관리자·비담당 조사역은 상태·날짜만 받는 제한 응답이에요
-// (FR-APR-02, 권한 매트릭스 14번, 11/3 확정 — SCRUM-110).
+// STR API (계약서 S1~S6, BE docs/06_features/str.md API 표). 경로·응답 번호는 `draft_no`(`DRF-` + 6자리).
+//
+// 백엔드 연결 상태 (2026-11-10)
+//   S1 POST /cases/{case_no}/str-drafts        — BE develop 구현(SCRUM-183). 요청 {case_version} (BE fix/str-create-case-version)
+//   S2 GET  /str-drafts/{draft_no}             — BE feat/SCRUM-205 (리뷰 중). 아래 "S2 실제 응답과 다른 점" 참고
+//   S3 PUT  /str-drafts/{draft_no}/revisions   — BE 아직 없음 → 404 NOT_FOUND 안내, 입력 유지
+//   S4 GET  /str-drafts/{draft_no}/revisions   — BE 아직 없음
+//   S5 POST /str-drafts/{draft_no}/verify      — BE 아직 없음
+//   S6 POST /str-drafts/{draft_no}/submit      — BE 아직 없음
+// 아직 없는 API는 계약서 모양 그대로 MSW(`src/mocks/handlers.js`)가 답해요. BE가 붙으면 이 파일은 그대로 써요.
 const draftPath = (draftNo) => `/api/v1/str-drafts/${encodeURIComponent(draftNo)}`
+const casePath = (caseNo) => `/api/v1/cases/${encodeURIComponent(caseNo)}`
 
-// label은 서식 항목 제목(예: "의심스러운 거래자 관련", 11/4 채영). 없으면 null.
+// label은 서식 항목 제목(11/4 채영). S2 실제 응답(SCRUM-205)엔 아직 없어서 null → sectionTitles 표로.
+// cites는 단락이 근거로 쓴 facts 키 목록(규약 v0.4 8번) — 화면은 읽기만 하고 수정 요청엔 넣지 않아요.
 const toSection = (data) => ({
 	section: data.section,
 	label: data.label ?? null,
-	text: data.text,
+	text: data.text ?? "",
+	cites: data.cites ?? [],
 	evidenceIds: data.evidence_ids ?? [],
 })
 
-// 검증 결과는 AI 응답 그대로 넘어와요(계약서 S5, 규약 §5.3).
-// 코드 검사 reason: MISMATCH·UNPARSED·MISSING·OUT_OF_SCOPE — 넷을 구분해서 보여 줘요. 값이 없으면 null(계약서 2.3).
+// 검증 결과는 AI 응답 그대로(계약서 S5, 규약 §5.3). reason: MISMATCH·UNPARSED·MISSING·OUT_OF_SCOPE.
 const toCodeCheck = (data) => ({
 	check: data.check,
-	section: data.section,
-	draftValue: data.draft_value,
-	sourceValue: data.source_value,
+	section: data.section ?? null,
+	draftValue: data.draft_value ?? null,
+	sourceValue: data.source_value ?? null,
 	match: data.match,
 	reason: data.reason ?? null,
 })
 
-// AI 평가는 항목마다 1~5점 + 한 줄 코멘트.
 const toLlmCheck = (data) => ({ check: data.check, comment: data.comment, score: data.score })
 
-// status: PASSED·CODE_FAILED·LLM_FAILED·VERIFY_UNAVAILABLE.
-const toVerification = (data) => ({
-	verificationId: data.verification_id,
-	revisionNo: data.revision_no,
-	narrativeSha256: data.narrative_sha256,
-	isCurrent: data.is_current,
-	passed: data.passed,
-	status: data.status,
-	verifierVersion: data.verifier_version,
-	producedAt: data.produced_at,
+/**
+ * status: PASSED·CODE_FAILED·LLM_FAILED·VERIFY_UNAVAILABLE.
+ * isCurrent는 서버 값이 먼저예요. S2 실제 응답(SCRUM-205)은 AI payload + revision_no라 is_current가 없을 수 있어서,
+ * 그때만 "검증한 수정본 = 지금 수정본"으로 봐요(str.md §2 승인 요청 조건과 같은 기준). 해시 비교는 서버가 다시 해요.
+ */
+export const toVerification = (data, currentRevisionNo = null) => ({
+	verificationId: data.verification_id ?? null,
+	revisionNo: data.revision_no ?? null,
+	narrativeSha256: data.narrative_sha256 ?? null,
+	isCurrent:
+		typeof data.is_current === "boolean"
+			? data.is_current
+			: data.revision_no != null && data.revision_no === currentRevisionNo,
+	passed: data.passed === true,
+	status: data.status ?? null,
+	verifierVersion: data.verifier_version ?? null,
+	producedAt: data.produced_at ?? null,
 	codeChecks: (data.code_checks ?? []).map(toCodeCheck),
-	// 코드 검사가 실패하면 평가자를 안 돌려서 null — 빈 배열로 바꾸지 않아요("평가 안 함"과 "항목 0개"는 달라요).
-	llmChecks: data.llm_checks ? data.llm_checks.map(toLlmCheck) : null,
+	// 코드 검사가 실패하면 평가자를 안 돌려서 null — 빈 배열로 바꾸지 않아요("평가 안 함" ≠ "항목 0개").
+	llmChecks: Array.isArray(data.llm_checks) ? data.llm_checks.map(toLlmCheck) : null,
+})
+
+const toLastRejection = (data) => ({
+	reasonCode: data.reason_code,
+	comment: data.comment,
+	revisionNo: data.revision_no ?? null,
+	decidedBy: data.decided_by ?? null,
+	decidedAt: data.decided_at ?? null,
+	narrativeUnchanged: data.narrative_unchanged ?? null,
 })
 
 /**
- * `access`는 `FULL`(본문) 또는 `META_ONLY`(상태·날짜만 — 관리자·비담당 조사역). META_ONLY 응답은
- * facts·narrative·latest_verification·last_rejection·references가 null로 와요(11/4 채영 확정).
- * 이중 방어: FULL이 아니면 서버가 실수로 본문을 함께 보내도 화면 모델로 옮기지 않습니다.
+ * S2 → 화면 모델. `access`가 정확히 "FULL"일 때만 본문 필드를 옮겨요(META_ONLY·없음·모르는 값은 상태·날짜만).
+ *
+ * S2 실제 응답(BE SCRUM-205)과 계약서의 차이 — 없는 키는 null로 두고 화면이 대신 판단하지 않아요.
+ *   - case_status·generation_id·generator_version·label·last_rejection·suspicion_*·available_actions 아직 없음
+ *   - META_ONLY의 case_no는 null (계약서는 값)
+ *   - facts의 *account_key는 *account_no(가림)·*account_ref로 바뀌어 옴
+ * availableActions는 키가 없으면 null — "서버가 아직 안 줌"과 "할 수 있는 게 없음([])"을 구분해요(strRules.strActionsFor).
  */
 export function toDraft(data) {
 	const meta = {
 		draftNo: data.draft_no,
-		caseNo: data.case_no,
+		caseNo: data.case_no ?? null,
 		status: data.status,
 		caseStatus: data.case_status ?? null,
 		producedAt: data.produced_at ?? null,
-		access: data.access,
+		access: data.access ?? null,
 		contentVisible: data.access === "FULL",
 	}
 	if (!meta.contentVisible) return meta
+	const currentRevisionNo = data.current_revision_no ?? null
 	return {
 		...meta,
-		generationId: data.generation_id,
-		caseVersion: data.case_version,
-		version: data.version,
-		generatorVersion: data.generator_version,
-		currentRevisionNo: data.current_revision_no,
-		// facts는 AI facts를 그대로 받아요(계약서 Q15, 11/4 채영) — 화면용으로 줄이지 않고 키도 바꾸지 않아요.
-		// 본문 cites가 "inbound.amount.USD"·"counterparties.count"처럼 AI fact 키 이름(snake_case)이라, 키를 그대로 둬야 cites와 값을 바로 맞춰 볼 수 있어요.
-		// 숫자는 서버(AI)가 계산한 값이라 다시 계산하지 않아요.
+		generationId: data.generation_id ?? null,
+		caseVersion: data.case_version ?? null,
+		version: data.version ?? null,
+		generatorVersion: data.generator_version ?? null,
+		currentRevisionNo,
+		// facts는 AI facts 그대로(계약서 Q15) — 키를 바꾸지 않아야 cites("inbound.count")와 바로 맞춰 봐요.
 		facts: data.facts ?? null,
 		narrative: (data.narrative ?? []).map(toSection),
 		latestVerification: data.latest_verification
-			? toVerification(data.latest_verification)
+			? toVerification(data.latest_verification, currentRevisionNo)
 			: null,
 		lastRejection: data.last_rejection ? toLastRejection(data.last_rejection) : null,
-		// 의심 유형·정도 이름은 11/4 채영 확정(Q6). 유형 코드 목록은 준혁님 룰 명세의 "서식 유형 번호"를 따라요.
 		suspicionTypes: data.suspicion_types ?? [],
 		suspicionTypesRecommended: data.suspicion_types_recommended ?? [],
 		suspicionLevelBranch: data.suspicion_level_branch ?? null,
 		suspicionLevelHq: data.suspicion_level_hq ?? null,
-		// 버튼은 서버가 준 목록으로만 그려요. 케이스 상세와 같은 이름 available_actions(계약서 Q16, 11/4 채영).
-		// 값: REVISE·VERIFY·SUBMIT·REGENERATE·CLOSE_WITH_DRAFT(조사역), APPROVE·REJECT·REPORT(승인자),
-		// PREVIEW_PDF·DOWNLOAD_PDF·REGENERATE_PDF.
-		availableActions: data.available_actions ?? [],
-		// TODO(SCRUM-110): 〔확인 필요 — 채영〕 report·references는 S2에 키만 정해지고 모양이 아직 없어요. 정해지면 옮겨요.
+		// REVISE·VERIFY·SUBMIT·REGENERATE·CLOSE_WITH_DRAFT(조사역) / APPROVE·REJECT·REPORT(승인자) / *_PDF
+		availableActions: Array.isArray(data.available_actions) ? data.available_actions : null,
 	}
 }
-
-// 마지막 반려(없으면 null). 시각 이름은 rejected_at이 아니라 decided_at이에요(11/4 채영).
-const toLastRejection = (data) => ({
-	reasonCode: data.reason_code,
-	comment: data.comment,
-	revisionNo: data.revision_no,
-	decidedBy: data.decided_by,
-	decidedAt: data.decided_at,
-	narrativeUnchanged: data.narrative_unchanged,
-})
 
 const toRevisionSummary = (data) => ({
 	revisionNo: data.revision_no,
 	changedSections: data.changed_sections ?? [],
-	editedBy: data.edited_by,
-	editedAt: data.edited_at,
+	editedBy: data.edited_by ?? null,
+	editedAt: data.edited_at ?? null,
+})
+
+// 저장 응답 〔초안 — 계약서 S3〕: 새 수정본 번호·초안 version·case_version. 화면은 성공 뒤 S2를 다시 읽어요.
+const toSaved = (data) => ({
+	draftNo: data.draft_no ?? null,
+	revisionNo: data.revision_no ?? data.current_revision_no ?? null,
+	version: data.version ?? null,
+	caseVersion: data.case_version ?? null,
+	caseStatus: data.case_status ?? null,
+})
+
+const toSubmitted = (data) => ({
+	caseNo: data.case_no ?? null,
+	caseStatus: data.case_status ?? data.status ?? null,
+	caseVersion: data.case_version ?? data.version ?? null,
 })
 
 export const strApi = {
+	/** S1 — 생성·재생성. 응답 {case_no, case_status, case_version, draft_no}. AI를 기다려서 전용 timeout. */
+	createDraft: async ({ caseNo, caseVersion }) => {
+		const { data } = await apiClient.post(
+			`${casePath(caseNo)}/str-drafts`,
+			{ case_version: caseVersion },
+			{ timeout: AI_REQUEST_TIMEOUT_MS },
+		)
+		return {
+			caseNo: data.case_no,
+			caseStatus: data.case_status,
+			caseVersion: data.case_version,
+			draftNo: data.draft_no,
+		}
+	},
+	/** S2 */
 	getDraft: async (draftNo, signal) =>
 		toDraft((await apiClient.get(draftPath(draftNo), { signal })).data),
-	// 목록에는 본문이 없어요. 본문 전·후는 getRevision으로 한 행씩 받아요.
+	/** S3 — 고친 섹션만 {section, text}. facts·cites·evidence_ids는 보내지 않아요(서버가 관리). */
+	saveRevision: async ({ draftNo, caseVersion, sections }) =>
+		toSaved(
+			(
+				await apiClient.put(`${draftPath(draftNo)}/revisions`, {
+					case_version: caseVersion,
+					sections: sections.map(({ section, text }) => ({ section, text })),
+				})
+			).data,
+		),
+	/** S4 목록 — 본문 없음. */
 	getRevisions: async (draftNo, signal) =>
 		(await apiClient.get(`${draftPath(draftNo)}/revisions`, { signal })).data.items.map(
 			toRevisionSummary,
 		),
+	/** S4 한 행 — 전·후 본문. */
 	getRevision: async (draftNo, revisionNo, signal) => {
 		const { data } = await apiClient.get(`${draftPath(draftNo)}/revisions`, {
 			params: { revision_no: revisionNo },
@@ -125,4 +177,31 @@ export const strApi = {
 			narrativeAfter: (data.narrative_after ?? []).map(toSection),
 		}
 	},
+	/** S5 — body {}. 서버가 지금 저장된 수정본을 검증해요. 응답은 검증 결과(AI 응답 그대로). */
+	verify: async ({ draftNo }) => {
+		const { data } = await apiClient.post(
+			`${draftPath(draftNo)}/verify`,
+			{},
+			{ timeout: AI_REQUEST_TIMEOUT_MS },
+		)
+		return toVerification(data, data.revision_no ?? null)
+	},
+	/** S6 — 승인 요청. 서버가 ApprovalGate로 다시 검사해요(본문 해시). */
+	submit: async ({
+		draftNo,
+		caseVersion,
+		verificationId,
+		suspicionTypes,
+		suspicionLevelBranch,
+	}) =>
+		toSubmitted(
+			(
+				await apiClient.post(`${draftPath(draftNo)}/submit`, {
+					case_version: caseVersion,
+					verification_id: verificationId,
+					suspicion_types: suspicionTypes,
+					suspicion_level_branch: suspicionLevelBranch,
+				})
+			).data,
+		),
 }

@@ -40,26 +40,26 @@
 
 ## 3. 에러 코드 → 화면 처리 [BE 03 §2, BE 04 §5, FE 코드 `apiClient.js`]
 
-| HTTP | `code`                                                                                  | 화면에서                                                                                                                 | 지금 코드                              |
-| ---- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
-| 400  | `INVALID_REQUEST`                                                                       | `details` 필드 오류를 해당 입력칸에. 입력 유지                                                                           | 메모에서 처리                          |
-| 401  | `UNAUTHENTICATED`                                                                       | 업무 캐시 정리 → 로그인 안내, **지금 URL 기억**. 실패한 쓰기를 다시 보내지 않음                                          | 처리 (`queryClient.js`)                |
-| 401  | `LOGIN_FAILED`                                                                          | "아이디 또는 비밀번호가 맞지 않아요." 한 가지 문구. 세션 끊김 안내와 구분                                                | 처리 (`apiClient`)                     |
-| 403  | `FORBIDDEN`                                                                             | 화면 유지, 그 동작 자리(확인창·칸)에 "실행 권한이 없어요" — 서버 문구보다 먼저 (SCRUM-200)                               | 처리                                   |
-| 403  | `CSRF_INVALID`                                                                          | 입력 유지, "현재 사용자를 다시 확인한 뒤 시도" — 권한 부족과 다른 문구. 자동 반복 없음                                   | 처리                                   |
-| 403  | `NOT_ASSIGNEE`                                                                          | "담당자만 할 수 있어요" + 상세 재조회                                                                                    | 처리                                   |
-| 404  | `CASE_NOT_FOUND`, `DRAFT_NOT_FOUND` …                                                   | 대상 없음 안내 + 목록으로                                                                                                | 처리 (404 공통)                        |
-| 404  | `NOT_FOUND`                                                                             | 주소 자체가 없음(아직 서버에 없는 API, 백엔드 #67). "아직 서버에 없는 기능이에요" + 입력 유지                            | 처리 (`apiClient`)                     |
-| 409  | `CONCURRENT_UPDATE`                                                                     | **입력·기준 버전 유지**, 최신 내용을 따로 불러 비교, 사용자가 고른 뒤 새 버전으로 명시적 재저장                          | 처리                                   |
-| 409  | `INVALID_CASE_TRANSITION`                                                               | "현재 상태에서 할 수 없어요" + 상세 재조회, 그 동작이 빠지면 열린 폼 닫기                                                | 처리                                   |
-| 409  | `INVALID_ASSIGNEE` (·404 `USER_NOT_FOUND`)                                              | 담당자 입력칸 아래(`aria-invalid`·`aria-describedby`), 입력 유지. 담당자 변경 확인창은 그 안에 안내 + 조사역 목록 재조회 | 처리 (SCRUM-200)                       |
-| 409  | `SELF_APPROVAL`                                                                         | "본인이 담당한 케이스는 승인할 수 없어요"                                                                                | 문구만                                 |
-| 409  | `NARRATIVE_UNCHANGED`                                                                   | "반려된 본문을 고친 뒤 다시 요청해 주세요" (재조회 없이 편집 유지)                                                       | 문구만                                 |
-| 409  | `DRAFT_IN_PROGRESS`                                                                     | "초안을 만드는 중이에요" — AI 장애(502)와 다른 안내. 자동 재시도 없음                                                    | 문구만                                 |
-| 409  | `DRAFT_NOT_VERIFIED`, `DRAFT_LOCKED`, `DRAFT_SUPERSEDED`, `VERIFY_IN_PROGRESS` 〔초안〕 | 코드별 안내 + 초안 재조회                                                                                                | 아직                                   |
-| 409  | `BATCH_RUNNING`, `BATCH_ALREADY_DONE`                                                   | 배치 화면 안내 + 상태 재조회                                                                                             | 케이스 생성 카드 확인창 안 (SCRUM-180) |
-| 409  | 그 밖                                                                                   | 일반 업무 안내 + 재조회. **`CONCURRENT_UPDATE` 충돌 화면을 띄우지 않음**                                                 | 처리                                   |
-| 502  | `AI_UNAVAILABLE`, `AI_TIMEOUT`, `AI_BAD_RESPONSE`, `LLM_*`, `MODEL_UNAVAILABLE` …       | 그 영역(요약·초안·검증)에만 실패 안내 + 수동 다시 시도. 나머지 화면은 계속 씀                                            | 문구만 (502 공통)                      |
+| HTTP | `code`                                                                                                 | 화면에서                                                                                                                 | 지금 코드                              |
+| ---- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
+| 400  | `INVALID_REQUEST`                                                                                      | `details` 필드 오류를 해당 입력칸에. 입력 유지                                                                           | 메모에서 처리                          |
+| 401  | `UNAUTHENTICATED`                                                                                      | 업무 캐시 정리 → 로그인 안내, **지금 URL 기억**. 실패한 쓰기를 다시 보내지 않음                                          | 처리 (`queryClient.js`)                |
+| 401  | `LOGIN_FAILED`                                                                                         | "아이디 또는 비밀번호가 맞지 않아요." 한 가지 문구. 세션 끊김 안내와 구분                                                | 처리 (`apiClient`)                     |
+| 403  | `FORBIDDEN`                                                                                            | 화면 유지, 그 동작 자리(확인창·칸)에 "실행 권한이 없어요" — 서버 문구보다 먼저 (SCRUM-200)                               | 처리                                   |
+| 403  | `CSRF_INVALID`                                                                                         | 입력 유지, "현재 사용자를 다시 확인한 뒤 시도" — 권한 부족과 다른 문구. 자동 반복 없음                                   | 처리                                   |
+| 403  | `NOT_ASSIGNEE`                                                                                         | "담당자만 할 수 있어요" + 상세 재조회                                                                                    | 처리                                   |
+| 404  | `CASE_NOT_FOUND`, `DRAFT_NOT_FOUND` …                                                                  | 대상 없음 안내 + 목록으로                                                                                                | 처리 (404 공통)                        |
+| 404  | `NOT_FOUND`                                                                                            | 주소 자체가 없음(아직 서버에 없는 API, 백엔드 #67). "아직 서버에 없는 기능이에요" + 입력 유지                            | 처리 (`apiClient`)                     |
+| 409  | `CONCURRENT_UPDATE`                                                                                    | **입력·기준 버전 유지**, 최신 내용을 따로 불러 비교, 사용자가 고른 뒤 새 버전으로 명시적 재저장                          | 처리                                   |
+| 409  | `INVALID_CASE_TRANSITION`                                                                              | "현재 상태에서 할 수 없어요" + 상세 재조회, 그 동작이 빠지면 열린 폼 닫기                                                | 처리                                   |
+| 409  | `INVALID_ASSIGNEE` (·404 `USER_NOT_FOUND`)                                                             | 담당자 입력칸 아래(`aria-invalid`·`aria-describedby`), 입력 유지. 담당자 변경 확인창은 그 안에 안내 + 조사역 목록 재조회 | 처리 (SCRUM-200)                       |
+| 409  | `SELF_APPROVAL`                                                                                        | "본인이 담당한 케이스는 승인할 수 없어요"                                                                                | 문구만                                 |
+| 409  | `NARRATIVE_UNCHANGED`                                                                                  | "반려된 본문을 고친 뒤 다시 요청해 주세요" (재조회 없이 편집 유지)                                                       | 문구만                                 |
+| 409  | `DRAFT_IN_PROGRESS`                                                                                    | "초안을 만드는 중이에요" — AI 장애(502)와 다른 안내. 자동 재시도 없음                                                    | 문구만                                 |
+| 409  | `DRAFT_NOT_VERIFIED`, `DRAFT_LOCKED`, `DRAFT_SUPERSEDED`, `DRAFT_REQUEST_CLOSED`, `VERIFY_IN_PROGRESS` | 코드별 안내 + 케이스·초안 재조회, 입력 유지                                                                              | 처리 (`useStrCommand`)                 |
+| 409  | `BATCH_RUNNING`, `BATCH_ALREADY_DONE`                                                                  | 배치 화면 안내 + 상태 재조회                                                                                             | 케이스 생성 카드 확인창 안 (SCRUM-180) |
+| 409  | 그 밖                                                                                                  | 일반 업무 안내 + 재조회. **`CONCURRENT_UPDATE` 충돌 화면을 띄우지 않음**                                                 | 처리                                   |
+| 502  | `AI_UNAVAILABLE`, `AI_TIMEOUT`, `AI_BAD_RESPONSE`, `LLM_*`, `MODEL_UNAVAILABLE` …                      | 그 영역(요약·초안·검증)에만 실패 안내 + 수동 다시 시도. 나머지 화면은 계속 씀                                            | 문구만 (502 공통)                      |
 
 케이스 목록·상세는 위 코드를 MSW로 한 번씩 띄워 점검했어요(`src/test/caseErrors.test.jsx`, SCRUM-200). 오류는 그 동작의 확인창·폼·칸 안에만 보이고 다른 칸·버튼은 막지 않아요.
 
@@ -75,7 +75,7 @@
 
 요약 갱신·초안 생성·검증은 백엔드가 AI를 부르고 기다려요. **백엔드 쪽 한도가 재시도 포함 전체 90초**예요.
 
-- 지금 `apiClient` timeout은 15초라 AI 요청엔 짧아요. AI 요청은 **전용 설정**(90초 + 여유)으로 따로 보내요 〔확인 필요: 프록시·Vercel 한도 포함 최종 값 — FE-8〕.
+- 지금 `apiClient` timeout은 15초라 AI 요청엔 짧아요. AI 요청(초안 생성·검증)은 요청마다 `AI_REQUEST_TIMEOUT_MS`(100초)로 보내요 〔확인 필요: 프록시·Vercel 한도 포함 최종 값 — FE-8〕.
 - 요청 중엔 진행 안내 + **같은 버튼 다시 누르기 막기**. 자동 재시도·폴링 없음.
 - 화면을 떠나도 서버 작업은 계속될 수 있어요. "취소됐다"고 표시하지 않아요.
 - 응답이 없거나 timeout이면 **최신 초안·검증·상태를 먼저 조회**하고 나서 다시 할지 정해요(같은 초안이 두 번 생길 수 있음 — BE 미결 21).
@@ -120,6 +120,10 @@
 - 종료 버튼은 하나예요. `available_actions`에 `CLOSE`가 있으면 `close`, `CLOSE_WITH_DRAFT`가 있으면 `close-with-draft`를 불러요 — 초안이 있는지 화면이 따로 판단하지 않아요(SCRUM-112). 백엔드가 아직 없으면 404 `NOT_FOUND` 안내("아직 서버에 없는 기능이에요.") — 입력은 폼에 그대로 남아요.
 - 변경 응답(M)은 상세 전체가 아니라서 성공 뒤 상세·목록을 무효화해 다시 불러요(`useCaseCommand`). `CONCURRENT_UPDATE`·`INVALID_CASE_TRANSITION`·`NOT_ASSIGNEE`면 입력을 두고 상세만 다시 불러요.
 - 400 `details`의 필드 이름은 요청 JSON 이름(snake_case, 예: `investigator_notes`) 하나로 와요(BE SCRUM-167 #76).
+
+### STR — 단계별 연결 (11/10)
+
+S1 초안 생성은 실제 BE(develop)에 붙어요. 단, BE가 요청 이름을 `caseVersion`으로 받아서 BE `fix/str-create-case-version`이 들어가야 200/201이 나요. S2는 BE `feat/SCRUM-205`, S3~S6은 아직 MSW예요. 표는 `06_features/str.md` "백엔드 연결 상태".
 
 ### 〔초안〕 STR 초안 조회 — MSW 계약 [STR API 명세 2·4번, 계약서 S2·S4·S5(11/4 채영), FE 코드 `strApi.js`·`mocks/strDrafts.js`, SCRUM-110]
 
