@@ -4,6 +4,7 @@
 
 - 프론트 폴더: `src/features/str/` · 백엔드 짝: `str` (BE `06_features/str.md`, STR 명세 〔초안〕)
 - 지금: `/cases/:caseId/str`은 케이스의 지금 초안(`current_draft_no` 〔확인 필요 — 케이스 상세 API 필드 이름〕)을 불러와 **서술부를 읽기 전용으로** 그려요. 섹션은 서버가 준 목록·순서 그대로, 제목은 `label` → `shared/str/sectionTitles.js`(7항목 + 옛 6섹션, 시연 화면과 같은 표, label이 빈 값이어도 표로) → 섹션 이름 순서예요(SCRUM-115). 그 아래 **검증 결과 패널**(SCRUM-116)이 `latest_verification`을 보여 줘요. 수정·검증 실행·승인 요청은 아직이고, 시연(`/demo/cases/:caseId/str`)에서 합성 데이터로 볼 수 있어요.
+- **남은 STR 화면 이슈(SCRUM-114·116·117·118·121)는 실제 `/cases/:caseNo/str` 화면에 만들어요(11/10).** `DemoStrPage`는 없앨 예정이라 고치지 않아요.
 
 ## 1. 화면 — `/cases/:caseNo/str`
 
@@ -20,11 +21,11 @@
 
 ### 검증 결과 패널 — `components/VerificationPanel.jsx` 〔SCRUM-116, FR-VRF-02~08〕
 
-- 항목은 `features/str/verificationLabels.js` 표대로 **늘 10개** — 코드 검사 5개(금액 `AMOUNT_MATCH`·날짜 `DATE_MATCH`·건수 `COUNT_MATCH`·계좌 `ACCOUNT_ID_MATCH`·근거 범위 `EVIDENCE_IN_SCOPE`), AI 평가 5개(1~5점 + 한 줄 코멘트). 표에 없는 항목(옛 `GROUNDING`)은 안 보여요.
-- **실패한 항목을 위로**, 나머지는 표 순서. 코드 검사는 같은 검사가 여러 줄 올 수 있어(날짜 하나당 한 줄) 한 줄이라도 `match: false`면 실패, 틀린 줄마다 사유·섹션·본문 값·원본 값.
+- 항목은 `features/str/verificationLabels.js` 표대로 **늘 11개** — 코드 검사 6개(금액 `AMOUNT_MATCH`·날짜 `DATE_MATCH`·건수 `COUNT_MATCH`·계좌 `ACCOUNT_ID_MATCH`·근거 범위 `EVIDENCE_IN_SCOPE`·종합의견 `OPINION_PRESENT` — 종합의견 공란 거부, narrative_v2만), AI 평가 5개(1~5점 + 한 줄 코멘트). **표에 없는 이름이 응답에 오면 숨기지 않고 이름 그대로** 표 뒤에 보여 줘요(개수를 고정하지 않아요 — "코드 검사 실패"인데 실패 항목이 안 보이는 일을 막아요). 옛 `GROUNDING`만 뺍니다.
+- **실패한 항목을 위로**, 나머지는 표 순서. 코드 검사는 같은 검사가 여러 줄 올 수 있어(날짜 하나당 한 줄) 한 줄이라도 `match: false`면 실패, 틀린 줄마다 사유·섹션·본문 값·원본 값. 줄의 `section`이 `null`이면 "초안 전체"(건수·근거 범위처럼 초안 전체를 본 검사).
 - 사유는 `불일치(MISMATCH)`·`읽지 못함(UNPARSED)`·`빠짐(MISSING)`·`근거 범위 밖(OUT_OF_SCOPE)`을 나눠요. 줄이 하나도 없으면 "통과"가 아니라 **"검사 없음"**(예: SCRUM-60 전 `COUNT_MATCH`).
-- AI 평가는 4점 이상 통과·미만 "미달". `llm_checks: null`이면 5개 모두 **"평가 안 함"**(코드 검사 실패로 건너뜀), 배열에 빠진 항목은 "결과 없음".
-- 맨 위 결과(통과·코드 검사 실패·AI 평가 미달·검증 못 함)는 **서버 `status`·`passed` 그대로**예요 — 화면이 줄 결과로 다시 계산하지 않아요. 통과 기준 "코드 검사 5개 전부 통과 + AI 평가 전부 4점 이상"은 글자로만 보여 줘요.
+- AI 평가는 4점 이상 통과·미만 "미달". `llm_checks: null`이면 표의 5개 모두 **"평가 안 함"**이고, 이유는 `status`로 나눠요 — `CODE_FAILED`는 "코드 검사가 실패해서 AI 평가를 돌리지 않았어요", `VERIFY_UNAVAILABLE`은 "AI 평가를 하지 못했어요(평가 서비스 오류). 검증 실패가 아니에요". 배열에 빠진 항목은 "결과 없음".
+- 맨 위 결과(통과·코드 검사 실패·AI 평가 미달·검증 못 함)는 **서버 `status`·`passed` 그대로**예요 — 화면이 줄 결과로 다시 계산하지 않아요. 통과 기준 "코드 검사 전부 통과 + AI 평가 전부 4점 이상"은 글자로만 보여 줘요.
 - 어느 수정본을 검증했는지 표시하고, `is_current: false`거나 지금 수정본 번호와 다르면 "이전 수정본을 검증한 결과" 안내.
 - 검증 기록이 없으면 "아직 검증하지 않았어요". [다시 검증]·검증 못 함 유지는 SCRUM-117.
 - MSW: `DRF-000124`(케이스 1001)에 코드 검사 실패 예시(날짜 못 읽음·빠짐, 건수 줄 없음, AI 평가 null). 테스트 `src/test/strVerification.test.jsx`.

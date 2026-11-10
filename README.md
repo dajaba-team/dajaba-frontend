@@ -25,7 +25,7 @@ npm run dev            # http://localhost:5173
 
 **백엔드와 같이 보기** — 백엔드를 local 프로파일로 띄우고(`docker compose up --build`, 백엔드 README 참고) `VITE_USE_MOCKS=false`. 개발 서버가 `/api` 요청을 `http://localhost:8080`으로 넘겨서(`vite.config.js` 프록시) 세션·CSRF 쿠키를 같은 출처로 써요. 한 번에 확인하려면 **`http://localhost:5173/dev/connection`**(개발 모드 전용)에서 [전체 확인] → 계정과 비밀번호(노션 「백엔드 개발 › .env」의 `DEV_USER_PASSWORD`) 입력 후 [로그인] → [로그아웃]을 눌러요. 서버 상태 · API 문서(swagger와 같은 `/v3/api-docs`) · 세션 · CSRF가 전부 "통과"면 연동 준비 끝.
 
-**전체 시연 화면** — 개발 모드에서만 `/demo`(업무 개요·배치·경보·룰·케이스·STR·승인·평가·감사)가 열려요. 합성 데이터만 쓰고 운영 빌드에는 들어가지 않아요.
+**전체 시연 화면** — 개발 모드에서만 `/demo`(업무 개요·배치·경보·룰·케이스·STR·승인·평가·감사)가 열려요. 합성 데이터만 쓰고 운영 빌드에는 들어가지 않아요. **없앨 예정이라(11/10) 고치지 않아요** — 새 작업은 실제 화면으로 해요(`docs/08_decisions.md` §1).
 
 ### .env 변수
 

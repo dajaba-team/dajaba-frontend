@@ -54,9 +54,15 @@
 - 삭제 버튼 없음. 자기 자신의 역할 변경·비활성화 버튼 없음.
 - 비밀번호 입력값은 상태에 오래 두지 않고 보낸 뒤 비워요.
 
-## 5. 로그 — `/admin/access-logs`, `/admin/ai-calls` 〔후속〕
+## 5. 감사 기록 — `/admin/audit` (ADM-05) — 화면 SCRUM-170
 
-접근 로그·AI 호출 로그 조회(ADMIN). AI 호출 로그엔 메타데이터만 있어요(본문 없음).
+화면: `features/audit/pages/AdminAuditPage.jsx`, API `features/audit/api/auditApi.js`. 라우트 `RequireRole` ADMIN. 메뉴 "감사 기록"은 접근 기록 API(SCRUM-168, 진희)가 머지될 때 `ready: true`로 켜요 — 그 전엔 주소로만 들어가요.
+
+- 탭 두 개, 탭·필터·페이지는 주소 query. 메타만 보여 줘요(본문·메모 전문·계좌번호·프롬프트 없음, API도 안 줌)
+- **AI 호출 기록** `GET /admin/ai-calls`(계약서 5.9, BE #69): 엔드포인트·결과(`outcome`)·대상 종류/번호(번호는 종류를 고른 뒤에만)·요청 ID·실패 코드·기간. 실패는 `실패 · 코드`, 타임아웃은 HTTP "응답 없음"
+- **접근 기록** `GET /admin/access-logs`(SCRUM-168): 사용자 아이디·동작(`access_logs.action` 10개)·대상 종류·기간. 〔가정〕 응답 한 줄 `{id, login_id, action, target_type, target_id, created_at}` — 계약서에 모양이 들어오면 맞춰요
+- 기간은 한국 날짜로 고르고 UTC `Z`로 보내요(`from` 포함, `to`는 다음 날 0시 제외). 시작일 > 종료일이면 [조회]를 막아요
+- 결과 없음("조건에 맞는 기록이 없어요" + [필터 초기화])과 조회 실패(실패 안내 + [다시 불러오기])를 다르게(COM-02)
 
 ## 6. 테스트에 있어야 하는 것
 
