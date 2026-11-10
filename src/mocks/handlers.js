@@ -116,6 +116,30 @@ export const handlers = [
 					{ status: 404 },
 				)
 	}),
+	// BE GET /admin/users (SCRUM-135 ①) — ADMIN만, role·is_active 필터, display_name 오름차순
+	http.get(`${base}/api/v1/admin/users`, ({ request }) => {
+		if (!currentUser) return unauthenticated()
+		if (currentUser.role !== "ADMIN")
+			return HttpResponse.json(
+				{ error: { code: "FORBIDDEN", message: "권한이 없습니다", details: {} } },
+				{ status: 403 },
+			)
+		const url = new URL(request.url)
+		const role = url.searchParams.get("role")
+		const active = url.searchParams.get("is_active") !== "false"
+		const items = Object.values(MOCK_USERS)
+			.filter((u) => (!role || u.role === role) && (u.is_active !== false) === active)
+			.sort((a, b) => a.display_name.localeCompare(b.display_name))
+			.map((u) => ({
+				id: u.id,
+				login_id: u.login_id,
+				display_name: u.display_name,
+				role: u.role,
+				is_active: u.is_active !== false,
+				active_case_count: null,
+			}))
+		return HttpResponse.json({ items, page: 0, size: 100, total: items.length })
+	}),
 	http.get(`${base}/api/v1/cases/:caseNo/note-histories`, ({ params, request }) => {
 		if (!currentUser) return unauthenticated()
 		const item = cases.find((entry) => entry.case_no === params.caseNo)
@@ -134,6 +158,7 @@ export const handlers = [
 	}),
 	...[
 		["post", "assign"],
+		["post", "reassign"],
 		["post", "escalate"],
 		["post", "close"],
 		["post", "close-with-draft"],

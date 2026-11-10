@@ -353,6 +353,74 @@ describe("케이스 조사", () => {
 		await user.click(screen.getByRole("button", { name: "배정" }))
 		expect(await screen.findByText(/담당자 예시 inv02/)).toBeInTheDocument()
 	})
+	it("관리자는 상세에서 [담당자 변경]으로 활성 조사역을 골라 바꾼다 (A2)", async () => {
+		const bodies = recordBodies("/reassign")
+		const user = renderApp(`/cases/${REVIEWING}`, true, "admin")
+		await user.click(await screen.findByRole("button", { name: "담당자 변경" }))
+		const dialog = await screen.findByRole("dialog", { name: "담당자 변경" })
+		const select = await within(dialog).findByLabelText("새 담당 조사역")
+		// 지금 담당(inv01)과 조사역 아닌 사람은 목록에 없다
+		const options = within(select)
+			.getAllByRole("option")
+			.map((option) => option.value)
+		expect(options).toEqual(["", "inv02"])
+		expect(within(dialog).getByRole("button", { name: "변경" })).toBeDisabled()
+		await user.selectOptions(select, "inv02")
+		await user.type(within(dialog).getByLabelText("변경 사유 (선택)"), "업무 분담")
+		await user.click(within(dialog).getByRole("button", { name: "변경" }))
+		await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+		expect(await screen.findByText(/담당자 예시 inv02/)).toBeInTheDocument()
+		expect(bodies).toEqual([{ assignee: "inv02", comment: "업무 분담", version: 1 }])
+		server.events.removeAllListeners()
+	})
+	it("담당자 변경이 409 INVALID_ASSIGNEE면 안내하고 조사역 목록을 다시 부른다", async () => {
+		let listCalls = 0
+		server.events.on("request:start", ({ request }) => {
+			if (new URL(request.url).pathname === "/api/v1/admin/users") listCalls += 1
+		})
+		server.use(
+			http.post(`*/api/v1/cases/${REVIEWING}/reassign`, () =>
+				HttpResponse.json(
+					{
+						error: {
+							code: "INVALID_ASSIGNEE",
+							message: "활성 조사역에게만 배정할 수 있습니다",
+							details: { reason: "NOT_ACTIVE_INVESTIGATOR" },
+						},
+					},
+					{ status: 409 },
+				),
+			),
+		)
+		const user = renderApp(`/cases/${REVIEWING}`, true, "admin")
+		await user.click(await screen.findByRole("button", { name: "담당자 변경" }))
+		const dialog = await screen.findByRole("dialog", { name: "담당자 변경" })
+		await user.selectOptions(await within(dialog).findByLabelText("새 담당 조사역"), "inv02")
+		await user.click(within(dialog).getByRole("button", { name: "변경" }))
+		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+			"활성 조사역에게만 맡길 수 있어요",
+		)
+		await waitFor(() => expect(listCalls).toBe(2))
+		expect(within(dialog).getByLabelText("새 담당 조사역")).toHaveValue("")
+		server.events.removeAllListeners()
+	})
+	it("조사역에게는 [담당자 변경]이 보이지 않고, 관리자는 목록에서도 바꿀 수 있다", async () => {
+		const user = renderApp(`/cases/${REVIEWING}`)
+		await screen.findByRole("button", { name: "에스컬레이션" })
+		expect(screen.queryByRole("button", { name: "담당자 변경" })).not.toBeInTheDocument()
+		await user.click(screen.getByRole("link", { name: "← 케이스 목록" }))
+		await screen.findByRole("link", { name: REVIEWING })
+		expect(screen.queryByRole("button", { name: "담당자 변경" })).not.toBeInTheDocument()
+	})
+	it("관리자 목록에서 조사 중인 행의 [담당자 변경]이 확인창을 연다", async () => {
+		const user = renderApp("/cases", true, "admin")
+		const row = (await screen.findByRole("link", { name: REVIEWING })).closest("tr")
+		await user.click(within(row).getByRole("button", { name: "담당자 변경" }))
+		const dialog = await screen.findByRole("dialog", { name: "담당자 변경" })
+		expect(within(dialog).getByText(new RegExp(REVIEWING))).toBeInTheDocument()
+		await user.click(within(dialog).getByRole("button", { name: "취소" }))
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+	})
 	it("초안이 있는 케이스는 같은 [종료] 버튼으로 close-with-draft를 부른다", async () => {
 		const closeBodies = recordBodies("/close")
 		const draftBodies = recordBodies("/close-with-draft")

@@ -10,6 +10,7 @@ export default function ConfirmDialog({
 	onConfirm,
 	onCancel,
 	confirming = false,
+	confirmDisabled = false,
 	error = null,
 }) {
 	return (
@@ -25,7 +26,7 @@ export default function ConfirmDialog({
 						type="button"
 						className="primary"
 						onClick={onConfirm}
-						disabled={confirming}
+						disabled={confirming || confirmDisabled}
 						autoFocus
 					>
 						{confirming ? "처리 중…" : confirmLabel}

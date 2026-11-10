@@ -37,7 +37,7 @@ const REFETCH_ON = [
 ]
 
 /**
- * 케이스 상태 작업(assign·escalate·close·closeWithDraft·saveNotes). 응답은 공통 변경 응답 M이라 성공 뒤 상세·목록을 다시 불러요.
+ * 케이스 상태 작업(assign·reassign·escalate·close·closeWithDraft·saveNotes). 응답은 공통 변경 응답 M이라 성공 뒤 상세·목록을 다시 불러요.
  * 낙관적 변경 없음, 자동 재시도 없음(queryClient 기본값).
  */
 export function useCaseCommand(caseNo, name) {

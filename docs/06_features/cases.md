@@ -36,21 +36,21 @@
 
 ## 3. API 〔초안 — CASES 명세 v0.5, BE `06_features/cases.md`〕
 
-| ID    | API                                                         | 화면                                                     | 프론트                                                                     |
-| ----- | ----------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 01    | `GET /cases` (status 복수·`assignee=me`·from/to·정렬)       | 목록                                                     | `casesApi.list` ✅                                                         |
-| 02    | `GET /cases/{case_no}` 통합 상세 (+ `available_actions`)    | 상세                                                     | `casesApi.detail` ✅                                                       |
-| 03    | `POST /cases/{case_no}/assign`                              | 내게 배정 / 담당자 지정                                  | `casesApi.assign` ✅                                                       |
-| 04    | `POST /cases/{case_no}/reassign`                            | 담당자 교체(ADMIN)                                       | 없음 〔확인 필요: 본문 `{assignee_id}` vs `{assignee, comment, version}`〕 |
-| 05    | `PUT /cases/{case_no}/notes`                                | 메모 (NOTE 행 추가, 같은 내용 no-op, 빈 문자열 = 비우기) | `casesApi.saveNotes` (BE SCRUM-176)                                        |
-| 06    | `POST /cases/{case_no}/close`                               | 종료 (초안 없을 때)                                      | `casesApi.close` ✅                                                        |
-| 07    | `POST /cases/{case_no}/escalate` (사유 필수)                | 에스컬레이션                                             | `casesApi.escalate` ✅                                                     |
-| 08    | `GET /cases/{case_no}/transactions?scope=EVIDENCE\|CONTEXT` | 근거 거래                                                | 없음                                                                       |
-| 09    | `GET /cases/{case_no}/evidence/{transaction_id}`            | 거래 원본                                                | 없음                                                                       |
-| 10    | `GET /cases/{case_no}/graph`                                | 그래프 (후속)                                            | 없음                                                                       |
-| 11    | `GET /cases/{case_no}/histories`                            | 이력                                                     | 상세 안 `history`(최근 20건)                                               |
-| 12·13 | `POST …/refresh-summary`, `GET …/summary`                   | AI 요약                                                  | 없음                                                                       |
-| 15    | `GET /cases/{case_no}/note-histories`                       | 메모 이력                                                | `casesApi.noteHistories` — `CaseNoteHistory` (SCRUM-176)                   |
+| ID    | API                                                         | 화면                                                     | 프론트                                                                                                                                   |
+| ----- | ----------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 01    | `GET /cases` (status 복수·`assignee=me`·from/to·정렬)       | 목록                                                     | `casesApi.list` ✅                                                                                                                       |
+| 02    | `GET /cases/{case_no}` 통합 상세 (+ `available_actions`)    | 상세                                                     | `casesApi.detail` ✅                                                                                                                     |
+| 03    | `POST /cases/{case_no}/assign`                              | 내게 배정 / 담당자 지정                                  | `casesApi.assign` ✅                                                                                                                     |
+| 04    | `POST /cases/{case_no}/reassign`                            | 담당자 교체(ADMIN)                                       | `casesApi.reassign` — 상세 `CaseActions`·목록 관리 칸 [담당자 변경] → `ReassignDialog`. 본문 `{assignee, comment?, version}` (SCRUM-177) |
+| 05    | `PUT /cases/{case_no}/notes`                                | 메모 (NOTE 행 추가, 같은 내용 no-op, 빈 문자열 = 비우기) | `casesApi.saveNotes` (BE SCRUM-176)                                                                                                      |
+| 06    | `POST /cases/{case_no}/close`                               | 종료 (초안 없을 때)                                      | `casesApi.close` ✅                                                                                                                      |
+| 07    | `POST /cases/{case_no}/escalate` (사유 필수)                | 에스컬레이션                                             | `casesApi.escalate` ✅                                                                                                                   |
+| 08    | `GET /cases/{case_no}/transactions?scope=EVIDENCE\|CONTEXT` | 근거 거래                                                | 없음                                                                                                                                     |
+| 09    | `GET /cases/{case_no}/evidence/{transaction_id}`            | 거래 원본                                                | 없음                                                                                                                                     |
+| 10    | `GET /cases/{case_no}/graph`                                | 그래프 (후속)                                            | 없음                                                                                                                                     |
+| 11    | `GET /cases/{case_no}/histories`                            | 이력                                                     | 상세 안 `history`(최근 20건)                                                                                                             |
+| 12·13 | `POST …/refresh-summary`, `GET …/summary`                   | AI 요약                                                  | 없음                                                                                                                                     |
+| 15    | `GET /cases/{case_no}/note-histories`                       | 메모 이력                                                | `casesApi.noteHistories` — `CaseNoteHistory` (SCRUM-176)                                                                                 |
 
 초안 있는 종료 `POST /cases/{case_no}/close-with-draft` `{close_reason, comment, version}`는 str 컨트롤러예요(→ `str.md`). 프론트는 `casesApi.closeWithDraft`(MSW만 — BE 아직 없음). 모든 변경 요청에 `version`.
 

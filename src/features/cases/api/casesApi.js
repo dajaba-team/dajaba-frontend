@@ -122,6 +122,17 @@ export const casesApi = {
 				})
 			).data,
 		),
+	/** 담당자 변경(A2, ADMIN만). assignee는 새 담당 조사역 login_id, comment는 선택. */
+	reassign: async ({ caseNo, version, assignee, comment }) =>
+		toChange(
+			(
+				await apiClient.post(`${casePath(caseNo)}/reassign`, {
+					assignee,
+					...(comment ? { comment } : {}),
+					version,
+				})
+			).data,
+		),
 	escalate: async ({ caseNo, version, comment }) =>
 		toChange((await apiClient.post(`${casePath(caseNo)}/escalate`, { comment, version })).data),
 	/** 초안 없는 종료(A5). 초안이 있으면 서버가 409 CLOSE_REQUIRES_STR. */

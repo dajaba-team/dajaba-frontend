@@ -255,7 +255,19 @@ export function applyCommand(viewer, item, command, body, users) {
 		item.history[0].created_at = now
 		item.status = to
 	}
-	if (command === "assign") {
+	if (command === "reassign") {
+		// BE ReassignCase — ADMIN만(SecurityConfig 403 FORBIDDEN), 대상 404·409, 상태 409, 같은 담당이면 그대로
+		if (viewer.role !== "ADMIN") return fail(403, "FORBIDDEN", "권한이 없습니다")
+		const assignee = users[body.assignee]
+		if (!assignee) return fail(404, "USER_NOT_FOUND", "사용자가 없습니다")
+		if (assignee.role !== "INVESTIGATOR" || assignee.is_active === false)
+			return fail(409, "INVALID_ASSIGNEE", "활성 조사역에게만 배정할 수 있습니다")
+		if (!REASSIGNABLE.includes(item.status))
+			return fail(409, "INVALID_CASE_TRANSITION", "지금 상태에서 담당자를 바꿀 수 없습니다")
+		if (item.assignee?.login_id === body.assignee) return { item }
+		item.assignee = user(body.assignee)
+		move("REASSIGN", item.status, body.comment ?? null)
+	} else if (command === "assign") {
 		const target = viewer.role === "ADMIN" ? body.assignee : (body.assignee ?? viewer.login_id)
 		if (viewer.role !== "ADMIN" && target !== viewer.login_id)
 			return fail(409, "INVALID_ASSIGNEE", "본인에게만 배정할 수 있습니다")
