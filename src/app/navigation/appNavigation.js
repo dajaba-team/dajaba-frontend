@@ -64,7 +64,7 @@ export const appNavigation = [
 		screenId: "ADM-03",
 		roles: ["ADMIN"],
 		roleOrder: { ADMIN: 6 },
-		ready: false,
+		ready: true,
 	},
 ]
 

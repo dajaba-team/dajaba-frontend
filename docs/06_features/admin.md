@@ -31,7 +31,16 @@
 
 `GET /admin/rules`, `PUT /admin/rules/{rule_id}/params`. 저장하면 새 버전 행이 생겨요. 같은 버전 동시 저장은 409 → 재조회. 기준값 기본값을 프론트에서 채우지 않아요.
 
-## 4. 계정 — `/admin/users` [BE 04 §7]
+## 4. 계정 관리 — `/admin/accounts` (ADM-03) [BE 04 §7, 계약서 5.8] — 화면 SCRUM-169
+
+화면: `features/admin/users/pages/AdminAccountsPage.jsx`, 확인창 `components/AccountDialogs.jsx`, 입력 규칙 `accountRules.js`. 메뉴 "계정 관리" `ready: true`, 라우트 `RequireRole` ADMIN. API는 목록만 BE에 있고(SCRUM-135 ①) 나머지는 SCRUM-135 ②(진희) 전까지 계약서 5.8 모양 MSW.
+
+- 목록: 역할·상태(기본 활성) 필터, 조사역 행에 `active_case_count` + [케이스 보기](`/cases?assignee=login_id`). 내 계정·SYSTEM 행 버튼 없음, 관리자 행 역할 변경 없음, 삭제 없음
+- 발급: 입력 규칙을 화면에서 먼저 검사, 409 `LOGIN_ID_TAKEN`은 아이디 칸 아래, 성공 뒤 비밀번호 비움·다시 안 보임
+- 역할 변경: 조사역 ↔ 승인자. 세션 끊김 안내, 승인자로 바꿀 때 "담당했던 케이스는 승인할 수 없어요". 409 `ASSIGNEE_HAS_ACTIVE_CASES`면 N건 + [담당 케이스 보기], [변경] 꺼짐
+- 비활성화는 막지 않고 끝난 뒤 진행 중 담당 N건 안내 + [케이스 보기]. 재활성화·비밀번호 초기화(8~128자)는 확인창
+
+(아래 표는 처음 정리한 API 목록)
 
 | 기능              | API                                                                  | 화면                                                  |
 | ----------------- | -------------------------------------------------------------------- | ----------------------------------------------------- |

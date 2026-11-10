@@ -5,6 +5,7 @@ import RequireRole from "./routes/RequireRole"
 import CaseListPage from "../features/cases/pages/CaseListPage"
 import CaseDetailPage from "../features/cases/pages/CaseDetailPage"
 import StrPage from "../features/str/pages/StrPage"
+import AdminAccountsPage from "../features/admin/users/pages/AdminAccountsPage"
 import { useSession } from "../features/auth/hooks/useSession"
 import { homePathFor } from "./navigation/appNavigation"
 
@@ -67,6 +68,7 @@ export default function AppRouter() {
 				<Route path="cases/:caseNo" element={<CaseDetailPage />} />
 				<Route path="cases/:caseNo/str" element={<StrPage />} />
 				<Route element={<RequireRole roles={["ADMIN"]} />}>
+					<Route path="admin/accounts" element={<AdminAccountsPage />} />
 					<Route path="admin/*" element={<NotYetPage />} />
 				</Route>
 				<Route element={<RequireRole roles={["APPROVER", "ADMIN"]} />}>
