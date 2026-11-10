@@ -5,12 +5,10 @@ import { useCases } from "../hooks/useCases"
 import { REJECTION_LABELS, STATUS_LABELS, labelOf } from "../labels"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
-import { useSession } from "../../auth/hooks/useSession"
 import ReassignDialog from "../components/ReassignDialog"
 
-// 담당자 변경을 받는 상태 — BE CaseStatus REASSIGNABLE. 목록 행에는 available_actions가 없어서 버튼을 켤지만 여기서 정해요.
-// 누를 수 있는지는 서버가 다시 검사해요(ADMIN만, 상태 409).
-const REASSIGNABLE = ["REVIEWING", "ESCALATED", "DRAFTED", "REJECTED"]
+// 목록의 [담당자 변경]도 상세처럼 서버가 준 available_actions(REASSIGN)만 보고 켜요(#23 리뷰). 누르면 서버가 다시 검사해요.
+const canReassign = (item) => item.availableActions.includes("REASSIGN")
 
 // 정렬 — 서버 기본은 점수 높은 순(score,desc). 점수가 없는 케이스는 오름·내림 모두 맨 뒤(계약서 C1).
 const SORTS = [
@@ -79,9 +77,9 @@ export default function CaseListPage() {
 		},
 		{ enabled: !periodInvalid },
 	)
-	const session = useSession()
-	const isAdmin = session.data?.role === "ADMIN"
 	const [reassigning, setReassigning] = useState(null)
+	// 관리 칸은 그 페이지에 [담당자 변경]을 받을 줄이 하나라도 있을 때만
+	const manageColumn = Boolean(query.data?.items.some(canReassign))
 	const filtered =
 		filters.statuses.length > 0 ||
 		Boolean(filters.from || filters.to || filters.mine || filters.assignee)
@@ -198,7 +196,7 @@ export default function CaseListPage() {
 											<th scope="col">점수</th>
 											<th scope="col">담당자</th>
 											<th scope="col">생성</th>
-											{isAdmin && <th scope="col">관리</th>}
+											{manageColumn && <th scope="col">관리</th>}
 										</tr>
 									</thead>
 									<tbody>
@@ -221,9 +219,9 @@ export default function CaseListPage() {
 												<td>{item.score ?? "—"}</td>
 												<td>{item.assignee?.displayName || "미배정"}</td>
 												<td>{formatSystemTime(item.createdAt)}</td>
-												{isAdmin && (
+												{manageColumn && (
 													<td>
-														{REASSIGNABLE.includes(item.status) && (
+														{canReassign(item) && (
 															<button
 																type="button"
 																onClick={() => setReassigning(item)}

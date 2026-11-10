@@ -34,7 +34,7 @@ describe("서버 실패 안내", () => {
 	})
 	it("주소가 없는 404는 대상 없음과 다르게 안내한다", () => {
 		expect(getErrorMessage(failure(404, "NOT_FOUND", "요청한 주소가 없습니다"))).toBe(
-			"아직 서버에 없는 기능이에요. 작성 내용은 유지됩니다.",
+			"아직 서버에 없는 기능이에요.",
 		)
 		expect(getErrorMessage(failure(404, "CASE_NOT_FOUND", "케이스가 없습니다"))).toBe(
 			"케이스가 없습니다",

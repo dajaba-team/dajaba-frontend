@@ -10,6 +10,7 @@ import CaseTransactionsPanel from "../components/CaseTransactionsPanel"
 import CaseFlowGraph from "../components/CaseFlowGraph"
 import CaseHistoryPanel from "../components/CaseHistoryPanel"
 import CaseActions from "../components/CaseActions"
+import CaseSummaryPanel from "../components/CaseSummaryPanel"
 import {
 	CLOSE_REASON_LABELS,
 	REJECTION_LABELS,
@@ -19,7 +20,8 @@ import {
 } from "../labels"
 
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
-// 경보·최근 점수는 서버 alert·latest_score(SCRUM-152). 합계(aggregates)·근거 거래(C3)·그래프(C5)·이력 전체(C6)는 SCRUM-179.
+// 경보·최근 점수는 서버 alert·latest_score(SCRUM-152), AI 조사 요약은 latest_summary(SCRUM-175).
+// 합계(aggregates)·근거 거래(C3)·그래프(C5)·이력 전체(C6)는 SCRUM-179.
 
 // 맨 위 score·scoreBand는 계약서 Q2 MVP대로 latest_score와 같은 값이에요(#78 리뷰). 혹시 비면 latest_score로.
 // 모델 점수라 범죄 확률이 아니에요. 등급은 서버 값(HIGH·MEDIUM·LOW) 그대로 — 정책이 없으면 등급 없이 점수만.
@@ -121,6 +123,7 @@ export default function CaseDetailPage() {
 					<CaseTransactionsPanel caseNo={detail.caseNo} />
 					<CaseFlowGraph caseNo={detail.caseNo} accountRef={detail.accountRef} />
 					<CaseActions detail={detail} />
+					<CaseSummaryPanel detail={detail} />
 					{detail.availableActions.includes("UPDATE_NOTES") ? (
 						<CaseMemoEditor
 							key={detail.caseNo}
