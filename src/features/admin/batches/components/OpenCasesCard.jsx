@@ -1,4 +1,4 @@
-import { useId, useState } from "react"
+import { useEffect, useId, useState } from "react"
 import { Link } from "react-router"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import ConfirmDialog from "../../../../shared/ui/ConfirmDialog"
@@ -8,7 +8,9 @@ import { batchesApi } from "../api/batchesApi"
 
 // [케이스 생성] 카드 — 계약서 B4·B5, 백엔드 OpenCasesController(SCRUM-105). 관리자만(라우트 RequireRole + 서버 403).
 // 실행 전 확인창 → 202(RUNNING) → 상태 확인을 2초마다 다시 불러 끝나면 멈춰요. 결과·실패는 이 카드 안에만 보여 줘요.
+// 자동 상태 조회는 최대 10분(계약서 5.6) — 넘으면 멈추고 [상태 다시 확인]으로 직접 불러요. 실패로 단정하지 않아요.
 const POLL_MS = 2000
+const MAX_POLL_MS = 10 * 60 * 1000
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 function Result({ run }) {
@@ -40,15 +42,17 @@ function Result({ run }) {
 	)
 }
 
-export default function OpenCasesCard() {
+export default function OpenCasesCard({ maxPollMs = MAX_POLL_MS }) {
 	const dateId = useId()
 	const [date, setDate] = useState("")
 	const [confirming, setConfirming] = useState(false)
 	const [runId, setRunId] = useState(null)
+	const [timedOut, setTimedOut] = useState(false)
 	const start = useMutation({
 		mutationFn: () => batchesApi.openCases({ date }),
 		onSuccess: (run) => {
 			setConfirming(false)
+			setTimedOut(false)
 			setRunId(run.batchRunId) // 202 를 받으면 바로 상태를 한 번 확인하고, RUNNING 이면 2초마다
 		},
 	})
@@ -56,9 +60,17 @@ export default function OpenCasesCard() {
 		queryKey: ["admin", "batches", runId],
 		queryFn: ({ signal }) => batchesApi.run(runId, signal),
 		enabled: runId != null,
-		refetchInterval: (query) => (query.state.data?.status === "RUNNING" ? POLL_MS : false),
+		refetchInterval: (query) =>
+			query.state.data?.status === "RUNNING" && !timedOut ? POLL_MS : false,
 	})
-	const running = start.isPending || run.data?.status === "RUNNING"
+	// 실행 하나마다 상한 타이머 — 끝나기 전에 넘으면 자동 조회만 멈춰요
+	useEffect(() => {
+		if (runId == null) return undefined
+		const timer = setTimeout(() => setTimedOut(true), maxPollMs)
+		return () => clearTimeout(timer)
+	}, [runId, maxPollMs])
+	const stillRunning = run.data?.status === "RUNNING"
+	const running = start.isPending || (stillRunning && !timedOut)
 	return (
 		<section className="case-panel" aria-labelledby="open-cases-title">
 			<h2 id="open-cases-title">케이스 생성</h2>
@@ -87,6 +99,17 @@ export default function OpenCasesCard() {
 			{start.isError && !confirming && <p role="alert">{getErrorMessage(start.error)}</p>}
 			{run.isError && <p role="alert">{getErrorMessage(run.error)}</p>}
 			{run.data && <Result run={run.data} />}
+			{stillRunning && timedOut && (
+				<div role="alert">
+					<p>
+						10분이 지나도 끝나지 않아 자동 확인을 멈췄어요. 아직 처리 중일 수 있어요 —
+						실패로 보지 말고 상태를 다시 확인해 주세요.
+					</p>
+					<button type="button" onClick={() => run.refetch()} disabled={run.isFetching}>
+						상태 다시 확인
+					</button>
+				</div>
+			)}
 			{confirming && (
 				<ConfirmDialog
 					title="케이스 생성"

@@ -7,6 +7,7 @@ import { http, HttpResponse } from "msw"
 import App from "../app/App"
 import { createQueryClient } from "../app/queryClient"
 import { resetCases } from "../mocks/handlers"
+import OpenCasesCard from "../features/admin/batches/components/OpenCasesCard"
 import { server } from "../mocks/server"
 
 // [케이스 생성] 카드 (SCRUM-180) — B4 open-cases 202 → B5 상태 확인 → 카드 안 결과.
@@ -156,4 +157,45 @@ describe("케이스 생성 카드 (SCRUM-180)", () => {
 		expect(await screen.findByRole("heading", { name: "권한이 없어요" })).toBeInTheDocument()
 		expect(screen.queryByRole("region", { name: "케이스 생성" })).not.toBeInTheDocument()
 	})
+	it("자동 상태 조회는 상한(계약서 5.6 10분)을 넘으면 멈추고 [상태 다시 확인]으로 직접 부른다", async () => {
+		let calls = 0
+		let done = false
+		server.use(
+			http.post("*/api/v1/admin/batches/open-cases", () =>
+				HttpResponse.json(run({ status: "RUNNING", rows_in: null, rows_out: null }), {
+					status: 202,
+				}),
+			),
+			http.get("*/api/v1/admin/batches/7", () => {
+				calls += 1
+				return HttpResponse.json(
+					done
+						? run({ rows_out: 2 })
+						: run({ status: "RUNNING", rows_in: null, rows_out: null }),
+				)
+			}),
+		)
+		resetCases(USERS.admin)
+		render(
+			<QueryClientProvider client={createQueryClient()}>
+				<MemoryRouter>
+					<OpenCasesCard maxPollMs={50} />
+				</MemoryRouter>
+			</QueryClientProvider>,
+		)
+		const user = userEvent.setup()
+		const card = await runFor(user)
+		expect(
+			await within(card).findByText(/10분이 지나도 끝나지 않아 자동 확인을 멈췄어요/),
+		).toBeInTheDocument()
+		const callsAtStop = calls
+		await new Promise((resolve) => setTimeout(resolve, 2500))
+		expect(calls).toBe(callsAtStop) // 상한 뒤에는 저절로 다시 부르지 않아요
+		done = true
+		await user.click(within(card).getByRole("button", { name: "상태 다시 확인" }))
+		expect(await within(card).findByText(/조사 케이스 2건을 생성했어요/)).toBeInTheDocument()
+		expect(
+			within(card).queryByRole("button", { name: "상태 다시 확인" }),
+		).not.toBeInTheDocument()
+	}, 10000)
 })
