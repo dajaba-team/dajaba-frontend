@@ -48,6 +48,6 @@ export function stateNotice(draft, caseDetail) {
 	if (status === "PENDING_APPROVAL") return "승인 대기 중이라 본문을 수정할 수 없어요."
 	if (status === "REJECTED" && caseDetail?.rejectionReasonCode === "NOT_REPORTABLE")
 		return "보고 안 함으로 반려됐어요. 종료 사유를 남겨 마무리해 주세요."
-	if (status === "REJECTED") return "보완 요청: 수정 후 저장하고 다시 검증해 주세요."
+	if (status === "REJECTED") return "보완 요청: 수정 후 저장해 주세요."
 	return null
 }

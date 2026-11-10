@@ -31,8 +31,8 @@ export default function StrGenerateForm({ detail, regenerate = false, blockedRea
 				<p>현재 경보와 근거로 STR 초안을 만들어요.</p>
 			)}
 			<p className="case-action-note">
-				AI가 만드는 데 최대 90초쯤 걸려요. 생성과 검증은 따로예요 — 만든 뒤 본문을 확인하고
-				검증해 주세요.
+				AI가 만드는 데 최대 90초쯤 걸려요. 만든 뒤 본문을 확인하고 필요한 항목을 고쳐 저장해
+				주세요.
 			</p>
 			{blockedReason && <p role="note">{blockedReason}</p>}
 			{command.isPending && (
