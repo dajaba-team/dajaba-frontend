@@ -190,7 +190,11 @@ describe("케이스 조사", () => {
 				screen.queryByRole("link", { name: "CASE-2022-001002" }),
 			).not.toBeInTheDocument(),
 		)
-		await user.selectOptions(screen.getByLabelText("상태 필터"), "CLOSED")
+		await user.click(
+			within(screen.getByRole("group", { name: "상태" })).getByRole("checkbox", {
+				name: "종료",
+			}),
+		)
 		expect(await screen.findByText("조건에 맞는 케이스가 없습니다.")).toBeInTheDocument()
 	})
 	it("담당 조사역이 에스컬레이션한 뒤 사유를 골라 종료한다", async () => {
@@ -975,5 +979,110 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		expect(screen.getByRole("region", { name: "메모 이력" })).toBeInTheDocument()
 		await user.click(within(history).getByRole("button", { name: "최근 이력만 보기" }))
 		expect(await screen.findByRole("region", { name: "최근 이력" })).toBeInTheDocument()
+	})
+})
+
+describe("케이스 목록 필터 (SCRUM-181)", () => {
+	function recordListUrls() {
+		const urls = []
+		server.events.on("request:start", ({ request }) => {
+			const url = new URL(request.url)
+			if (url.pathname === "/api/v1/cases") urls.push(url)
+		})
+		return urls
+	}
+	const statusBox = (name) =>
+		within(screen.getByRole("group", { name: "상태" })).getByRole("checkbox", { name })
+
+	it("상태 여러 개를 골라 서버에 쉼표로 보내고 주소에 남긴다", async () => {
+		const urls = recordListUrls()
+		const user = renderApp("/cases")
+		await screen.findByRole("link", { name: REVIEWING })
+		await user.click(statusBox("조사 중"))
+		await user.click(statusBox("초안 작성됨"))
+		expect(await screen.findByRole("link", { name: "CASE-2022-001001" })).toBeInTheDocument()
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("link", { name: "CASE-2022-001002" }),
+			).not.toBeInTheDocument(),
+		)
+		expect(urls.at(-1).searchParams.get("status")).toBe("REVIEWING,DRAFTED")
+		expect(screen.getByText("점수 높은 순")).toBeInTheDocument()
+		server.events.removeAllListeners()
+	})
+	it("시작일이 종료일보다 늦으면 안내하고 목록을 부르지 않는다", async () => {
+		const user = renderApp("/cases")
+		await screen.findByRole("link", { name: REVIEWING })
+		const urls = recordListUrls()
+		await user.type(screen.getByLabelText("생성일 종료"), "2026-11-01")
+		await user.type(screen.getByLabelText("생성일 시작"), "2026-11-05")
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"시작일은 종료일보다 늦을 수 없어요.",
+		)
+		expect(screen.queryByRole("region", { name: "케이스 목록 표" })).not.toBeInTheDocument()
+		expect(urls.some((url) => url.searchParams.get("from") === "2026-11-05")).toBe(false)
+		server.events.removeAllListeners()
+	})
+	it("결과가 없으면 [필터 초기화]로 전체 목록에 돌아온다", async () => {
+		const user = renderApp("/cases?status=CLOSED")
+		expect(await screen.findByText("조건에 맞는 케이스가 없습니다.")).toBeInTheDocument()
+		await user.click(screen.getAllByRole("button", { name: "필터 초기화" }).at(-1))
+		expect(await screen.findByRole("link", { name: REVIEWING })).toBeInTheDocument()
+		expect(statusBox("종료")).not.toBeChecked()
+	})
+	it("주소로 들어오면 필터가 채워지고, 상세에 갔다 돌아와도 필터·정렬이 그대로다", async () => {
+		const urls = recordListUrls()
+		const user = renderApp("/cases?status=REVIEWING&sort=created_at,desc&from=2026-11-01")
+		await user.click(await screen.findByRole("link", { name: REVIEWING }))
+		await user.click(await screen.findByRole("link", { name: "← 케이스 목록" }))
+		await screen.findByRole("link", { name: REVIEWING })
+		expect(statusBox("조사 중")).toBeChecked()
+		expect(screen.getByLabelText("정렬")).toHaveValue("created_at,desc")
+		expect(screen.getByLabelText("생성일 시작")).toHaveValue("2026-11-01")
+		const last = urls.at(-1)
+		expect(last.searchParams.get("status")).toBe("REVIEWING")
+		expect(last.searchParams.get("sort")).toBe("created_at,desc")
+		expect(last.searchParams.get("from")).toBe("2026-11-01")
+		server.events.removeAllListeners()
+	})
+	it("계정 관리 [케이스 보기]의 assignee=login_id 를 그대로 보낸다", async () => {
+		const urls = recordListUrls()
+		const user = renderApp("/cases?assignee=inv01", true, "admin")
+		expect(await screen.findByText(/담당자: inv01/)).toBeInTheDocument()
+		await screen.findByRole("link", { name: REVIEWING })
+		expect(urls.at(-1).searchParams.get("assignee")).toBe("inv01")
+		expect(screen.queryByRole("link", { name: "CASE-2022-001002" })).not.toBeInTheDocument()
+		await user.click(screen.getByRole("button", { name: "담당자 조건 해제" }))
+		expect(await screen.findByRole("link", { name: "CASE-2022-001002" })).toBeInTheDocument()
+		server.events.removeAllListeners()
+	})
+	it("반려 케이스는 보완 요청·보고 안 함을 나눠 보여 준다", async () => {
+		const row = (caseNo, code) => ({
+			case_no: caseNo,
+			status: "REJECTED",
+			account_ref: "ACR-9",
+			account_no: "010_****0009",
+			assignee: { login_id: "inv01", display_name: "예시 inv01" },
+			score: 0.9,
+			rejection_reason_code: code,
+			version: 5,
+			created_at: "2026-11-02T01:00:00Z",
+		})
+		server.use(
+			http.get("*/api/v1/cases", () =>
+				HttpResponse.json({
+					items: [
+						row("CASE-2022-009001", "NEED_REVISION"),
+						row("CASE-2022-009002", "NOT_REPORTABLE"),
+					],
+					page: 0,
+					size: 20,
+					total: 2,
+				}),
+			),
+		)
+		renderApp("/cases")
+		expect(await screen.findByText("반려 · 보완 요청")).toBeInTheDocument()
+		expect(screen.getByText("반려 · 보고 안 함")).toBeInTheDocument()
 	})
 })

@@ -2,7 +2,7 @@ import { useId, useState } from "react"
 import { useCaseCommand } from "../hooks/useCases"
 import { useSession } from "../../auth/hooks/useSession"
 import { CLOSE_REASON_LABELS } from "../labels"
-import { getErrorMessage } from "../../../shared/api/apiClient"
+import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
 import ReassignDialog from "./ReassignDialog"
 
 const COMMENT_MAX = 2000
@@ -96,7 +96,17 @@ function SelfAssign({ detail }) {
 }
 
 // 확인 단계가 있는 작업 공통 틀. 실패해도 입력은 남기고 안내만 보여 줘요.
-function ActionForm({ title, submitLabel, command, onSubmit, onDone, canSubmit, children }) {
+// fieldError 가 있으면 그 칸 옆에 보여 주니 폼 공통 안내는 같이 띄우지 않아요(계약서 3절 "입력칸 옆에").
+function ActionForm({
+	title,
+	submitLabel,
+	command,
+	onSubmit,
+	onDone,
+	canSubmit,
+	fieldError = false,
+	children,
+}) {
 	const titleId = useId()
 	return (
 		<form
@@ -110,7 +120,7 @@ function ActionForm({ title, submitLabel, command, onSubmit, onDone, canSubmit, 
 		>
 			<h3 id={titleId}>{title}</h3>
 			{children}
-			{command.isError && <p role="alert">{getErrorMessage(command.error)}</p>}
+			{command.isError && !fieldError && <p role="alert">{getErrorMessage(command.error)}</p>}
 			<div className="case-action-buttons">
 				<button type="submit" disabled={command.isPending || !canSubmit}>
 					{command.isPending ? "처리 중…" : submitLabel}
@@ -142,9 +152,18 @@ function CommentField({ label, value, onChange }) {
 	)
 }
 
+// 배정 대상 오류(409 INVALID_ASSIGNEE·404 USER_NOT_FOUND)는 계약서 3절대로 담당자 칸 아래에 — 입력은 남겨요.
+const ASSIGNEE_ERRORS = ["INVALID_ASSIGNEE", "USER_NOT_FOUND"]
+
 function AssignForm({ detail, onDone }) {
 	const command = useCaseCommand(detail.caseNo, "assign")
 	const [assignee, setAssignee] = useState("")
+	const inputId = useId()
+	const errorId = useId()
+	const fieldError =
+		command.isError && ASSIGNEE_ERRORS.includes(getErrorCode(command.error))
+			? getErrorMessage(command.error)
+			: null
 	return (
 		<ActionForm
 			title="담당자 배정"
@@ -153,11 +172,23 @@ function AssignForm({ detail, onDone }) {
 			canSubmit={assignee.trim() !== ""}
 			onSubmit={() => ({ version: detail.version, assignee: assignee.trim() })}
 			onDone={onDone}
+			fieldError={Boolean(fieldError)}
 		>
-			<label className="case-field">
-				배정할 조사역 아이디
-				<input value={assignee} onChange={(event) => setAssignee(event.target.value)} />
-			</label>
+			<div className="case-field">
+				<label htmlFor={inputId}>배정할 조사역 아이디</label>
+				<input
+					id={inputId}
+					value={assignee}
+					aria-invalid={fieldError ? true : undefined}
+					aria-describedby={fieldError ? errorId : undefined}
+					onChange={(event) => setAssignee(event.target.value)}
+				/>
+				{fieldError && (
+					<p id={errorId} role="alert">
+						{fieldError}
+					</p>
+				)}
+			</div>
 		</ActionForm>
 	)
 }

@@ -4,10 +4,11 @@ import { getErrorCode } from "../../../shared/api/apiClient"
 
 export const caseKey = (caseNo) => ["case", caseNo]
 
-export function useCases(params) {
+export function useCases(params, { enabled = true } = {}) {
 	return useQuery({
 		queryKey: ["cases", params],
 		queryFn: ({ signal }) => casesApi.list(params, signal),
+		enabled,
 	})
 }
 

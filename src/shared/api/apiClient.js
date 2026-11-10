@@ -33,6 +33,8 @@ export function getErrorMessage(error) {
 	if (code === "INVALID_CASE_TRANSITION")
 		return "현재 상태에서 실행할 수 없습니다. 최신 상태를 확인해 주세요."
 	if (code === "NOT_ASSIGNEE") return "담당자만 할 수 있어요. 최신 상태를 확인해 주세요."
+	// 역할 권한 없음(계약서 3절) — 서버 문구("권한이 없습니다")보다 화면 문구를 먼저 써요(SCRUM-200).
+	if (code === "FORBIDDEN") return "실행 권한이 없어요."
 	// AI 초안 생성이 이미 진행 중이라는 뜻이라 AI 장애(502)와 다르게 안내합니다.
 	if (code === "DRAFT_IN_PROGRESS") return "초안을 만드는 중이에요. 잠시 후 상태를 확인해 주세요."
 	if (code === "SELF_APPROVAL") return "본인이 담당한 케이스는 승인할 수 없습니다."

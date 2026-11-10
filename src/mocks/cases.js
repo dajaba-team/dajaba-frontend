@@ -195,13 +195,19 @@ const summaryOf = (item) => ({
 
 export function listResponse(items, url, viewer = null) {
 	const statuses = url.searchParams.get("status")?.split(",").filter(Boolean) ?? []
-	const assignee = url.searchParams.get("assignee")
+	const rawAssignee = url.searchParams.get("assignee")
+	const assignee = rawAssignee === "me" ? viewer?.login_id : rawAssignee
+	// 케이스 생성일 양 끝 포함 (BE 는 한국 날짜 — 예시 데이터는 UTC 날짜로 충분해요)
+	const from = url.searchParams.get("from")
+	const to = url.searchParams.get("to")
 	const page = Number(url.searchParams.get("page") ?? 0)
 	const size = Number(url.searchParams.get("size") ?? 20)
 	const filtered = items.filter(
 		(item) =>
 			(!statuses.length || statuses.includes(item.status)) &&
-			(!assignee || item.assignee?.login_id === assignee),
+			(!rawAssignee || item.assignee?.login_id === assignee) &&
+			(!from || item.created_at.slice(0, 10) >= from) &&
+			(!to || item.created_at.slice(0, 10) <= to),
 	)
 	return {
 		// BE ListCases 처럼 줄마다 available_actions (#23 리뷰)
