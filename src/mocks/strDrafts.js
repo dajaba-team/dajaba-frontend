@@ -192,6 +192,36 @@ export function seedStrDrafts() {
 			generator_version: "str-gen-0.2.0+narrative_v2",
 			produced_at: "2026-11-05T11:30:00Z",
 			narrative: NARRATIVE_V2,
+			// 코드 검사 실패 예시(SCRUM-116) — 날짜 한 곳 못 읽음·한 곳 빠짐, 건수 검사 줄 없음(SCRUM-60 전), AI 평가 안 함(null).
+			latest_verification: {
+				verification_id: "VRF-b20c11",
+				draft_no: "DRF-000124",
+				generation_id: "GEN-DRF-000124",
+				revision_no: 1,
+				narrative_sha256: "예시-해시-124",
+				is_current: true,
+				passed: false,
+				status: "CODE_FAILED",
+				verifier_version: "str-verify-0.1.0",
+				produced_at: "2026-11-05T11:32:10Z",
+				code_checks: [
+					codeCheck("AMOUNT_MATCH", "INSTRUMENT", "USD 42,750.50", "42750.50"),
+					codeCheck("DATE_MATCH", "DATE", "2022-09-02", "2022-09-02"),
+					{
+						...codeCheck("DATE_MATCH", "METHOD", "9월 초", "2022-09-02"),
+						match: false,
+						reason: "UNPARSED",
+					},
+					{
+						...codeCheck("DATE_MATCH", "GROUNDS", null, "2022-09-02"),
+						match: false,
+						reason: "MISSING",
+					},
+					codeCheck("ACCOUNT_ID_MATCH", "SUBJECT", "010_8000EBD30", "010_8000EBD30"),
+					codeCheck("EVIDENCE_IN_SCOPE", "INSTRUMENT", null, null),
+				],
+				llm_checks: null,
+			},
 		}),
 		// 케이스 1003의 승인본 — 옛 6섹션(narrative_v1). 7항목 전환 뒤에도 그대로 남아 보여야 해요.
 		aiOriginalDraft({

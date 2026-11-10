@@ -4,6 +4,7 @@ import { useStrDraft } from "../hooks/useStrDraft"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
 import StrNarrative from "../components/StrNarrative"
+import VerificationPanel from "../components/VerificationPanel"
 import { revisionLabel } from "../../../shared/str/revisionLabel"
 import "../styles/str.css"
 
@@ -46,6 +47,12 @@ export default function StrPage() {
 					</div>
 					<StrNarrative narrative={draft.narrative} />
 				</section>
+			)}
+			{draft?.contentVisible && (
+				<VerificationPanel
+					verification={draft.latestVerification}
+					currentRevisionNo={draft.currentRevisionNo}
+				/>
 			)}
 		</>
 	)
