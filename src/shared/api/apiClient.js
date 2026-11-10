@@ -75,7 +75,7 @@ export function getErrorMessage(error) {
 		return "현재 업무 상태에서 처리할 수 없습니다. 최신 상태를 확인해 주세요."
 	if (error.response?.status === 502)
 		return "AI 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."
-	if (isNoResponse(error)) {
+	if (!error.response && ["ECONNABORTED", "ETIMEDOUT", "ERR_NETWORK"].includes(error.code)) {
 		return "서버 응답을 확인하지 못했습니다. 저장 요청이었다면 최신 내용을 확인한 후 다시 시도해 주세요."
 	}
 	return "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."
