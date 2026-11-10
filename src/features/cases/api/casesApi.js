@@ -149,11 +149,18 @@ const toChange = (data) => ({
 })
 
 export const casesApi = {
-	/** 화면 page는 1부터, API page는 0부터. statuses는 배열(비면 전체), mine이면 assignee=me. */
-	list: async ({ statuses = [], mine = false, page = 1, size = 20, sort } = {}, signal) => {
+	/** 화면 page는 1부터, API page는 0부터. statuses는 배열(비면 전체), mine이면 assignee=me, from·to는 케이스 생성일(YYYY-MM-DD, 양 끝 포함). */
+	list: async (
+		{ statuses = [], mine = false, assignee, from, to, page = 1, size = 20, sort } = {},
+		signal,
+	) => {
 		const params = { page: page - 1, size }
 		if (statuses.length) params.status = statuses.join(",")
+		// 내 담당이 먼저 — 계정 관리 [케이스 보기]의 assignee=login_id 는 그다음
 		if (mine) params.assignee = "me"
+		else if (assignee) params.assignee = assignee
+		if (from) params.from = from
+		if (to) params.to = to
 		if (sort) params.sort = sort
 		const { data } = await apiClient.get("/api/v1/cases", { params, signal })
 		return {
