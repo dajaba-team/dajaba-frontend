@@ -4,6 +4,7 @@ import { useCaseDetail } from "../hooks/useCases"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
 import CaseMemoEditor from "../components/CaseMemoEditor"
+import CaseNoteHistory from "../components/CaseNoteHistory"
 import CaseActions from "../components/CaseActions"
 import {
 	CLOSE_REASON_LABELS,
@@ -30,6 +31,15 @@ function scoreText(detail) {
 	if (!latest) return "산출 정보 없음"
 	const label = labelOf(SCORE_STATUS_LABELS, latest.scoreStatus)
 	return latest.failureCode ? `${label} (${latest.failureCode})` : label
+}
+
+// 메모를 고칠 수 있는 상태인데 버튼(UPDATE_NOTES)이 없으면 담당자가 아니라서예요 — 안내 문구만 고르고,
+// 저장 가능 여부는 서버 available_actions 그대로예요(BE CaseStatus EDITABLE + 보완 반려).
+function memoEditableStatus(detail) {
+	return (
+		["REVIEWING", "ESCALATED", "DRAFTED"].includes(detail.status) ||
+		(detail.status === "REJECTED" && detail.rejectionReasonCode === "NEED_REVISION")
+	)
 }
 
 function AlertPanel({ alert }) {
@@ -114,9 +124,14 @@ export default function CaseDetailPage() {
 							<p className="preserve-lines">
 								{detail.investigatorNotes || "메모 없음"}
 							</p>
-							<p>현재 케이스는 읽기 전용입니다.</p>
+							<p>
+								{memoEditableStatus(detail)
+									? "담당 조사역만 메모를 수정할 수 있어요."
+									: "현재 케이스는 읽기 전용입니다."}
+							</p>
 						</section>
 					)}
+					<CaseNoteHistory caseNo={detail.caseNo} />
 					<section aria-labelledby="history-title">
 						<h2 id="history-title">최근 이력</h2>
 						{detail.history.length ? (

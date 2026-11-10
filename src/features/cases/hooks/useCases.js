@@ -19,6 +19,15 @@ export function useCaseDetail(caseNo) {
 	})
 }
 
+/** 메모 이력(C8). 키가 caseKey 아래라 메모 저장 뒤 상세와 같이 다시 불러요. */
+export function useCaseNoteHistories(caseNo, page) {
+	return useQuery({
+		queryKey: [...caseKey(caseNo), "note-histories", page],
+		queryFn: ({ signal }) => casesApi.noteHistories({ caseNo, page }, signal),
+		enabled: Boolean(caseNo),
+	})
+}
+
 // 서버 상태가 화면과 달라서 생기는 오류 — 상세를 다시 불러 최신 버튼을 보여 줘요(계약서 3절).
 const REFETCH_ON = [
 	"CONCURRENT_UPDATE",

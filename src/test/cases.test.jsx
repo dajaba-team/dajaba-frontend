@@ -423,6 +423,45 @@ describe("케이스 조사", () => {
 		await user.click(screen.getByRole("button", { name: "종료 실행" }))
 		expect(await screen.findByText("종료", { selector: ".case-status" })).toBeInTheDocument()
 	})
+	it("메모를 저장하면 메모 이력에 새 메모와 이전 메모가 보인다 (C8)", async () => {
+		const user = renderApp(`/cases/${REVIEWING}`)
+		const historySection = await screen.findByRole("region", { name: "메모 이력" })
+		expect(await within(historySection).findByText("메모 이력이 없습니다.")).toBeInTheDocument()
+		const memo = await screen.findByRole("textbox", { name: "메모 내용" })
+		await user.clear(memo)
+		await user.type(memo, "거래 목적 자료 요청 완료")
+		await user.click(screen.getByRole("button", { name: "메모 저장" }))
+		expect(await screen.findByText("메모가 저장되었습니다.")).toBeInTheDocument()
+		expect(
+			await within(historySection).findByText("거래 목적 자료 요청 완료"),
+		).toBeInTheDocument()
+		expect(within(historySection).getByText("이전 메모")).toBeInTheDocument()
+		expect(within(historySection).getByText("거래 목적 확인 필요")).toBeInTheDocument()
+		expect(within(historySection).getByText(/버전 1에서/)).toBeInTheDocument()
+	})
+	it("메모를 비운 기록은 (메모 비움)으로 보인다", async () => {
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}/note-histories`, () =>
+				HttpResponse.json({
+					items: [
+						{
+							before_text: "거래 목적 확인 필요",
+							after_text: "",
+							case_version_before: 1,
+							created_by: "inv01",
+							created_at: "2026-11-02T02:00:00Z",
+						},
+					],
+					page: 0,
+					size: 20,
+					total: 1,
+				}),
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		const historySection = await screen.findByRole("region", { name: "메모 이력" })
+		expect(await within(historySection).findByText("(메모 비움)")).toBeInTheDocument()
+	})
 	it("초안이 있는 케이스에서 STR 화면으로 갈 수 있다", async () => {
 		const user = renderApp("/cases/CASE-2022-001001")
 		await user.click(await screen.findByRole("link", { name: /STR 화면으로/ }))
@@ -616,7 +655,10 @@ describe("예시 계정 권한과 입력 보호", () => {
 		await screen.findByText("로그인이 필요합니다.")
 		await login(user, "apr01")
 		await screen.findByText("예시 apr01 (apr01) · APPROVER")
-		expect(await screen.findByText("현재 케이스는 읽기 전용입니다.")).toBeInTheDocument()
+		// 조사 중인 케이스라 "읽기 전용"이 아니라 담당자 안내 (SCRUM-176)
+		expect(
+			await screen.findByText("담당 조사역만 메모를 수정할 수 있어요."),
+		).toBeInTheDocument()
 		expect(screen.queryByRole("textbox", { name: "메모 내용" })).not.toBeInTheDocument()
 	})
 	it("입력 검증 오류를 메모 입력에 연결하며 내용을 유지한다", async () => {

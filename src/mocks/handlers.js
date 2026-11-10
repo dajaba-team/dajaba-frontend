@@ -1,5 +1,12 @@
 import { canViewStrContent, seedStrDrafts, visibleStrDraft } from "./strDrafts"
-import { applyCommand, changeResponse, detailResponse, listResponse, seedCases } from "./cases"
+import {
+	applyCommand,
+	changeResponse,
+	detailResponse,
+	listResponse,
+	noteHistoriesResponse,
+	seedCases,
+} from "./cases"
 import { http, HttpResponse } from "msw"
 
 let cases = seedCases()
@@ -98,6 +105,22 @@ export const handlers = [
 		const item = cases.find((entry) => entry.case_no === params.caseNo)
 		return item
 			? HttpResponse.json(detailResponse(currentUser, item))
+			: HttpResponse.json(
+					{
+						error: {
+							code: "CASE_NOT_FOUND",
+							message: "케이스가 없습니다",
+							details: {},
+						},
+					},
+					{ status: 404 },
+				)
+	}),
+	http.get(`${base}/api/v1/cases/:caseNo/note-histories`, ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		return item
+			? HttpResponse.json(noteHistoriesResponse(item, new URL(request.url)))
 			: HttpResponse.json(
 					{
 						error: {

@@ -199,6 +199,14 @@ export function detailResponse(viewer, item) {
 	}
 }
 
+/** 메모 이력(C8) — 최신 먼저, 페이지 밖 직전 메모도 before_text 로 (BE ListCaseNoteHistories). */
+export function noteHistoriesResponse(item, url) {
+	const page = Number(url.searchParams.get("page") ?? 0)
+	const size = Number(url.searchParams.get("size") ?? 20)
+	const all = item.note_histories ?? []
+	return { items: all.slice(page * size, (page + 1) * size), page, size, total: all.length }
+}
+
 export const changeResponse = (item) => ({
 	case_no: item.case_no,
 	status: item.status,
@@ -265,6 +273,18 @@ export function applyCommand(viewer, item, command, body, users) {
 		if (command === "notes") {
 			if (!availableActions(viewer, item).includes("UPDATE_NOTES"))
 				return fail(409, "INVALID_CASE_TRANSITION", "지금 상태에서 메모를 고칠 수 없습니다")
+			// 같은 내용(메모가 없을 때 빈 문자열 포함)이면 그대로 — version 안 오름 (BE UpdateCaseNotes)
+			if (body.investigator_notes === (item.investigator_notes ?? "")) return { item }
+			item.note_histories = [
+				{
+					before_text: item.investigator_notes ?? null,
+					after_text: body.investigator_notes,
+					case_version_before: item.version,
+					created_by: viewer.login_id,
+					created_at: now,
+				},
+				...(item.note_histories ?? []),
+			]
 			item.investigator_notes = body.investigator_notes
 		} else if (command === "escalate") {
 			if (item.status !== "REVIEWING")

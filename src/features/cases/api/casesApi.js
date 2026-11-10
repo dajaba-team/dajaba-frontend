@@ -1,8 +1,8 @@
 import { apiClient } from "../../../shared/api/apiClient"
 
 // 케이스 API — 프론트 API 계약서 v0.2 C1·C2·A1·A3·A4·A5·A6, CASES 명세 API-01·02·03·05·06·07.
-// 백엔드 CaseController(SCRUM-106)와 같은 경로·모양이에요. 메모(A3 PUT …/notes)와 초안 있는 종료(A6, str 컨트롤러)는
-// 백엔드가 아직 없어 MSW가 답해요.
+// 백엔드 CaseController(SCRUM-106)와 같은 경로·모양이에요. 메모(A3 PUT …/notes)·메모 이력(C8)은 SCRUM-176으로 붙었어요.
+// 초안 있는 종료(A6, str 컨트롤러)는 백엔드가 아직 없어 MSW가 답해요.
 // 서버는 snake_case, 화면은 camelCase — 변환은 여기서 한 번만 해요.
 const casePath = (caseNo) => `/api/v1/cases/${encodeURIComponent(caseNo)}`
 
@@ -74,6 +74,15 @@ const toCaseDetail = (data) => ({
 	availableActions: data.available_actions ?? [],
 })
 
+// 메모 이력 한 줄 (계약서 C8). beforeText는 바로 앞 메모(첫 기록은 null), 비운 기록은 afterText "".
+const toNoteHistory = (data) => ({
+	beforeText: data.before_text ?? null,
+	afterText: data.after_text,
+	caseVersionBefore: data.case_version_before,
+	createdBy: data.created_by,
+	createdAt: data.created_at,
+})
+
 // 공통 변경 응답 M (계약서 5.3). 상세 전체가 아니라서 성공 뒤엔 상세를 다시 불러요.
 const toChange = (data) => ({
 	caseNo: data.case_no,
@@ -137,6 +146,21 @@ export const casesApi = {
 				})
 			).data,
 		),
+	/** 메모 이력(C8), 최신 먼저. 화면 page는 1부터, API page는 0부터. */
+	noteHistories: async ({ caseNo, page = 1, size = 20 }, signal) => {
+		const { data } = await apiClient.get(`${casePath(caseNo)}/note-histories`, {
+			params: { page: page - 1, size },
+			signal,
+		})
+		return {
+			items: data.items.map(toNoteHistory),
+			page: data.page + 1,
+			size: data.size,
+			total: data.total,
+			totalPages: Math.ceil(data.total / data.size),
+		}
+	},
+	/** 메모 저장(A3). 같은 내용이면 서버가 그대로 두고(version 안 오름), 빈 문자열은 비우기. */
 	saveNotes: async ({ caseNo, version, investigatorNotes }) =>
 		toChange(
 			(
