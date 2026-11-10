@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router"
+import { Link, useLocation, useParams } from "react-router"
 import "../styles/cases.css"
 import { useCaseDetail } from "../hooks/useCases"
 import { AsyncState } from "../../../shared/ui/AsyncState"
@@ -73,11 +73,14 @@ function AlertPanel({ alert }) {
 
 export default function CaseDetailPage() {
 	const { caseNo } = useParams()
+	// 목록에서 들어왔으면 그때의 필터·정렬·페이지(주소 query)로 돌아가요 (SCRUM-181)
+	const fromList = useLocation().state?.listSearch
+	const listSearch = typeof fromList === "string" && fromList.startsWith("?") ? fromList : ""
 	const query = useCaseDetail(caseNo)
 	const detail = query.data
 	return (
 		<>
-			<Link to="/cases">← 케이스 목록</Link>
+			<Link to={`/cases${listSearch}`}>← 케이스 목록</Link>
 			<AsyncState query={query} />
 			{detail && (
 				<>
