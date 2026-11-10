@@ -28,6 +28,39 @@ export function useCaseNoteHistories(caseNo, page) {
 	})
 }
 
+/** 근거 거래(C3)·그래프(C5)·이력 전체(C6) — 조회만, 키가 caseKey 아래라 상태 변경 뒤 같이 다시 불러요. */
+export function useCaseTransactions(caseNo, scope, page) {
+	return useQuery({
+		queryKey: [...caseKey(caseNo), "transactions", scope, page],
+		queryFn: ({ signal }) => casesApi.transactions({ caseNo, scope, page }, signal),
+		enabled: Boolean(caseNo),
+	})
+}
+
+export function useCaseEvidence(caseNo, transactionId) {
+	return useQuery({
+		queryKey: [...caseKey(caseNo), "evidence", transactionId],
+		queryFn: ({ signal }) => casesApi.evidence({ caseNo, transactionId }, signal),
+		enabled: Boolean(caseNo) && transactionId != null,
+	})
+}
+
+export function useCaseGraph(caseNo) {
+	return useQuery({
+		queryKey: [...caseKey(caseNo), "graph"],
+		queryFn: ({ signal }) => casesApi.graph({ caseNo }, signal),
+		enabled: Boolean(caseNo),
+	})
+}
+
+export function useCaseHistories(caseNo, page, enabled = true) {
+	return useQuery({
+		queryKey: [...caseKey(caseNo), "histories", page],
+		queryFn: ({ signal }) => casesApi.histories({ caseNo, page }, signal),
+		enabled: Boolean(caseNo) && enabled,
+	})
+}
+
 // 서버 상태가 화면과 달라서 생기는 오류 — 상세를 다시 불러 최신 버튼을 보여 줘요(계약서 3절).
 const REFETCH_ON = [
 	"CONCURRENT_UPDATE",
