@@ -11,7 +11,7 @@ const amountsOf = (flow) =>
 
 const countOf = (flow) => (flow?.count == null ? "-" : `${flow.count}건`)
 
-// S2 실제 응답은 *account_key를 가린 *account_no·*account_ref로 바꿔서 줘요(BE SCRUM-205). MSW 시드는 원 모양.
+// S2 실제 응답은 *account_key를 가린 *account_no·*account_ref로 바꿔서 줘요(BE SCRUM-205 #84). MSW 시드는 원 모양.
 const accountOf = (subject) => subject?.account_no ?? subject?.account_ref ?? null
 
 export default function StrFacts({ facts }) {

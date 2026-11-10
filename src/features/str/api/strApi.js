@@ -3,17 +3,17 @@ import { AI_REQUEST_TIMEOUT_MS, apiClient } from "../../../shared/api/apiClient"
 // STR API (계약서 S1~S6, BE docs/06_features/str.md API 표). 경로·응답 번호는 `draft_no`(`DRF-` + 6자리).
 //
 // 백엔드 연결 상태 (2026-11-10)
-//   S1 POST /cases/{case_no}/str-drafts        — BE develop 구현(SCRUM-183). 요청 {case_version} (BE fix/str-create-case-version)
-//   S2 GET  /str-drafts/{draft_no}             — BE feat/SCRUM-205 (리뷰 중). 아래 "S2 실제 응답과 다른 점" 참고
-//   S3 PUT  /str-drafts/{draft_no}/revisions   — BE 아직 없음 → 404 NOT_FOUND 안내, 입력 유지
-//   S4 GET  /str-drafts/{draft_no}/revisions   — BE 아직 없음
+//   S1 POST /cases/{case_no}/str-drafts        — BE develop 구현(SCRUM-183). 요청 {case_version} (#89에서 snake_case로 고침)
+//   S2 GET  /str-drafts/{draft_no}             — BE develop 구현(SCRUM-205 #84). 아래 "S2 실제 응답과 다른 점" 참고
+//   S3 PUT  /str-drafts/{draft_no}/revisions   — BE develop 구현(SCRUM-184 #91)
+//   S4 GET  /str-drafts/{draft_no}/revisions   — BE develop 구현(SCRUM-184 #91). 목록·?revision_no= 한 행
 //   S5 POST /str-drafts/{draft_no}/verify      — BE 아직 없음
 //   S6 POST /str-drafts/{draft_no}/submit      — BE 아직 없음
 // 아직 없는 API는 계약서 모양 그대로 MSW(`src/mocks/handlers.js`)가 답해요. BE가 붙으면 이 파일은 그대로 써요.
 const draftPath = (draftNo) => `/api/v1/str-drafts/${encodeURIComponent(draftNo)}`
 const casePath = (caseNo) => `/api/v1/cases/${encodeURIComponent(caseNo)}`
 
-// label은 서식 항목 제목(11/4 채영). S2 실제 응답(SCRUM-205)엔 아직 없어서 null → sectionTitles 표로.
+// label은 서식 항목 제목 — BE가 섹션 이름으로 붙여 줘요(SCRUM-205 #84). 없거나 빈 값이면 sectionTitles 표로.
 // cites는 단락이 근거로 쓴 facts 키 목록(규약 v0.4 8번) — 화면은 읽기만 하고 수정 요청엔 넣지 않아요.
 const toSection = (data) => ({
 	section: data.section,
@@ -37,8 +37,8 @@ const toLlmCheck = (data) => ({ check: data.check, comment: data.comment, score:
 
 /**
  * status: PASSED·CODE_FAILED·LLM_FAILED·VERIFY_UNAVAILABLE.
- * isCurrent는 서버 값이 먼저예요. S2 실제 응답(SCRUM-205)은 AI payload + revision_no라 is_current가 없을 수 있어서,
- * 그때만 "검증한 수정본 = 지금 수정본"으로 봐요(str.md §2 승인 요청 조건과 같은 기준). 해시 비교는 서버가 다시 해요.
+ * isCurrent는 서버 값을 써요 — BE S2가 "검증한 수정본 = 지금 수정본"으로 is_current를 붙여 줘요(SCRUM-205 #84).
+ * 키가 없을 때만(옛 응답·검증 응답 등) 같은 기준으로 계산해요. 해시 비교는 서버가 다시 해요.
  */
 export const toVerification = (data, currentRevisionNo = null) => ({
 	verificationId: data.verification_id ?? null,
@@ -69,9 +69,10 @@ const toLastRejection = (data) => ({
 /**
  * S2 → 화면 모델. `access`가 정확히 "FULL"일 때만 본문 필드를 옮겨요(META_ONLY·없음·모르는 값은 상태·날짜만).
  *
- * S2 실제 응답(BE SCRUM-205)과 계약서의 차이 — 없는 키는 null로 두고 화면이 대신 판단하지 않아요.
- *   - case_status·generation_id·generator_version·label·last_rejection·suspicion_*·available_actions 아직 없음
- *   - META_ONLY의 case_no는 null (계약서는 값)
+ * S2 실제 응답(BE develop, SCRUM-205 #84)과 계약서의 차이 — 없는 키는 null로 두고 화면이 대신 판단하지 않아요.
+ *   - generation_id·generator_version·last_rejection·suspicion_*·available_actions 아직 없음
+ *     (case_status·narrative[].label·latest_verification.is_current는 #84에서 들어옴)
+ *   - META_ONLY의 case_no·case_status는 null (계약서는 값)
  *   - facts의 *account_key는 *account_no(가림)·*account_ref로 바뀌어 옴
  * availableActions는 키가 없으면 null — "서버가 아직 안 줌"과 "할 수 있는 게 없음([])"을 구분해요(strRules.strActionsFor).
  */
@@ -117,7 +118,8 @@ const toRevisionSummary = (data) => ({
 	editedAt: data.edited_at ?? null,
 })
 
-// 저장 응답 〔초안 — 계약서 S3〕: 새 수정본 번호·초안 version·case_version. 화면은 성공 뒤 S2를 다시 읽어요.
+// 저장 응답(S3, BE StrRevisionResponses.Saved): draft_no·revision_no·changed_sections·edited_by·edited_at·narrative·
+// needs_verification·version·case_version. 화면은 번호·version만 쓰고 성공 뒤 S2를 다시 읽어요. case_status는 BE가 안 줘서 null.
 const toSaved = (data) => ({
 	draftNo: data.draft_no ?? null,
 	revisionNo: data.revision_no ?? data.current_revision_no ?? null,
@@ -160,12 +162,12 @@ export const strApi = {
 				})
 			).data,
 		),
-	/** S4 목록 — 본문 없음. */
+	/** S4 목록 — 본문 없음. BE 응답 {draft_no, current_revision_no, items[{…, ai_original}]} 중 items만 써요. */
 	getRevisions: async (draftNo, signal) =>
 		(await apiClient.get(`${draftPath(draftNo)}/revisions`, { signal })).data.items.map(
 			toRevisionSummary,
 		),
-	/** S4 한 행 — 전·후 본문. */
+	/** S4 한 행(?revision_no=) — 평평한 모양, 전·후 본문 전체. 1번(AI 원문)은 narrative_before가 []. */
 	getRevision: async (draftNo, revisionNo, signal) => {
 		const { data } = await apiClient.get(`${draftPath(draftNo)}/revisions`, {
 			params: { revision_no: revisionNo },

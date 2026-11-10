@@ -201,7 +201,7 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 		})
 	})
 
-	it("S2 실제 응답(BE SCRUM-205) 모양 — available_actions 없음은 null, is_current 없음은 수정본 번호로", () => {
+	it("S2에 없는 키 — available_actions 없음은 null, is_current가 없으면 수정본 번호로 판단", () => {
 		const draft = toDraft({
 			draft_no: DRAFT_NO,
 			access: "FULL",
@@ -245,7 +245,8 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 	})
 
 	it.each([
-		["admin", "FORBIDDEN"],
+		// BE ListStrRevisions는 관리자도 비담당과 같이 NOT_ASSIGNEE예요(URL 역할 규칙 없음).
+		["admin", "NOT_ASSIGNEE"],
 		["inv02", "NOT_ASSIGNEE"],
 	])("%s가 수정 이력을 부르면 403 %s이고 본문이 없다", async (who, code) => {
 		resetCases(users[who])

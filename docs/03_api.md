@@ -123,14 +123,14 @@
 
 ### STR — 단계별 연결 (11/10)
 
-S1 초안 생성은 실제 BE(develop)에 붙어요. 단, BE가 요청 이름을 `caseVersion`으로 받아서 BE `fix/str-create-case-version`이 들어가야 200/201이 나요. S2는 BE `feat/SCRUM-205`, S3~S6은 아직 MSW예요. 표는 `06_features/str.md` "백엔드 연결 상태".
+S1(SCRUM-183, `case_version` #89)·S2(SCRUM-205 #84)·S3·S4(SCRUM-184 #91)는 BE develop에 있어요. S5·S6·A6은 아직 MSW예요. 표는 `06_features/str.md` "백엔드 연결 상태".
 
-### 〔초안〕 STR 초안 조회 — MSW 계약 [STR API 명세 2·4번, 계약서 S2·S4·S5(11/4 채영), FE 코드 `strApi.js`·`mocks/strDrafts.js`, SCRUM-110]
+### STR 초안 조회 [STR API 명세 2·4번, 계약서 S2·S4·S5(11/4 채영), BE SCRUM-184 #91, FE 코드 `strApi.js`·`mocks/strDrafts.js`, SCRUM-110]
 
-백엔드 str API가 아직 없어 **명세 예시 JSON 그대로** MSW가 답해요. 본문 열람 제한 규칙은 `06_features/str.md` §3.
+수정 이력(S4)은 BE develop에 있어요. MSW는 같은 모양으로 답해요. 본문 열람 제한 규칙은 `06_features/str.md` §3.
 
 | 동작           | API                                                         | 응답                                                                                                              | 프론트                |
 | -------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------- |
 | 초안 보기      | `GET /api/v1/str-drafts/{draft_no}`                         | 명세 1번 모양 또는 상태·날짜만의 제한 응답(`access: "META_ONLY"`, 본문 필드 `null`), 없으면 404 `DRAFT_NOT_FOUND` | `strApi.getDraft`     |
-| 수정 이력 목록 | `GET /api/v1/str-drafts/{draft_no}/revisions`               | `{ draft_no, items }` (본문 없음). 열람 권한 없으면 403 `FORBIDDEN`·`NOT_ASSIGNEE`                                | `strApi.getRevisions` |
-| 수정본 한 행   | `GET /api/v1/str-drafts/{draft_no}/revisions?revision_no=n` | `narrative_before`·`narrative_after`, 없는 번호 404                                                               | `strApi.getRevision`  |
+| 수정 이력 목록 | `GET /api/v1/str-drafts/{draft_no}/revisions`               | `{ draft_no, current_revision_no, items }` (본문 없음, 행마다 `ai_original`). 열람 권한 없으면 403 `NOT_ASSIGNEE` | `strApi.getRevisions` |
+| 수정본 한 행   | `GET /api/v1/str-drafts/{draft_no}/revisions?revision_no=n` | 평평한 모양 `narrative_before`·`narrative_after`(1번은 before `[]`), 없는 번호 404 `REVISION_NOT_FOUND`           | `strApi.getRevision`  |

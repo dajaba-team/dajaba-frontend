@@ -8,22 +8,22 @@
 
 ### 백엔드 연결 상태 (단계별)
 
-| 단계 | API                                                    | BE                                                                                                                          | 프론트                                             |
-| ---- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| 1    | S1 `POST /cases/{case_no}/str-drafts` `{case_version}` | develop (SCRUM-183). **요청 이름이 `caseVersion`으로 고정돼 400** → BE `fix/str-create-case-version`에서 `case_version`으로 | `strApi.createDraft` (timeout 100초)               |
-| 2    | S2 `GET /str-drafts/{draft_no}`                        | `feat/SCRUM-205` 리뷰 중                                                                                                    | `strApi.getDraft` — 아래 "S2 차이" 흡수            |
-| 3    | S3 `PUT …/revisions`                                   | 없음 → 404 `NOT_FOUND` 안내 + 입력 유지                                                                                     | `strApi.saveRevision`                              |
-| 4    | S4 `GET …/revisions`                                   | 없음                                                                                                                        | `strApi.getRevisions`·`getRevision`                |
-| 5    | S5 `POST …/verify`                                     | 없음                                                                                                                        | `strApi.verify` (timeout 100초)                    |
-| 6    | S6 `POST …/submit`                                     | 없음                                                                                                                        | `strApi.submit`                                    |
-| -    | A6 `POST /cases/{case_no}/close-with-draft`            | 없음                                                                                                                        | `casesApi.closeWithDraft` (STR 화면에서도 같은 폼) |
+| 단계 | API                                                    | BE                                                                                                                              | 프론트                                             |
+| ---- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| 1    | S1 `POST /cases/{case_no}/str-drafts` `{case_version}` | develop (SCRUM-183). 요청 이름 `case_version`(#89에서 고침)                                                                     | `strApi.createDraft` (timeout 100초)               |
+| 2    | S2 `GET /str-drafts/{draft_no}`                        | develop (SCRUM-205 #84)                                                                                                         | `strApi.getDraft` — 아래 "S2 차이" 흡수            |
+| 3    | S3 `PUT …/revisions`                                   | develop (SCRUM-184 #91). 고친 단락만, NFC 5,000자. 응답에 저장된 `narrative` 전체·`needs_verification`·`version`·`case_version` | `strApi.saveRevision`                              |
+| 4    | S4 `GET …/revisions`                                   | develop (SCRUM-184 #91). 목록 `{draft_no, current_revision_no, items[{…, ai_original}]}`, `?revision_no=`는 평평한 전·후 본문   | `strApi.getRevisions`·`getRevision`                |
+| 5    | S5 `POST …/verify`                                     | 없음                                                                                                                            | `strApi.verify` (timeout 100초)                    |
+| 6    | S6 `POST …/submit`                                     | 없음                                                                                                                            | `strApi.submit`                                    |
+| -    | A6 `POST /cases/{case_no}/close-with-draft`            | 없음                                                                                                                            | `casesApi.closeWithDraft` (STR 화면에서도 같은 폼) |
 
 BE가 한 단계씩 붙으면 프론트 코드는 그대로예요(경로·모양을 계약서대로 미리 맞춰 둠). `VITE_USE_MOCKS=true`면 전부 MSW가 답해요.
 
-**S2 차이 (SCRUM-205 기준)** — `available_actions`·`case_status`·`generation_id`·`generator_version`·`narrative[].label`·`last_rejection`·`suspicion_*`가 아직 없고, `latest_verification`은 AI payload + `revision_no`(`is_current` 없음)예요. 프론트는:
+**S2 차이 (BE develop, SCRUM-205 #84 기준)** — `case_status`·`narrative[].label`·`latest_verification.is_current`는 들어왔어요. `available_actions`·`generation_id`·`generator_version`·`last_rejection`·`suspicion_*`는 아직 없고, `META_ONLY`의 `case_no`·`case_status`는 `null`이에요. 프론트는:
 
 - `available_actions` 키가 없으면 `null`로 두고, 그동안만 케이스 C2 `available_actions`(`GENERATE_DRAFT`·`CLOSE_WITH_DRAFT`)에서 STR 버튼을 옮겨 와요(`strActionsFor` — 임시 다리, S2가 주면 자동으로 안 탐).
-- `is_current`가 없으면 `latest_verification.revision_no === current_revision_no`로 봐요(승인 요청 조건과 같은 기준, 최종 판단은 서버 ApprovalGate).
+- `is_current`는 서버 값을 써요. 키가 없을 때만 `latest_verification.revision_no === current_revision_no`로 봐요(BE가 붙이는 기준과 같음, 최종 판단은 서버 ApprovalGate).
 - 나머지는 `null`/`[]`로 두고 지어내지 않아요.
 
 ## 1. 화면 — `/cases/:caseNo/str`
@@ -90,15 +90,15 @@ S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), 
 
 본문을 볼 수 있는 사람은 **그 케이스의 담당 조사역**과 **승인자(APPROVER)**뿐이에요. **관리자와 비담당 조사역은 상태·날짜만** 받아요(ADMIN은 조사역·승인자 권한을 물려받지 않음). STR 명세 §2의 "담당이 아닌 조사역은 403 `NOT_ASSIGNEE`"는 채영님이 이 결정에 맞춰 고쳐요.
 
-| 누가                   | `GET /str-drafts/{draft_no}`                                                                                                                                                                                                 | `GET /str-drafts/{draft_no}/revisions`                                                                    |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| 담당 조사역 · 승인자   | 200 명세 1번 모양 전체 + `access: "FULL"`                                                                                                                                                                                    | 200 목록 `{ draft_no, items }`(본문 없음), `?revision_no=`면 그 행의 `narrative_before`·`narrative_after` |
-| 관리자 · 비담당 조사역 | 200 **제한 응답** `access: "META_ONLY"` — `draft_no`·`case_no`·`status`·`case_status`·`produced_at`만 값이 있고 `facts`·`narrative`·`latest_verification`·`last_rejection`·`references`는 `null`(키는 빼지 않음, 계약서 2.3) | 403 — 관리자 `FORBIDDEN`, 비담당 조사역 `NOT_ASSIGNEE`                                                    |
+| 누가                   | `GET /str-drafts/{draft_no}`                                                                                                                                                                                                                                  | `GET /str-drafts/{draft_no}/revisions`                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 담당 조사역 · 승인자   | 200 명세 1번 모양 전체 + `access: "FULL"`                                                                                                                                                                                                                     | 200 목록 `{ draft_no, items }`(본문 없음), `?revision_no=`면 그 행의 `narrative_before`·`narrative_after` |
+| 관리자 · 비담당 조사역 | 200 **제한 응답** `access: "META_ONLY"` — `draft_no`·`status`·`produced_at`만 값이 있고(`case_no`·`case_status`도 계약서엔 값이지만 BE는 `null`) `facts`·`narrative`·`latest_verification`·`last_rejection`·`references`는 `null`(키는 빼지 않음, 계약서 2.3) | 403 `NOT_ASSIGNEE` (관리자도 같음)                                                                        |
 
 - 제한 응답도 `strView` 열람 기록 한 줄을 남겨요(BE `03_shared` §9).
 - 서버는 제한 응답을 **허용 필드만 골라** 만들어요. 프론트 `toDraft`도 `access`가 `"FULL"`이 아니면(없거나 모르는 값 포함) 본문 필드를 화면 모델로 옮기지 않아요.
 - 화면은 `contentVisible`로 "본문 보기"와 "상태·날짜만 보기"를 고르고, 역할로 다시 계산하지 않아요.
-- 수정 이력은 제한 응답 없이 **403**(관리자 `FORBIDDEN`, 비담당 조사역 `NOT_ASSIGNEE`), 없는 `revision_no`는 **404 `REVISION_NOT_FOUND`**예요 [계약서 Q13, 11/4 채영].
+- 수정 이력은 제한 응답 없이 **403 `NOT_ASSIGNEE`**(관리자·비담당 조사역 모두 — BE `ListStrRevisions`, 11/4 계약서 Q13은 관리자 `FORBIDDEN`이었음), 없는 `revision_no`는 **404 `REVISION_NOT_FOUND`**예요 [계약서 Q13, 11/4 채영].
 
 ## 4. 실패 처리 [BE 03 §2, BE flows 04]
 

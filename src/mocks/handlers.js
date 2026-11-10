@@ -591,7 +591,7 @@ export const handlers = [
 			? HttpResponse.json(visibleStrDraft(currentUser, draft, caseOf(draft), draftActions))
 			: draftNotFound()
 	}),
-	// S3·S5·S6 — BE 아직 없음. 계약서·BE str.md 모양으로 MSW가 답해요.
+	// S3는 BE develop(SCRUM-184 #91)과 같은 계약, S5·S6은 BE 아직 없음 — 계약서·BE str.md 모양으로 MSW가 답해요.
 	...[
 		["put", "revisions", saveRevision],
 		["post", "verify", verifyDraft],
@@ -613,12 +613,12 @@ export const handlers = [
 		if (!currentUser) return unauthenticated()
 		const draft = drafts.find((item) => item.draft_no === params.draftNo)
 		if (!draft) return draftNotFound()
-		// 수정 이력은 제한 응답 없이 403 — 관리자 FORBIDDEN, 비담당 조사역 NOT_ASSIGNEE (계약서 Q13, 11/4 채영)
+		// 수정 이력은 제한 응답 없이 403 NOT_ASSIGNEE — 관리자도 같아요(BE ListStrRevisions, SCRUM-184 #91)
 		if (!canViewStrContent(currentUser, draft))
 			return HttpResponse.json(
 				{
 					error: {
-						code: currentUser.role === "ADMIN" ? "FORBIDDEN" : "NOT_ASSIGNEE",
+						code: "NOT_ASSIGNEE",
 						message: "권한이 없습니다",
 						details: {},
 					},

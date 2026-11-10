@@ -23,7 +23,7 @@ export function changedSections(narrative, inputs) {
  * 이 화면에서 쓸 STR 동작 목록.
  *
  * 원칙: 버튼은 서버가 준 S2 `available_actions`만 보고 켜요(계약서 Q16).
- * 다리(임시): S2 실제 응답(BE SCRUM-205)엔 아직 available_actions가 없어요(null). 그동안은 케이스 상세 C2의
+ * 다리(임시): S2 실제 응답(BE develop, SCRUM-205 #84)엔 아직 available_actions가 없어요(null). 그동안은 케이스 상세 C2의
  * available_actions(BE CaseAction — 담당·상태를 서버가 이미 판단한 값)에서 STR 동작을 옮겨 와요.
  *   - GENERATE_DRAFT(담당 + ESCALATED·DRAFTED·REJECTED/NEED_REVISION) → 초안 ACTIVE면 REVISE·VERIFY·REGENERATE
  *   - 그중 케이스가 DRAFTED면 SUBMIT (보완 요청 반려는 저장으로 DRAFTED가 된 뒤에만 — str.md §2)
