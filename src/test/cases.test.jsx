@@ -353,6 +353,103 @@ describe("케이스 조사", () => {
 		await user.click(screen.getByRole("button", { name: "배정" }))
 		expect(await screen.findByText(/담당자 예시 inv02/)).toBeInTheDocument()
 	})
+	it("관리자는 상세에서 [담당자 변경]으로 활성 조사역을 골라 바꾼다 (A2)", async () => {
+		const bodies = recordBodies("/reassign")
+		const user = renderApp(`/cases/${REVIEWING}`, true, "admin")
+		await user.click(await screen.findByRole("button", { name: "담당자 변경" }))
+		const dialog = await screen.findByRole("dialog", { name: "담당자 변경" })
+		const select = await within(dialog).findByLabelText("새 담당 조사역")
+		// 지금 담당(inv01)과 조사역 아닌 사람은 목록에 없다
+		const options = within(select)
+			.getAllByRole("option")
+			.map((option) => option.value)
+		expect(options).toEqual(["", "inv02"])
+		expect(within(dialog).getByRole("button", { name: "변경" })).toBeDisabled()
+		await user.selectOptions(select, "inv02")
+		await user.type(within(dialog).getByLabelText("변경 사유 (선택)"), "업무 분담")
+		await user.click(within(dialog).getByRole("button", { name: "변경" }))
+		await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+		expect(await screen.findByText(/담당자 예시 inv02/)).toBeInTheDocument()
+		expect(bodies).toEqual([{ assignee: "inv02", comment: "업무 분담", version: 1 }])
+		server.events.removeAllListeners()
+	})
+	it("담당자 변경이 409 INVALID_ASSIGNEE면 안내하고 조사역 목록을 다시 부른다", async () => {
+		let listCalls = 0
+		server.events.on("request:start", ({ request }) => {
+			if (new URL(request.url).pathname === "/api/v1/admin/users") listCalls += 1
+		})
+		server.use(
+			http.post(`*/api/v1/cases/${REVIEWING}/reassign`, () =>
+				HttpResponse.json(
+					{
+						error: {
+							code: "INVALID_ASSIGNEE",
+							message: "활성 조사역에게만 배정할 수 있습니다",
+							details: { reason: "NOT_ACTIVE_INVESTIGATOR" },
+						},
+					},
+					{ status: 409 },
+				),
+			),
+		)
+		const user = renderApp(`/cases/${REVIEWING}`, true, "admin")
+		await user.click(await screen.findByRole("button", { name: "담당자 변경" }))
+		const dialog = await screen.findByRole("dialog", { name: "담당자 변경" })
+		await user.selectOptions(await within(dialog).findByLabelText("새 담당 조사역"), "inv02")
+		await user.click(within(dialog).getByRole("button", { name: "변경" }))
+		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+			"활성 조사역에게만 맡길 수 있어요",
+		)
+		await waitFor(() => expect(listCalls).toBe(2))
+		expect(within(dialog).getByLabelText("새 담당 조사역")).toHaveValue("")
+		server.events.removeAllListeners()
+	})
+	it("조사역에게는 [담당자 변경]이 보이지 않고, 관리자는 목록에서도 바꿀 수 있다", async () => {
+		const user = renderApp(`/cases/${REVIEWING}`)
+		await screen.findByRole("button", { name: "에스컬레이션" })
+		expect(screen.queryByRole("button", { name: "담당자 변경" })).not.toBeInTheDocument()
+		await user.click(screen.getByRole("link", { name: "← 케이스 목록" }))
+		await screen.findByRole("link", { name: REVIEWING })
+		expect(screen.queryByRole("button", { name: "담당자 변경" })).not.toBeInTheDocument()
+	})
+	it("목록 [담당자 변경]은 상태가 아니라 서버 available_actions 를 따른다 (#23 리뷰)", async () => {
+		server.use(
+			http.get("*/api/v1/cases", () =>
+				HttpResponse.json({
+					items: [
+						{
+							case_no: REVIEWING,
+							status: "REVIEWING",
+							account_ref: "ACR-0004",
+							account_no: "011_****1021",
+							assignee: { login_id: "inv01", display_name: "예시 inv01" },
+							score: 0.91,
+							rejection_reason_code: null,
+							version: 1,
+							created_at: "2026-11-02T01:03:00Z",
+							available_actions: [],
+						},
+					],
+					page: 0,
+					size: 20,
+					total: 1,
+				}),
+			),
+		)
+		renderApp("/cases", true, "admin")
+		await screen.findByRole("link", { name: REVIEWING })
+		expect(screen.queryByRole("button", { name: "담당자 변경" })).not.toBeInTheDocument()
+		expect(screen.queryByRole("columnheader", { name: "관리" })).not.toBeInTheDocument()
+	})
+	it("관리자 목록에서 조사 중인 행의 [담당자 변경]이 확인창을 연다", async () => {
+		const user = renderApp("/cases", true, "admin")
+		const row = (await screen.findByRole("link", { name: REVIEWING })).closest("tr")
+		await user.click(within(row).getByRole("button", { name: "담당자 변경" }))
+		const dialog = await screen.findByRole("dialog", { name: "담당자 변경" })
+		expect(within(dialog).getByText(new RegExp(REVIEWING))).toBeInTheDocument()
+		await user.click(within(dialog).getByRole("button", { name: "취소" }))
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+	})
 	it("초안이 있는 케이스는 같은 [종료] 버튼으로 close-with-draft를 부른다", async () => {
 		const closeBodies = recordBodies("/close")
 		const draftBodies = recordBodies("/close-with-draft")
@@ -422,6 +519,45 @@ describe("케이스 조사", () => {
 		expect(screen.getByLabelText("종료 설명")).toHaveValue("정상 급여 이체")
 		await user.click(screen.getByRole("button", { name: "종료 실행" }))
 		expect(await screen.findByText("종료", { selector: ".case-status" })).toBeInTheDocument()
+	})
+	it("메모를 저장하면 메모 이력에 새 메모와 이전 메모가 보인다 (C8)", async () => {
+		const user = renderApp(`/cases/${REVIEWING}`)
+		const historySection = await screen.findByRole("region", { name: "메모 이력" })
+		expect(await within(historySection).findByText("메모 이력이 없습니다.")).toBeInTheDocument()
+		const memo = await screen.findByRole("textbox", { name: "메모 내용" })
+		await user.clear(memo)
+		await user.type(memo, "거래 목적 자료 요청 완료")
+		await user.click(screen.getByRole("button", { name: "메모 저장" }))
+		expect(await screen.findByText("메모가 저장되었습니다.")).toBeInTheDocument()
+		expect(
+			await within(historySection).findByText("거래 목적 자료 요청 완료"),
+		).toBeInTheDocument()
+		expect(within(historySection).getByText("이전 메모")).toBeInTheDocument()
+		expect(within(historySection).getByText("거래 목적 확인 필요")).toBeInTheDocument()
+		expect(within(historySection).getByText(/버전 1에서/)).toBeInTheDocument()
+	})
+	it("메모를 비운 기록은 (메모 비움)으로 보인다", async () => {
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}/note-histories`, () =>
+				HttpResponse.json({
+					items: [
+						{
+							before_text: "거래 목적 확인 필요",
+							after_text: "",
+							case_version_before: 1,
+							created_by: "inv01",
+							created_at: "2026-11-02T02:00:00Z",
+						},
+					],
+					page: 0,
+					size: 20,
+					total: 1,
+				}),
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		const historySection = await screen.findByRole("region", { name: "메모 이력" })
+		expect(await within(historySection).findByText("(메모 비움)")).toBeInTheDocument()
 	})
 	it("초안이 있는 케이스에서 STR 화면으로 갈 수 있다", async () => {
 		const user = renderApp("/cases/CASE-2022-001001")
@@ -685,7 +821,10 @@ describe("예시 계정 권한과 입력 보호", () => {
 		await screen.findByText("로그인이 필요합니다.")
 		await login(user, "apr01")
 		await screen.findByText("예시 apr01 (apr01) · APPROVER")
-		expect(await screen.findByText("현재 케이스는 읽기 전용입니다.")).toBeInTheDocument()
+		// 조사 중인 케이스라 "읽기 전용"이 아니라 담당자 안내 (SCRUM-176)
+		expect(
+			await screen.findByText("담당 조사역만 메모를 수정할 수 있어요."),
+		).toBeInTheDocument()
 		expect(screen.queryByRole("textbox", { name: "메모 내용" })).not.toBeInTheDocument()
 	})
 	it("입력 검증 오류를 메모 입력에 연결하며 내용을 유지한다", async () => {
@@ -717,5 +856,124 @@ describe("예시 계정 권한과 입력 보호", () => {
 		const event = new Event("beforeunload", { cancelable: true })
 		window.dispatchEvent(event)
 		expect(event.defaultPrevented).toBe(true)
+	})
+})
+describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
+	it("상세에 통화별 합계, 근거 거래 표, 자금 흐름 그래프가 보인다", async () => {
+		renderApp(`/cases/${REVIEWING}`)
+		const agg = await screen.findByRole("region", { name: "유입·유출 합계" })
+		expect(within(agg).getByText("유입 (2건)")).toBeInTheDocument()
+		expect(within(agg).getByText("1,000 US Dollar")).toBeInTheDocument()
+		expect(within(agg).getByText("유출 (1건)")).toBeInTheDocument()
+		expect(
+			within(agg).getByText(/경유 거래와 내 계좌끼리 옮긴 돈은 합계에서/),
+		).toBeInTheDocument()
+
+		const table = await screen.findByRole("region", { name: "근거 거래" })
+		const rows = await within(table).findAllByRole("row")
+		expect(rows).toHaveLength(5) // 머리 + 4건
+		expect(within(rows[1]).getByText("III부 1 · 입금")).toBeInTheDocument()
+		expect(within(rows[1]).getByText("2022-10-31 09:00:00")).toBeInTheDocument()
+		expect(within(rows[3]).getByText("III부 3 · 출금")).toBeInTheDocument()
+		expect(within(rows[4]).getByText("대상 계좌 미참여")).toBeInTheDocument()
+
+		const graph = await screen.findByRole("img", { name: /거래 4건/ })
+		expect(within(graph).getAllByTestId("graph-edge")).toHaveLength(4)
+		expect(within(graph).getByText("011_****1021 (대상)")).toBeInTheDocument()
+	})
+	it("[거래 원본]은 C4 원본을 창으로 보여 주고, 404면 그 창에만 안내", async () => {
+		const user = renderApp(`/cases/${REVIEWING}`)
+		const table = await screen.findByRole("region", { name: "근거 거래" })
+		await user.click((await within(table).findAllByRole("button", { name: "거래 원본" }))[0])
+		const dialog = await screen.findByRole("dialog", { name: "거래 원본 · 4721" })
+		expect(
+			await within(dialog).findByText(/IBM AML HI-Small · 행 4721 · 합성 데이터/),
+		).toBeInTheDocument()
+		expect(within(dialog).getByText("입금")).toBeInTheDocument()
+		await user.click(within(dialog).getByRole("button", { name: "닫기" }))
+
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}/evidence/:id`, () =>
+				HttpResponse.json(
+					{
+						error: {
+							code: "EVIDENCE_NOT_FOUND",
+							message: "이 케이스의 근거 거래가 아닙니다",
+							details: {},
+						},
+					},
+					{ status: 404 },
+				),
+			),
+		)
+		await user.click(within(table).getAllByRole("button", { name: "거래 원본" })[1])
+		const failed = await screen.findByRole("dialog", { name: "거래 원본 · 4722" })
+		expect(
+			await within(failed).findByText("이 케이스의 근거 거래가 아닙니다"),
+		).toBeInTheDocument()
+		expect(screen.getByRole("region", { name: "근거 거래" })).toBeInTheDocument()
+	})
+	it("참고 거래 탭과 근거 없는 케이스는 칸마다 빈 상태를 보여 준다", async () => {
+		const user = renderApp(`/cases/${REVIEWING}`)
+		const table = await screen.findByRole("region", { name: "근거 거래" })
+		await user.click(within(table).getByRole("button", { name: "참고 거래" }))
+		expect(await within(table).findByText("참고 거래가 없어요.")).toBeInTheDocument()
+	})
+	it("근거 거래가 없는 케이스는 합계·표·그래프가 비어 있다고 알린다", async () => {
+		renderApp("/cases/CASE-2022-001002")
+		expect(await screen.findByText("근거 거래가 없어요.")).toBeInTheDocument()
+		expect(await screen.findByText("이 케이스의 근거 거래가 없어요.")).toBeInTheDocument()
+		expect(await screen.findByText("그릴 거래가 없어요.")).toBeInTheDocument()
+	})
+	it("그래프가 잘리면 전체 N건 중 M건, 표가 실패해도 다른 칸은 남는다", async () => {
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}/graph`, () =>
+				HttpResponse.json({
+					nodes: [
+						{ account_ref: "ACR-0004", account_no: "011_****1021" },
+						{ account_ref: "ACR-102", account_no: "020_****2020" },
+					],
+					edges: [
+						{
+							transaction_id: 1,
+							source: "ACR-102",
+							target: "ACR-0004",
+							amount: 10,
+							currency: "US Dollar",
+							amount_basis: "RECEIVED",
+							scope: "EVIDENCE",
+							ts: "2022-10-31T09:00:00",
+						},
+					],
+					returned_transaction_count: 200,
+					total_transaction_count: 300,
+					truncated: true,
+				}),
+			),
+			http.get(`*/api/v1/cases/${REVIEWING}/transactions`, () =>
+				HttpResponse.json(
+					{ error: { code: "INTERNAL_ERROR", message: "서버 오류", details: {} } },
+					{ status: 500 },
+				),
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		expect(await screen.findByText(/전체 300건 중 200건만 그렸어요/)).toBeInTheDocument()
+		const table = screen.getByRole("region", { name: "근거 거래" })
+		expect(await within(table).findByRole("alert")).toHaveTextContent(
+			"데이터를 불러오지 못했습니다.",
+		)
+		expect(screen.getByRole("region", { name: "유입·유출 합계" })).toBeInTheDocument()
+	})
+	it("[이력 전체 보기]는 C6 상태 이력을 따로 불러오고 메모 이력과 섞지 않는다", async () => {
+		const user = renderApp(`/cases/${REVIEWING}`)
+		await user.click(await screen.findByRole("button", { name: "이력 전체 보기" }))
+		const history = await screen.findByRole("region", { name: "상태 이력 전체" })
+		expect(await within(history).findByText("담당 배정")).toBeInTheDocument()
+		expect(within(history).getByText("케이스 생성")).toBeInTheDocument()
+		expect(within(history).queryByText("메모 저장")).not.toBeInTheDocument()
+		expect(screen.getByRole("region", { name: "메모 이력" })).toBeInTheDocument()
+		await user.click(within(history).getByRole("button", { name: "최근 이력만 보기" }))
+		expect(await screen.findByRole("region", { name: "최근 이력" })).toBeInTheDocument()
 	})
 })

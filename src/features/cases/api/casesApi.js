@@ -1,8 +1,8 @@
 import { apiClient } from "../../../shared/api/apiClient"
 
-// 케이스 API — 프론트 API 계약서 v0.2 C1·C2·C7·A1·A3·A4·A5·A6·A7, CASES 명세 API-01·02·03·05·06·07·12·13.
-// 백엔드 CaseController(SCRUM-106)와 같은 경로·모양이에요. 메모(A3 PUT …/notes)와 초안 있는 종료(A6, str 컨트롤러)는
-// 백엔드가 아직 없어 MSW가 답해요.
+// 케이스 API — 프론트 API 계약서 v0.2 C1~C8·A1~A7, CASES 명세 API-01~13·15.
+// 백엔드 CaseController(SCRUM-106)와 같은 경로·모양이에요. 메모(A3)·메모 이력(C8)은 SCRUM-176, 요약(A7·C7)은 SCRUM-175.
+// 초안 있는 종료(A6, str 컨트롤러)는 백엔드가 아직 없어 MSW가 답해요.
 // 서버는 snake_case, 화면은 camelCase — 변환은 여기서 한 번만 해요.
 const casePath = (caseNo) => `/api/v1/cases/${encodeURIComponent(caseNo)}`
 
@@ -20,6 +20,8 @@ const toCaseSummary = (data) => ({
 	rejectionReasonCode: data.rejection_reason_code ?? null,
 	version: data.version,
 	createdAt: data.created_at,
+	// 목록 한 줄에도 상세와 같은 버튼 목록이 와요(BE #87, #23 리뷰). 상세는 아래 toCaseDetail 이 같은 키로 덮어써요.
+	availableActions: data.available_actions ?? [],
 })
 
 const toHistory = (data) => ({
@@ -61,6 +63,42 @@ const toLatestScore = (data) =>
 			}
 		: null
 
+// 상세 aggregates (C2). 통화별 합계 — 화면은 더하거나 환산하지 않아요. 경유·자기계좌 거래는 서버가 이미 뺐어요.
+const toSide = (data) => ({
+	transactionCount: data?.transaction_count ?? 0,
+	totals: (data?.totals ?? []).map((total) => ({
+		currency: total.currency,
+		amount: total.amount,
+	})),
+})
+const toAggregates = (data) =>
+	data
+		? {
+				transactionCount: data.transaction_count,
+				inbound: toSide(data.inbound),
+				outbound: toSide(data.outbound),
+				firstTs: data.first_ts ?? null,
+				lastTs: data.last_ts ?? null,
+			}
+		: null
+
+// 거래 한 줄 (C3·C4). ts는 데이터 시각. direction은 케이스 계좌 기준 INBOUND·OUTBOUND·INDIRECT(경유).
+const toTransaction = (data) => ({
+	transactionId: data.transaction_id,
+	fromAccountRef: data.from_account_ref,
+	fromAccountNo: data.from_account_no,
+	toAccountRef: data.to_account_ref,
+	toAccountNo: data.to_account_no,
+	ts: data.ts,
+	amountPaid: data.amount_paid,
+	currencyPaid: data.currency_paid,
+	amountReceived: data.amount_received,
+	currencyReceived: data.currency_received,
+	paymentFormat: data.payment_format,
+	direction: data.direction,
+	scope: data.scope,
+})
+
 // AI 조사 요약 한 건 (A7·C7·상세 latest_summary 같은 모양). isCurrent: 지금 입력과 같은가, 판정 못 하면 null.
 // modelFocus("모델이 주목한 점")는 관측 사실(summaryLines)과 섞지 않으려고 따로 둬요.
 const toSummary = (data) =>
@@ -75,7 +113,7 @@ const toSummary = (data) =>
 			}
 		: null
 
-// 아직 서버가 null로 주는 칸(aggregates 등)은 화면을 만들 때 옮겨요.
+// 아직 서버가 null로 주는 칸(current_draft 등)은 화면을 만들 때 옮겨요.
 const toCaseDetail = (data) => ({
 	...toCaseSummary(data),
 	alert: toAlert(data.alert),
@@ -84,9 +122,19 @@ const toCaseDetail = (data) => ({
 	updatedAt: data.updated_at ?? null,
 	closeReason: data.close_reason ?? null,
 	investigatorNotes: data.investigator_notes ?? null,
+	aggregates: toAggregates(data.aggregates),
 	currentDraftNo: data.current_draft_no ?? null,
 	history: (data.history ?? []).map(toHistory),
 	availableActions: data.available_actions ?? [],
+})
+
+// 메모 이력 한 줄 (계약서 C8). beforeText는 바로 앞 메모(첫 기록은 null), 비운 기록은 afterText "".
+const toNoteHistory = (data) => ({
+	beforeText: data.before_text ?? null,
+	afterText: data.after_text,
+	caseVersionBefore: data.case_version_before,
+	createdBy: data.created_by,
+	createdAt: data.created_at,
 })
 
 // 공통 변경 응답 M (계약서 5.3). 상세 전체가 아니라서 성공 뒤엔 상세를 다시 불러요.
@@ -128,6 +176,17 @@ export const casesApi = {
 				})
 			).data,
 		),
+	/** 담당자 변경(A2, ADMIN만). assignee는 새 담당 조사역 login_id, comment는 선택. */
+	reassign: async ({ caseNo, version, assignee, comment }) =>
+		toChange(
+			(
+				await apiClient.post(`${casePath(caseNo)}/reassign`, {
+					assignee,
+					...(comment ? { comment } : {}),
+					version,
+				})
+			).data,
+		),
 	escalate: async ({ caseNo, version, comment }) =>
 		toChange((await apiClient.post(`${casePath(caseNo)}/escalate`, { comment, version })).data),
 	/** 초안 없는 종료(A5). 초안이 있으면 서버가 409 CLOSE_REQUIRES_STR. */
@@ -152,6 +211,88 @@ export const casesApi = {
 				})
 			).data,
 		),
+	/** 근거 거래(C3). scope EVIDENCE(기본)·CONTEXT, 시각 오름차순. 화면 page는 1부터. */
+	transactions: async ({ caseNo, scope = "EVIDENCE", page = 1, size = 20 }, signal) => {
+		const { data } = await apiClient.get(`${casePath(caseNo)}/transactions`, {
+			params: { scope, page: page - 1, size },
+			signal,
+		})
+		return {
+			items: data.items.map(toTransaction),
+			page: data.page + 1,
+			size: data.size,
+			total: data.total,
+			totalPages: Math.ceil(data.total / data.size),
+		}
+	},
+	/** 거래 원본(C4). 이 케이스의 근거 거래가 아니면 404 EVIDENCE_NOT_FOUND. */
+	evidence: async ({ caseNo, transactionId }, signal) => {
+		const { data } = await apiClient.get(
+			`${casePath(caseNo)}/evidence/${encodeURIComponent(transactionId)}`,
+			{ signal },
+		)
+		return {
+			caseNo: data.case_no,
+			transaction: toTransaction(data.transaction),
+			source: {
+				dataset: data.source?.dataset ?? null,
+				recordId: data.source?.record_id ?? null,
+				isSynthetic: data.source?.is_synthetic ?? null,
+			},
+			eligibleForStr: data.eligible_for_str,
+		}
+	},
+	/** 자금 흐름 그래프(C5). 넘치면 truncated — 화면은 "전체 N건 중 M건". */
+	graph: async ({ caseNo }, signal) => {
+		const { data } = await apiClient.get(`${casePath(caseNo)}/graph`, { signal })
+		return {
+			nodes: data.nodes.map((node) => ({
+				accountRef: node.account_ref,
+				accountNo: node.account_no,
+			})),
+			edges: data.edges.map((edge) => ({
+				transactionId: edge.transaction_id,
+				source: edge.source,
+				target: edge.target,
+				amount: edge.amount,
+				currency: edge.currency,
+				scope: edge.scope,
+				ts: edge.ts,
+			})),
+			returnedTransactionCount: data.returned_transaction_count,
+			totalTransactionCount: data.total_transaction_count,
+			truncated: data.truncated,
+		}
+	},
+	/** 상태 이력 전체(C6), 최신 먼저, 메모(NOTE) 빼고. */
+	histories: async ({ caseNo, page = 1, size = 20 }, signal) => {
+		const { data } = await apiClient.get(`${casePath(caseNo)}/histories`, {
+			params: { page: page - 1, size },
+			signal,
+		})
+		return {
+			items: data.items.map(toHistory),
+			page: data.page + 1,
+			size: data.size,
+			total: data.total,
+			totalPages: Math.ceil(data.total / data.size),
+		}
+	},
+	/** 메모 이력(C8), 최신 먼저. 화면 page는 1부터, API page는 0부터. */
+	noteHistories: async ({ caseNo, page = 1, size = 20 }, signal) => {
+		const { data } = await apiClient.get(`${casePath(caseNo)}/note-histories`, {
+			params: { page: page - 1, size },
+			signal,
+		})
+		return {
+			items: data.items.map(toNoteHistory),
+			page: data.page + 1,
+			size: data.size,
+			total: data.total,
+			totalPages: Math.ceil(data.total / data.size),
+		}
+	},
+	/** 메모 저장(A3). 같은 내용이면 서버가 그대로 두고(version 안 오름), 빈 문자열은 비우기. */
 	/** AI 조사 요약 생성·갱신(A7) → 201 { case_no, summary, case_version }. 실패(502 등)면 기존 요약은 그대로예요. */
 	refreshSummary: async ({ caseNo, version }) => {
 		const { data } = await apiClient.post(`${casePath(caseNo)}/refresh-summary`, { version })

@@ -146,6 +146,43 @@
 		padding: var(--space-5);
 	}
 }
+/* 근거 거래·그래프·합계 (SCRUM-179) */
+.case-aggregates {
+	display: grid;
+	gap: var(--space-3);
+	grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+.case-row-context td {
+	color: var(--color-muted);
+	font-style: italic;
+}
+.case-action-buttons [aria-pressed="true"] {
+	font-weight: 700;
+	text-decoration: underline;
+}
+.case-graph {
+	display: block;
+	inline-size: 100%;
+	max-inline-size: 30rem;
+	block-size: auto;
+}
+.case-graph .edge {
+	stroke: currentColor;
+	stroke-width: 1.5;
+	opacity: 0.7;
+}
+.case-graph .graph-node circle {
+	fill: var(--color-surface, #fff);
+	stroke: currentColor;
+	stroke-width: 1.5;
+}
+.case-graph .graph-node.target circle {
+	stroke-width: 3;
+}
+.case-graph text {
+	font-size: 11px;
+	fill: currentColor;
+}
 /* AI 조사 요약 (SCRUM-175) — 배지는 글자로도 상태를 말해서 색만으로 구분하지 않아요. */
 .case-ai-summary {
 	margin-block: var(--space-5);

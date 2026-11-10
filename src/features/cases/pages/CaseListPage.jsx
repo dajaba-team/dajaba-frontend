@@ -1,9 +1,14 @@
+import { useState } from "react"
 import { Link, useSearchParams } from "react-router"
 import "../styles/cases.css"
 import { useCases } from "../hooks/useCases"
 import { STATUS_LABELS, labelOf } from "../labels"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
+import ReassignDialog from "../components/ReassignDialog"
+
+// 목록의 [담당자 변경]도 상세처럼 서버가 준 available_actions(REASSIGN)만 보고 켜요(#23 리뷰). 누르면 서버가 다시 검사해요.
+const canReassign = (item) => item.availableActions.includes("REASSIGN")
 
 // 케이스 목록 — 계약서 C1 `GET /cases`. 필터·페이지는 URL에 둬서 새로고침·링크 공유에도 유지해요.
 // 서버 기본 정렬은 점수 높은 순(score,desc)이에요. 점수가 아직 없으면 서버가 생성일 최신 순으로 줘요(SCRUM-152).
@@ -14,6 +19,9 @@ export default function CaseListPage() {
 	const rawPage = Number(params.get("page") || 1)
 	const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1
 	const query = useCases({ statuses: status ? [status] : [], mine, page })
+	const [reassigning, setReassigning] = useState(null)
+	// 관리 칸은 그 페이지에 [담당자 변경]을 받을 줄이 하나라도 있을 때만
+	const manageColumn = Boolean(query.data?.items.some(canReassign))
 	function update(next) {
 		const merged = { status, mine: mine ? "1" : "", page: "1", ...next }
 		setParams(Object.fromEntries(Object.entries(merged).filter(([, value]) => value)))
@@ -72,6 +80,7 @@ export default function CaseListPage() {
 											<th scope="col">점수</th>
 											<th scope="col">담당자</th>
 											<th scope="col">생성</th>
+											{manageColumn && <th scope="col">관리</th>}
 										</tr>
 									</thead>
 									<tbody>
@@ -93,6 +102,18 @@ export default function CaseListPage() {
 												<td>{item.score ?? "—"}</td>
 												<td>{item.assignee?.displayName || "미배정"}</td>
 												<td>{formatSystemTime(item.createdAt)}</td>
+												{manageColumn && (
+													<td>
+														{canReassign(item) && (
+															<button
+																type="button"
+																onClick={() => setReassigning(item)}
+															>
+																담당자 변경
+															</button>
+														)}
+													</td>
+												)}
 											</tr>
 										))}
 									</tbody>
@@ -122,6 +143,14 @@ export default function CaseListPage() {
 					</>
 				)}
 			</section>
+			{reassigning && (
+				<ReassignDialog
+					caseNo={reassigning.caseNo}
+					version={reassigning.version}
+					assignee={reassigning.assignee}
+					onClose={() => setReassigning(null)}
+				/>
+			)}
 		</>
 	)
 }

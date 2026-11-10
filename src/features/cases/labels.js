@@ -46,3 +46,10 @@ export const SCORE_STATUS_LABELS = {
 }
 
 export const labelOf = (labels, value) => (value == null ? "" : (labels[value] ?? value))
+
+// 근거 거래 방향 — 케이스 계좌 기준 (계약서 C3). INDIRECT = 경유 거래, 대상 계좌가 보내지도 받지도 않음.
+export const DIRECTION_LABELS = {
+	INBOUND: "입금",
+	OUTBOUND: "출금",
+	INDIRECT: "대상 계좌 미참여 (경유)",
+}

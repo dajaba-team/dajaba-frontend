@@ -1,5 +1,16 @@
 import { canViewStrContent, seedStrDrafts, visibleStrDraft } from "./strDrafts"
-import { applyCommand, changeResponse, detailResponse, listResponse, seedCases } from "./cases"
+import {
+	applyCommand,
+	changeResponse,
+	detailResponse,
+	evidenceResponse,
+	graphResponse,
+	historiesResponse,
+	listResponse,
+	noteHistoriesResponse,
+	seedCases,
+	transactionsResponse,
+} from "./cases"
 import { http, HttpResponse } from "msw"
 
 let cases = seedCases()
@@ -91,7 +102,7 @@ export const handlers = [
 	// 케이스 — 계약서 C1·C2·A1·A3·A4·A5·A6 (요약 A7·C7은 아래, 실제 백엔드 CaseController와 같은 경로, 메모 A3·초안 있는 종료 A6은 백엔드 준비 중)
 	http.get(`${base}/api/v1/cases`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
-		return HttpResponse.json(listResponse(cases, new URL(request.url)))
+		return HttpResponse.json(listResponse(cases, new URL(request.url), currentUser))
 	}),
 	http.get(`${base}/api/v1/cases/:caseNo`, ({ params }) => {
 		if (!currentUser) return unauthenticated()
@@ -109,8 +120,94 @@ export const handlers = [
 					{ status: 404 },
 				)
 	}),
+	// BE GET /admin/users (SCRUM-135 ①) — ADMIN만, role·is_active 필터, display_name 오름차순
+	http.get(`${base}/api/v1/admin/users`, ({ request }) => {
+		if (!currentUser) return unauthenticated()
+		if (currentUser.role !== "ADMIN")
+			return HttpResponse.json(
+				{ error: { code: "FORBIDDEN", message: "권한이 없습니다", details: {} } },
+				{ status: 403 },
+			)
+		const url = new URL(request.url)
+		const role = url.searchParams.get("role")
+		const active = url.searchParams.get("is_active") !== "false"
+		const items = Object.values(MOCK_USERS)
+			.filter((u) => (!role || u.role === role) && (u.is_active !== false) === active)
+			.sort((a, b) => a.display_name.localeCompare(b.display_name))
+			.map((u) => ({
+				id: u.id,
+				login_id: u.login_id,
+				display_name: u.display_name,
+				role: u.role,
+				is_active: u.is_active !== false,
+				active_case_count: null,
+			}))
+		return HttpResponse.json({ items, page: 0, size: 100, total: items.length })
+	}),
+	// 근거 거래(C3)·원본(C4)·그래프(C5)·이력 전체(C6) — BE CaseTransactions·ListCaseHistories(SCRUM-179)와 같은 모양
+	...[
+		["transactions", transactionsResponse],
+		["graph", graphResponse],
+		["histories", historiesResponse],
+	].map(([path, respond]) =>
+		http.get(`${base}/api/v1/cases/:caseNo/${path}`, ({ params, request }) => {
+			if (!currentUser) return unauthenticated()
+			const item = cases.find((entry) => entry.case_no === params.caseNo)
+			return item
+				? HttpResponse.json(respond(item, new URL(request.url)))
+				: HttpResponse.json(
+						{
+							error: {
+								code: "CASE_NOT_FOUND",
+								message: "케이스가 없습니다",
+								details: {},
+							},
+						},
+						{ status: 404 },
+					)
+		}),
+	),
+	http.get(`${base}/api/v1/cases/:caseNo/evidence/:transactionId`, ({ params }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		if (!item)
+			return HttpResponse.json(
+				{ error: { code: "CASE_NOT_FOUND", message: "케이스가 없습니다", details: {} } },
+				{ status: 404 },
+			)
+		const evidence = evidenceResponse(item, params.transactionId)
+		return evidence
+			? HttpResponse.json(evidence)
+			: HttpResponse.json(
+					{
+						error: {
+							code: "EVIDENCE_NOT_FOUND",
+							message: "이 케이스의 근거 거래가 아닙니다",
+							details: {},
+						},
+					},
+					{ status: 404 },
+				)
+	}),
+	http.get(`${base}/api/v1/cases/:caseNo/note-histories`, ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		return item
+			? HttpResponse.json(noteHistoriesResponse(item, new URL(request.url)))
+			: HttpResponse.json(
+					{
+						error: {
+							code: "CASE_NOT_FOUND",
+							message: "케이스가 없습니다",
+							details: {},
+						},
+					},
+					{ status: 404 },
+				)
+	}),
 	...[
 		["post", "assign"],
+		["post", "reassign"],
 		["post", "escalate"],
 		["post", "close"],
 		["post", "close-with-draft"],

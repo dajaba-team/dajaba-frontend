@@ -3,22 +3,31 @@ import { useCaseCommand } from "../hooks/useCases"
 import { useSession } from "../../auth/hooks/useSession"
 import { CLOSE_REASON_LABELS } from "../labels"
 import { getErrorMessage } from "../../../shared/api/apiClient"
+import ReassignDialog from "./ReassignDialog"
 
 const COMMENT_MAX = 2000
 
 // 버튼은 서버가 준 availableActions만 보고 켜요. 누르면 서버가 다시 검사해요(계약서 §4).
-// 이 화면이 다루는 것: ASSIGN·ESCALATE·CLOSE·CLOSE_WITH_DRAFT. 종료는 버튼 하나 — 초안이 있으면 서버가
+// 이 화면이 다루는 것: ASSIGN·REASSIGN·ESCALATE·CLOSE·CLOSE_WITH_DRAFT. 종료는 버튼 하나 — 초안이 있으면 서버가
 // CLOSE 대신 CLOSE_WITH_DRAFT를 줘요(SCRUM-112).
 export default function CaseActions({ detail }) {
 	const session = useSession()
 	const [open, setOpen] = useState(null)
+	const [reassigning, setReassigning] = useState(false)
 	const actions = detail.availableActions
 	const has = (action) => actions.includes(action)
 	// 409 뒤 상세를 다시 불러 그 동작이 빠졌으면(예: 다른 사람이 먼저 종료) 열린 폼도 닫아요.
 	// open도 같이 비워서, 나중에 그 동작이 다시 생겨도 예전 폼이 저절로 열리지 않게 해요(#12 리뷰).
 	const shown = open && has(open.toUpperCase()) ? open : null
 	if (open && !shown) setOpen(null)
-	if (!has("ASSIGN") && !has("ESCALATE") && !has("CLOSE") && !has("CLOSE_WITH_DRAFT")) return null
+	if (
+		!has("ASSIGN") &&
+		!has("REASSIGN") &&
+		!has("ESCALATE") &&
+		!has("CLOSE") &&
+		!has("CLOSE_WITH_DRAFT")
+	)
+		return null
 	const isAdmin = session.data?.role === "ADMIN"
 	return (
 		<section className="case-actions" aria-labelledby="case-actions-title">
@@ -28,6 +37,11 @@ export default function CaseActions({ detail }) {
 				{has("ASSIGN") && isAdmin && (
 					<button type="button" onClick={() => setOpen("assign")} disabled={!!shown}>
 						담당자 배정
+					</button>
+				)}
+				{has("REASSIGN") && (
+					<button type="button" onClick={() => setReassigning(true)} disabled={!!shown}>
+						담당자 변경
 					</button>
 				)}
 				{has("ESCALATE") && (
@@ -45,6 +59,14 @@ export default function CaseActions({ detail }) {
 					</button>
 				)}
 			</div>
+			{reassigning && has("REASSIGN") && (
+				<ReassignDialog
+					caseNo={detail.caseNo}
+					version={detail.version}
+					assignee={detail.assignee}
+					onClose={() => setReassigning(false)}
+				/>
+			)}
 			{shown === "assign" && <AssignForm detail={detail} onDone={() => setOpen(null)} />}
 			{shown === "escalate" && <EscalateForm detail={detail} onDone={() => setOpen(null)} />}
 			{shown === "close" && (

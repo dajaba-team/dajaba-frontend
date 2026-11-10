@@ -44,6 +44,31 @@ const PENDING_SCORE = {
 	reasons: [],
 }
 
+// 근거 거래 예시 (계약서 C3). 대상 계좌는 케이스 계좌(account_ref). 계좌는 가린 값만.
+const tx = (id, minute, from, to, paid, received, direction, currency = "US Dollar") => ({
+	transaction_id: id,
+	from_account_ref: from[0],
+	from_account_no: from[1],
+	to_account_ref: to[0],
+	to_account_no: to[1],
+	ts: `2022-10-31T09:${String(minute).padStart(2, "0")}:00`,
+	amount_paid: paid,
+	currency_paid: currency,
+	amount_received: received,
+	currency_received: currency,
+	payment_format: "ACH",
+	direction,
+	scope: "EVIDENCE",
+})
+const ACCOUNT_1004 = ["ACR-0004", "011_****1021"]
+const OTHER = (n) => [`ACR-10${n}`, `0${n}0_****20${n}0`]
+const TRANSACTIONS_1004 = [
+	tx(4721, 0, OTHER(2), ACCOUNT_1004, 600, 600, "INBOUND"),
+	tx(4722, 10, OTHER(3), ACCOUNT_1004, 400, 400, "INBOUND"),
+	tx(4723, 20, ACCOUNT_1004, OTHER(4), 900, 900, "OUTBOUND"),
+	tx(4724, 30, OTHER(4), OTHER(5), 880, 880, "INDIRECT"),
+]
+
 export function seedCases() {
 	return [
 		{
@@ -111,6 +136,7 @@ export function seedCases() {
 			rejection_reason_code: null,
 			close_reason: null,
 			version: 1,
+			transactions: TRANSACTIONS_1004,
 			history: [
 				history("ASSIGN", "OPEN", "REVIEWING", "inv01", 12),
 				history("OPEN", null, "OPEN", "system", 2),
@@ -167,7 +193,7 @@ const summaryOf = (item) => ({
 	created_at: item.created_at,
 })
 
-export function listResponse(items, url) {
+export function listResponse(items, url, viewer = null) {
 	const statuses = url.searchParams.get("status")?.split(",").filter(Boolean) ?? []
 	const assignee = url.searchParams.get("assignee")
 	const page = Number(url.searchParams.get("page") ?? 0)
@@ -178,7 +204,11 @@ export function listResponse(items, url) {
 			(!assignee || item.assignee?.login_id === assignee),
 	)
 	return {
-		items: filtered.slice(page * size, (page + 1) * size).map(summaryOf),
+		// BE ListCases 처럼 줄마다 available_actions (#23 리뷰)
+		items: filtered.slice(page * size, (page + 1) * size).map((item) => ({
+			...summaryOf(item),
+			available_actions: viewer ? availableActions(viewer, item) : [],
+		})),
 		page,
 		size,
 		total: filtered.length,
@@ -199,7 +229,7 @@ export function detailResponse(viewer, item) {
 		investigator_notes: item.investigator_notes,
 		close_reason: item.close_reason,
 		latest_score: item.latest_score ?? null,
-		aggregates: null,
+		aggregates: aggregatesOf(item.transactions ?? []),
 		latest_summary: item.latest_summary ?? null,
 		current_draft_no: item.current_draft_no,
 		current_draft: null,
@@ -208,6 +238,107 @@ export function detailResponse(viewer, item) {
 		available_actions: availableActions(viewer, item),
 	}
 }
+
+/** 메모 이력(C8) — 최신 먼저, 페이지 밖 직전 메모도 before_text 로 (BE ListCaseNoteHistories). */
+export function noteHistoriesResponse(item, url) {
+	const page = Number(url.searchParams.get("page") ?? 0)
+	const size = Number(url.searchParams.get("size") ?? 20)
+	const all = item.note_histories ?? []
+	return { items: all.slice(page * size, (page + 1) * size), page, size, total: all.length }
+}
+
+// 상세 aggregates — BE CaseAggregates 와 같은 규칙(통화별, 경유 제외, 환산 없음).
+function aggregatesOf(transactions) {
+	const sum = (direction, amountKey, currencyKey) => {
+		const rows = transactions.filter((t) => t.direction === direction)
+		const totals = {}
+		rows.forEach((t) => {
+			totals[t[currencyKey]] = (totals[t[currencyKey]] ?? 0) + t[amountKey]
+		})
+		return {
+			transaction_count: rows.length,
+			totals: Object.entries(totals).map(([currency, amount]) => ({ currency, amount })),
+		}
+	}
+	return {
+		transaction_count: transactions.length,
+		inbound: sum("INBOUND", "amount_received", "currency_received"),
+		outbound: sum("OUTBOUND", "amount_paid", "currency_paid"),
+		first_ts: transactions[0]?.ts ?? null,
+		last_ts: transactions.at(-1)?.ts ?? null,
+	}
+}
+
+const page = (all, url) => {
+	const number = Number(url.searchParams.get("page") ?? 0)
+	const size = Number(url.searchParams.get("size") ?? 20)
+	return {
+		items: all.slice(number * size, (number + 1) * size),
+		page: number,
+		size,
+		total: all.length,
+	}
+}
+
+/** C3 — CONTEXT 는 BE 처럼 빈 목록. */
+export function transactionsResponse(item, url) {
+	const scope = url.searchParams.get("scope") ?? "EVIDENCE"
+	return page(scope === "CONTEXT" ? [] : (item.transactions ?? []), url)
+}
+
+/** C4 — 이 케이스의 근거 거래가 아니면 null(→ 404 EVIDENCE_NOT_FOUND). */
+export function evidenceResponse(item, transactionId) {
+	const found = (item.transactions ?? []).find(
+		(t) => String(t.transaction_id) === String(transactionId),
+	)
+	return found
+		? {
+				case_no: item.case_no,
+				transaction: found,
+				source: {
+					dataset: "IBM AML HI-Small",
+					record_id: found.transaction_id,
+					is_synthetic: true,
+				},
+				eligible_for_str: true,
+			}
+		: null
+}
+
+/** C5 — limit 기본 200. */
+export function graphResponse(item, url) {
+	const all = item.transactions ?? []
+	const limit = Number(url.searchParams.get("limit") ?? 200)
+	const shown = all.slice(0, limit)
+	const nodes = new Map()
+	shown.forEach((t) => {
+		nodes.set(t.from_account_ref, t.from_account_no)
+		nodes.set(t.to_account_ref, t.to_account_no)
+	})
+	return {
+		nodes: [...nodes].map(([account_ref, account_no]) => ({ account_ref, account_no })),
+		edges: shown.map((t) => ({
+			transaction_id: t.transaction_id,
+			source: t.from_account_ref,
+			target: t.to_account_ref,
+			amount: t.amount_received,
+			currency: t.currency_received,
+			amount_basis: "RECEIVED",
+			scope: t.scope,
+			ts: t.ts,
+		})),
+		returned_transaction_count: shown.length,
+		total_transaction_count: all.length,
+		truncated: all.length > shown.length,
+	}
+}
+
+/** C6 — 최신 먼저, NOTE 제외. */
+export const historiesResponse = (item, url) =>
+	page(
+		item.history.filter((h) => h.action !== "NOTE"),
+		url,
+	)
 
 export const changeResponse = (item) => ({
 	case_no: item.case_no,
@@ -257,7 +388,19 @@ export function applyCommand(viewer, item, command, body, users) {
 		item.history[0].created_at = now
 		item.status = to
 	}
-	if (command === "assign") {
+	if (command === "reassign") {
+		// BE ReassignCase — ADMIN만(SecurityConfig 403 FORBIDDEN), 대상 404·409, 상태 409, 같은 담당이면 그대로
+		if (viewer.role !== "ADMIN") return fail(403, "FORBIDDEN", "권한이 없습니다")
+		const assignee = users[body.assignee]
+		if (!assignee) return fail(404, "USER_NOT_FOUND", "사용자가 없습니다")
+		if (assignee.role !== "INVESTIGATOR" || assignee.is_active === false)
+			return fail(409, "INVALID_ASSIGNEE", "활성 조사역에게만 배정할 수 있습니다")
+		if (!REASSIGNABLE.includes(item.status))
+			return fail(409, "INVALID_CASE_TRANSITION", "지금 상태에서 담당자를 바꿀 수 없습니다")
+		if (item.assignee?.login_id === body.assignee) return { item }
+		item.assignee = user(body.assignee)
+		move("REASSIGN", item.status, body.comment ?? null)
+	} else if (command === "assign") {
 		const target = viewer.role === "ADMIN" ? body.assignee : (body.assignee ?? viewer.login_id)
 		if (viewer.role !== "ADMIN" && target !== viewer.login_id)
 			return fail(409, "INVALID_ASSIGNEE", "본인에게만 배정할 수 있습니다")
@@ -297,6 +440,18 @@ export function applyCommand(viewer, item, command, body, users) {
 		} else if (command === "notes") {
 			if (!availableActions(viewer, item).includes("UPDATE_NOTES"))
 				return fail(409, "INVALID_CASE_TRANSITION", "지금 상태에서 메모를 고칠 수 없습니다")
+			// 같은 내용(메모가 없을 때 빈 문자열 포함)이면 그대로 — version 안 오름 (BE UpdateCaseNotes)
+			if (body.investigator_notes === (item.investigator_notes ?? "")) return { item }
+			item.note_histories = [
+				{
+					before_text: item.investigator_notes ?? null,
+					after_text: body.investigator_notes,
+					case_version_before: item.version,
+					created_by: viewer.login_id,
+					created_at: now,
+				},
+				...(item.note_histories ?? []),
+			]
 			item.investigator_notes = body.investigator_notes
 		} else if (command === "escalate") {
 			if (item.status !== "REVIEWING")
