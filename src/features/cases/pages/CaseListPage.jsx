@@ -5,12 +5,10 @@ import { useCases } from "../hooks/useCases"
 import { STATUS_LABELS, labelOf } from "../labels"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
-import { useSession } from "../../auth/hooks/useSession"
 import ReassignDialog from "../components/ReassignDialog"
 
-// 담당자 변경을 받는 상태 — BE CaseStatus REASSIGNABLE. 목록 행에는 available_actions가 없어서 버튼을 켤지만 여기서 정해요.
-// 누를 수 있는지는 서버가 다시 검사해요(ADMIN만, 상태 409).
-const REASSIGNABLE = ["REVIEWING", "ESCALATED", "DRAFTED", "REJECTED"]
+// 목록의 [담당자 변경]도 상세처럼 서버가 준 available_actions(REASSIGN)만 보고 켜요(#23 리뷰). 누르면 서버가 다시 검사해요.
+const canReassign = (item) => item.availableActions.includes("REASSIGN")
 
 // 케이스 목록 — 계약서 C1 `GET /cases`. 필터·페이지는 URL에 둬서 새로고침·링크 공유에도 유지해요.
 // 서버 기본 정렬은 점수 높은 순(score,desc)이에요. 점수가 아직 없으면 서버가 생성일 최신 순으로 줘요(SCRUM-152).
@@ -21,9 +19,9 @@ export default function CaseListPage() {
 	const rawPage = Number(params.get("page") || 1)
 	const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1
 	const query = useCases({ statuses: status ? [status] : [], mine, page })
-	const session = useSession()
-	const isAdmin = session.data?.role === "ADMIN"
 	const [reassigning, setReassigning] = useState(null)
+	// 관리 칸은 그 페이지에 [담당자 변경]을 받을 줄이 하나라도 있을 때만
+	const manageColumn = Boolean(query.data?.items.some(canReassign))
 	function update(next) {
 		const merged = { status, mine: mine ? "1" : "", page: "1", ...next }
 		setParams(Object.fromEntries(Object.entries(merged).filter(([, value]) => value)))
@@ -82,7 +80,7 @@ export default function CaseListPage() {
 											<th scope="col">점수</th>
 											<th scope="col">담당자</th>
 											<th scope="col">생성</th>
-											{isAdmin && <th scope="col">관리</th>}
+											{manageColumn && <th scope="col">관리</th>}
 										</tr>
 									</thead>
 									<tbody>
@@ -104,9 +102,9 @@ export default function CaseListPage() {
 												<td>{item.score ?? "—"}</td>
 												<td>{item.assignee?.displayName || "미배정"}</td>
 												<td>{formatSystemTime(item.createdAt)}</td>
-												{isAdmin && (
+												{manageColumn && (
 													<td>
-														{REASSIGNABLE.includes(item.status) && (
+														{canReassign(item) && (
 															<button
 																type="button"
 																onClick={() => setReassigning(item)}

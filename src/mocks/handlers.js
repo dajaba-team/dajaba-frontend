@@ -102,7 +102,7 @@ export const handlers = [
 	// 케이스 — 계약서 C1·C2·A1·A3·A4·A5·A6 (요약 A7·C7은 아래, 실제 백엔드 CaseController와 같은 경로, 메모 A3·초안 있는 종료 A6은 백엔드 준비 중)
 	http.get(`${base}/api/v1/cases`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
-		return HttpResponse.json(listResponse(cases, new URL(request.url)))
+		return HttpResponse.json(listResponse(cases, new URL(request.url), currentUser))
 	}),
 	http.get(`${base}/api/v1/cases/:caseNo`, ({ params }) => {
 		if (!currentUser) return unauthenticated()

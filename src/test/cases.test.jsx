@@ -412,6 +412,35 @@ describe("케이스 조사", () => {
 		await screen.findByRole("link", { name: REVIEWING })
 		expect(screen.queryByRole("button", { name: "담당자 변경" })).not.toBeInTheDocument()
 	})
+	it("목록 [담당자 변경]은 상태가 아니라 서버 available_actions 를 따른다 (#23 리뷰)", async () => {
+		server.use(
+			http.get("*/api/v1/cases", () =>
+				HttpResponse.json({
+					items: [
+						{
+							case_no: REVIEWING,
+							status: "REVIEWING",
+							account_ref: "ACR-0004",
+							account_no: "011_****1021",
+							assignee: { login_id: "inv01", display_name: "예시 inv01" },
+							score: 0.91,
+							rejection_reason_code: null,
+							version: 1,
+							created_at: "2026-11-02T01:03:00Z",
+							available_actions: [],
+						},
+					],
+					page: 0,
+					size: 20,
+					total: 1,
+				}),
+			),
+		)
+		renderApp("/cases", true, "admin")
+		await screen.findByRole("link", { name: REVIEWING })
+		expect(screen.queryByRole("button", { name: "담당자 변경" })).not.toBeInTheDocument()
+		expect(screen.queryByRole("columnheader", { name: "관리" })).not.toBeInTheDocument()
+	})
 	it("관리자 목록에서 조사 중인 행의 [담당자 변경]이 확인창을 연다", async () => {
 		const user = renderApp("/cases", true, "admin")
 		const row = (await screen.findByRole("link", { name: REVIEWING })).closest("tr")

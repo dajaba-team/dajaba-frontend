@@ -193,7 +193,7 @@ const summaryOf = (item) => ({
 	created_at: item.created_at,
 })
 
-export function listResponse(items, url) {
+export function listResponse(items, url, viewer = null) {
 	const statuses = url.searchParams.get("status")?.split(",").filter(Boolean) ?? []
 	const assignee = url.searchParams.get("assignee")
 	const page = Number(url.searchParams.get("page") ?? 0)
@@ -204,7 +204,11 @@ export function listResponse(items, url) {
 			(!assignee || item.assignee?.login_id === assignee),
 	)
 	return {
-		items: filtered.slice(page * size, (page + 1) * size).map(summaryOf),
+		// BE ListCases 처럼 줄마다 available_actions (#23 리뷰)
+		items: filtered.slice(page * size, (page + 1) * size).map((item) => ({
+			...summaryOf(item),
+			available_actions: viewer ? availableActions(viewer, item) : [],
+		})),
 		page,
 		size,
 		total: filtered.length,

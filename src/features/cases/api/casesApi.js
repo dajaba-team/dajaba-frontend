@@ -20,6 +20,8 @@ const toCaseSummary = (data) => ({
 	rejectionReasonCode: data.rejection_reason_code ?? null,
 	version: data.version,
 	createdAt: data.created_at,
+	// 목록 한 줄에도 상세와 같은 버튼 목록이 와요(BE #87, #23 리뷰). 상세는 아래 toCaseDetail 이 같은 키로 덮어써요.
+	availableActions: data.available_actions ?? [],
 })
 
 const toHistory = (data) => ({
