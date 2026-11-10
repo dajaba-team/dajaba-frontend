@@ -3,9 +3,13 @@ import {
 	applyCommand,
 	changeResponse,
 	detailResponse,
+	evidenceResponse,
+	graphResponse,
+	historiesResponse,
 	listResponse,
 	noteHistoriesResponse,
 	seedCases,
+	transactionsResponse,
 } from "./cases"
 import { http, HttpResponse } from "msw"
 
@@ -139,6 +143,51 @@ export const handlers = [
 				active_case_count: null,
 			}))
 		return HttpResponse.json({ items, page: 0, size: 100, total: items.length })
+	}),
+	// 근거 거래(C3)·원본(C4)·그래프(C5)·이력 전체(C6) — BE CaseTransactions·ListCaseHistories(SCRUM-179)와 같은 모양
+	...[
+		["transactions", transactionsResponse],
+		["graph", graphResponse],
+		["histories", historiesResponse],
+	].map(([path, respond]) =>
+		http.get(`${base}/api/v1/cases/:caseNo/${path}`, ({ params, request }) => {
+			if (!currentUser) return unauthenticated()
+			const item = cases.find((entry) => entry.case_no === params.caseNo)
+			return item
+				? HttpResponse.json(respond(item, new URL(request.url)))
+				: HttpResponse.json(
+						{
+							error: {
+								code: "CASE_NOT_FOUND",
+								message: "케이스가 없습니다",
+								details: {},
+							},
+						},
+						{ status: 404 },
+					)
+		}),
+	),
+	http.get(`${base}/api/v1/cases/:caseNo/evidence/:transactionId`, ({ params }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		if (!item)
+			return HttpResponse.json(
+				{ error: { code: "CASE_NOT_FOUND", message: "케이스가 없습니다", details: {} } },
+				{ status: 404 },
+			)
+		const evidence = evidenceResponse(item, params.transactionId)
+		return evidence
+			? HttpResponse.json(evidence)
+			: HttpResponse.json(
+					{
+						error: {
+							code: "EVIDENCE_NOT_FOUND",
+							message: "이 케이스의 근거 거래가 아닙니다",
+							details: {},
+						},
+					},
+					{ status: 404 },
+				)
 	}),
 	http.get(`${base}/api/v1/cases/:caseNo/note-histories`, ({ params, request }) => {
 		if (!currentUser) return unauthenticated()

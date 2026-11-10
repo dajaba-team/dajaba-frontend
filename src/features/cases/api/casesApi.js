@@ -61,7 +61,43 @@ const toLatestScore = (data) =>
 			}
 		: null
 
-// 아직 서버가 null로 주는 칸(aggregates·latest_summary 등)은 화면을 만들 때 옮겨요.
+// 상세 aggregates (C2). 통화별 합계 — 화면은 더하거나 환산하지 않아요. 경유·자기계좌 거래는 서버가 이미 뺐어요.
+const toSide = (data) => ({
+	transactionCount: data?.transaction_count ?? 0,
+	totals: (data?.totals ?? []).map((total) => ({
+		currency: total.currency,
+		amount: total.amount,
+	})),
+})
+const toAggregates = (data) =>
+	data
+		? {
+				transactionCount: data.transaction_count,
+				inbound: toSide(data.inbound),
+				outbound: toSide(data.outbound),
+				firstTs: data.first_ts ?? null,
+				lastTs: data.last_ts ?? null,
+			}
+		: null
+
+// 거래 한 줄 (C3·C4). ts는 데이터 시각. direction은 케이스 계좌 기준 INBOUND·OUTBOUND·INDIRECT(경유).
+const toTransaction = (data) => ({
+	transactionId: data.transaction_id,
+	fromAccountRef: data.from_account_ref,
+	fromAccountNo: data.from_account_no,
+	toAccountRef: data.to_account_ref,
+	toAccountNo: data.to_account_no,
+	ts: data.ts,
+	amountPaid: data.amount_paid,
+	currencyPaid: data.currency_paid,
+	amountReceived: data.amount_received,
+	currencyReceived: data.currency_received,
+	paymentFormat: data.payment_format,
+	direction: data.direction,
+	scope: data.scope,
+})
+
+// 아직 서버가 null로 주는 칸(current_draft 등)은 화면을 만들 때 옮겨요.
 const toCaseDetail = (data) => ({
 	...toCaseSummary(data),
 	alert: toAlert(data.alert),
@@ -69,6 +105,7 @@ const toCaseDetail = (data) => ({
 	updatedAt: data.updated_at ?? null,
 	closeReason: data.close_reason ?? null,
 	investigatorNotes: data.investigator_notes ?? null,
+	aggregates: toAggregates(data.aggregates),
 	currentDraftNo: data.current_draft_no ?? null,
 	history: (data.history ?? []).map(toHistory),
 	availableActions: data.available_actions ?? [],
@@ -157,6 +194,73 @@ export const casesApi = {
 				})
 			).data,
 		),
+	/** 근거 거래(C3). scope EVIDENCE(기본)·CONTEXT, 시각 오름차순. 화면 page는 1부터. */
+	transactions: async ({ caseNo, scope = "EVIDENCE", page = 1, size = 20 }, signal) => {
+		const { data } = await apiClient.get(`${casePath(caseNo)}/transactions`, {
+			params: { scope, page: page - 1, size },
+			signal,
+		})
+		return {
+			items: data.items.map(toTransaction),
+			page: data.page + 1,
+			size: data.size,
+			total: data.total,
+			totalPages: Math.ceil(data.total / data.size),
+		}
+	},
+	/** 거래 원본(C4). 이 케이스의 근거 거래가 아니면 404 EVIDENCE_NOT_FOUND. */
+	evidence: async ({ caseNo, transactionId }, signal) => {
+		const { data } = await apiClient.get(
+			`${casePath(caseNo)}/evidence/${encodeURIComponent(transactionId)}`,
+			{ signal },
+		)
+		return {
+			caseNo: data.case_no,
+			transaction: toTransaction(data.transaction),
+			source: {
+				dataset: data.source?.dataset ?? null,
+				recordId: data.source?.record_id ?? null,
+				isSynthetic: data.source?.is_synthetic ?? null,
+			},
+			eligibleForStr: data.eligible_for_str,
+		}
+	},
+	/** 자금 흐름 그래프(C5). 넘치면 truncated — 화면은 "전체 N건 중 M건". */
+	graph: async ({ caseNo }, signal) => {
+		const { data } = await apiClient.get(`${casePath(caseNo)}/graph`, { signal })
+		return {
+			nodes: data.nodes.map((node) => ({
+				accountRef: node.account_ref,
+				accountNo: node.account_no,
+			})),
+			edges: data.edges.map((edge) => ({
+				transactionId: edge.transaction_id,
+				source: edge.source,
+				target: edge.target,
+				amount: edge.amount,
+				currency: edge.currency,
+				scope: edge.scope,
+				ts: edge.ts,
+			})),
+			returnedTransactionCount: data.returned_transaction_count,
+			totalTransactionCount: data.total_transaction_count,
+			truncated: data.truncated,
+		}
+	},
+	/** 상태 이력 전체(C6), 최신 먼저, 메모(NOTE) 빼고. */
+	histories: async ({ caseNo, page = 1, size = 20 }, signal) => {
+		const { data } = await apiClient.get(`${casePath(caseNo)}/histories`, {
+			params: { page: page - 1, size },
+			signal,
+		})
+		return {
+			items: data.items.map(toHistory),
+			page: data.page + 1,
+			size: data.size,
+			total: data.total,
+			totalPages: Math.ceil(data.total / data.size),
+		}
+	},
 	/** 메모 이력(C8), 최신 먼저. 화면 page는 1부터, API page는 0부터. */
 	noteHistories: async ({ caseNo, page = 1, size = 20 }, signal) => {
 		const { data } = await apiClient.get(`${casePath(caseNo)}/note-histories`, {

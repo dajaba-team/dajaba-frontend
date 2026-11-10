@@ -5,10 +5,13 @@ import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
 import CaseMemoEditor from "../components/CaseMemoEditor"
 import CaseNoteHistory from "../components/CaseNoteHistory"
+import CaseAggregatesPanel from "../components/CaseAggregatesPanel"
+import CaseTransactionsPanel from "../components/CaseTransactionsPanel"
+import CaseFlowGraph from "../components/CaseFlowGraph"
+import CaseHistoryPanel from "../components/CaseHistoryPanel"
 import CaseActions from "../components/CaseActions"
 import {
 	CLOSE_REASON_LABELS,
-	HISTORY_LABELS,
 	REJECTION_LABELS,
 	SCORE_STATUS_LABELS,
 	STATUS_LABELS,
@@ -16,7 +19,7 @@ import {
 } from "../labels"
 
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
-// 경보·최근 점수는 서버 alert·latest_score(SCRUM-152). 근거 거래·AI 요약은 아직 null이라 칸이 채워지면 붙여요.
+// 경보·최근 점수는 서버 alert·latest_score(SCRUM-152). 합계(aggregates)·근거 거래(C3)·그래프(C5)·이력 전체(C6)는 SCRUM-179.
 
 // 맨 위 score·scoreBand는 계약서 Q2 MVP대로 latest_score와 같은 값이에요(#78 리뷰). 혹시 비면 latest_score로.
 // 모델 점수라 범죄 확률이 아니에요. 등급은 서버 값(HIGH·MEDIUM·LOW) 그대로 — 정책이 없으면 등급 없이 점수만.
@@ -111,6 +114,9 @@ export default function CaseDetailPage() {
 						</dl>
 					</section>
 					<AlertPanel alert={detail.alert} />
+					<CaseAggregatesPanel aggregates={detail.aggregates} />
+					<CaseTransactionsPanel caseNo={detail.caseNo} />
+					<CaseFlowGraph caseNo={detail.caseNo} accountRef={detail.accountRef} />
 					<CaseActions detail={detail} />
 					{detail.availableActions.includes("UPDATE_NOTES") ? (
 						<CaseMemoEditor
@@ -132,27 +138,7 @@ export default function CaseDetailPage() {
 						</section>
 					)}
 					<CaseNoteHistory caseNo={detail.caseNo} />
-					<section aria-labelledby="history-title">
-						<h2 id="history-title">최근 이력</h2>
-						{detail.history.length ? (
-							<ol className="case-history">
-								{detail.history.map((entry, index) => (
-									<li key={`${entry.createdAt}-${index}`}>
-										<strong>{labelOf(HISTORY_LABELS, entry.action)}</strong>{" "}
-										{entry.fromStatus &&
-											`${labelOf(STATUS_LABELS, entry.fromStatus)} → `}
-										{labelOf(STATUS_LABELS, entry.toStatus)} · {entry.createdBy}{" "}
-										· {formatSystemTime(entry.createdAt)}
-										{entry.comment && (
-											<p className="preserve-lines">{entry.comment}</p>
-										)}
-									</li>
-								))}
-							</ol>
-						) : (
-							<p>이력이 없습니다.</p>
-						)}
-					</section>
+					<CaseHistoryPanel caseNo={detail.caseNo} recent={detail.history} />
 					{detail.currentDraftNo && (
 						<Link to={`/cases/${encodeURIComponent(detail.caseNo)}/str`}>
 							STR 화면으로 이동 →

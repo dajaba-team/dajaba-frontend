@@ -760,3 +760,122 @@ describe("예시 계정 권한과 입력 보호", () => {
 		expect(event.defaultPrevented).toBe(true)
 	})
 })
+describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
+	it("상세에 통화별 합계, 근거 거래 표, 자금 흐름 그래프가 보인다", async () => {
+		renderApp(`/cases/${REVIEWING}`)
+		const agg = await screen.findByRole("region", { name: "유입·유출 합계" })
+		expect(within(agg).getByText("유입 (2건)")).toBeInTheDocument()
+		expect(within(agg).getByText("1,000 US Dollar")).toBeInTheDocument()
+		expect(within(agg).getByText("유출 (1건)")).toBeInTheDocument()
+		expect(
+			within(agg).getByText(/경유 거래와 내 계좌끼리 옮긴 돈은 합계에서/),
+		).toBeInTheDocument()
+
+		const table = await screen.findByRole("region", { name: "근거 거래" })
+		const rows = await within(table).findAllByRole("row")
+		expect(rows).toHaveLength(5) // 머리 + 4건
+		expect(within(rows[1]).getByText("III부 1 · 입금")).toBeInTheDocument()
+		expect(within(rows[1]).getByText("2022-10-31 09:00:00")).toBeInTheDocument()
+		expect(within(rows[3]).getByText("III부 3 · 출금")).toBeInTheDocument()
+		expect(within(rows[4]).getByText("대상 계좌 미참여")).toBeInTheDocument()
+
+		const graph = await screen.findByRole("img", { name: /거래 4건/ })
+		expect(within(graph).getAllByTestId("graph-edge")).toHaveLength(4)
+		expect(within(graph).getByText("011_****1021 (대상)")).toBeInTheDocument()
+	})
+	it("[거래 원본]은 C4 원본을 창으로 보여 주고, 404면 그 창에만 안내", async () => {
+		const user = renderApp(`/cases/${REVIEWING}`)
+		const table = await screen.findByRole("region", { name: "근거 거래" })
+		await user.click((await within(table).findAllByRole("button", { name: "거래 원본" }))[0])
+		const dialog = await screen.findByRole("dialog", { name: "거래 원본 · 4721" })
+		expect(
+			await within(dialog).findByText(/IBM AML HI-Small · 행 4721 · 합성 데이터/),
+		).toBeInTheDocument()
+		expect(within(dialog).getByText("입금")).toBeInTheDocument()
+		await user.click(within(dialog).getByRole("button", { name: "닫기" }))
+
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}/evidence/:id`, () =>
+				HttpResponse.json(
+					{
+						error: {
+							code: "EVIDENCE_NOT_FOUND",
+							message: "이 케이스의 근거 거래가 아닙니다",
+							details: {},
+						},
+					},
+					{ status: 404 },
+				),
+			),
+		)
+		await user.click(within(table).getAllByRole("button", { name: "거래 원본" })[1])
+		const failed = await screen.findByRole("dialog", { name: "거래 원본 · 4722" })
+		expect(
+			await within(failed).findByText("이 케이스의 근거 거래가 아닙니다"),
+		).toBeInTheDocument()
+		expect(screen.getByRole("region", { name: "근거 거래" })).toBeInTheDocument()
+	})
+	it("참고 거래 탭과 근거 없는 케이스는 칸마다 빈 상태를 보여 준다", async () => {
+		const user = renderApp(`/cases/${REVIEWING}`)
+		const table = await screen.findByRole("region", { name: "근거 거래" })
+		await user.click(within(table).getByRole("button", { name: "참고 거래" }))
+		expect(await within(table).findByText("참고 거래가 없어요.")).toBeInTheDocument()
+	})
+	it("근거 거래가 없는 케이스는 합계·표·그래프가 비어 있다고 알린다", async () => {
+		renderApp("/cases/CASE-2022-001002")
+		expect(await screen.findByText("근거 거래가 없어요.")).toBeInTheDocument()
+		expect(await screen.findByText("이 케이스의 근거 거래가 없어요.")).toBeInTheDocument()
+		expect(await screen.findByText("그릴 거래가 없어요.")).toBeInTheDocument()
+	})
+	it("그래프가 잘리면 전체 N건 중 M건, 표가 실패해도 다른 칸은 남는다", async () => {
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}/graph`, () =>
+				HttpResponse.json({
+					nodes: [
+						{ account_ref: "ACR-0004", account_no: "011_****1021" },
+						{ account_ref: "ACR-102", account_no: "020_****2020" },
+					],
+					edges: [
+						{
+							transaction_id: 1,
+							source: "ACR-102",
+							target: "ACR-0004",
+							amount: 10,
+							currency: "US Dollar",
+							amount_basis: "RECEIVED",
+							scope: "EVIDENCE",
+							ts: "2022-10-31T09:00:00",
+						},
+					],
+					returned_transaction_count: 200,
+					total_transaction_count: 300,
+					truncated: true,
+				}),
+			),
+			http.get(`*/api/v1/cases/${REVIEWING}/transactions`, () =>
+				HttpResponse.json(
+					{ error: { code: "INTERNAL_ERROR", message: "서버 오류", details: {} } },
+					{ status: 500 },
+				),
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		expect(await screen.findByText(/전체 300건 중 200건만 그렸어요/)).toBeInTheDocument()
+		const table = screen.getByRole("region", { name: "근거 거래" })
+		expect(await within(table).findByRole("alert")).toHaveTextContent(
+			"데이터를 불러오지 못했습니다.",
+		)
+		expect(screen.getByRole("region", { name: "유입·유출 합계" })).toBeInTheDocument()
+	})
+	it("[이력 전체 보기]는 C6 상태 이력을 따로 불러오고 메모 이력과 섞지 않는다", async () => {
+		const user = renderApp(`/cases/${REVIEWING}`)
+		await user.click(await screen.findByRole("button", { name: "이력 전체 보기" }))
+		const history = await screen.findByRole("region", { name: "상태 이력 전체" })
+		expect(await within(history).findByText("담당 배정")).toBeInTheDocument()
+		expect(within(history).getByText("케이스 생성")).toBeInTheDocument()
+		expect(within(history).queryByText("메모 저장")).not.toBeInTheDocument()
+		expect(screen.getByRole("region", { name: "메모 이력" })).toBeInTheDocument()
+		await user.click(within(history).getByRole("button", { name: "최근 이력만 보기" }))
+		expect(await screen.findByRole("region", { name: "최근 이력" })).toBeInTheDocument()
+	})
+})
