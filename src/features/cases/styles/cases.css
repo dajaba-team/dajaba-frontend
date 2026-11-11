@@ -55,8 +55,9 @@
 	padding: var(--space-1) var(--space-2);
 	border-radius: var(--radius-control);
 	background: var(--color-soft);
-	color: var(--color-primary);
+	color: var(--color-text);
 	font-size: var(--font-small);
+	font-weight: 600;
 }
 .case-pagination {
 	display: flex;
@@ -309,7 +310,7 @@
 }
 .case-tabs [aria-pressed="true"] {
 	border-color: var(--color-primary);
-	background: var(--color-soft);
+	background: var(--color-primary-soft);
 	color: var(--color-primary);
 	font-weight: 700;
 }

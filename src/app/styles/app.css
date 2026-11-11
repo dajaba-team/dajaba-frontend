@@ -32,6 +32,7 @@
 	padding: var(--space-5);
 	background: var(--color-sidebar);
 	color: var(--color-sidebar-text);
+	border-block-end: var(--border-width) solid var(--color-border);
 }
 .app-brand {
 	display: flex;
@@ -65,10 +66,15 @@
 	text-decoration: none;
 	border-radius: var(--radius-control);
 }
+.navigation-link:hover {
+	background: var(--color-soft);
+}
+/* 선택한 메뉴는 면을 칠하지 않고 왼쪽 선 + 글자색으로 — 굵기도 같이 달라 색만으로 구분하지 않아요. */
 .navigation-link.is-active {
 	background: var(--color-sidebar-active);
-	color: var(--color-on-dark);
+	color: var(--color-primary);
 	font-weight: 700;
+	box-shadow: inset 0.1875rem 0 0 var(--color-primary);
 }
 .sidebar-note {
 	margin-block-start: auto;
@@ -116,6 +122,8 @@
 	}
 	.app-sidebar {
 		min-height: 100dvh;
+		border-block-end: 0;
+		border-inline-end: var(--border-width) solid var(--color-border);
 	}
 	.app-navigation {
 		flex-direction: column;

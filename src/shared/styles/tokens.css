@@ -1,18 +1,22 @@
 /* 공통 토큰: 색상·간격·글꼴·모서리·그림자를 이곳에서 조정합니다. */
 :root {
-	--color-canvas: #f4f6fa;
-	--color-surface: #ffffff;
-	--color-soft: #edf1f8;
-	--color-text: #182438;
-	--color-muted: #526176;
-	--color-primary: #294eb5;
-	--color-focus: #315bcc;
-	--color-border: #dce2ec;
-	--color-control-border: #8996aa;
-	--color-sidebar: #17243b;
-	--color-sidebar-text: #cbd5e5;
-	--color-sidebar-active: #2a3b58;
-	--color-on-dark: #ffffff;
+	/* 바탕은 푸른 기 없는 옅은 회색, 글자는 순흑 대신 짙은 회색 — 오래 봐도 눈이 덜 피로하게.
+	   강조색 #0046ff 는 채도가 높아 넓은 면에 칠하지 않고 링크·선택 표시·포커스에만 써요. */
+	--color-canvas: #f4f4f2;
+	--color-surface: #fdfdfc;
+	--color-soft: #eeeeec;
+	--color-text: #23272d;
+	--color-muted: #5d646c;
+	--color-text-muted: var(--color-muted);
+	--color-primary: #0046ff;
+	--color-primary-soft: #e8eeff;
+	--color-focus: #0046ff;
+	--color-border: #dddedb;
+	--color-control-border: #8b9097;
+	--color-sidebar: #ebebe8;
+	--color-sidebar-text: #474d55;
+	--color-sidebar-active: #fdfdfc;
+	--color-on-dark: #23272d;
 	--color-pass: #1d6b3a;
 	--color-fail: #b42318;
 	--space-1: 0.25rem;
@@ -21,15 +25,15 @@
 	--space-4: 1rem;
 	--space-5: 1.5rem;
 	--space-6: 2rem;
-	--font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	--font-family: Pretendard, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 	--font-small: 0.8125rem;
 	--font-body: 0.9375rem;
 	--font-section: 1.125rem;
 	--font-title: clamp(1.5rem, 1.2rem + 1vw, 2rem);
-	--radius-control: 0.375rem;
-	--radius-card: 0.75rem;
-	--shadow-card: 0 0.125rem 0.5rem rgb(23 36 59 / 6%);
+	--radius-control: 0.25rem;
+	--radius-card: 0.375rem;
+	--shadow-card: none;
 	--border-width: 0.0625rem;
-	--focus-width: 0.1875rem;
+	--focus-width: 0.125rem;
 	--control-height: 2.75rem;
 }
