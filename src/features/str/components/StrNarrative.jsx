@@ -1,6 +1,10 @@
 import { sectionTitle } from "../../../shared/str/sectionTitles"
 import { SECTION_MAX, sectionError, textLength } from "../model/strRules"
-import { CHECK_LABELS, CHECK_REASON_LABELS, labelOf } from "../labels"
+import { labelOf } from "../labels"
+import { CODE_CHECKS, CODE_REASON_LABELS } from "../verificationLabels"
+
+// 검사 이름 → 화면 라벨(검증 결과 패널과 같은 표). 표에 없는 이름은 labelOf가 이름 그대로 보여 줘요.
+const CODE_CHECK_LABELS = Object.fromEntries(CODE_CHECKS)
 
 // 서술부 본문. 서버가 준 narrative 목록·순서 그대로 그리고, 섹션 개수(6·7)나 이름을 가정하지 않아요(SCRUM-115).
 // AI 본문은 글자로만 그려요(dangerouslySetInnerHTML 금지, docs/06_features/str.md §1).
@@ -70,8 +74,8 @@ export default function StrNarrative({
 										role="note"
 									>
 										<strong>
-											{labelOf(CHECK_LABELS, check.check)} ·{" "}
-											{labelOf(CHECK_REASON_LABELS, check.reason)}
+											{labelOf(CODE_CHECK_LABELS, check.check)} ·{" "}
+											{labelOf(CODE_REASON_LABELS, check.reason)}
 										</strong>{" "}
 										본문 {check.draftValue ?? "-"} / 원본{" "}
 										{check.sourceValue ?? "-"}

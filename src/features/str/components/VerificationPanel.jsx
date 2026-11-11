@@ -10,11 +10,13 @@ import {
 	LLM_SKIPPED_NOTES,
 	VERIFICATION_STATUS_LABELS,
 } from "../verificationLabels"
+import { VERIFICATION_TEXT } from "../model/strRules"
 
 // 검증 결과 패널 (SCRUM-116). 표의 코드 검사 6개·AI 평가 5개를 늘 다 보여 주고, 실패한 항목을 위로 올려요.
 // 표에 없는 검사 이름이 응답에 오면 이름 그대로 표 뒤에 보여 줘요(옛 GROUNDING만 뺌).
 // 통과·실패 판단은 서버 passed·status 그대로예요 — 화면은 줄마다 표시만 하고 전체 결과를 다시 계산하지 않아요.
-// 검증을 다시 돌리는 버튼·검증 못 함 유지는 SCRUM-117에서 붙여요.
+// STR 작성 화면(2/2)은 선택 props로 [저장본 검증]·[다시 검증] 버튼(canVerify·onVerify), 미저장 안내(dirty),
+// 검증 중 안내(verifying), 실패 안내(verifyError)를 붙여요. 결과(VERIFY_UNAVAILABLE 포함)는 서버가 준 최신 검증으로 패널에 남아요.
 
 const PASS_RULE = `통과 기준: 코드 검사 전부 통과 + AI 평가 전부 ${LLM_PASS_SCORE}점 이상`
 
@@ -120,7 +122,51 @@ function LlmCheckRow({ item, status }) {
 	)
 }
 
-export default function VerificationPanel({ verification, currentRevisionNo }) {
+// 검증 실행 줄 — 결과가 없을 때도 있을 때도 같은 자리에 보여요. 가짜 진행률은 없어요(최대 90초 안내만).
+function VerifyControls({ hasResult, dirty, canVerify, verifying, verifyError, onVerify }) {
+	return (
+		<>
+			{dirty && (
+				<p role="status" className="str-check-note">
+					{VERIFICATION_TEXT.UNSAVED}
+				</p>
+			)}
+			{canVerify && (
+				<div className="str-toolbar">
+					<button type="button" onClick={onVerify} disabled={dirty || verifying}>
+						{verifying ? "검증 중…" : hasResult ? "다시 검증" : "저장본 검증"}
+					</button>
+				</div>
+			)}
+			{verifying && (
+				<p role="status" className="str-check-note">
+					저장본을 검증하고 있어요. 최대 90초쯤 걸려요.
+				</p>
+			)}
+			{verifyError && <p role="alert">{verifyError}</p>}
+		</>
+	)
+}
+
+export default function VerificationPanel({
+	verification,
+	currentRevisionNo,
+	dirty = false,
+	canVerify = false,
+	verifying = false,
+	verifyError = null,
+	onVerify,
+}) {
+	const controls = (
+		<VerifyControls
+			hasResult={Boolean(verification)}
+			dirty={dirty}
+			canVerify={canVerify}
+			verifying={verifying}
+			verifyError={verifyError}
+			onVerify={onVerify}
+		/>
+	)
 	if (!verification) {
 		return (
 			<section className="str-panel" aria-labelledby="str-verify-heading">
@@ -128,6 +174,7 @@ export default function VerificationPanel({ verification, currentRevisionNo }) {
 					<h2 id="str-verify-heading">검증 결과</h2>
 					<p>{PASS_RULE}</p>
 				</div>
+				{controls}
 				<p>아직 검증하지 않았어요.</p>
 			</section>
 		)
@@ -155,6 +202,7 @@ export default function VerificationPanel({ verification, currentRevisionNo }) {
 				</p>
 				<p>{PASS_RULE}</p>
 			</div>
+			{controls}
 			{stale && (
 				<p role="note" className="str-restricted">
 					지금 저장된 수정본이 아닌 이전 수정본을 검증한 결과예요. 다시 검증해야 승인

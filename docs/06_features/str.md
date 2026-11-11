@@ -4,7 +4,7 @@
 
 - 프론트 폴더: `src/features/str/` · 백엔드 짝: `str` (BE `06_features/str.md`, STR 명세 〔초안〕)
 - 지금(11/11): `/cases/:caseNo/str`이 화면 설계 STR-01~04를 다 그려요(S1~S4는 #34, 이 PR이 S5·S6·A6) — 초안 생성·재생성(S1), 조회(S2), 항목 수정·저장(S3), 수정 이력(S4), 저장본 검증(S5), VI부 유형·지점 정도 + 승인 요청(S6), 초안 있는 종료(A6), 동시 수정 비교, 제한 열람·승인 대기·반려·잠금 안내. 케이스 상세에도 `GENERATE_DRAFT`면 [STR 초안 생성] 버튼이 생겨요. 섹션은 서버가 준 목록·순서 그대로, 제목은 `label` → `shared/str/sectionTitles.js` → 섹션 이름 순서예요(SCRUM-115).
-- 검증 결과 패널(SCRUM-116, `components/VerificationPanel.jsx`)은 S2 `latest_verification`을 읽기 전용으로 보여 줘요. 검증 실행(S5)은 `StrVerificationPanel`의 [저장본 검증] 버튼이에요.
+- 검증 결과는 #32의 `components/VerificationPanel.jsx` 하나로 보여 줘요(SCRUM-116 표시 규칙 그대로). 2/2는 그 패널에 [저장본 검증]·[다시 검증] 버튼, 미저장 안내, verify(S5) 호출만 더해요(선택 props `dirty`·`canVerify`·`verifying`·`verifyError`·`onVerify`).
 - 코드: `api/strApi.js`(변환·요청) · `model/strRules.js`(버튼·검증 상태·승인 요청 막힘 이유 — 순수 함수) · `hooks/useStrDraft.js`(`useStrCommand`) · `components/Str*` · `pages/StrPage.jsx`. MSW: `mocks/strCommands.js`.
 
 ### 백엔드 연결 상태 (단계별)
@@ -48,7 +48,7 @@ BE가 한 단계씩 붙으면 프론트 코드는 그대로예요(경로·모양
 - AI 평가는 4점 이상 통과·미만 "미달". `llm_checks: null`이면 표의 5개 모두 **"평가 안 함"**이고, 이유는 `status`로 나눠요 — `CODE_FAILED`는 "코드 검사가 실패해서 AI 평가를 돌리지 않았어요", `VERIFY_UNAVAILABLE`은 "AI 평가를 하지 못했어요(평가 서비스 오류). 검증 실패가 아니에요". 배열에 빠진 항목은 "결과 없음".
 - 맨 위 결과(통과·코드 검사 실패·AI 평가 미달·검증 못 함)는 **서버 `status`·`passed` 그대로**예요 — 화면이 줄 결과로 다시 계산하지 않아요. 통과 기준 "코드 검사 전부 통과 + AI 평가 전부 4점 이상"은 글자로만 보여 줘요.
 - 어느 수정본을 검증했는지 표시하고, `is_current: false`거나 지금 수정본 번호와 다르면 "이전 수정본을 검증한 결과" 안내.
-- 검증 기록이 없으면 "아직 검증하지 않았어요". [다시 검증]·검증 못 함 유지는 SCRUM-117.
+- 검증 기록이 없으면 "아직 검증하지 않았어요". [저장본 검증]·[다시 검증] 버튼은 STR 작성 화면(2/2)이 선택 props로 붙이고, 검증 못 함(`VERIFY_UNAVAILABLE`) 결과도 패널에 남아요(토스트 아님).
 - MSW: `DRF-000124`(케이스 1001)에 코드 검사 실패 예시(날짜 못 읽음·빠짐, 건수 줄 없음, AI 평가 null). 테스트 `src/test/strVerification.test.jsx`.
 
 ## 2. 순서와 버튼 [BE flows 03, 안건 17·23·24]

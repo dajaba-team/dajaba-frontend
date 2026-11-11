@@ -14,7 +14,6 @@ import { STATUS_LABELS, REJECTION_LABELS } from "../../cases/labels"
 import { CloseForm } from "../../cases/components/CaseActions"
 import StrNarrative from "../components/StrNarrative"
 import StrFacts from "../components/StrFacts"
-import StrVerificationPanel from "../components/StrVerificationPanel"
 import StrSuspicionPanel from "../components/StrSuspicionPanel"
 import StrRevisionHistory from "../components/StrRevisionHistory"
 import StrGenerateForm from "../components/StrGenerateForm"
@@ -227,14 +226,15 @@ function StrWorkspace({ draft, detail }) {
 				</section>
 
 				<div className="str-aside">
-					<StrVerificationPanel
+					{/* 검증 결과 표시는 #32 패널 하나로 — 2/2는 버튼·미저장 안내·verify 호출만 더해요 */}
+					<VerificationPanel
 						verification={verification}
+						currentRevisionNo={draft.currentRevisionNo}
 						dirty={dirty}
 						canVerify={can("VERIFY")}
 						verifying={verify.isPending}
 						verifyError={verify.isError ? getErrorMessage(verify.error) : null}
 						onVerify={() => !dirty && !verify.isPending && verify.mutate({})}
-						narrative={draft.narrative}
 					/>
 					<StrSuspicionPanel
 						editable={editable}
@@ -246,12 +246,6 @@ function StrWorkspace({ draft, detail }) {
 					/>
 				</div>
 			</div>
-
-			{/* 최신 검증 결과(S2 latest_verification) 읽기 전용 — SCRUM-116 */}
-			<VerificationPanel
-				verification={draft.latestVerification}
-				currentRevisionNo={draft.currentRevisionNo}
-			/>
 
 			<section className="str-actionbar" aria-label="STR 작업">
 				{editable && (

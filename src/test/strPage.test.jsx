@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { render, screen, within } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { http, HttpResponse } from "msw"
 import { server } from "../mocks/server"
@@ -10,6 +10,9 @@ import App from "../app/App"
 import { createQueryClient } from "../app/queryClient"
 import { resetCases } from "../mocks/handlers"
 import { sectionTitle } from "../shared/str/sectionTitles"
+import { seedStrDrafts, visibleStrDraft } from "../mocks/strDrafts"
+import { LLM_SKIPPED_NOTES } from "../features/str/verificationLabels"
+import { VERIFICATION_TEXT } from "../features/str/model/strRules"
 
 const users = {
 	inv01: { id: 1, login_id: "inv01", display_name: "예시 inv01", role: "INVESTIGATOR" },
@@ -48,6 +51,19 @@ const sectionHeadings = async () => {
 	return within(list)
 		.getAllByRole("heading", { level: 2 })
 		.map((heading) => heading.textContent)
+}
+
+// 검증 결과 패널(#32 VerificationPanel) — 화면에 하나만 있어요.
+const verifyPanel = async () =>
+	(await screen.findByRole("heading", { name: "검증 결과" })).closest("section")
+// 패널 맨 위 결과 줄(서버 status 그대로의 라벨)
+const statusOf = (panel) => panel.querySelector(".str-verify-status").textContent
+
+async function verifyAndWait(user, expected) {
+	const panel = await verifyPanel()
+	await user.click(within(panel).getByRole("button", { name: "다시 검증" }))
+	await waitFor(() => expect(panel).toHaveTextContent(expected))
+	return panel
 }
 
 describe("STR 화면 — 서버가 준 서술부 목록대로 그리기 (SCRUM-115)", () => {
@@ -114,19 +130,21 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		const date = await sectionBox("일자")
 		await replaceText(user, date, "2022년 9월 3일 하루 동안.")
 		expect(screen.getByText("미저장 변경이 있어요")).toBeInTheDocument()
-		expect(screen.getByRole("button", { name: "저장본 검증" })).toBeDisabled()
+		const panel = await verifyPanel()
+		// MSW 초안엔 수정본 1번 검증 기록이 있어요(SCRUM-116 예시) — 그래서 버튼 이름은 [다시 검증]
+		expect(within(panel).getByRole("button", { name: "다시 검증" })).toBeDisabled()
+		expect(within(panel).getByRole("status")).toHaveTextContent(VERIFICATION_TEXT.UNSAVED)
 		expect(screen.getByText("먼저 변경 내용을 저장해 주세요.")).toBeInTheDocument()
 
 		await user.click(screen.getByRole("button", { name: "변경 저장" }))
 		expect(await screen.findByText(/7개 항목 · 수정본 2번/)).toBeInTheDocument()
-		// MSW 초안엔 수정본 1번 검증 기록이 있어요(SCRUM-116 예시) — 저장하면 지난 결과가 돼요.
-		expect(screen.getByText("본문이 바뀌어 다시 검증해야 해요.")).toBeInTheDocument()
+		// 저장하면 수정본 1번 결과는 지난 결과 — #32의 안내 그대로
+		expect(within(panel).getByText(/이전 수정본을 검증한 결과예요/)).toBeInTheDocument()
 
-		await user.click(screen.getByRole("button", { name: "저장본 검증" }))
-		expect(await screen.findByText(/코드 대조에서 맞지 않는 항목이 있어요/)).toBeInTheDocument()
-		expect(
-			screen.getByText("코드 대조가 실패해 AI 평가는 실행하지 않았어요."),
-		).toBeInTheDocument()
+		await verifyAndWait(user, "코드 검사 실패 · 수정본 2번 검증")
+		// AI 평가 5줄마다 "코드 검사가 실패해서…"
+		expect(screen.getAllByText(LLM_SKIPPED_NOTES.CODE_FAILED)).toHaveLength(5)
+		expect(within(panel).queryByText(/이전 수정본을 검증한 결과예요/)).not.toBeInTheDocument()
 		// 일자 항목 아래 본문 값·원본 값
 		expect(
 			within(screen.getByRole("article", { name: "일자" })).getByRole("note"),
@@ -136,8 +154,7 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		await replaceText(user, await sectionBox("일자"), "2022년 9월 2일 하루 동안.")
 		await user.click(screen.getByRole("button", { name: "변경 저장" }))
 		expect(await screen.findByText(/7개 항목 · 수정본 3번/)).toBeInTheDocument()
-		await user.click(screen.getByRole("button", { name: "저장본 검증" }))
-		expect(await screen.findByText("현재 저장본 검증 통과")).toBeInTheDocument()
+		await verifyAndWait(user, "통과 · 수정본 3번 검증")
 
 		// VI부 — 유형·지점 정도는 기본값 없음
 		expect(screen.getByText("의심 유형을 1개 이상 선택해 주세요.")).toBeInTheDocument()
@@ -154,6 +171,95 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		).toBeInTheDocument()
 		expect(screen.queryByRole("textbox")).not.toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "변경 저장" })).not.toBeInTheDocument()
+	})
+
+	it("검증 못 함(VERIFY_UNAVAILABLE)은 코드 검사 실패 문구 없이 패널에 남고 [다시 검증]을 누를 수 있다 (테스트 11-4)", async () => {
+		const user = renderStr("CASE-2022-001001")
+		// MSW: 본문에 "검증불가"가 있으면 평가 서비스 오류로 답해요.
+		await replaceText(user, await sectionBox("종합의견"), "검증불가 예시 의견.")
+		await user.click(screen.getByRole("button", { name: "변경 저장" }))
+		expect(await screen.findByText(/7개 항목 · 수정본 2번/)).toBeInTheDocument()
+
+		const panel = await verifyAndWait(user, "검증 못 함 · 수정본 2번 검증")
+		expect(within(panel).getAllByText(LLM_SKIPPED_NOTES.VERIFY_UNAVAILABLE)).toHaveLength(5)
+		expect(within(panel).queryByText(LLM_SKIPPED_NOTES.CODE_FAILED)).not.toBeInTheDocument()
+		expect(within(panel).getByRole("button", { name: "다시 검증" })).toBeEnabled()
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+	})
+
+	it("PASSED·CODE_FAILED·LLM_FAILED·VERIFY_UNAVAILABLE을 서로 다른 문구로 보여 준다", async () => {
+		const user = renderStr("CASE-2022-001001")
+		const seen = []
+		// 1) 시드 결과: 코드 검사 실패(수정본 1번)
+		let panel = await verifyPanel()
+		await waitFor(() =>
+			expect(panel).toHaveTextContent("코드 검사 실패 · 수정본 1번 (AI 원문) 검증"),
+		)
+		seen.push(statusOf(panel))
+		expect(within(panel).getAllByText(LLM_SKIPPED_NOTES.CODE_FAILED)).toHaveLength(5)
+
+		// 2) AI 평가 미달 — verify 응답과 그 뒤 초안 조회를 덮어써요(MSW verify는 이 상태를 만들지 않아요).
+		const llmFailed = {
+			verification_id: "VRF-llm",
+			revision_no: 1,
+			passed: false,
+			status: "LLM_FAILED",
+			produced_at: "2026-11-11T00:00:00Z",
+			code_checks: [
+				"AMOUNT_MATCH",
+				"DATE_MATCH",
+				"COUNT_MATCH",
+				"ACCOUNT_ID_MATCH",
+				"EVIDENCE_IN_SCOPE",
+				"OPINION_PRESENT",
+			].map((check) => ({ check, section: null, match: true, reason: null })),
+			llm_checks: [
+				{ check: "FIVE_W_ONE_H_COMPLETE", score: 5, comment: "충분" },
+				{ check: "TYPOLOGY_CONSISTENT", score: 2, comment: "유형과 본문이 어긋남" },
+				{ check: "NO_UNSUPPORTED_CLAIM", score: 4, comment: "-" },
+				{ check: "NO_SPECULATION", score: 4, comment: "-" },
+				{ check: "NO_INSTRUCTION_TEXT", score: 5, comment: "-" },
+			],
+		}
+		const seeded = seedStrDrafts().find((draft) => draft.draft_no === "DRF-000124")
+		// 버튼은 케이스 C2에서 옮겨 오게(임시 다리) available_actions 키를 빼요.
+		const { available_actions: _unused, ...draft } = {
+			...seeded,
+			latest_verification: llmFailed,
+		}
+		server.use(
+			http.post("*/api/v1/str-drafts/:draftNo/verify", () => HttpResponse.json(llmFailed)),
+			http.get("*/api/v1/str-drafts/:draftNo", () =>
+				HttpResponse.json(visibleStrDraft(users.inv01, draft)),
+			),
+		)
+		panel = await verifyAndWait(user, "AI 평가 미달 · 수정본 1번 (AI 원문) 검증")
+		seen.push(statusOf(panel))
+		expect(within(panel).getByText("2점 · 미달")).toBeInTheDocument()
+		// 미달 항목이 AI 평가 맨 위
+		const llmRows = within(within(panel).getByRole("list", { name: "AI 평가" })).getAllByRole(
+			"listitem",
+		)
+		expect(llmRows[0]).toHaveTextContent("의심 유형과 본문이 맞음")
+		server.resetHandlers()
+
+		// 3) 검증 못 함
+		await replaceText(user, await sectionBox("종합의견"), "검증불가 예시 의견.")
+		await user.click(screen.getByRole("button", { name: "변경 저장" }))
+		expect(await screen.findByText(/7개 항목 · 수정본 2번/)).toBeInTheDocument()
+		panel = await verifyAndWait(user, "검증 못 함 · 수정본 2번 검증")
+		seen.push(statusOf(panel))
+		expect(within(panel).getAllByText(LLM_SKIPPED_NOTES.VERIFY_UNAVAILABLE)).toHaveLength(5)
+
+		// 4) 통과
+		await replaceText(user, await sectionBox("종합의견"), "자금 출처 확인이 필요해 보여요.")
+		await user.click(screen.getByRole("button", { name: "변경 저장" }))
+		expect(await screen.findByText(/7개 항목 · 수정본 3번/)).toBeInTheDocument()
+		panel = await verifyAndWait(user, "통과 · 수정본 3번 검증")
+		seen.push(statusOf(panel))
+
+		expect(seen).toEqual(["코드 검사 실패", "AI 평가 미달", "검증 못 함", "통과"])
+		expect(new Set(seen).size).toBe(4)
 	})
 
 	it("빈 항목은 저장 버튼이 꺼진다", async () => {
@@ -209,9 +315,10 @@ describe("STR 초안 생성 (S1)", () => {
 		expect(
 			await screen.findByText(/DRF-000125 · 초안 ACTIVE · 케이스 DRAFTED/),
 		).toBeInTheDocument()
-		expect(
-			screen.getByText("아직 검증하지 않았어요. 저장한 본문을 검증해 주세요."),
-		).toBeInTheDocument()
+		// 새 초안은 검증 기록이 없어요 — #32 패널 문구 + [저장본 검증]
+		const panel = await verifyPanel()
+		expect(within(panel).getByText("아직 검증하지 않았어요.")).toBeInTheDocument()
+		expect(within(panel).getByRole("button", { name: "저장본 검증" })).toBeEnabled()
 	})
 
 	it("만드는 중(409 DRAFT_IN_PROGRESS)은 장애가 아니라 진행 중으로 안내한다", async () => {

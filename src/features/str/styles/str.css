@@ -98,8 +98,7 @@
 .str-banner p {
 	margin: 0;
 }
-.str-toolbar,
-.str-actions-row {
+.str-toolbar {
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--space-2);
@@ -194,18 +193,6 @@
 .str-pre {
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
-}
-.str-llm-checks {
-	margin: 0;
-	padding-inline-start: var(--space-4);
-}
-.str-verify-pass,
-.str-verify-passed {
-	color: var(--color-pass);
-}
-.str-verify-code_failed,
-.str-verify-llm_failed {
-	color: var(--color-fail);
 }
 .str-vi-group {
 	display: grid;
