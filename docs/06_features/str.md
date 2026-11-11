@@ -4,6 +4,7 @@
 
 - 프론트 폴더: `src/features/str/` · 백엔드 짝: `str` (BE `06_features/str.md`, STR 명세 〔초안〕)
 - 지금(11/11): `/cases/:caseNo/str`이 초안 생성·재생성(S1), 조회(S2), 항목 수정·저장(S3), 수정 이력(S4), 동시 수정 비교, 제한 열람·승인 대기·반려·잠금 안내를 그려요 — BE develop에 있는 API만. 저장본 검증(S5), VI부 유형·지점 정도 + 승인 요청(S6), STR 화면의 초안 있는 종료(A6)는 다음 PR(BE 전이라 MSW)로 나눠요. 케이스 상세에도 `GENERATE_DRAFT`면 [STR 초안 생성] 버튼이 생겨요. 섹션은 서버가 준 목록·순서 그대로, 제목은 `label` → `shared/str/sectionTitles.js` → 섹션 이름 순서예요(SCRUM-115).
+- 검증 결과 패널(SCRUM-116, `components/VerificationPanel.jsx`)은 S2 `latest_verification`을 읽기 전용으로 보여 줘요 — 검증 실행 버튼(S5)은 다음 PR.
 - 코드: `api/strApi.js`(변환·요청) · `model/strRules.js`(버튼·입력 검사·상태 안내 — 순수 함수) · `hooks/useStrDraft.js`(`useStrCommand`) · `components/Str*` · `pages/StrPage.jsx`. MSW: `mocks/strCommands.js`.
 
 ### 백엔드 연결 상태 (단계별)
@@ -38,6 +39,17 @@ BE가 한 단계씩 붙으면 프론트 코드는 그대로예요(경로·모양
 
 - AI 본문은 **글자로만** 그려요(`dangerouslySetInnerHTML` 금지).
 - 본문 열람은 담당 조사역·승인자만. 그 밖의 사람에겐 상태·날짜만 보여요(`04_auth_session.md` §4).
+
+### 검증 결과 패널 — `components/VerificationPanel.jsx` 〔SCRUM-116, FR-VRF-02~08〕
+
+- 항목은 `features/str/verificationLabels.js` 표대로 **늘 11개** — 코드 검사 6개(금액 `AMOUNT_MATCH`·날짜 `DATE_MATCH`·건수 `COUNT_MATCH`·계좌 `ACCOUNT_ID_MATCH`·근거 범위 `EVIDENCE_IN_SCOPE`·종합의견 `OPINION_PRESENT` — 종합의견 공란 거부, narrative_v2만), AI 평가 5개(1~5점 + 한 줄 코멘트). **표에 없는 이름이 응답에 오면 숨기지 않고 이름 그대로** 표 뒤에 보여 줘요(개수를 고정하지 않아요 — "코드 검사 실패"인데 실패 항목이 안 보이는 일을 막아요). 옛 `GROUNDING`만 뺍니다.
+- **실패한 항목을 위로**, 나머지는 표 순서. 코드 검사는 같은 검사가 여러 줄 올 수 있어(날짜 하나당 한 줄) 한 줄이라도 `match: false`면 실패, 틀린 줄마다 사유·섹션·본문 값·원본 값. 줄의 `section`이 `null`이면 "초안 전체"(건수·근거 범위처럼 초안 전체를 본 검사).
+- 사유는 `불일치(MISMATCH)`·`읽지 못함(UNPARSED)`·`빠짐(MISSING)`·`근거 범위 밖(OUT_OF_SCOPE)`을 나눠요. 줄이 하나도 없으면 "통과"가 아니라 **"검사 없음"**(예: SCRUM-60 전 `COUNT_MATCH`).
+- AI 평가는 4점 이상 통과·미만 "미달". `llm_checks: null`이면 표의 5개 모두 **"평가 안 함"**이고, 이유는 `status`로 나눠요 — `CODE_FAILED`는 "코드 검사가 실패해서 AI 평가를 돌리지 않았어요", `VERIFY_UNAVAILABLE`은 "AI 평가를 하지 못했어요(평가 서비스 오류). 검증 실패가 아니에요". 배열에 빠진 항목은 "결과 없음".
+- 맨 위 결과(통과·코드 검사 실패·AI 평가 미달·검증 못 함)는 **서버 `status`·`passed` 그대로**예요 — 화면이 줄 결과로 다시 계산하지 않아요. 통과 기준 "코드 검사 전부 통과 + AI 평가 전부 4점 이상"은 글자로만 보여 줘요.
+- 어느 수정본을 검증했는지 표시하고, `is_current: false`거나 지금 수정본 번호와 다르면 "이전 수정본을 검증한 결과" 안내.
+- 검증 기록이 없으면 "아직 검증하지 않았어요". [다시 검증]·검증 못 함 유지는 SCRUM-117.
+- MSW: `DRF-000124`(케이스 1001)에 코드 검사 실패 예시(날짜 못 읽음·빠짐, 건수 줄 없음, AI 평가 null). 테스트 `src/test/strVerification.test.jsx`.
 
 ## 2. 순서와 버튼 [BE flows 03, 안건 17·23·24]
 

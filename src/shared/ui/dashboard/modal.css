@@ -1,0 +1,49 @@
+/* 실제 화면에서도 모달이 배경을 막고 가운데 뜨도록 공통 스타일. 시연 쪽 규칙은 그대로 둡니다. */
+.modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: grid;
+	place-items: center;
+	padding: var(--space-4);
+	background: rgb(8 18 32 / 55%);
+}
+.modal {
+	width: min(620px, 100%);
+	max-height: min(760px, calc(100dvh - 2 * var(--space-4)));
+	overflow: auto;
+	background: var(--color-surface);
+	color: var(--color-text);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-card);
+	box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 25%);
+}
+.modal > header {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	padding: var(--space-3) var(--space-4);
+	background: var(--color-surface);
+	border-bottom: var(--border-width) solid var(--color-border);
+}
+.modal > header h2 {
+	margin: 0;
+	font-size: var(--font-section);
+}
+.modal-body {
+	padding: var(--space-4);
+}
+.modal > footer {
+	position: sticky;
+	bottom: 0;
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--space-2);
+	padding: var(--space-3) var(--space-4);
+	background: var(--color-surface);
+	border-top: var(--border-width) solid var(--color-border);
+}

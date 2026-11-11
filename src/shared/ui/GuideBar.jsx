@@ -34,12 +34,7 @@ export default function GuideBar({ role, children }) {
 					title="한 건의 업무를 끝까지 따라가는 방법"
 					onClose={() => setOpen(false)}
 					footer={
-						<button
-							type="button"
-							className="primary"
-							onClick={() => setOpen(false)}
-							autoFocus
-						>
+						<button type="button" className="primary" onClick={() => setOpen(false)}>
 							확인
 						</button>
 					}

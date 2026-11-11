@@ -4,6 +4,7 @@ import { useCaseDetail } from "../../cases/hooks/useCases"
 import { useStrCommand, useStrDraft } from "../hooks/useStrDraft"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
+import VerificationPanel from "../components/VerificationPanel"
 import { revisionLabel } from "../../../shared/str/revisionLabel"
 import { sectionTitle } from "../../../shared/str/sectionTitles"
 import { getErrorCode, getErrorMessage, isVersionConflict } from "../../../shared/api/apiClient"
@@ -187,6 +188,12 @@ function StrWorkspace({ draft, detail }) {
 					/>
 				)}
 			</section>
+
+			{/* 최신 검증 결과(S2 latest_verification) 읽기 전용 — SCRUM-116 */}
+			<VerificationPanel
+				verification={draft.latestVerification}
+				currentRevisionNo={draft.currentRevisionNo}
+			/>
 
 			<section className="str-actionbar" aria-label="STR 작업">
 				{editable && (
