@@ -67,14 +67,13 @@
 	border-radius: var(--radius-control);
 }
 .navigation-link:hover {
-	background: var(--color-soft);
+	background: var(--color-sidebar-active);
 }
-/* 선택한 메뉴는 면을 칠하지 않고 왼쪽 선 + 글자색으로 — 굵기도 같이 달라 색만으로 구분하지 않아요. */
+/* 선택한 메뉴는 한 톤 짙은 면 + 굵은 글자만 — 선·상자·강조색 없이. */
 .navigation-link.is-active {
 	background: var(--color-sidebar-active);
-	color: var(--color-primary);
+	color: var(--color-on-dark);
 	font-weight: 700;
-	box-shadow: inset 0.1875rem 0 0 var(--color-primary);
 }
 .sidebar-note {
 	margin-block-start: auto;
