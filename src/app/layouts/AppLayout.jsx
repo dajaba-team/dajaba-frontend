@@ -1,13 +1,21 @@
+import { useEffect } from "react"
 import { Link, NavLink, Outlet } from "react-router"
 import "../styles/app.css"
 import { useSession } from "../../features/auth/hooks/useSession"
 import AuthPanel from "../../features/auth/components/AuthPanel"
 import GuideBar from "../../shared/ui/GuideBar"
+import { useToast } from "../../shared/ui/toast/useToast"
 import { visibleMenus } from "../navigation/appNavigation"
 
 export default function AppLayout() {
 	const session = useSession()
 	const menus = session.data ? visibleMenus(session.data.role) : []
+	// 로그아웃·계정 전환·401 어느 길이든 loginId 가 바뀌면 이전 사람의 알림을 비워요.
+	const loginId = session.data?.loginId
+	const { dismiss } = useToast()
+	useEffect(() => {
+		dismiss()
+	}, [loginId, dismiss])
 	return (
 		<>
 			<a className="skip-link" href="#main-content">
