@@ -66,9 +66,125 @@
 	border-radius: var(--radius-control);
 	background: var(--color-soft);
 }
+
+/* ---- STR 작성 화면 (STR-01~04) ---- */
+.str-subheading {
+	margin-block: 0 var(--space-4);
+	color: var(--color-muted);
+}
+.str-muted {
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.str-error {
+	color: var(--color-fail);
+	font-size: var(--font-small);
+}
+.str-badge {
+	display: inline-block;
+	padding-inline: var(--space-2);
+	border-radius: var(--radius-control);
+	background: var(--color-soft);
+	font-size: var(--font-small);
+}
+.str-banner,
+.str-conflict {
+	margin-block: var(--space-4);
+	padding: var(--space-4);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-card);
+	background: var(--color-soft);
+}
+.str-banner p {
+	margin: 0;
+}
+.str-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+	margin-block: var(--space-3);
+}
 .str-panel + .str-panel {
 	margin-block-start: var(--space-4);
 }
+.str-panel-head-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+.str-facts {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+	gap: var(--space-2) var(--space-4);
+	margin: 0;
+}
+.str-facts dt {
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.str-facts dd {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+.str-raw pre {
+	max-height: 20rem;
+	overflow: auto;
+	font-size: var(--font-small);
+}
+.str-section-index {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+	margin-block-end: var(--space-3);
+	font-size: var(--font-small);
+}
+.str-section-input {
+	width: 100%;
+	min-height: 7rem;
+	margin-block: var(--space-2) var(--space-1);
+	font: inherit;
+	resize: vertical;
+}
+.str-section-input[aria-invalid="true"] {
+	border-color: var(--color-fail);
+}
+.str-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--font-small);
+}
+.str-table th,
+.str-table td {
+	padding: var(--space-1) var(--space-2);
+	border-bottom: var(--border-width) solid var(--color-border);
+	text-align: start;
+	vertical-align: top;
+}
+.str-pre {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+.str-history {
+	display: grid;
+	gap: var(--space-1);
+	padding-inline-start: var(--space-4);
+}
+.str-actionbar {
+	position: sticky;
+	bottom: 0;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2);
+	margin-block-start: var(--space-4);
+	padding: var(--space-3) var(--space-4);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-card);
+	background: var(--color-surface);
+	box-shadow: var(--shadow-card);
+}
+
+/* ---- 검증 결과 패널 (SCRUM-116) ---- */
 .str-verify-status.is-passed {
 	color: var(--color-pass);
 }

@@ -1,4 +1,5 @@
 import { canViewStrContent, seedStrDrafts, visibleStrDraft } from "./strDrafts"
+import { createDraft, draftActions, saveRevision } from "./strCommands"
 import {
 	applyCommand,
 	changeResponse,
@@ -76,6 +77,8 @@ const draftNotFound = () =>
 		{ error: { code: "DRAFT_NOT_FOUND", message: "초안을 찾을 수 없습니다", details: {} } },
 		{ status: 404 },
 	)
+const caseOf = (draft) => cases.find((entry) => entry.case_no === draft.case_no) ?? null
+const reply = ({ status, body }) => HttpResponse.json(body, { status })
 const unauthenticated = () =>
 	HttpResponse.json({ error: { code: "UNAUTHENTICATED" } }, { status: 401 })
 const base = new URL(import.meta.env.VITE_API_BASE_URL || "", window.location.origin).href.replace(
@@ -573,22 +576,40 @@ export const handlers = [
 			)
 		return HttpResponse.json({ case_no: item.case_no, summary: item.latest_summary ?? null })
 	}),
+	// S1 초안 생성 — BE develop에 있어요(SCRUM-183). MSW는 같은 계약으로 답해요. 새 초안 본문은 7항목 예시를 복사.
+	http.post(`${base}/api/v1/cases/:caseNo/str-drafts`, async ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		const body = await request.json().catch(() => null)
+		const template = drafts.find((entry) => entry.draft_no === "DRF-000124")
+		return reply(createDraft(currentUser, item, body, drafts, template))
+	}),
 	http.get(`${base}/api/v1/str-drafts/:draftNo`, ({ params }) => {
 		if (!currentUser) return unauthenticated()
 		const draft = drafts.find((item) => item.draft_no === params.draftNo)
-		return draft ? HttpResponse.json(visibleStrDraft(currentUser, draft)) : draftNotFound()
+		return draft
+			? HttpResponse.json(visibleStrDraft(currentUser, draft, caseOf(draft), draftActions))
+			: draftNotFound()
+	}),
+	// S3 — BE develop(SCRUM-184 #91)과 같은 계약으로 MSW가 답해요.
+	http.put(`${base}/api/v1/str-drafts/:draftNo/revisions`, async ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const draft = drafts.find((item) => item.draft_no === params.draftNo)
+		if (!draft) return draftNotFound()
+		const body = await request.json().catch(() => null)
+		return reply(saveRevision(currentUser, caseOf(draft), draft, body))
 	}),
 	// 목록은 본문 없이, `?revision_no=`면 그 한 행의 전·후 본문(명세 4번).
 	http.get(`${base}/api/v1/str-drafts/:draftNo/revisions`, ({ params, request }) => {
 		if (!currentUser) return unauthenticated()
 		const draft = drafts.find((item) => item.draft_no === params.draftNo)
 		if (!draft) return draftNotFound()
-		// 수정 이력은 제한 응답 없이 403 — 관리자 FORBIDDEN, 비담당 조사역 NOT_ASSIGNEE (계약서 Q13, 11/4 채영)
+		// 수정 이력은 제한 응답 없이 403 NOT_ASSIGNEE — 관리자도 같아요(BE ListStrRevisions, SCRUM-184 #91)
 		if (!canViewStrContent(currentUser, draft))
 			return HttpResponse.json(
 				{
 					error: {
-						code: currentUser.role === "ADMIN" ? "FORBIDDEN" : "NOT_ASSIGNEE",
+						code: "NOT_ASSIGNEE",
 						message: "권한이 없습니다",
 						details: {},
 					},

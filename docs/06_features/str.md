@@ -3,8 +3,29 @@
 > v0.1 · 2026-10-31 · 초안(팀 확인 중) · 정리 지윤
 
 - 프론트 폴더: `src/features/str/` · 백엔드 짝: `str` (BE `06_features/str.md`, STR 명세 〔초안〕)
-- 지금: `/cases/:caseId/str`은 케이스의 지금 초안(`current_draft_no` 〔확인 필요 — 케이스 상세 API 필드 이름〕)을 불러와 **서술부를 읽기 전용으로** 그려요. 섹션은 서버가 준 목록·순서 그대로, 제목은 `label` → `shared/str/sectionTitles.js`(7항목 + 옛 6섹션, 시연 화면과 같은 표, label이 빈 값이어도 표로) → 섹션 이름 순서예요(SCRUM-115). 그 아래 **검증 결과 패널**(SCRUM-116)이 `latest_verification`을 보여 줘요. 수정·검증 실행·승인 요청은 아직이고, 시연(`/demo/cases/:caseId/str`)에서 합성 데이터로 볼 수 있어요.
-- **남은 STR 화면 이슈(SCRUM-114·116·117·118·121)는 실제 `/cases/:caseNo/str` 화면에 만들어요(11/10).** `DemoStrPage`는 없앨 예정이라 고치지 않아요.
+- 지금(11/11): `/cases/:caseNo/str`이 초안 생성·재생성(S1), 조회(S2), 항목 수정·저장(S3), 수정 이력(S4), 동시 수정 비교, 제한 열람·승인 대기·반려·잠금 안내를 그려요 — BE develop에 있는 API만. 저장본 검증(S5), VI부 유형·지점 정도 + 승인 요청(S6), STR 화면의 초안 있는 종료(A6)는 다음 PR(BE 전이라 MSW)로 나눠요. 케이스 상세에도 `GENERATE_DRAFT`면 [STR 초안 생성] 버튼이 생겨요. 섹션은 서버가 준 목록·순서 그대로, 제목은 `label` → `shared/str/sectionTitles.js` → 섹션 이름 순서예요(SCRUM-115).
+- 검증 결과 패널(SCRUM-116, `components/VerificationPanel.jsx`)은 S2 `latest_verification`을 읽기 전용으로 보여 줘요 — 검증 실행 버튼(S5)은 다음 PR.
+- 코드: `api/strApi.js`(변환·요청) · `model/strRules.js`(버튼·입력 검사·상태 안내 — 순수 함수) · `hooks/useStrDraft.js`(`useStrCommand`) · `components/Str*` · `pages/StrPage.jsx`. MSW: `mocks/strCommands.js`.
+
+### 백엔드 연결 상태 (단계별)
+
+| 단계 | API                                                    | BE                                                                                                                              | 프론트                                     |
+| ---- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| 1    | S1 `POST /cases/{case_no}/str-drafts` `{case_version}` | develop (SCRUM-183). 요청 이름 `case_version`(#89에서 고침)                                                                     | `strApi.createDraft` (timeout 100초)       |
+| 2    | S2 `GET /str-drafts/{draft_no}`                        | develop (SCRUM-205 #84)                                                                                                         | `strApi.getDraft` — 아래 "S2 차이" 흡수    |
+| 3    | S3 `PUT …/revisions`                                   | develop (SCRUM-184 #91). 고친 단락만, NFC 5,000자. 응답에 저장된 `narrative` 전체·`needs_verification`·`version`·`case_version` | `strApi.saveRevision`                      |
+| 4    | S4 `GET …/revisions`                                   | develop (SCRUM-184 #91). 목록 `{draft_no, current_revision_no, items[{…, ai_original}]}`, `?revision_no=`는 평평한 전·후 본문   | `strApi.getRevisions`·`getRevision`        |
+| 5    | S5 `POST …/verify`                                     | 없음                                                                                                                            | 다음 PR                                    |
+| 6    | S6 `POST …/submit`                                     | 없음                                                                                                                            | 다음 PR                                    |
+| -    | A6 `POST /cases/{case_no}/close-with-draft`            | 없음                                                                                                                            | 다음 PR (케이스 상세의 종료는 지금도 있음) |
+
+BE가 한 단계씩 붙으면 프론트 코드는 그대로예요(경로·모양을 계약서대로 미리 맞춰 둠). `VITE_USE_MOCKS=true`면 전부 MSW가 답해요.
+
+**S2 차이 (BE develop, SCRUM-205 #84 기준)** — `case_status`·`narrative[].label`·`latest_verification.is_current`는 들어왔어요. `available_actions`·`generation_id`·`generator_version`·`last_rejection`·`suspicion_*`는 아직 없고, `META_ONLY`의 `case_no`·`case_status`는 `null`이에요. 프론트는:
+
+- `available_actions` 키가 없으면 `null`로 두고, 그동안만 케이스 C2 `available_actions`(`GENERATE_DRAFT`·`CLOSE_WITH_DRAFT`)에서 STR 버튼을 옮겨 와요(`strActionsFor` — 임시 다리, S2가 주면 자동으로 안 탐).
+- `is_current`는 서버 값을 써요. 키가 없을 때만 `latest_verification.revision_no === current_revision_no`로 대신 봐요. 서버의 판단 기준(BE #95 S5부터 본문 해시)은 따라 하지 않고, 최종 판단은 서버 ApprovalGate예요.
+- 나머지는 `null`/`[]`로 두고 지어내지 않아요.
 
 ## 1. 화면 — `/cases/:caseNo/str`
 
@@ -53,15 +74,15 @@
 
 ## 3. API 〔초안 — STR 명세, BE `06_features/str.md`〕
 
-| #   | API                                                                    | 화면             | 프론트                      |
-| --- | ---------------------------------------------------------------------- | ---------------- | --------------------------- |
-| 1   | `POST /cases/{case_no}/str-drafts` (최대 90초)                         | 초안 생성·재생성 | 없음                        |
-| 2   | `GET /str-drafts/{draft_no}`                                           | 초안 보기        | `strApi.getDraft` (MSW)     |
-| 3   | `PUT /str-drafts/{draft_no}/revisions` (고친 섹션만)                   | 섹션 저장        | 없음                        |
-| 4   | `GET /str-drafts/{draft_no}/revisions?revision_no=`                    | 수정 이력        | `strApi.getRevisions` (MSW) |
-| 5   | `POST /str-drafts/{draft_no}/verify` (body `{}`)                       | 검증             | 없음                        |
-| 6   | `POST /str-drafts/{draft_no}/submit` `{case_version, verification_id}` | 승인 요청        | 없음                        |
-| 9   | `POST /cases/{case_no}/close-with-draft`                               | 초안 있는 종료   | 없음                        |
+| #   | API                                                                                                             | 화면             | 프론트                      |
+| --- | --------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------------- |
+| 1   | `POST /cases/{case_no}/str-drafts` (최대 90초)                                                                  | 초안 생성·재생성 | `strApi.createDraft`        |
+| 2   | `GET /str-drafts/{draft_no}`                                                                                    | 초안 보기        | `strApi.getDraft` (MSW)     |
+| 3   | `PUT /str-drafts/{draft_no}/revisions` (고친 섹션만)                                                            | 섹션 저장        | `strApi.saveRevision` (MSW) |
+| 4   | `GET /str-drafts/{draft_no}/revisions?revision_no=`                                                             | 수정 이력        | `strApi.getRevisions` (MSW) |
+| 5   | `POST /str-drafts/{draft_no}/verify` (body `{}`)                                                                | 검증             | `strApi.verify` (MSW)       |
+| 6   | `POST /str-drafts/{draft_no}/submit` `{case_version, verification_id, suspicion_types, suspicion_level_branch}` | 승인 요청        | `strApi.submit` (MSW)       |
+| 9   | `POST /cases/{case_no}/close-with-draft`                                                                        | 초안 있는 종료   | `casesApi.closeWithDraft`   |
 
 승인·반려(7·8)는 `approvals.md`. 확정본 PDF는 STR 명세 〔후속〕.
 
@@ -81,15 +102,15 @@ S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), 
 
 본문을 볼 수 있는 사람은 **그 케이스의 담당 조사역**과 **승인자(APPROVER)**뿐이에요. **관리자와 비담당 조사역은 상태·날짜만** 받아요(ADMIN은 조사역·승인자 권한을 물려받지 않음). STR 명세 §2의 "담당이 아닌 조사역은 403 `NOT_ASSIGNEE`"는 채영님이 이 결정에 맞춰 고쳐요.
 
-| 누가                   | `GET /str-drafts/{draft_no}`                                                                                                                                                                                                 | `GET /str-drafts/{draft_no}/revisions`                                                                    |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| 담당 조사역 · 승인자   | 200 명세 1번 모양 전체 + `access: "FULL"`                                                                                                                                                                                    | 200 목록 `{ draft_no, items }`(본문 없음), `?revision_no=`면 그 행의 `narrative_before`·`narrative_after` |
-| 관리자 · 비담당 조사역 | 200 **제한 응답** `access: "META_ONLY"` — `draft_no`·`case_no`·`status`·`case_status`·`produced_at`만 값이 있고 `facts`·`narrative`·`latest_verification`·`last_rejection`·`references`는 `null`(키는 빼지 않음, 계약서 2.3) | 403 — 관리자 `FORBIDDEN`, 비담당 조사역 `NOT_ASSIGNEE`                                                    |
+| 누가                   | `GET /str-drafts/{draft_no}`                                                                                                                                                                                                                                  | `GET /str-drafts/{draft_no}/revisions`                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 담당 조사역 · 승인자   | 200 명세 1번 모양 전체 + `access: "FULL"`                                                                                                                                                                                                                     | 200 목록 `{ draft_no, items }`(본문 없음), `?revision_no=`면 그 행의 `narrative_before`·`narrative_after` |
+| 관리자 · 비담당 조사역 | 200 **제한 응답** `access: "META_ONLY"` — `draft_no`·`status`·`produced_at`만 값이 있고(`case_no`·`case_status`도 계약서엔 값이지만 BE는 `null`) `facts`·`narrative`·`latest_verification`·`last_rejection`·`references`는 `null`(키는 빼지 않음, 계약서 2.3) | 403 `NOT_ASSIGNEE` (관리자도 같음)                                                                        |
 
 - 제한 응답도 `strView` 열람 기록 한 줄을 남겨요(BE `03_shared` §9).
 - 서버는 제한 응답을 **허용 필드만 골라** 만들어요. 프론트 `toDraft`도 `access`가 `"FULL"`이 아니면(없거나 모르는 값 포함) 본문 필드를 화면 모델로 옮기지 않아요.
 - 화면은 `contentVisible`로 "본문 보기"와 "상태·날짜만 보기"를 고르고, 역할로 다시 계산하지 않아요.
-- 수정 이력은 제한 응답 없이 **403**(관리자 `FORBIDDEN`, 비담당 조사역 `NOT_ASSIGNEE`), 없는 `revision_no`는 **404 `REVISION_NOT_FOUND`**예요 [계약서 Q13, 11/4 채영].
+- 수정 이력은 제한 응답 없이 **403 `NOT_ASSIGNEE`**(관리자·비담당 조사역 모두 — BE `ListStrRevisions`), 없는 `revision_no`는 **404 `REVISION_NOT_FOUND`**예요 [계약서 Q13, 11/4 채영].
 
 ## 4. 실패 처리 [BE 03 §2, BE flows 04]
 
@@ -101,6 +122,10 @@ S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), 
 | 409 `CONCURRENT_UPDATE`                                             | 편집 내용 유지 + 최신 수정본 비교 (cases 메모와 같은 방식)                                          |
 | 502 `AI_*`·`LLM_*`                                                  | 생성·검증 영역에만 실패 안내 + 수동 다시 시도. **검증 통신 실패를 "내용 부적합"으로 표시하지 않음** |
 | 응답 없음·timeout                                                   | 최신 초안·검증 상태를 먼저 조회 (같은 초안이 두 번 생길 수 있음 — BE 미결 21)                       |
+
+**VI부 유형 목록** — `shared/str/suspicionTypes.js`(UI/UX 검토 자료 v1.3의 5분류 38항목). 코드는 `DEMO_` 접두사 그대로예요 〔확인 필요 — 준혁·채영: 룰 명세 "서식 유형 번호"로 교체〕. 추천은 표시만, 자동 체크 없음.
+
+**MSW 검증 흉내** — 본문에 "9월 3일"이 있으면 날짜 대조 불일치(`CODE_FAILED`, `llm_checks: null`), "검증불가"가 있으면 `VERIFY_UNAVAILABLE`, 그 밖은 통과.
 
 ## 5. 테스트에 있어야 하는 것
 

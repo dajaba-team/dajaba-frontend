@@ -56,7 +56,7 @@
 | 409  | `SELF_APPROVAL`                                                                         | "본인이 담당한 케이스는 승인할 수 없어요"                                                                                | 문구만                                 |
 | 409  | `NARRATIVE_UNCHANGED`                                                                   | "반려된 본문을 고친 뒤 다시 요청해 주세요" (재조회 없이 편집 유지)                                                       | 문구만                                 |
 | 409  | `DRAFT_IN_PROGRESS`                                                                     | "초안을 만드는 중이에요" — AI 장애(502)와 다른 안내. 자동 재시도 없음                                                    | 문구만                                 |
-| 409  | `DRAFT_NOT_VERIFIED`, `DRAFT_LOCKED`, `DRAFT_SUPERSEDED`, `VERIFY_IN_PROGRESS` 〔초안〕 | 코드별 안내 + 초안 재조회                                                                                                | 아직                                   |
+| 409  | `DRAFT_NOT_VERIFIED`, `DRAFT_LOCKED`, `DRAFT_SUPERSEDED`, `VERIFY_IN_PROGRESS` 〔초안〕 | 코드별 안내 + 케이스·초안 재조회, 입력 유지                                                                              | 일부 (`LOCKED`·`SUPERSEDED`)           |
 | 409  | `BATCH_RUNNING`, `BATCH_ALREADY_DONE`                                                   | 배치 화면 안내 + 상태 재조회                                                                                             | 케이스 생성 카드 확인창 안 (SCRUM-180) |
 | 409  | 그 밖                                                                                   | 일반 업무 안내 + 재조회. **`CONCURRENT_UPDATE` 충돌 화면을 띄우지 않음**                                                 | 처리                                   |
 | 502  | `AI_UNAVAILABLE`, `AI_TIMEOUT`, `AI_BAD_RESPONSE`, `LLM_*`, `MODEL_UNAVAILABLE` …       | 그 영역(요약·초안·검증)에만 실패 안내 + 수동 다시 시도. 나머지 화면은 계속 씀                                            | 문구만 (502 공통)                      |
@@ -75,7 +75,7 @@
 
 요약 갱신·초안 생성·검증은 백엔드가 AI를 부르고 기다려요. **백엔드 쪽 한도가 재시도 포함 전체 90초**예요.
 
-- 지금 `apiClient` timeout은 15초라 AI 요청엔 짧아요. AI 요청은 **전용 설정**(90초 + 여유)으로 따로 보내요 〔확인 필요: 프록시·Vercel 한도 포함 최종 값 — FE-8〕.
+- 지금 `apiClient` timeout은 15초라 AI 요청엔 짧아요. AI 요청(초안 생성)은 요청마다 `AI_REQUEST_TIMEOUT_MS`(100초)로 보내요 〔확인 필요: 프록시·Vercel 한도 포함 최종 값 — FE-8〕.
 - 요청 중엔 진행 안내 + **같은 버튼 다시 누르기 막기**. 자동 재시도·폴링 없음.
 - 화면을 떠나도 서버 작업은 계속될 수 있어요. "취소됐다"고 표시하지 않아요.
 - 응답이 없거나 timeout이면 **최신 초안·검증·상태를 먼저 조회**하고 나서 다시 할지 정해요(같은 초안이 두 번 생길 수 있음 — BE 미결 21).
@@ -121,12 +121,16 @@
 - 변경 응답(M)은 상세 전체가 아니라서 성공 뒤 상세·목록을 무효화해 다시 불러요(`useCaseCommand`). `CONCURRENT_UPDATE`·`INVALID_CASE_TRANSITION`·`NOT_ASSIGNEE`면 입력을 두고 상세만 다시 불러요.
 - 400 `details`의 필드 이름은 요청 JSON 이름(snake_case, 예: `investigator_notes`) 하나로 와요(BE SCRUM-167 #76).
 
-### 〔초안〕 STR 초안 조회 — MSW 계약 [STR API 명세 2·4번, 계약서 S2·S4·S5(11/4 채영), FE 코드 `strApi.js`·`mocks/strDrafts.js`, SCRUM-110]
+### STR — 단계별 연결 (11/10)
 
-백엔드 str API가 아직 없어 **명세 예시 JSON 그대로** MSW가 답해요. 본문 열람 제한 규칙은 `06_features/str.md` §3.
+S1(SCRUM-183, `case_version` #89)·S2(SCRUM-205 #84)·S3·S4(SCRUM-184 #91)는 BE develop에 있어요. S5·S6·A6은 아직 MSW예요. 표는 `06_features/str.md` "백엔드 연결 상태".
+
+### STR 초안 조회 [STR API 명세 2·4번, 계약서 S2·S4·S5(11/4 채영), BE SCRUM-184 #91, FE 코드 `strApi.js`·`mocks/strDrafts.js`, SCRUM-110]
+
+수정 이력(S4)은 BE develop에 있어요. MSW는 같은 모양으로 답해요. 본문 열람 제한 규칙은 `06_features/str.md` §3.
 
 | 동작           | API                                                         | 응답                                                                                                              | 프론트                |
 | -------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------- |
 | 초안 보기      | `GET /api/v1/str-drafts/{draft_no}`                         | 명세 1번 모양 또는 상태·날짜만의 제한 응답(`access: "META_ONLY"`, 본문 필드 `null`), 없으면 404 `DRAFT_NOT_FOUND` | `strApi.getDraft`     |
-| 수정 이력 목록 | `GET /api/v1/str-drafts/{draft_no}/revisions`               | `{ draft_no, items }` (본문 없음). 열람 권한 없으면 403 `FORBIDDEN`·`NOT_ASSIGNEE`                                | `strApi.getRevisions` |
-| 수정본 한 행   | `GET /api/v1/str-drafts/{draft_no}/revisions?revision_no=n` | `narrative_before`·`narrative_after`, 없는 번호 404                                                               | `strApi.getRevision`  |
+| 수정 이력 목록 | `GET /api/v1/str-drafts/{draft_no}/revisions`               | `{ draft_no, current_revision_no, items }` (본문 없음, 행마다 `ai_original`). 열람 권한 없으면 403 `NOT_ASSIGNEE` | `strApi.getRevisions` |
+| 수정본 한 행   | `GET /api/v1/str-drafts/{draft_no}/revisions?revision_no=n` | 평평한 모양 `narrative_before`·`narrative_after`(1번은 before `[]`), 없는 번호 404 `REVISION_NOT_FOUND`           | `strApi.getRevision`  |
