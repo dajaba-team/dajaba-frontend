@@ -232,7 +232,7 @@
 .summary-badge.is-stale {
 	color: var(--color-fail);
 }
-/* 케이스 상세 배치 (화면 설계 CASE-02) — 점수 카드·연결 경보, 그 아래 2단. 좁으면 한 줄로 쌓아요. */
+/* 케이스 상세 배치 (화면 설계 CASE-02) — 점수 카드·연결 경보 → 거래 근거(전체 폭) → 메모 탭·다음 작업. 좁으면 한 줄로 쌓아요. */
 .case-detail-top,
 .case-detail-grid,
 .case-detail-aside {
@@ -316,11 +316,9 @@
 .case-card .case-ai-summary {
 	margin-block: 0;
 }
-/* 2단에서는 표 칸이 좁아 글자가 쪼개지니, 줄바꿈 없이 표 영역만 가로 스크롤해요. */
 .case-card .case-table th,
 .case-card .case-table td {
 	padding: var(--space-3);
-	white-space: nowrap;
 }
 .case-tabs {
 	display: flex;
@@ -355,7 +353,9 @@
 	.case-detail-top {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
-	.case-detail-grid {
+	/* 거래 근거는 표가 가로로 잘리지 않게 한 줄 전체를 쓰고, 메모·다음 작업은 그 아래에 나란히. */
+	.case-detail-aside {
 		grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 1fr);
+		align-items: start;
 	}
 }
