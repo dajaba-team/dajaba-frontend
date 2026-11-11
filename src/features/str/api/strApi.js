@@ -35,8 +35,9 @@ const toLlmCheck = (data) => ({ check: data.check, comment: data.comment, score:
 
 /**
  * status: PASSED·CODE_FAILED·LLM_FAILED·VERIFY_UNAVAILABLE.
- * isCurrent는 서버 값을 써요 — BE S2가 "검증한 수정본 = 지금 수정본"으로 is_current를 붙여 줘요(SCRUM-205 #84).
- * 키가 없을 때만(옛 응답·검증 응답 등) 같은 기준으로 계산해요. 해시 비교는 서버가 다시 해요.
+ * isCurrent는 서버가 준 is_current를 그대로 써요. 서버가 무엇으로 판단하는지(수정본 번호·본문 해시 —
+ * BE #95 S5부터 해시)는 화면이 따라 하지 않아요. 키가 없을 때만(옛 응답·검증 응답 등) 화면에서
+ * "검증한 수정본 번호 = 지금 수정본 번호"로 대신 계산해요. 승인 요청 때 서버가 다시 검사해요.
  */
 export const toVerification = (data, currentRevisionNo = null) => ({
 	verificationId: data.verification_id ?? null,

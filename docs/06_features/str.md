@@ -23,7 +23,7 @@ BE가 한 단계씩 붙으면 프론트 코드는 그대로예요(경로·모양
 **S2 차이 (BE develop, SCRUM-205 #84 기준)** — `case_status`·`narrative[].label`·`latest_verification.is_current`는 들어왔어요. `available_actions`·`generation_id`·`generator_version`·`last_rejection`·`suspicion_*`는 아직 없고, `META_ONLY`의 `case_no`·`case_status`는 `null`이에요. 프론트는:
 
 - `available_actions` 키가 없으면 `null`로 두고, 그동안만 케이스 C2 `available_actions`(`GENERATE_DRAFT`·`CLOSE_WITH_DRAFT`)에서 STR 버튼을 옮겨 와요(`strActionsFor` — 임시 다리, S2가 주면 자동으로 안 탐).
-- `is_current`는 서버 값을 써요. 키가 없을 때만 `latest_verification.revision_no === current_revision_no`로 봐요(BE가 붙이는 기준과 같음, 최종 판단은 서버 ApprovalGate).
+- `is_current`는 서버 값을 써요. 키가 없을 때만 `latest_verification.revision_no === current_revision_no`로 대신 봐요. 서버의 판단 기준(BE #95 S5부터 본문 해시)은 따라 하지 않고, 최종 판단은 서버 ApprovalGate예요.
 - 나머지는 `null`/`[]`로 두고 지어내지 않아요.
 
 ## 1. 화면 — `/cases/:caseNo/str`
@@ -98,7 +98,7 @@ S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), 
 - 제한 응답도 `strView` 열람 기록 한 줄을 남겨요(BE `03_shared` §9).
 - 서버는 제한 응답을 **허용 필드만 골라** 만들어요. 프론트 `toDraft`도 `access`가 `"FULL"`이 아니면(없거나 모르는 값 포함) 본문 필드를 화면 모델로 옮기지 않아요.
 - 화면은 `contentVisible`로 "본문 보기"와 "상태·날짜만 보기"를 고르고, 역할로 다시 계산하지 않아요.
-- 수정 이력은 제한 응답 없이 **403 `NOT_ASSIGNEE`**(관리자·비담당 조사역 모두 — BE `ListStrRevisions`, 11/4 계약서 Q13은 관리자 `FORBIDDEN`이었음), 없는 `revision_no`는 **404 `REVISION_NOT_FOUND`**예요 [계약서 Q13, 11/4 채영].
+- 수정 이력은 제한 응답 없이 **403 `NOT_ASSIGNEE`**(관리자·비담당 조사역 모두 — BE `ListStrRevisions`), 없는 `revision_no`는 **404 `REVISION_NOT_FOUND`**예요 [계약서 Q13, 11/4 채영].
 
 ## 4. 실패 처리 [BE 03 §2, BE flows 04]
 
