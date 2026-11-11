@@ -632,6 +632,59 @@ describe("케이스 조사", () => {
 			screen.getByText("0.91 · 등급 HIGH · 범죄 확률 아님 (모델 xgb-2022.11)"),
 		).toBeInTheDocument()
 	})
+	it("왜 올라왔는지: 기여 크기 순 상위 3개를 관측값·기준값·모델 기여로 나눠 보여 준다 (SCRUM-208)", async () => {
+		renderApp(`/cases/${REVIEWING}`)
+		const panel = await screen.findByRole("region", { name: "왜 올라왔는지" })
+		const items = within(panel).getAllByRole("listitem")
+		// 목업 reasons 4개(기여 0.05·0.42·0.31·-0.18) → 절댓값 순 0.42·0.31·-0.18, 0.05는 빠짐
+		expect(items.map((item) => within(item).getByRole("code").textContent)).toEqual([
+			"account_in_counterparties_24h",
+			"amount_out_sum_24h",
+			"fan_out_degree_24h",
+		])
+		expect(within(panel).queryByText("night_tx_ratio_24h")).not.toBeInTheDocument()
+		// 기여값은 관측값 자리에 쓰지 않고 따로, 확인 못 한 값은 채우지 않음
+		expect(within(items[0]).getByText("12 count")).toBeInTheDocument()
+		expect(within(items[0]).getByText("3 (같은 계좌 직전 30일 평균)")).toBeInTheDocument()
+		expect(within(items[0]).getByText("+0.42 (SHAP · raw_margin)")).toBeInTheDocument()
+		expect(within(items[1]).getByText("152,000.5 USD")).toBeInTheDocument()
+		expect(within(items[1]).getByText("기준값 없음")).toBeInTheDocument()
+		expect(within(items[2]).getByText("확인 못 함")).toBeInTheDocument()
+		expect(within(items[2]).getByText("-0.18 (SHAP · raw_margin)")).toBeInTheDocument()
+		expect(within(panel).getAllByText("모델 기여 (거래 사실 아님)")).toHaveLength(3)
+		expect(within(panel).getByText(/STR 근거로 쓰지 않아요/)).toBeInTheDocument()
+	})
+	it.each([
+		["FAILED", [], "점수 산출에 실패해서 이유가 없어요. 위험이 낮다는 뜻이 아니에요."],
+		["PENDING", [], "점수 산출 전이라 이유가 아직 없어요."],
+		["SCORED", [], "모델이 이유를 보내지 않았어요."],
+	])(
+		"왜 올라왔는지: %s · 이유 없음은 목록 대신 안내만 보여 준다",
+		async (status, reasons, text) => {
+			server.use(
+				http.get(`*/api/v1/cases/${REVIEWING}`, () =>
+					HttpResponse.json(
+						detailJson({
+							latest_score: {
+								score_status: status,
+								score: status === "SCORED" ? 0.91 : null,
+								score_band: null,
+								failure_code: status === "FAILED" ? "AI_TIMEOUT" : null,
+								model_version: null,
+								feature_version: null,
+								data_quality_status: null,
+								reasons,
+							},
+						}),
+					),
+				),
+			)
+			renderApp(`/cases/${REVIEWING}`)
+			const panel = await screen.findByRole("region", { name: "왜 올라왔는지" })
+			expect(within(panel).getByText(text)).toBeInTheDocument()
+			expect(within(panel).queryByRole("listitem")).not.toBeInTheDocument()
+		},
+	)
 	it("점수 전·산출 실패면 점수 대신 상태를 보여 준다", async () => {
 		const latest = { score: null, model_version: null, reasons: [] }
 		server.use(
