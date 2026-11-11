@@ -11,9 +11,16 @@ export const GlobalStyle = createGlobalStyle`
   h1, h2, h3, p { overflow-wrap: anywhere; }
   button, input, select, textarea { font: inherit; }
   button, select, textarea, input:not([type="checkbox"]) { border: var(--border-width) solid var(--color-control-border); border-radius: var(--radius-control); padding: var(--space-2) var(--space-3); background: var(--color-surface); color: var(--color-text); max-width: 100%; }
-  button, select { min-height: var(--control-height); }
+  button, select, input:not([type="checkbox"]):not([type="radio"]) { min-height: var(--control-height); }
+  /* 체크박스·라디오는 글자와 세로 가운데를 맞추고 사이를 띄워요. */
+  label:has(> input[type="checkbox"]), label:has(> input[type="radio"]) { display: inline-flex; align-items: center; gap: var(--space-2); }
+  input[type="checkbox"], input[type="radio"] { margin: 0; }
+  th, td { vertical-align: middle; }
   button { cursor: pointer; }
   button:hover:enabled { background: var(--color-soft); }
+  /* 폼을 보내는 주 버튼은 강조색으로 채워요. */
+  button[type="submit"]:enabled { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-on-dark); font-weight: 600; }
+  button[type="submit"]:hover:enabled { border-color: var(--color-primary-strong); background: var(--color-primary-strong); }
   button:disabled { cursor: not-allowed; color: var(--color-muted); background: var(--color-soft); }
   textarea { display: block; width: 100%; min-height: 10rem; margin-block: var(--space-2) var(--space-4); resize: vertical; }
   input[type="checkbox"] { accent-color: var(--color-primary); }
