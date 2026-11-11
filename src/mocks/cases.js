@@ -23,6 +23,19 @@ const alertOf = (index) => ({
 	reference_ts: "2022-11-01T00:00:00",
 	transaction_count: 12 + index,
 })
+// 점수 이유 예시 (AI 점수 응답 reasons, 계약 예시 score_response.json 모양). 관측·기준·기여가 따로, 확인 못 한 값은 null.
+const reason = (name, value, unit, contribution, baseline = null) => ({
+	name,
+	observation: { value, unit, basis: null, window_start: null, window_end: null },
+	baseline: { value: baseline, definition: baseline == null ? null : "같은 계좌 직전 30일 평균" },
+	contribution: { method: "SHAP", value: contribution, scale: "raw_margin" },
+})
+const SCORE_REASONS = [
+	reason("night_tx_ratio_24h", 0.4, "ratio", 0.05),
+	reason("account_in_counterparties_24h", 12, "count", 0.42, 3),
+	reason("amount_out_sum_24h", 152000.5, "USD", 0.31),
+	reason("fan_out_degree_24h", null, "count", -0.18),
+]
 const scored = (score) => ({
 	score_status: "SCORED",
 	score,
@@ -31,7 +44,7 @@ const scored = (score) => ({
 	model_version: "xgb-2022.11",
 	feature_version: "f1",
 	data_quality_status: "OK",
-	reasons: [],
+	reasons: SCORE_REASONS,
 })
 const PENDING_SCORE = {
 	score_status: "PENDING",

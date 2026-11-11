@@ -213,3 +213,13 @@
 .summary-badge.is-stale {
 	color: var(--color-fail);
 }
+/* 점수 이유 상위 3개 (SCRUM-208) — 이유마다 관측값·기준값·모델 기여를 한 묶음으로 */
+.case-reasons {
+	display: grid;
+	gap: var(--space-3);
+	margin: 0;
+	padding: 0 var(--space-4) var(--space-4) calc(var(--space-4) + 1.25rem);
+}
+.case-reasons li > dl {
+	padding: var(--space-2) 0 0;
+}
