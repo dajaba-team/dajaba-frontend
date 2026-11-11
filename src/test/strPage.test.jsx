@@ -149,6 +149,12 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		expect(
 			within(screen.getByRole("article", { name: "일자" })).getByRole("note"),
 		).toHaveTextContent("본문 2022-09-03 / 원본 2022-09-02")
+		// 본문 속 그 값에 밑줄 + 바로 옆 "원본: …"
+		const marked = within(screen.getByRole("article", { name: "일자" })).getByLabelText(
+			"일자 검증 결과 표시",
+		)
+		expect(marked.querySelector("mark.str-mismatch")).toHaveTextContent("2022년 9월 3일")
+		expect(marked).toHaveTextContent("원본: 2022-09-02")
 		expect(screen.getByRole("button", { name: "승인 요청" })).toBeDisabled()
 
 		await replaceText(user, await sectionBox("일자"), "2022년 9월 2일 하루 동안.")

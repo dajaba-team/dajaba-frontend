@@ -278,3 +278,24 @@
 	color: var(--color-muted);
 	font-size: var(--font-small);
 }
+/* 코드 대조 불일치 — 본문 값 밑줄 + 바로 옆 "원본: …" (STR-02-S CODE_FAILED). 색만으로 구분하지 않게 물결 밑줄 + 글자. */
+.str-section-verified {
+	padding: var(--space-2);
+	border-radius: var(--radius-control);
+	background: var(--color-soft);
+}
+.str-mismatch {
+	background: transparent;
+	color: inherit;
+	text-decoration: underline wavy var(--color-fail);
+	text-decoration-thickness: 2px;
+	text-underline-offset: 3px;
+}
+.str-mismatch-source {
+	margin-inline-start: var(--space-1);
+	padding-inline: var(--space-1);
+	border-radius: var(--radius-control);
+	color: var(--color-fail);
+	font-size: var(--font-small);
+	white-space: nowrap;
+}

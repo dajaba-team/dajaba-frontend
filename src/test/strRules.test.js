@@ -6,6 +6,8 @@ import {
 	submitBlockReason,
 	textLength,
 	verificationState,
+	mismatchMarks,
+	valueCandidates,
 } from "../features/str/model/strRules"
 
 const draft = (over = {}) => ({
@@ -42,10 +44,10 @@ describe("STR 화면 규칙", () => {
 			"REGENERATE",
 			"CLOSE_WITH_DRAFT",
 		])
-		// 보완 요청 반려 — 저장해서 DRAFTED가 되기 전엔 승인 요청 없음
+		// 보완 요청 반려 — 저장해서 DRAFTED가 되기 전엔 검증·승인 요청 없음(BE #95: 검증도 DRAFTED에서만)
 		expect(
 			strActionsFor(draft(), { status: "REJECTED", availableActions: ["GENERATE_DRAFT"] }),
-		).toEqual(["REVISE", "VERIFY", "REGENERATE"])
+		).toEqual(["REVISE", "REGENERATE"])
 		// 승인 대기·비담당(케이스 동작 없음)·과거 초안·제한 응답은 아무것도 없음
 		expect(
 			strActionsFor(draft(), { status: "PENDING_APPROVAL", availableActions: [] }),
@@ -105,5 +107,32 @@ describe("STR 화면 규칙", () => {
 		).toMatch("검증 통과")
 		expect(submitBlockReason({ ...base, types: [] })).toMatch("유형")
 		expect(submitBlockReason({ ...base, level: null })).toMatch("지점 의심 정도")
+	})
+
+	it("불일치 본문 값을 본문 글자 모양으로 찾아 밑줄 범위를 준다", () => {
+		expect(valueCandidates("2022-09-03")).toEqual(
+			expect.arrayContaining(["2022년 9월 3일", "9월 3일", "2022-09-03"]),
+		)
+		expect(valueCandidates("42750.00")).toEqual(
+			expect.arrayContaining(["42,750.00", "42,750", "42750"]),
+		)
+		const text = "2022년 9월 3일 하루 동안 USD 42,750.00이 들어옴."
+		const date = { check: "DATE_MATCH", match: false, draftValue: "2022-09-03" }
+		const amount = { check: "AMOUNT_MATCH", match: false, draftValue: "42750.00" }
+		const passed = { check: "COUNT_MATCH", match: true, draftValue: "3" }
+		const marks = mismatchMarks(text, [amount, date, passed])
+		expect(marks.map((m) => text.slice(m.start, m.end))).toEqual([
+			"2022년 9월 3일",
+			"42,750.00",
+		])
+		expect(marks[0].check).toBe(date)
+	})
+
+	it("숫자 일부·못 찾은 값·빈 값엔 밑줄을 긋지 않는다", () => {
+		const three = { check: "COUNT_MATCH", match: false, draftValue: "3" }
+		expect(mismatchMarks("13건이 들어옴", [three])).toEqual([])
+		expect(mismatchMarks("3건, 13건", [three]).map((m) => m.start)).toEqual([0])
+		expect(mismatchMarks("9월 초", [{ match: false, draftValue: "2022-09-03" }])).toEqual([])
+		expect(mismatchMarks("본문", [{ match: false, draftValue: null }])).toEqual([])
 	})
 })

@@ -52,8 +52,8 @@ export function draftActions(viewer, item, draft) {
 	const base = caseActions(viewer, item)
 	const actions = []
 	if (base.includes("GENERATE_DRAFT")) {
-		actions.push("REVISE", "VERIFY")
-		if (item.status === "DRAFTED") actions.push("SUBMIT")
+		actions.push("REVISE")
+		if (item.status === "DRAFTED") actions.push("VERIFY", "SUBMIT")
 		actions.push("REGENERATE")
 	}
 	if (base.includes("CLOSE_WITH_DRAFT")) actions.push("CLOSE_WITH_DRAFT")
@@ -201,6 +201,11 @@ export function verifyDraft(viewer, item, draft) {
 	if (!isAssignee(viewer, item)) return fail(403, "NOT_ASSIGNEE", "담당자만 할 수 있습니다")
 	const error = checkActiveDraft(draft)
 	if (error) return error
+	// BE #95 VerifyStrDraft — DRAFTED에서만(보완 요청 반려 뒤엔 저장해서 DRAFTED가 된 다음).
+	if (item.status !== "DRAFTED")
+		return fail(409, "INVALID_CASE_TRANSITION", "초안 작성됨 상태에서만 검증할 수 있습니다", {
+			action: "VERIFY_DRAFT",
+		})
 	const all = draft.narrative.map((section) => section.text).join("\n")
 	const base = {
 		verification_id: `VRF-${draft.draft_no.slice(4)}-${draft.current_revision_no}-${Date.now() % 100000}`,
