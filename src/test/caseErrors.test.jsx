@@ -80,9 +80,11 @@ describe("403 — 역할 권한 없음·담당 아님", () => {
 				fail(403, "FORBIDDEN", "권한이 없습니다"),
 			),
 		)
-		renderApp(`/cases/${REVIEWING}`)
+		const user = renderApp(`/cases/${REVIEWING}`)
+		await user.click(await screen.findByRole("button", { name: "자금 흐름" }))
 		const graph = await screen.findByRole("region", { name: "자금 흐름 그래프" })
 		expect(await within(graph).findByRole("alert")).toHaveTextContent("실행 권한이 없어요.")
+		await user.click(screen.getByRole("button", { name: "근거 거래" }))
 		expect(await screen.findByRole("region", { name: "근거 거래" })).toBeInTheDocument()
 		expect(screen.getByRole("button", { name: "에스컬레이션" })).toBeEnabled()
 	})
@@ -164,6 +166,7 @@ describe("502 — AI 요약 실패는 요약 칸에만", () => {
 			),
 		)
 		const user = renderApp(`/cases/${DRAFTED}`)
+		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
 		const panel = await screen.findByRole("region", { name: "AI 조사 요약" })
 		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))
 		expect(await within(panel).findByRole("alert")).toHaveTextContent(
@@ -174,6 +177,7 @@ describe("502 — AI 요약 실패는 요약 칸에만", () => {
 		// 칸 밖에는 오류가 없고, 메모·종료는 그대로 쓸 수 있다
 		const outside = screen.getAllByRole("alert").filter((node) => !panel.contains(node))
 		expect(outside).toHaveLength(0)
+		await user.click(screen.getByRole("button", { name: "메모" }))
 		expect(screen.getByRole("button", { name: "메모 저장" })).toBeEnabled()
 		expect(screen.getByRole("button", { name: "종료" })).toBeEnabled()
 	})
@@ -184,6 +188,7 @@ describe("502 — AI 요약 실패는 요약 칸에만", () => {
 			),
 		)
 		const user = renderApp(`/cases/${DRAFTED}`)
+		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
 		const panel = await screen.findByRole("region", { name: "AI 조사 요약" })
 		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))
 		expect(await within(panel).findByRole("alert")).toHaveTextContent("AI 응답이 늦어")
