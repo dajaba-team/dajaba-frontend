@@ -344,9 +344,8 @@ export function visibleStrDraft(user, draft, item = null, actionsOf = null) {
 		latest_verification: verification
 			? {
 					...verification,
-					is_current:
-						verification.is_current ??
-						verification.revision_no === draft.current_revision_no,
+					// BE GetStrDraft처럼 늘 지금 수정본 번호로 계산해요 — 시드에 적힌 값은 저장 뒤 틀려져요.
+					is_current: verification.revision_no === draft.current_revision_no,
 				}
 			: null,
 	}

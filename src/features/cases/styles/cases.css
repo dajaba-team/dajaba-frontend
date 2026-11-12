@@ -245,6 +245,7 @@
 }
 /* 케이스 상세 배치 (화면 설계 CASE-02) — 점수 카드·연결 경보 → 거래 근거(전체 폭) → 메모 탭·다음 작업. 좁으면 한 줄로 쌓아요. */
 .case-detail-top,
+.case-detail-stack,
 .case-detail-grid,
 .case-detail-aside {
 	display: grid;
@@ -254,10 +255,11 @@
 .case-detail-top {
 	margin-block-end: var(--space-4);
 }
+.case-detail-top,
 .case-detail-grid {
 	align-items: start;
 }
-.case-detail-top > .case-panel > h2 {
+.case-detail-top .case-panel > h2 {
 	margin: var(--space-4) var(--space-4) 0;
 }
 .case-score {
@@ -369,4 +371,14 @@
 		grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 1fr);
 		align-items: start;
 	}
+}
+/* 점수 이유 상위 3개 (SCRUM-208) — 이유마다 관측값·기준값·모델 기여를 한 묶음으로 */
+.case-reasons {
+	display: grid;
+	gap: var(--space-3);
+	margin: 0;
+	padding: 0 var(--space-4) var(--space-4) calc(var(--space-4) + 1.25rem);
+}
+.case-reasons li > dl {
+	padding: var(--space-2) 0 0;
 }

@@ -6,6 +6,7 @@ import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
 import CaseActions from "../components/CaseActions"
 import CaseEvidenceCard from "../components/CaseEvidenceCard"
 import CaseNotesCard from "../components/CaseNotesCard"
+import CaseScoreReasons from "../components/CaseScoreReasons"
 import {
 	CLOSE_REASON_LABELS,
 	REJECTION_LABELS,
@@ -17,6 +18,7 @@ import {
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
 // 배치(화면 설계 CASE-02): 점수 카드 + 연결 경보 → 거래 근거(합계 + 근거·참고·자금 흐름 탭, 전체 폭 —
 // 표가 가로로 잘리지 않게) → 그 아래 메모·AI 요약·상태 이력 탭 + 다음 작업. 좁은 화면에선 한 줄로 쌓여요.
+// 점수 이유 상위 3개(SCRUM-208)는 점수 카드 바로 아래.
 
 // 맨 위 score·scoreBand는 계약서 Q2 MVP대로 latest_score와 같은 값이에요(#78 리뷰). 혹시 비면 latest_score로.
 // 모델 점수라 범죄 확률이 아니에요. 등급은 서버 값(HIGH·MEDIUM·LOW) 그대로 — 정책이 없으면 등급 없이 점수만.
@@ -99,29 +101,37 @@ export default function CaseDetailPage() {
 						</p>
 					</header>
 					<div className="case-detail-top">
-						<section className="case-panel case-summary" aria-label="케이스 정보">
-							<ScoreBlock detail={detail} />
-							<dl>
-								<dt>계좌</dt>
-								<dd>{detail.accountNo}</dd>
-								<dt>생성</dt>
-								<dd>{formatSystemTime(detail.createdAt)}</dd>
-								{detail.rejectionReasonCode && (
-									<>
-										<dt>반려</dt>
-										<dd>
-											{labelOf(REJECTION_LABELS, detail.rejectionReasonCode)}
-										</dd>
-									</>
-								)}
-								{detail.closeReason && (
-									<>
-										<dt>종료 사유</dt>
-										<dd>{labelOf(CLOSE_REASON_LABELS, detail.closeReason)}</dd>
-									</>
-								)}
-							</dl>
-						</section>
+						<div className="case-detail-stack">
+							<section className="case-panel case-summary" aria-label="케이스 정보">
+								<ScoreBlock detail={detail} />
+								<dl>
+									<dt>계좌</dt>
+									<dd>{detail.accountNo}</dd>
+									<dt>생성</dt>
+									<dd>{formatSystemTime(detail.createdAt)}</dd>
+									{detail.rejectionReasonCode && (
+										<>
+											<dt>반려</dt>
+											<dd>
+												{labelOf(
+													REJECTION_LABELS,
+													detail.rejectionReasonCode,
+												)}
+											</dd>
+										</>
+									)}
+									{detail.closeReason && (
+										<>
+											<dt>종료 사유</dt>
+											<dd>
+												{labelOf(CLOSE_REASON_LABELS, detail.closeReason)}
+											</dd>
+										</>
+									)}
+								</dl>
+							</section>
+							<CaseScoreReasons latestScore={detail.latestScore} />
+						</div>
 						<AlertPanel alert={detail.alert} />
 					</div>
 					<div className="case-detail-grid">

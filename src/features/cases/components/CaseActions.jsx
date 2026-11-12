@@ -119,6 +119,7 @@ function ActionForm({
 	command,
 	onSubmit,
 	onDone,
+	onSuccess,
 	canSubmit,
 	fieldError = false,
 	// 되돌릴 수 없는 동작(종료)은 파란 주 버튼 대신 빨간 글자·테두리로 — 습관적으로 누르지 않게(#37 리뷰).
@@ -133,7 +134,12 @@ function ActionForm({
 			onSubmit={(event) => {
 				event.preventDefault()
 				if (command.isPending || !canSubmit) return
-				command.mutate(onSubmit(), { onSuccess: onDone })
+				command.mutate(onSubmit(), {
+					onSuccess: () => {
+						onSuccess?.()
+						onDone()
+					},
+				})
 			}}
 		>
 			<h3 id={titleId}>{title}</h3>
@@ -234,7 +240,8 @@ function EscalateForm({ detail, onDone }) {
 }
 
 // name: "close"(초안 없음, A5) 또는 "closeWithDraft"(초안 있음, A6). 요청 본문은 같아요.
-function CloseForm({ detail, name, onDone }) {
+// STR 화면(초안 있는 종료)에서도 같은 폼을 써요.
+export function CloseForm({ detail, name, onDone, onClosed }) {
 	const command = useCaseCommand(detail.caseNo, name)
 	const [closeReason, setCloseReason] = useState("")
 	const [comment, setComment] = useState("")
@@ -247,6 +254,7 @@ function CloseForm({ detail, name, onDone }) {
 			canSubmit={closeReason !== "" && comment.trim() !== ""}
 			onSubmit={() => ({ version: detail.version, closeReason, comment })}
 			onDone={onDone}
+			onSuccess={onClosed}
 		>
 			<p>종료한 케이스는 다시 열 수 없어요. 종료는 범죄가 없다는 확정이 아니에요.</p>
 			{name === "closeWithDraft" && (

@@ -6,4 +6,6 @@ export const DRAFT_STATUS_LABELS = {
 	LOCKED: "승인·잠김",
 }
 
+// 검증 결과 라벨(상태·검사 이름·사유)은 verificationLabels.js 하나로 써요(SCRUM-116).
+
 export const labelOf = (table, value) => (value == null ? "-" : (table[value] ?? value))
