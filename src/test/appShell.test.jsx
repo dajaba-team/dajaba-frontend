@@ -70,14 +70,14 @@ describe("appNavigation 표", () => {
 		expect(by.approvals).toBe("APR-01")
 		expect(by.accounts).toBe("ADM-03")
 	})
-	it("지금은 조사 케이스만 ready: true, 나머지는 ready: false", () => {
-		expect(appNavigation.filter((m) => m.ready).map((m) => m.id)).toEqual(["cases"])
+	it("지금은 데이터·배치 운영·조사 케이스만 ready: true, 나머지는 ready: false", () => {
+		expect(appNavigation.filter((m) => m.ready).map((m) => m.id)).toEqual(["batches", "cases"])
 	})
 })
 
 describe("visibleMenus — ready:true만 노출", () => {
-	it("관리자 visibleMenus는 지금 [조사 케이스] 하나", () => {
-		expect(visibleMenus("ADMIN").map((m) => m.id)).toEqual(["cases"])
+	it("관리자 visibleMenus는 지금 [데이터·배치 운영, 조사 케이스]", () => {
+		expect(visibleMenus("ADMIN").map((m) => m.id)).toEqual(["batches", "cases"])
 	})
 	it("승인자 visibleMenus도 지금 [조사 케이스] 하나", () => {
 		expect(visibleMenus("APPROVER").map((m) => m.id)).toEqual(["cases"])
@@ -85,8 +85,8 @@ describe("visibleMenus — ready:true만 노출", () => {
 })
 
 describe("homePathFor — COM-01 첫 화면 규칙", () => {
-	it("지금 상태에서 세 역할 모두 /cases로 간다", () => {
-		expect(homePathFor("ADMIN")).toBe("/cases")
+	it("관리자는 /admin/batches, 조사역·승인자는 /cases로 간다", () => {
+		expect(homePathFor("ADMIN")).toBe("/admin/batches")
 		expect(homePathFor("INVESTIGATOR")).toBe("/cases")
 		expect(homePathFor("APPROVER")).toBe("/cases")
 	})
@@ -100,15 +100,13 @@ describe("homePathFor — COM-01 첫 화면 규칙", () => {
 })
 
 describe("앱 셸 — 사용자 흐름", () => {
-	it("admin 로그인 상태면 사이드바에 '조사 케이스'만 보이고 관리자 메뉴는 숨겨진다", async () => {
+	it("admin 로그인 상태면 사이드바에 '데이터·배치 운영'·'조사 케이스'만 보이고 나머지 관리자 메뉴는 숨겨진다", async () => {
 		renderApp("/cases", "admin")
 		const nav = await screen.findByRole("navigation", { name: "주요 메뉴" })
 		await waitFor(() =>
 			expect(within(nav).getByRole("link", { name: "조사 케이스" })).toBeInTheDocument(),
 		)
-		expect(
-			within(nav).queryByRole("link", { name: "데이터·배치 운영" }),
-		).not.toBeInTheDocument()
+		expect(within(nav).getByRole("link", { name: "데이터·배치 운영" })).toBeInTheDocument()
 		expect(within(nav).queryByRole("link", { name: "경보 점검" })).not.toBeInTheDocument()
 		expect(within(nav).queryByRole("link", { name: "계정 관리" })).not.toBeInTheDocument()
 		expect(within(nav).queryByRole("link", { name: "탐지 룰" })).not.toBeInTheDocument()
@@ -139,15 +137,14 @@ describe("앱 셸 — 사용자 흐름", () => {
 		await waitFor(() => expect(screen.getByText(/예시 admin/)).toBeInTheDocument())
 		const nav2 = screen.getByRole("navigation", { name: "주요 메뉴" })
 		expect(within(nav2).getByRole("link", { name: "조사 케이스" })).toBeInTheDocument()
-		// admin 전용 메뉴는 아직 ready:false라 안 보임
-		expect(
-			within(nav2).queryByRole("link", { name: "데이터·배치 운영" }),
-		).not.toBeInTheDocument()
+		expect(within(nav2).getByRole("link", { name: "데이터·배치 운영" })).toBeInTheDocument()
+		// 아직 ready:false인 관리자 메뉴는 안 보임
+		expect(within(nav2).queryByRole("link", { name: "경보 점검" })).not.toBeInTheDocument()
 	})
 
-	it("로그인 상태에서 /로 들어가면 역할별 홈(지금은 /cases)으로 간다", async () => {
+	it("로그인 상태에서 /로 들어가면 역할별 홈(관리자는 /admin/batches)으로 간다", async () => {
 		renderApp("/", "admin")
-		await screen.findByRole("heading", { name: /케이스 목록/i })
+		await screen.findByRole("heading", { name: "데이터·배치 운영" })
 	})
 
 	it("로그인 안 됐을 때 /는 develop 동작 그대로 — DEV에선 /dev/connection", async () => {

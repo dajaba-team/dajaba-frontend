@@ -17,8 +17,18 @@ import { http, HttpResponse } from "msw"
 let cases = seedCases()
 let drafts = seedStrDrafts()
 let currentUser = null
-// 배치 실행 (B4·B5) — 접수하면 RUNNING, 첫 상태 조회에서 끝나요. 같은 날짜가 성공했으면 409 BATCH_ALREADY_DONE.
+// 배치 실행 (B1·B2·B4·B5) — 적재·케이스 생성은 접수하면 RUNNING, 첫 상태 조회에서 끝나요. 룰 스캔은 바로 끝나요.
+// 같은 유형·날짜가 성공했으면 409 BATCH_ALREADY_DONE(적재는 날짜와 상관없이 한 번).
 let batchRuns = []
+const batchConflict = (code, message) =>
+	HttpResponse.json({ error: { code, message, details: {} } }, { status: 409 })
+const succeeded = (type, date) =>
+	batchRuns.some(
+		(run) =>
+			run.batch_type === type &&
+			run.status === "SUCCEEDED" &&
+			(date == null || run.batch_date === date),
+	)
 // MSW 예시 계정입니다. 실제 백엔드 비밀번호(DEV_USER_PASSWORD)와는 관계없습니다.
 export const MOCK_PASSWORD = "mock-password"
 const MOCK_USERS = Object.fromEntries(
@@ -254,6 +264,54 @@ export const handlers = [
 			pageOf(byFilters(ACCESS_LOGS, url, ["login_id", "action", "target_type"]), url),
 		)
 	}),
+	http.post(`${base}/api/v1/admin/batches/load`, () => {
+		if (!currentUser) return unauthenticated()
+		const denied = adminOnly()
+		if (denied) return denied
+		if (succeeded("LOAD_DATASET"))
+			return batchConflict("BATCH_ALREADY_DONE", "이미 적재된 데이터가 있습니다")
+		const run = {
+			batch_run_id: 100 + batchRuns.length,
+			batch_type: "LOAD_DATASET",
+			batch_date: new Date().toISOString().slice(0, 10),
+			status: "RUNNING",
+		}
+		batchRuns.push(run)
+		return HttpResponse.json(run, { status: 202 })
+	}),
+	http.post(`${base}/api/v1/admin/batches/rule-scan`, ({ request }) => {
+		if (!currentUser) return unauthenticated()
+		const denied = adminOnly()
+		if (denied) return denied
+		const date = new URL(request.url).searchParams.get("date")
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? ""))
+			return HttpResponse.json(
+				{ error: { code: "INVALID_REQUEST", message: "date 가 필요합니다", details: {} } },
+				{ status: 400 },
+			)
+		if (!succeeded("LOAD_DATASET"))
+			return batchConflict("DATASET_NOT_LOADED", "적재된 거래가 없습니다")
+		if (date < "2022-09-01" || date > "2022-09-18")
+			return batchConflict("DATE_OUT_OF_RANGE", "거래가 있는 날짜가 아닙니다")
+		if (succeeded("RULE_SCAN", date))
+			return batchConflict(
+				"BATCH_ALREADY_DONE",
+				`RULE_SCAN ${date} 는 이미 성공한 배치입니다`,
+			)
+		const run = {
+			batch_run_id: 100 + batchRuns.length,
+			batch_type: "RULE_SCAN",
+			batch_date: date,
+			status: "SUCCEEDED",
+			rows_in: 1200,
+			rows_out: 3,
+			alerts_by_rule: [{ rule_id: "R02_FAN_IN", rule_version: 1, alert_count: 3 }],
+			started_at: "2026-11-12T03:00:00Z",
+			finished_at: "2026-11-12T03:00:02Z",
+		}
+		batchRuns.push(run)
+		return HttpResponse.json(run)
+	}),
 	http.post(`${base}/api/v1/admin/batches/open-cases`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
 		if (currentUser.role !== "ADMIN")
@@ -267,7 +325,8 @@ export const handlers = [
 				{ error: { code: "INVALID_REQUEST", message: "date 가 필요합니다", details: {} } },
 				{ status: 400 },
 			)
-		if (batchRuns.some((run) => run.batch_date === date && run.status === "SUCCEEDED"))
+		// 다른 유형(룰 스캔)이 같은 날짜에 성공해도 막지 않게 유형까지 봐요(SCRUM-220)
+		if (succeeded("OPEN_CASES", date))
 			return HttpResponse.json(
 				{
 					error: {
