@@ -7,8 +7,9 @@ import { AI_REQUEST_TIMEOUT_MS, apiClient } from "../../../shared/api/apiClient"
 //   S2 GET  /str-drafts/{draft_no}             — BE develop 구현(SCRUM-205 #84). 아래 "S2 실제 응답과 다른 점" 참고
 //   S3 PUT  /str-drafts/{draft_no}/revisions   — BE develop 구현(SCRUM-184 #91)
 //   S4 GET  /str-drafts/{draft_no}/revisions   — BE develop 구현(SCRUM-184 #91). 목록·?revision_no= 한 행
-//   S5 POST /str-drafts/{draft_no}/verify      — BE 아직 없음
-//   S6 POST /str-drafts/{draft_no}/submit      — BE 아직 없음
+//   S5 POST /str-drafts/{draft_no}/verify      — BE develop 구현(SCRUM-206 #95)
+//                                                응답은 AI 원문이라 is_current 없음
+//   S6 POST /str-drafts/{draft_no}/submit      — BE develop 구현(SCRUM-185 #100)
 // 아직 없는 API는 계약서 모양 그대로 MSW(`src/mocks/handlers.js`)가 답해요. BE가 붙으면 이 파일은 그대로 써요.
 const draftPath = (draftNo) => `/api/v1/str-drafts/${encodeURIComponent(draftNo)}`
 const casePath = (caseNo) => `/api/v1/cases/${encodeURIComponent(caseNo)}`
@@ -112,18 +113,26 @@ export function toDraft(data) {
 	}
 }
 
+// ai_original: 서버가 정한 "AI 원문 행" 여부(S4). 없으면 null — revisionLabel이 번호로 대신 봐요.
 const toRevisionSummary = (data) => ({
 	revisionNo: data.revision_no,
 	changedSections: data.changed_sections ?? [],
 	editedBy: data.edited_by ?? null,
 	editedAt: data.edited_at ?? null,
+	aiOriginal: typeof data.ai_original === "boolean" ? data.ai_original : null,
 })
 
-// 저장 응답(S3, BE StrRevisionResponses.Saved): draft_no·revision_no·changed_sections·edited_by·edited_at·narrative·
-// needs_verification·version·case_version. 화면은 번호·version만 쓰고 성공 뒤 S2를 다시 읽어요. case_status는 BE가 안 줘서 null.
+// 저장 응답(S3, BE StrRevisionResponses.Saved). 화면은 성공 뒤 S2를 다시 읽지만,
+// needs_verification은 저장 안내 문구에 바로 써요(검증 대상이 바뀌었는지 서버가 판단).
+// case_status는 BE가 안 줘서 null.
 const toSaved = (data) => ({
 	draftNo: data.draft_no ?? null,
 	revisionNo: data.revision_no ?? data.current_revision_no ?? null,
+	changedSections: data.changed_sections ?? [],
+	editedBy: data.edited_by ?? null,
+	editedAt: data.edited_at ?? null,
+	needsVerification:
+		typeof data.needs_verification === "boolean" ? data.needs_verification : null,
 	version: data.version ?? null,
 	caseVersion: data.case_version ?? null,
 	caseStatus: data.case_status ?? null,
@@ -163,11 +172,17 @@ export const strApi = {
 				})
 			).data,
 		),
-	/** S4 목록 — 본문 없음. BE 응답 {draft_no, current_revision_no, items[{…, ai_original}]} 중 items만 써요. */
-	getRevisions: async (draftNo, signal) =>
-		(await apiClient.get(`${draftPath(draftNo)}/revisions`, { signal })).data.items.map(
-			toRevisionSummary,
-		),
+	/**
+	 * S4 목록 — 본문 없음. BE 응답 {draft_no, current_revision_no, items[{…, ai_original}]}.
+	 * current_revision_no로 "지금 저장본" 행을 표시해요.
+	 */
+	getRevisions: async (draftNo, signal) => {
+		const { data } = await apiClient.get(`${draftPath(draftNo)}/revisions`, { signal })
+		return {
+			currentRevisionNo: data.current_revision_no ?? null,
+			items: (data.items ?? []).map(toRevisionSummary),
+		}
+	},
 	/** S4 한 행(?revision_no=) — 평평한 모양, 전·후 본문 전체. 1번(AI 원문)은 narrative_before가 []. */
 	getRevision: async (draftNo, revisionNo, signal) => {
 		const { data } = await apiClient.get(`${draftPath(draftNo)}/revisions`, {

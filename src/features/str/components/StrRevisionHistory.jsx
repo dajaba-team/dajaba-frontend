@@ -22,15 +22,18 @@ export default function StrRevisionHistory({ draftNo, onClose }) {
 			<AsyncState query={list} />
 			{list.data && (
 				<ol className="str-history">
-					{list.data.map((item) => (
+					{list.data.items.map((item) => (
 						<li key={item.revisionNo}>
 							<button
 								type="button"
 								aria-pressed={selected === item.revisionNo}
 								onClick={() => setSelected(item.revisionNo)}
 							>
-								{revisionLabel(item.revisionNo)}
+								{revisionLabel(item.revisionNo, item.aiOriginal)}
 							</button>{" "}
+							{item.revisionNo === list.data.currentRevisionNo && (
+								<span className="str-badge">지금 저장본</span>
+							)}{" "}
 							{item.changedSections.length
 								? item.changedSections.join(", ")
 								: "변경 항목 없음"}{" "}
@@ -56,7 +59,7 @@ function RevisionDiff({ revision }) {
 	return (
 		<table
 			className="str-table"
-			aria-label={`${revisionLabel(revision.revisionNo)} 전·후 본문`}
+			aria-label={`${revisionLabel(revision.revisionNo, revision.aiOriginal)} 전·후 본문`}
 		>
 			<thead>
 				<tr>
