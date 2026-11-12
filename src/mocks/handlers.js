@@ -17,9 +17,11 @@ import { http, HttpResponse } from "msw"
 let cases = seedCases()
 let drafts = seedStrDrafts()
 let currentUser = null
-// 배치 실행 (B1·B2·B4·B5) — 적재·케이스 생성은 접수하면 RUNNING, 첫 상태 조회에서 끝나요. 룰 스캔은 바로 끝나요.
-// 같은 유형·날짜가 성공했으면 409 BATCH_ALREADY_DONE(적재는 날짜와 상관없이 한 번).
+// 배치 실행 (B1~B5) — 적재·케이스 생성은 접수하면 RUNNING, 첫 상태 조회에서 끝나요. 룰 스캔·점수는 바로 끝나요.
+// 같은 유형·날짜가 성공했으면 409 BATCH_ALREADY_DONE(적재는 날짜와 상관없이 한 번). 점수는 다시 돌릴 수 있어요(V012).
 let batchRuns = []
+// 점수(B3) 날짜별 실행 횟수 — 첫 실행은 1건 실패(다시 보낼 수 있음), 두 번째는 남은 1건 성공, 그 뒤는 대상 없음
+let scoreAttempts = {}
 const batchConflict = (code, message) =>
 	HttpResponse.json({ error: { code, message, details: {} } }, { status: 409 })
 const succeeded = (type, date) =>
@@ -81,6 +83,7 @@ export function resetCases(user = null) {
 	currentUser = user
 	accounts = seedAccounts()
 	batchRuns = []
+	scoreAttempts = {}
 }
 const draftNotFound = () =>
 	HttpResponse.json(
@@ -308,6 +311,38 @@ export const handlers = [
 			alerts_by_rule: [{ rule_id: "R02_FAN_IN", rule_version: 1, alert_count: 3 }],
 			started_at: "2026-11-12T03:00:00Z",
 			finished_at: "2026-11-12T03:00:02Z",
+		}
+		batchRuns.push(run)
+		return HttpResponse.json(run)
+	}),
+	http.post(`${base}/api/v1/admin/batches/score`, ({ request }) => {
+		if (!currentUser) return unauthenticated()
+		const denied = adminOnly()
+		if (denied) return denied
+		const date = new URL(request.url).searchParams.get("date")
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? ""))
+			return HttpResponse.json(
+				{ error: { code: "INVALID_REQUEST", message: "date 가 필요합니다", details: {} } },
+				{ status: 400 },
+			)
+		if (!succeeded("RULE_SCAN", date))
+			return batchConflict("RULE_SCAN_NOT_DONE", `${date} 룰 스캔이 아직 성공하지 않았습니다`)
+		const attempt = (scoreAttempts[date] = (scoreAttempts[date] ?? 0) + 1)
+		const [requested, scored, failed] =
+			attempt === 1 ? [3, 2, 1] : attempt === 2 ? [1, 1, 0] : [0, 0, 0]
+		const run = {
+			batch_run_id: 100 + batchRuns.length,
+			batch_type: "SCORE_REQUEST",
+			batch_date: date,
+			status: failed ? "FAILED" : "SUCCEEDED", // 다시 보낼 실패가 남으면 FAILED 여도 200
+			requested,
+			scored,
+			failed,
+			retryable: failed,
+			chunks: { total: requested ? 1 : 0, failed: 0 },
+			model_versions: requested ? ["stub-1"] : [],
+			started_at: "2026-11-12T03:00:00Z",
+			finished_at: "2026-11-12T03:00:04Z",
 		}
 		batchRuns.push(run)
 		return HttpResponse.json(run)
