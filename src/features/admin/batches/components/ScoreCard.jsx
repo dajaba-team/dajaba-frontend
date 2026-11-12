@@ -53,7 +53,9 @@ export default function ScoreCard({ date, onResult, primary = false }) {
 		onSuccess: (result) => {
 			setLast(result)
 			onResult?.({
-				status: result.failed ? "PARTIAL" : "SUCCEEDED",
+				// 하나도 성공 못 했으면 "실패", 성공이 섞였으면 "일부 실패"(화면 표시용)
+				status: !result.failed ? "SUCCEEDED" : result.scored ? "PARTIAL" : "FAILED",
+				retry: result.retryable > 0,
 				summary: result.requested
 					? `${result.batchDate} 성공 ${formatCount(result.scored)} / 실패 ${formatCount(result.failed)}`
 					: `${result.batchDate} 대상 없음`,
@@ -61,7 +63,15 @@ export default function ScoreCard({ date, onResult, primary = false }) {
 		},
 	})
 	const retry = last?.retryable > 0
-	const state = score.isPending ? "running" : last?.failed ? "partial" : last ? "done" : "idle"
+	const state = score.isPending
+		? "running"
+		: !last
+			? "idle"
+			: !last.failed
+				? "done"
+				: last.scored
+					? "partial"
+					: "failed"
 	return (
 		<BatchStep
 			id="score-step-title"

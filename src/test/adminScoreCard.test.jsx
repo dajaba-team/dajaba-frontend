@@ -122,6 +122,23 @@ describe("데이터·배치 운영 — 점수 산출 (SCRUM-221)", () => {
 		expect(
 			within(scoreCard()).getByText("묶음 2개 중 호출 실패 1개 · 모델 model-v2"),
 		).toBeInTheDocument()
+		expect(within(scoreCard()).getByText("일부 실패")).toBeInTheDocument()
+
+		// AI 가 꺼져 하나도 성공 못 하면(테스트 11-2) 배지는 "일부 실패"가 아니라 "실패", 다음 행동은 재처리
+		body = scoreResponse({
+			status: "FAILED",
+			requested: 1850,
+			failed: 1850,
+			retryable: 1850,
+			chunks: { total: 4, failed: 4 },
+		})
+		await user.click(within(scoreCard()).getByRole("button", { name: "점수 재처리" }))
+		expect(await within(scoreCard()).findByText(/0건 성공, 1,850건 실패/)).toBeInTheDocument()
+		expect(within(scoreCard()).getByText("실패")).toBeInTheDocument()
+		expect(within(scoreCard()).queryByText("일부 실패")).not.toBeInTheDocument()
+		expect(screen.getByRole("region", { name: "실행 결과" })).toHaveTextContent(
+			"점수 산출실패2022-09-02 성공 0 / 실패 1,850실패 재처리",
+		)
 	})
 
 	it("룰 스캔 전이면(409 RULE_SCAN_NOT_DONE) 카드에 알리고 날짜를 남긴다", async () => {

@@ -17,10 +17,11 @@ const STEPS = [
 ]
 // PARTIAL 은 화면 표시용(점수 일부 실패) — 서버 enum 이 아니고 서버로 보내지 않아요
 const STATUS_LABEL = { RUNNING: "실행 중", SUCCEEDED: "완료", FAILED: "실패", PARTIAL: "일부 실패" }
+// 점수는 다시 보낼 실패(retry)가 남으면 일부 실패든 전부 실패든 다음 행동이 "실패 재처리"
 const nextAction = (step, row) =>
 	row.status === "SUCCEEDED"
 		? step.next
-		: row.status === "PARTIAL"
+		: row.retry
 			? "실패 재처리"
 			: row.status === "FAILED"
 				? "원인 확인 후 다시 실행"
