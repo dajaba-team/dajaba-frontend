@@ -203,6 +203,9 @@ describe("케이스 조사", () => {
 		await user.click(await screen.findByRole("link", { name: REVIEWING }))
 		await user.click(await screen.findByRole("button", { name: "에스컬레이션" }))
 		await user.type(screen.getByLabelText("에스컬레이션 사유"), "STR 검토 필요")
+		expect(screen.getByRole("button", { name: "에스컬레이션 실행" })).not.toHaveClass(
+			"is-irreversible",
+		)
 		await user.click(screen.getByRole("button", { name: "에스컬레이션 실행" }))
 		expect(
 			await screen.findByText("에스컬레이션됨", { selector: ".case-status" }),
@@ -212,6 +215,8 @@ describe("케이스 조사", () => {
 		await user.click(screen.getByRole("button", { name: "종료" }))
 		const submit = screen.getByRole("button", { name: "종료 실행" })
 		expect(submit).toBeDisabled()
+		// 되돌릴 수 없는 종료는 파란 주 버튼이 아니라 따로 표시, 진행 동작(에스컬레이션)은 그대로 (#37 리뷰)
+		expect(submit).toHaveClass("is-irreversible")
 		await user.click(screen.getByRole("radio", { name: "오탐" }))
 		expect(submit).toBeDisabled()
 		await user.type(screen.getByLabelText("종료 설명"), "동일 법인 내부 이체")

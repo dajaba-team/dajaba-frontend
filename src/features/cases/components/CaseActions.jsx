@@ -121,6 +121,8 @@ function ActionForm({
 	onDone,
 	canSubmit,
 	fieldError = false,
+	// 되돌릴 수 없는 동작(종료)은 파란 주 버튼 대신 빨간 글자·테두리로 — 습관적으로 누르지 않게(#37 리뷰).
+	irreversible = false,
 	children,
 }) {
 	const titleId = useId()
@@ -138,7 +140,11 @@ function ActionForm({
 			{children}
 			{command.isError && !fieldError && <p role="alert">{getErrorMessage(command.error)}</p>}
 			<div className="case-action-buttons">
-				<button type="submit" disabled={command.isPending || !canSubmit}>
+				<button
+					type="submit"
+					className={irreversible ? "is-irreversible" : undefined}
+					disabled={command.isPending || !canSubmit}
+				>
 					{command.isPending ? "처리 중…" : submitLabel}
 				</button>
 				<button type="button" onClick={onDone} disabled={command.isPending}>
@@ -236,6 +242,7 @@ function CloseForm({ detail, name, onDone }) {
 		<ActionForm
 			title="케이스 종료"
 			submitLabel="종료 실행"
+			irreversible
 			command={command}
 			canSubmit={closeReason !== "" && comment.trim() !== ""}
 			onSubmit={() => ({ version: detail.version, closeReason, comment })}
