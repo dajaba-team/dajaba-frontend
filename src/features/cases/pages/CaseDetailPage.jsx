@@ -3,14 +3,9 @@ import "../styles/cases.css"
 import { useCaseDetail } from "../hooks/useCases"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
-import CaseMemoEditor from "../components/CaseMemoEditor"
-import CaseNoteHistory from "../components/CaseNoteHistory"
-import CaseAggregatesPanel from "../components/CaseAggregatesPanel"
-import CaseTransactionsPanel from "../components/CaseTransactionsPanel"
-import CaseFlowGraph from "../components/CaseFlowGraph"
-import CaseHistoryPanel from "../components/CaseHistoryPanel"
 import CaseActions from "../components/CaseActions"
-import CaseSummaryPanel from "../components/CaseSummaryPanel"
+import CaseEvidenceCard from "../components/CaseEvidenceCard"
+import CaseNotesCard from "../components/CaseNotesCard"
 import CaseScoreReasons from "../components/CaseScoreReasons"
 import {
 	CLOSE_REASON_LABELS,
@@ -21,30 +16,38 @@ import {
 } from "../labels"
 
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
-// 경보·최근 점수는 서버 alert·latest_score(SCRUM-152), AI 조사 요약은 latest_summary(SCRUM-175).
-// 합계(aggregates)·근거 거래(C3)·그래프(C5)·이력 전체(C6)는 SCRUM-179. 점수 이유 상위 3개는 SCRUM-208.
+// 배치(화면 설계 CASE-02): 점수 카드 + 연결 경보 → 거래 근거(합계 + 근거·참고·자금 흐름 탭, 전체 폭 —
+// 표가 가로로 잘리지 않게) → 그 아래 메모·AI 요약·상태 이력 탭 + 다음 작업. 좁은 화면에선 한 줄로 쌓여요.
+// 점수 이유 상위 3개(SCRUM-208)는 점수 카드 바로 아래.
 
 // 맨 위 score·scoreBand는 계약서 Q2 MVP대로 latest_score와 같은 값이에요(#78 리뷰). 혹시 비면 latest_score로.
 // 모델 점수라 범죄 확률이 아니에요. 등급은 서버 값(HIGH·MEDIUM·LOW) 그대로 — 정책이 없으면 등급 없이 점수만.
-function scoreText(detail) {
+function ScoreBlock({ detail }) {
 	const latest = detail.latestScore
 	const score = detail.score ?? latest?.score ?? null
-	if (score != null) {
-		const band = detail.scoreBand ?? latest?.scoreBand ?? null
-		const text = [score, band && `등급 ${band}`, "범죄 확률 아님"].filter(Boolean).join(" · ")
-		return latest?.modelVersion ? `${text} (모델 ${latest.modelVersion})` : text
+	const band = detail.scoreBand ?? latest?.scoreBand ?? null
+	let status = null
+	if (score == null) {
+		const label = latest ? labelOf(SCORE_STATUS_LABELS, latest.scoreStatus) : "산출 정보 없음"
+		status = latest?.failureCode ? `${label} (${latest.failureCode})` : label
 	}
-	if (!latest) return "산출 정보 없음"
-	const label = labelOf(SCORE_STATUS_LABELS, latest.scoreStatus)
-	return latest.failureCode ? `${label} (${latest.failureCode})` : label
-}
-
-// 메모를 고칠 수 있는 상태인데 버튼(UPDATE_NOTES)이 없으면 담당자가 아니라서예요 — 안내 문구만 고르고,
-// 저장 가능 여부는 서버 available_actions 그대로예요(BE CaseStatus EDITABLE + 보완 반려).
-function memoEditableStatus(detail) {
 	return (
-		["REVIEWING", "ESCALATED", "DRAFTED"].includes(detail.status) ||
-		(detail.status === "REJECTED" && detail.rejectionReasonCode === "NEED_REVISION")
+		<div className="case-score">
+			<p className="case-score-label">조사 우선순위 점수</p>
+			{score != null ? (
+				<p className="case-score-value">
+					<strong>{score}</strong>
+					{band && <span className="case-status">등급 {band}</span>}
+				</p>
+			) : (
+				<p className="case-score-status">{status}</p>
+			)}
+			{score != null && (
+				<p className="case-action-note">
+					범죄 확률 아님{latest?.modelVersion && ` · 모델 ${latest.modelVersion}`}
+				</p>
+			)}
+		</div>
 	)
 }
 
@@ -97,61 +100,55 @@ export default function CaseDetailPage() {
 							{detail.version}
 						</p>
 					</header>
-					<section className="case-panel case-summary" aria-label="케이스 정보">
-						<dl>
-							<dt>계좌</dt>
-							<dd>{detail.accountNo}</dd>
-							<dt>조사 우선순위 점수</dt>
-							<dd>{scoreText(detail)}</dd>
-							<dt>생성</dt>
-							<dd>{formatSystemTime(detail.createdAt)}</dd>
-							{detail.rejectionReasonCode && (
-								<>
-									<dt>반려</dt>
-									<dd>{labelOf(REJECTION_LABELS, detail.rejectionReasonCode)}</dd>
-								</>
+					<div className="case-detail-top">
+						<div className="case-detail-stack">
+							<section className="case-panel case-summary" aria-label="케이스 정보">
+								<ScoreBlock detail={detail} />
+								<dl>
+									<dt>계좌</dt>
+									<dd>{detail.accountNo}</dd>
+									<dt>생성</dt>
+									<dd>{formatSystemTime(detail.createdAt)}</dd>
+									{detail.rejectionReasonCode && (
+										<>
+											<dt>반려</dt>
+											<dd>
+												{labelOf(
+													REJECTION_LABELS,
+													detail.rejectionReasonCode,
+												)}
+											</dd>
+										</>
+									)}
+									{detail.closeReason && (
+										<>
+											<dt>종료 사유</dt>
+											<dd>
+												{labelOf(CLOSE_REASON_LABELS, detail.closeReason)}
+											</dd>
+										</>
+									)}
+								</dl>
+							</section>
+							<CaseScoreReasons latestScore={detail.latestScore} />
+						</div>
+						<AlertPanel alert={detail.alert} />
+					</div>
+					<div className="case-detail-grid">
+						<CaseEvidenceCard detail={detail} />
+						<div className="case-detail-aside">
+							<CaseNotesCard detail={detail} onRefresh={() => query.refetch()} />
+							<CaseActions detail={detail} />
+							{detail.currentDraftNo && (
+								<Link
+									className="case-str-link"
+									to={`/cases/${encodeURIComponent(detail.caseNo)}/str`}
+								>
+									STR 화면으로 이동 →
+								</Link>
 							)}
-							{detail.closeReason && (
-								<>
-									<dt>종료 사유</dt>
-									<dd>{labelOf(CLOSE_REASON_LABELS, detail.closeReason)}</dd>
-								</>
-							)}
-						</dl>
-					</section>
-					<CaseScoreReasons latestScore={detail.latestScore} />
-					<AlertPanel alert={detail.alert} />
-					<CaseAggregatesPanel aggregates={detail.aggregates} />
-					<CaseTransactionsPanel caseNo={detail.caseNo} />
-					<CaseFlowGraph caseNo={detail.caseNo} accountRef={detail.accountRef} />
-					<CaseActions detail={detail} />
-					<CaseSummaryPanel detail={detail} />
-					{detail.availableActions.includes("UPDATE_NOTES") ? (
-						<CaseMemoEditor
-							key={detail.caseNo}
-							detail={detail}
-							onRefresh={() => query.refetch()}
-						/>
-					) : (
-						<section>
-							<h2>조사 메모</h2>
-							<p className="preserve-lines">
-								{detail.investigatorNotes || "메모 없음"}
-							</p>
-							<p>
-								{memoEditableStatus(detail)
-									? "담당 조사역만 메모를 수정할 수 있어요."
-									: "현재 케이스는 읽기 전용입니다."}
-							</p>
-						</section>
-					)}
-					<CaseNoteHistory caseNo={detail.caseNo} />
-					<CaseHistoryPanel caseNo={detail.caseNo} recent={detail.history} />
-					{detail.currentDraftNo && (
-						<Link to={`/cases/${encodeURIComponent(detail.caseNo)}/str`}>
-							STR 화면으로 이동 →
-						</Link>
-					)}
+						</div>
+					</div>
 				</>
 			)}
 		</>

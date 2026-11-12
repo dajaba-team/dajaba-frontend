@@ -7,6 +7,7 @@ import EvidenceDialog from "./EvidenceDialog"
 import { DIRECTION_LABELS } from "../labels"
 
 // 근거 거래 표 — 계약서 C3 `GET /cases/{case_no}/transactions`. 근거(EVIDENCE)와 참고(CONTEXT)는 탭을 나눠요.
+// 탭은 부모(CaseEvidenceCard)가 들고 scope 로 내려 줘요 — 범위가 바뀌면 key 로 새로 그려 1페이지부터.
 // 참고 거래는 STR 합계·근거에 안 들어가서 행에 "참고" 표시를 붙여요. 지금 서버는 참고 거래를 빈 목록으로 줘요.
 
 // 대상 계좌 기준 칸: 근거 거래 n번째(STR III부 거래 목록 순서) · 입금/출금. 경유 거래는 대상 계좌가 끼지 않아요.
@@ -15,35 +16,16 @@ function directionText(item, n) {
 	return `III부 ${n} · ${DIRECTION_LABELS[item.direction] ?? item.direction}`
 }
 
-const SCOPES = [
-	["EVIDENCE", "근거 거래"],
-	["CONTEXT", "참고 거래"],
-]
+const SCOPE_TITLES = { EVIDENCE: "근거 거래", CONTEXT: "참고 거래" }
 
-export default function CaseTransactionsPanel({ caseNo }) {
-	const [scope, setScope] = useState("EVIDENCE")
+export default function CaseTransactionsPanel({ caseNo, scope = "EVIDENCE" }) {
 	const [page, setPage] = useState(1)
 	const [opened, setOpened] = useState(null)
 	const query = useCaseTransactions(caseNo, scope, page)
 	const data = query.data
 	return (
 		<section className="case-panel" aria-labelledby="transactions-title">
-			<h2 id="transactions-title">근거 거래</h2>
-			<div className="case-action-buttons" role="group" aria-label="거래 범위">
-				{SCOPES.map(([value, label]) => (
-					<button
-						key={value}
-						type="button"
-						aria-pressed={scope === value}
-						onClick={() => {
-							setScope(value)
-							setPage(1)
-						}}
-					>
-						{label}
-					</button>
-				))}
-			</div>
+			<h2 id="transactions-title">{SCOPE_TITLES[scope]}</h2>
 			<AsyncState query={query} />
 			{data &&
 				(data.items.length ? (

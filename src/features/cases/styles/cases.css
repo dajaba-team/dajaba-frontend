@@ -6,6 +6,10 @@
 	margin-block: 0 var(--space-2);
 }
 .case-page-heading p {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2);
 	margin: 0;
 	color: var(--color-muted);
 }
@@ -22,6 +26,22 @@
 	align-items: center;
 	gap: var(--space-3);
 	padding: var(--space-4);
+}
+.case-filter label {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+.case-filter fieldset {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2) var(--space-4);
+	min-height: var(--control-height);
+	margin: 0;
+	padding: var(--space-2) var(--space-3);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-control);
 }
 .case-panel > p,
 .case-panel > [role="alert"] {
@@ -43,8 +63,8 @@
 	border-block-end: var(--border-width) solid var(--color-border);
 }
 .case-table th {
-	background: var(--color-soft);
-	color: var(--color-muted);
+	background: var(--color-primary-soft);
+	color: var(--color-text);
 	font-size: var(--font-small);
 }
 .case-table a {
@@ -54,9 +74,10 @@
 	display: inline-flex;
 	padding: var(--space-1) var(--space-2);
 	border-radius: var(--radius-control);
-	background: var(--color-soft);
+	background: var(--color-primary-soft);
 	color: var(--color-primary);
 	font-size: var(--font-small);
+	font-weight: 600;
 }
 .case-pagination {
 	display: flex;
@@ -80,6 +101,7 @@
 .case-summary dl {
 	display: grid;
 	grid-template-columns: max-content 1fr;
+	align-items: baseline;
 	gap: var(--space-2) var(--space-4);
 	margin: 0;
 	padding: var(--space-4);
@@ -89,9 +111,6 @@
 }
 .case-summary dd {
 	margin: 0;
-}
-.case-actions {
-	margin-block: var(--space-5);
 }
 .case-action-buttons {
 	display: flex;
@@ -109,6 +128,17 @@
 	border: var(--border-width) solid var(--color-border);
 	border-radius: var(--radius-card);
 	background: var(--color-surface);
+}
+/* 되돌릴 수 없는 확정 버튼 — 전역 submit 의 파란 면을 덮어 흰 바탕 + 빨간 글자·테두리. 꺼져 있으면 기본 회색. */
+.case-action-form button.is-irreversible:enabled {
+	border-color: var(--color-fail);
+	background: var(--color-surface);
+	color: var(--color-fail);
+}
+.case-action-form button.is-irreversible:hover:enabled {
+	border-color: var(--color-fail);
+	background: var(--color-fail-soft);
+	color: var(--color-fail);
 }
 .case-action-form h3 {
 	margin: 0;
@@ -212,6 +242,135 @@
 }
 .summary-badge.is-stale {
 	color: var(--color-fail);
+}
+/* 케이스 상세 배치 (화면 설계 CASE-02) — 점수 카드·연결 경보 → 거래 근거(전체 폭) → 메모 탭·다음 작업. 좁으면 한 줄로 쌓아요. */
+.case-detail-top,
+.case-detail-stack,
+.case-detail-grid,
+.case-detail-aside {
+	display: grid;
+	gap: var(--space-4);
+	min-inline-size: 0;
+}
+.case-detail-top {
+	margin-block-end: var(--space-4);
+}
+.case-detail-top,
+.case-detail-grid {
+	align-items: start;
+}
+.case-detail-top .case-panel > h2 {
+	margin: var(--space-4) var(--space-4) 0;
+}
+.case-score {
+	padding: var(--space-4) var(--space-4) 0;
+}
+.case-score p {
+	margin: 0;
+}
+.case-score-label {
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.case-score-value {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-3);
+}
+.case-score-value strong {
+	color: var(--color-primary);
+	font-size: var(--font-title);
+	line-height: 1.3;
+}
+.case-score-status {
+	font-size: var(--font-section);
+	font-weight: 650;
+}
+.case-str-link {
+	font-weight: 650;
+}
+/* 카드 — 안쪽 여백은 카드가 갖고, 안에 들어온 패널은 테두리 없이 한 덩어리로 보여 줘요. */
+.case-card {
+	min-inline-size: 0;
+	padding: var(--space-4);
+}
+.case-card h2 {
+	margin-block: 0 var(--space-3);
+}
+.case-card-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--space-2) var(--space-4);
+}
+.case-card-head .case-action-note {
+	margin: 0;
+	font-size: var(--font-small);
+}
+.case-card .case-panel {
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	background: transparent;
+	overflow: visible;
+}
+.case-card .case-panel > p,
+.case-card .case-panel > [role="alert"],
+.case-card .case-ai-summary > h2,
+.case-card .case-ai-summary > [role="group"],
+.case-card .case-ai-summary > button {
+	margin-inline: 0;
+}
+.case-card .case-summary dl {
+	padding: 0;
+}
+.case-card .case-ai-summary {
+	margin-block: 0;
+}
+.case-card .case-table th,
+.case-card .case-table td {
+	padding: var(--space-3);
+}
+.case-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+	margin-block-end: var(--space-4);
+	padding-block-end: var(--space-3);
+	border-block-end: var(--border-width) solid var(--color-border);
+}
+.case-tabs [aria-pressed="true"] {
+	border-color: var(--color-primary);
+	background: var(--color-primary);
+	color: var(--color-on-dark);
+	font-weight: 700;
+}
+/* 탭 이름이 곧 제목이라 탭 안 첫 제목은 화면에서만 숨겨요(스크린 리더·영역 이름은 그대로). */
+.case-tab-panel > section:first-child > h2:first-child {
+	position: absolute;
+	width: 0.0625rem;
+	height: 0.0625rem;
+	padding: 0;
+	margin: -0.0625rem;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+.case-tab-panel > section + section {
+	margin-block-start: var(--space-5);
+}
+@media (min-width: 75rem) {
+	.case-detail-top {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	/* 거래 근거는 표가 가로로 잘리지 않게 한 줄 전체를 쓰고, 메모·다음 작업은 그 아래에 나란히. */
+	.case-detail-aside {
+		grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 1fr);
+		align-items: start;
+	}
 }
 /* 점수 이유 상위 3개 (SCRUM-208) — 이유마다 관측값·기준값·모델 기여를 한 묶음으로 */
 .case-reasons {

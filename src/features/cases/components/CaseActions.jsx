@@ -34,7 +34,7 @@ export default function CaseActions({ detail }) {
 		return null
 	const isAdmin = session.data?.role === "ADMIN"
 	return (
-		<section className="case-actions" aria-labelledby="case-actions-title">
+		<section className="case-panel case-card case-actions" aria-labelledby="case-actions-title">
 			<h2 id="case-actions-title">다음 작업</h2>
 			<div className="case-action-buttons">
 				{has("ASSIGN") && !isAdmin && <SelfAssign detail={detail} />}
@@ -122,6 +122,8 @@ function ActionForm({
 	onSuccess,
 	canSubmit,
 	fieldError = false,
+	// 되돌릴 수 없는 동작(종료)은 파란 주 버튼 대신 빨간 글자·테두리로 — 습관적으로 누르지 않게(#37 리뷰).
+	irreversible = false,
 	children,
 }) {
 	const titleId = useId()
@@ -144,7 +146,11 @@ function ActionForm({
 			{children}
 			{command.isError && !fieldError && <p role="alert">{getErrorMessage(command.error)}</p>}
 			<div className="case-action-buttons">
-				<button type="submit" disabled={command.isPending || !canSubmit}>
+				<button
+					type="submit"
+					className={irreversible ? "is-irreversible" : undefined}
+					disabled={command.isPending || !canSubmit}
+				>
 					{command.isPending ? "처리 중…" : submitLabel}
 				</button>
 				<button type="button" onClick={onDone} disabled={command.isPending}>
@@ -243,6 +249,7 @@ export function CloseForm({ detail, name, onDone, onClosed }) {
 		<ActionForm
 			title="케이스 종료"
 			submitLabel="종료 실행"
+			irreversible
 			command={command}
 			canSubmit={closeReason !== "" && comment.trim() !== ""}
 			onSubmit={() => ({ version: detail.version, closeReason, comment })}
