@@ -1,4 +1,4 @@
-/* 데이터·배치 운영(ADM-01, SCRUM-220) — 흐름 데모 v1.3 배치: 분석 대상 → 4단계 카드 한 줄 → 실행 결과 → 안내. */
+/* 데이터·배치 운영(ADM-01, SCRUM-220) — 흐름 데모 v1.4 배치: 분석 대상 → 4단계 카드 한 줄 → 실행 결과 → 안내. */
 .batch-target {
 	display: flex;
 	flex-wrap: wrap;
@@ -96,9 +96,13 @@
 }
 /* 다음에 할 단계 하나만 진하게 */
 .batch-run[data-primary="true"]:enabled {
-	background: var(--color-sidebar);
-	border-color: var(--color-sidebar);
+	background: var(--color-primary);
+	border-color: var(--color-primary);
 	color: var(--color-on-dark);
+}
+.batch-run[data-primary="true"]:hover:enabled {
+	background: var(--color-primary-strong);
+	border-color: var(--color-primary-strong);
 }
 .batch-step p,
 .batch-step ul {
@@ -120,7 +124,7 @@
 	margin-block: var(--space-4) 0;
 	padding: var(--space-3) var(--space-5);
 	border: var(--border-width) solid var(--color-border);
-	border-inline-start: var(--space-1) solid var(--color-sidebar);
+	border-inline-start: var(--space-1) solid var(--color-primary);
 	border-radius: var(--radius-control);
 	background: var(--color-surface);
 }

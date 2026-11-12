@@ -6,7 +6,7 @@ import LoadDatasetCard from "../components/LoadDatasetCard"
 import RuleScanCard from "../components/RuleScanCard"
 import OpenCasesCard from "../components/OpenCasesCard"
 
-// 데이터·배치 운영(ADM-01, SCRUM-220) — 흐름 데모 v1.3 배치: 분석 날짜 → 4단계 카드 한 줄 → 실행 결과 → 안내.
+// 데이터·배치 운영(ADM-01, SCRUM-220) — 흐름 데모 v1.4 배치: 분석 날짜 → 4단계 카드 한 줄 → 실행 결과 → 안내.
 // 분석 날짜는 위에서 한 번 고르고 룰 스캔(다음 PR 점수 산출)에 써요. [케이스 생성] 카드(SCRUM-180)는 아직 자기 날짜 칸.
 // 실행 결과 표는 이 화면에서 실행한 것만 보여 줘요(새로고침하면 비어요 — 서버 기록은 B5).
 // 단계 잠금은 하지 않아요 — 새로고침하면 이 화면은 앞 단계 결과를 모르니, 순서는 서버 409가 지켜요. 다음 단계 버튼만 진하게.
