@@ -10,7 +10,7 @@ export const appNavigation = [
 		screenId: "ADM-01",
 		roles: ["ADMIN"],
 		roleOrder: { ADMIN: 0 },
-		ready: false,
+		ready: true, // SCRUM-220 화면 틀 — 관리자 첫 화면(COM-01)이 /admin/batches 로 바뀌어요
 	},
 	{
 		id: "alerts",

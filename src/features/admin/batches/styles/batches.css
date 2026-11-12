@@ -1,0 +1,126 @@
+/* 데이터·배치 운영(ADM-01, SCRUM-220) — 흐름 데모 v1.3 배치: 분석 대상 → 4단계 카드 한 줄 → 실행 결과 → 안내. */
+.batch-target {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2) var(--space-3);
+	padding: var(--space-4) var(--space-5);
+	margin-block-end: var(--space-4);
+}
+.batch-target label {
+	flex-basis: 100%;
+	font-size: var(--font-small);
+	font-weight: 600;
+}
+.batch-target p {
+	margin: 0;
+	color: var(--color-muted);
+}
+/* 넓으면 4칸, 중간 2칸, 좁으면 1칸 */
+.batch-steps {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: var(--space-4);
+	margin-block-end: var(--space-4);
+}
+@media (max-width: 75rem) {
+	.batch-steps {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (max-width: 40rem) {
+	.batch-steps {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+.batch-step,
+.batch-steps > .case-panel {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--space-2);
+	padding: var(--space-4) var(--space-5);
+	background: var(--color-surface);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-card);
+	box-shadow: var(--shadow-card);
+}
+/* 케이스 생성 카드(SCRUM-180)는 자기 마크업 그대로 — 칸 안 여백만 맞춰요 */
+.batch-steps > .case-panel > p,
+.batch-steps > .case-panel > [role="alert"] {
+	margin: 0;
+}
+.batch-step h2,
+.batch-steps > .case-panel h2 {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	margin: 0;
+	font-size: var(--font-section);
+}
+.batch-step-no {
+	display: inline-grid;
+	place-items: center;
+	inline-size: 1.5rem;
+	block-size: 1.5rem;
+	border: var(--border-width) solid var(--color-control-border);
+	border-radius: 50%;
+	font-size: var(--font-small);
+	font-weight: 600;
+}
+.batch-step-scope {
+	margin: 0;
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.batch-badge {
+	padding: var(--space-1) var(--space-2);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-soft);
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.batch-badge[data-state="running"] {
+	color: var(--color-primary);
+}
+.batch-badge[data-state="done"] {
+	color: var(--color-pass);
+}
+.batch-badge[data-state="partial"],
+.batch-badge[data-state="failed"] {
+	color: var(--color-fail);
+}
+.batch-run {
+	align-self: stretch;
+}
+/* 다음에 할 단계 하나만 진하게 */
+.batch-run[data-primary="true"]:enabled {
+	background: var(--color-sidebar);
+	border-color: var(--color-sidebar);
+	color: var(--color-on-dark);
+}
+.batch-step p,
+.batch-step ul {
+	margin: 0;
+	font-size: var(--font-small);
+}
+.batch-step ul {
+	padding-inline-start: var(--space-5);
+}
+.batch-results h2 {
+	margin: var(--space-4) var(--space-5);
+	font-size: var(--font-section);
+}
+.batch-results > p {
+	text-align: center;
+	color: var(--color-muted);
+}
+.batch-callout {
+	margin-block: var(--space-4) 0;
+	padding: var(--space-3) var(--space-5);
+	border: var(--border-width) solid var(--color-border);
+	border-inline-start: var(--space-1) solid var(--color-sidebar);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+}

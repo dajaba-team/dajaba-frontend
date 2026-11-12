@@ -72,7 +72,7 @@ export default function AppRouter() {
 				<Route element={<RequireRole roles={["ADMIN"]} />}>
 					<Route path="admin/accounts" element={<AdminAccountsPage />} />
 					<Route path="admin/audit" element={<AdminAuditPage />} />
-					{/* 케이스 생성 카드(SCRUM-180). 메뉴 ready 는 화면 틀 PR(준혁)에서 켜요 */}
+					{/* 데이터·배치 운영(ADM-01) — 화면 틀 SCRUM-220, 케이스 생성 카드 SCRUM-180 */}
 					<Route path="admin/batches" element={<AdminBatchesPage />} />
 					<Route path="admin/*" element={<NotYetPage />} />
 				</Route>
