@@ -937,6 +937,21 @@ describe("예시 계정 권한과 입력 보호", () => {
 			"거래 목적 확인 필요 추가",
 		)
 	})
+	it("확인창이 열리면 계속 작성에 포커스가 가서, 바로 Enter를 눌러도 메모가 남는다", async () => {
+		const user = renderApp("/cases/CASE-2022-001004")
+		const memo = await screen.findByRole("textbox", { name: "메모 내용" })
+		await user.type(memo, " 추가")
+		await user.click(screen.getByRole("link", { name: "← 케이스 목록" }))
+		const dialog = await screen.findByRole("dialog", { name: "저장하지 않은 메모가 있습니다" })
+		expect(document.activeElement).toBe(
+			within(dialog).getByRole("button", { name: "계속 작성" }),
+		)
+		await user.keyboard("{Enter}")
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+		expect(screen.getByRole("textbox", { name: "메모 내용" })).toHaveValue(
+			"거래 목적 확인 필요 추가",
+		)
+	})
 	it("확인창에서 저장하지 않고 이동을 고르면 그 화면으로 간다", async () => {
 		const user = renderApp("/cases/CASE-2022-001004")
 		const memo = await screen.findByRole("textbox", { name: "메모 내용" })

@@ -43,6 +43,7 @@ export default function CaseMemoEditor({ detail, onRefresh }) {
 					body="지금 이동하면 쓰던 메모가 사라집니다."
 					confirmLabel="저장하지 않고 이동"
 					cancelLabel="계속 작성"
+					initialFocus="cancel"
 					onConfirm={guard.leave}
 					onCancel={guard.stay}
 				/>

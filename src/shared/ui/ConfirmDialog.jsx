@@ -2,6 +2,8 @@ import Modal from "./dashboard/Modal"
 
 // 되돌릴 수 없는 버튼(배정·종료 확인 등) 뒤에 붙이는 얇은 확인창.
 // 사유 입력이 있는 확인창(종료·반려)은 각 기능에서 Modal을 직접 써요.
+// 처음 포커스는 기본으로 [확인]이에요(Modal 규칙). 확인이 되돌릴 수 없는 손실(미저장 내용 버리기 등)이면
+// initialFocus="cancel"로 [취소]에 두어, 열자마자 Enter·Space를 눌러도 아무것도 사라지지 않게 해요.
 export default function ConfirmDialog({
 	title,
 	body,
@@ -12,6 +14,7 @@ export default function ConfirmDialog({
 	confirming = false,
 	confirmDisabled = false,
 	error = null,
+	initialFocus = "confirm",
 }) {
 	return (
 		<Modal
@@ -19,7 +22,12 @@ export default function ConfirmDialog({
 			onClose={confirming ? () => {} : onCancel}
 			footer={
 				<>
-					<button type="button" onClick={onCancel} disabled={confirming}>
+					<button
+						type="button"
+						onClick={onCancel}
+						disabled={confirming}
+						autoFocus={initialFocus === "cancel"}
+					>
 						{cancelLabel}
 					</button>
 					<button
