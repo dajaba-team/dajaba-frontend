@@ -82,6 +82,7 @@
 - 생성과 검증은 버튼이 따로예요. 생성 직후 자동 검증하지 않아요(안건 17).
 - 적재·**케이스 생성**은 `202 + batch_run_id` 비동기 → `GET /admin/batches/{batch_run_id}` 상태 조회(계약서 B4·B5, 11/4 Q8). 케이스 생성 카드(`OpenCasesCard`, SCRUM-180)는 202 뒤 바로 한 번, `RUNNING`이면 2초마다 다시 불러 끝나면 멈춰요. 자동 조회는 최대 10분(계약서 5.6) — 넘으면 멈추고 [상태 다시 확인]으로 직접 불러요. 적재 카드(`LoadDatasetCard`, SCRUM-220)도 같은 방식이고 상태 확인은 `useBatchRun` 훅이에요. 이미 적재된 DB의 409 `BATCH_ALREADY_DONE`은 실패가 아니라 "이미 적재돼 있음"으로 보여 줘요.
 - 룰 스캔(`RuleScanCard`, SCRUM-220)은 동기 200 + `alerts_by_rule`(룰별 경보 수). 9/1(111만 건)도 기다리게 이 요청만 timeout 120초. 룰 스캔·점수는 동기라 폴링을 가정하지 않아요.
+- 점수(`ScoreCard`, SCRUM-221)는 동기 200 + `requested`·`scored`·`failed`·`retryable`·`chunks{total, failed}`·`model_versions`. **`status: FAILED`여도 200**(다시 보낼 실패가 남음) — 상태가 아니라 건수로 보여 주고, 실패를 0점·저위험으로 표시하지 않아요. `retryable > 0`이면 버튼 이름이 [점수 재처리](같은 API를 다시 부르면 남은 대상만, 따로 API 없음). 묶음마다 AI 최대 90초라 이 요청만 timeout 10분.
 
 ## 5. 지금 연결된 API
 
