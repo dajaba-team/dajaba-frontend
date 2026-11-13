@@ -1,26 +1,31 @@
 import { useCallback, useId, useState } from "react"
 import "../../../cases/styles/cases.css"
 import "../styles/batches.css"
-import BatchStep from "../components/BatchStep"
 import LoadDatasetCard from "../components/LoadDatasetCard"
 import RuleScanCard from "../components/RuleScanCard"
+import ScoreCard from "../components/ScoreCard"
 import OpenCasesCard from "../components/OpenCasesCard"
 
-// 데이터·배치 운영(ADM-01, SCRUM-220) — 흐름 데모 v1.4 배치: 분석 날짜 → 4단계 카드 한 줄 → 실행 결과 → 안내.
-// 분석 날짜는 위에서 한 번 고르고 룰 스캔(다음 PR 점수 산출)에 써요. [케이스 생성] 카드(SCRUM-180)는 아직 자기 날짜 칸.
+// 데이터·배치 운영(ADM-01, SCRUM-220·221) — 흐름 데모 v1.4 배치: 분석 날짜 → 4단계 카드 한 줄 → 실행 결과 → 안내.
+// 분석 날짜는 위에서 한 번 고르고 룰 스캔·점수 산출에 써요. [케이스 생성] 카드(SCRUM-180)는 아직 자기 날짜 칸.
 // 실행 결과 표는 이 화면에서 실행한 것만 보여 줘요(새로고침하면 비어요 — 서버 기록은 B5).
 // 단계 잠금은 하지 않아요 — 새로고침하면 이 화면은 앞 단계 결과를 모르니, 순서는 서버 409가 지켜요. 다음 단계 버튼만 진하게.
 const STEPS = [
 	{ key: "load", label: "원천 적재", next: "룰 스캔" },
 	{ key: "scan", label: "룰 스캔", next: "점수 산출" },
+	{ key: "score", label: "점수 산출", next: "케이스 생성" },
 ]
-const STATUS_LABEL = { RUNNING: "실행 중", SUCCEEDED: "완료", FAILED: "실패" }
+// PARTIAL 은 화면 표시용(점수 일부 실패) — 서버 enum 이 아니고 서버로 보내지 않아요
+const STATUS_LABEL = { RUNNING: "실행 중", SUCCEEDED: "완료", FAILED: "실패", PARTIAL: "일부 실패" }
+// 점수는 다시 보낼 실패(retry)가 남으면 일부 실패든 전부 실패든 다음 행동이 "실패 재처리"
 const nextAction = (step, row) =>
 	row.status === "SUCCEEDED"
 		? step.next
-		: row.status === "FAILED"
-			? "원인 확인 후 다시 실행"
-			: "상태 확인 중"
+		: row.retry
+			? "실패 재처리"
+			: row.status === "FAILED"
+				? "원인 확인 후 다시 실행"
+				: "상태 확인 중"
 
 export default function AdminBatchesPage() {
 	const dateId = useId()
@@ -28,6 +33,7 @@ export default function AdminBatchesPage() {
 	const [results, setResults] = useState({})
 	const onLoad = useCallback((row) => setResults((prev) => ({ ...prev, load: row })), [])
 	const onScan = useCallback((row) => setResults((prev) => ({ ...prev, scan: row })), [])
+	const onScore = useCallback((row) => setResults((prev) => ({ ...prev, score: row })), [])
 	const rows = STEPS.filter((step) => results[step.key])
 	const next = STEPS.find((step) => results[step.key]?.status !== "SUCCEEDED")?.key
 	return (
@@ -52,17 +58,12 @@ export default function AdminBatchesPage() {
 			<div className="batch-steps">
 				<LoadDatasetCard onResult={onLoad} primary={next === "load"} />
 				<RuleScanCard key={date} date={date} onResult={onScan} primary={next === "scan"} />
-				<BatchStep
-					id="score-step-title"
-					no={3}
-					title="점수 산출"
-					scope="성공분 유지 · 재처리 가능한 실패만"
-				>
-					<button type="button" className="batch-run" disabled>
-						준비 중
-					</button>
-					<p>다음 작업(점수 카드)에서 연결해요.</p>
-				</BatchStep>
+				<ScoreCard
+					key={`score-${date}`}
+					date={date}
+					onResult={onScore}
+					primary={next === "score"}
+				/>
 				<OpenCasesCard />
 			</div>
 			<section className="case-panel batch-results" aria-labelledby="batch-results-title">
