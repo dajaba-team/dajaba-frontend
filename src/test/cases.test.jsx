@@ -925,6 +925,38 @@ describe("예시 계정 권한과 입력 보호", () => {
 		window.dispatchEvent(event)
 		expect(event.defaultPrevented).toBe(true)
 	})
+	it("변경한 메모가 있을 때 다른 화면 링크를 누르면 확인하고, 계속 작성을 고르면 메모가 남는다", async () => {
+		const user = renderApp("/cases/CASE-2022-001004")
+		const memo = await screen.findByRole("textbox", { name: "메모 내용" })
+		await user.type(memo, " 추가")
+		await user.click(screen.getByRole("link", { name: "← 케이스 목록" }))
+		const dialog = await screen.findByRole("dialog", { name: "저장하지 않은 메모가 있습니다" })
+		await user.click(within(dialog).getByRole("button", { name: "계속 작성" }))
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+		expect(screen.getByRole("textbox", { name: "메모 내용" })).toHaveValue(
+			"거래 목적 확인 필요 추가",
+		)
+	})
+	it("확인창에서 저장하지 않고 이동을 고르면 그 화면으로 간다", async () => {
+		const user = renderApp("/cases/CASE-2022-001004")
+		const memo = await screen.findByRole("textbox", { name: "메모 내용" })
+		await user.type(memo, " 추가")
+		await user.click(screen.getByRole("link", { name: "← 케이스 목록" }))
+		const dialog = await screen.findByRole("dialog", { name: "저장하지 않은 메모가 있습니다" })
+		await user.click(within(dialog).getByRole("button", { name: "저장하지 않고 이동" }))
+		await waitFor(() =>
+			expect(screen.queryByRole("textbox", { name: "메모 내용" })).not.toBeInTheDocument(),
+		)
+	})
+	it("메모를 고치지 않았으면 링크를 눌러도 확인 없이 이동한다", async () => {
+		const user = renderApp("/cases/CASE-2022-001004")
+		await screen.findByRole("textbox", { name: "메모 내용" })
+		await user.click(screen.getByRole("link", { name: "← 케이스 목록" }))
+		await waitFor(() =>
+			expect(screen.queryByRole("textbox", { name: "메모 내용" })).not.toBeInTheDocument(),
+		)
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+	})
 })
 describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 	it("상세에 통화별 합계, 근거 거래 표, 자금 흐름 그래프가 보인다", async () => {
