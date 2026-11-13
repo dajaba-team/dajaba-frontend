@@ -1,5 +1,6 @@
 import { canViewStrContent, seedStrDrafts, visibleStrDraft } from "./strDrafts"
 import { createDraft, draftActions, saveRevision, submitDraft, verifyDraft } from "./strCommands"
+import { approveDraft, listApprovals, rejectDraft, seedPendingApproval } from "./approvals"
 import {
 	applyCommand,
 	changeResponse,
@@ -77,9 +78,11 @@ const adminOnly = () =>
 const accountFail = (status, code, message, details = {}) =>
 	HttpResponse.json({ error: { code, message, details } }, { status })
 
-export function resetCases(user = null) {
+// pendingApproval: 케이스 1001을 승인 대기로 둔 시드(승인함 테스트 — mocks/approvals.js seedPendingApproval)
+export function resetCases(user = null, { pendingApproval = false } = {}) {
 	cases = seedCases()
 	drafts = seedStrDrafts()
+	if (pendingApproval) seedPendingApproval(cases, drafts)
 	currentUser = user
 	accounts = seedAccounts()
 	batchRuns = []
@@ -701,6 +704,23 @@ export const handlers = [
 				return reply(run(currentUser, caseOf(draft), draft, body))
 			},
 		),
+	),
+	// 승인함 P1~P3 (BE ApprovalController, SCRUM-217~219) — 경로 번호는 draft_no
+	http.get(`${base}/api/v1/approvals`, ({ request }) => {
+		if (!currentUser) return unauthenticated()
+		return reply(listApprovals(currentUser, cases, drafts, new URL(request.url)))
+	}),
+	...[
+		["approve", approveDraft],
+		["reject", rejectDraft],
+	].map(([command, run]) =>
+		http.post(`${base}/api/v1/approvals/:draftNo/${command}`, async ({ params, request }) => {
+			if (!currentUser) return unauthenticated()
+			const draft = drafts.find((item) => item.draft_no === params.draftNo)
+			if (!draft) return draftNotFound()
+			const body = await request.json().catch(() => null)
+			return reply(run(currentUser, caseOf(draft), draft, body))
+		}),
 	),
 	// 목록은 본문 없이, `?revision_no=`면 그 한 행의 전·후 본문(명세 4번).
 	http.get(`${base}/api/v1/str-drafts/:draftNo/revisions`, ({ params, request }) => {
