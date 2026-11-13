@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { useCaseCommand } from "../hooks/useCases"
 import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
+import ConfirmDialog from "../../../shared/ui/ConfirmDialog"
+import { useUnsavedLinkGuard } from "../../../shared/ui/useUnsavedLinkGuard"
 
 // 메모 저장 — 계약서 A3 `PUT /cases/{case_no}/notes { investigator_notes, version }` → 공통 변경 응답 M.
 // 성공하면 useCaseCommand가 상세를 다시 불러요. 충돌(409 CONCURRENT_UPDATE)이어도 쓰던 메모는 그대로 둬요.
@@ -31,8 +33,20 @@ export default function CaseMemoEditor({ detail, onRefresh }) {
 		window.addEventListener("beforeunload", warnBeforeLeaving)
 		return () => window.removeEventListener("beforeunload", warnBeforeLeaving)
 	}, [dirty])
+	// 앱 안 다른 화면으로 가는 링크를 누르면 이동 전에 확인해요.
+	const guard = useUnsavedLinkGuard(dirty)
 	return (
 		<section aria-labelledby="memo-title">
+			{guard.pending && (
+				<ConfirmDialog
+					title="저장하지 않은 메모가 있습니다"
+					body="지금 이동하면 쓰던 메모가 사라집니다."
+					confirmLabel="저장하지 않고 이동"
+					cancelLabel="계속 작성"
+					onConfirm={guard.leave}
+					onCancel={guard.stay}
+				/>
+			)}
 			<h2 id="memo-title">조사 메모</h2>
 			<form
 				onSubmit={(event) => {

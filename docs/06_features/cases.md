@@ -3,7 +3,7 @@
 > v0.2 · 2026-11-08 · 초안(팀 확인 중) · 정리 지윤 · 11/8 초안 있는 종료(SCRUM-112)
 
 - 프론트 폴더: `src/features/cases/` · 백엔드 짝: `cases` (BE `06_features/cases.md`, CASES 명세 v0.5 〔초안〕)
-- 지금: 목록·상세·배정·에스컬레이션·종료(초안 없음)가 실제 `/api/v1/cases`(BE `CaseController`, SCRUM-106)에 붙어 있어요(SCRUM-103). 메모(05)와 초안 있는 종료(A6)는 계약대로 만들었지만 **백엔드 API가 아직 없어** MSW만 답해요(SCRUM-112). 거래·요약은 아직.
+- 지금: 목록·상세·배정·에스컬레이션·종료(초안 없음)가 실제 `/api/v1/cases`(BE `CaseController`, SCRUM-106)에 붙어 있어요(SCRUM-103). 메모 저장·이력(SCRUM-176), AI 조사 요약(SCRUM-175), 담당자 변경(SCRUM-177), 근거 거래·자금 흐름·이력(SCRUM-179)도 실제 API예요. 초안 있는 종료(A6)만 계약대로 만들었지만 **백엔드 API가 아직 없어** MSW만 답해요(SCRUM-112 — BE는 SCRUM-186).
 
 ## 1. 화면
 
@@ -72,7 +72,7 @@ Query key 〔제안〕: `["cases", filters]`, `["case", caseNo]`, `["case", case
 - `CONCURRENT_UPDATE`면 입력 유지 → 최신 내용을 따로 불러와 나란히 비교 → 사용자가 고른 뒤 **새 버전으로 명시적 재저장**.
 - 다른 409(`INVALID_CASE_TRANSITION` 등)엔 충돌 비교 화면을 띄우지 않고 코드별 안내 + 재조회.
 - 400 `INVALID_REQUEST`의 필드 오류를 입력칸에. 메모는 최대 10,000자(BE 01 §7).
-- 미저장 메모가 있으면 새로고침·탭 닫기 때 확인(`beforeunload`). **앱 안 경로 이동 확인은 아직** 〔후속〕.
+- 미저장 메모가 있으면 새로고침·탭 닫기 때 확인(`beforeunload`), 앱 안 링크로 다른 화면에 갈 때도 확인창([계속 작성]·[저장하지 않고 이동], `shared/ui/useUnsavedLinkGuard`). **브라우저 뒤로·앞으로 가기는 아직 막지 않아요** 〔후속 — `BrowserRouter`라 `useBlocker`를 못 써요〕.
 - 저장 응답이 늦게 왔는데 그사이 계정이 바뀌었으면 캐시에 반영하지 않아요(`context.session` 비교).
 
 ## 6. 테스트에 있어야 하는 것
