@@ -3,6 +3,7 @@ import { strApi, toDraft } from "../features/str/api/strApi"
 import { resetCases } from "../mocks/handlers"
 import { AI_FACTS_EXAMPLE } from "../mocks/strDrafts"
 import { apiClient, getErrorCode } from "../shared/api/apiClient"
+import { revisionLabel } from "../shared/str/revisionLabel"
 
 const DRAFT_NO = "DRF-000123"
 const users = {
@@ -125,14 +126,41 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 
 	it("수정 이력 목록에는 본문이 없고, revision_no로 한 행의 전·후 본문을 받는다", async () => {
 		resetCases(users.inv01)
-		const items = await strApi.getRevisions(DRAFT_NO)
-		expect(items.map((item) => item.revisionNo)).toEqual([2, 1])
-		expect(JSON.stringify(items)).not.toContain(BODY_SNIPPET)
+		const list = await strApi.getRevisions(DRAFT_NO)
+		expect(list.currentRevisionNo).toBe(2)
+		expect(list.items.map((item) => [item.revisionNo, item.aiOriginal])).toEqual([
+			[2, false],
+			[1, true],
+		])
+		expect(JSON.stringify(list)).not.toContain(BODY_SNIPPET)
 		const second = await strApi.getRevision(DRAFT_NO, 2)
 		expect(second.narrativeBefore[0].text).toContain("9월 3일")
 		expect(second.narrativeAfter[0].text).toContain("9월 2일")
 		const original = await strApi.getRevision(DRAFT_NO, 1)
 		expect(original).toMatchObject({ editedBy: "SYSTEM", narrativeBefore: [] })
+	})
+
+	it("수정본 이름은 서버 ai_original을 먼저 보고, 없을 때만 1번을 AI 원문으로 본다", () => {
+		expect(revisionLabel(1)).toBe("수정본 1번 (AI 원문)")
+		expect(revisionLabel(1, false)).toBe("수정본 1번")
+		expect(revisionLabel(3, true)).toBe("수정본 3번 (AI 원문)")
+		expect(revisionLabel(null, true)).toBe("-")
+	})
+
+	it("저장 응답(S3)의 needs_verification·변경 항목을 옮긴다", async () => {
+		resetCases(users.inv01)
+		const saved = await strApi.saveRevision({
+			draftNo: "DRF-000124",
+			caseVersion: 3,
+			sections: [{ section: "PLACE", text: "고친 장소" }],
+		})
+		expect(saved).toMatchObject({
+			revisionNo: 2,
+			changedSections: ["PLACE"],
+			editedBy: "inv01",
+			needsVerification: true,
+			caseStatus: null,
+		})
 	})
 
 	it.each(["admin", "inv02"])(

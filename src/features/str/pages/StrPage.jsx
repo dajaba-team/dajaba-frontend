@@ -297,7 +297,12 @@ function StrWorkspace({ draft, detail }) {
 				</p>
 			)}
 			{save.isSuccess && !dirty && (
-				<p role="status">저장했어요. 저장본을 다시 검증해 주세요.</p>
+				<p role="status">
+					{/* needs_verification=false(검증 대상 그대로)일 때만 짧게. 없으면 다시 검증 안내 */}
+					{save.data.needsVerification === false
+						? `${revisionLabel(save.data.revisionNo)}으로 저장했어요.`
+						: `${revisionLabel(save.data.revisionNo)}으로 저장했어요. 저장본을 다시 검증해 주세요.`}
+				</p>
 			)}
 
 			{panel === "submit" && (

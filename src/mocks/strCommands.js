@@ -170,12 +170,17 @@ export function saveRevision(viewer, item, draft, body) {
 	}
 	item.version += 1
 	item.updated_at = editedAt
+	// BE StrRevisionResponses.Saved 모양(case_status는 BE가 안 줌)
 	return ok({
 		draft_no: draft.draft_no,
 		revision_no: revisionNo,
+		changed_sections: sections.map((entry) => entry.section),
+		edited_by: viewer.login_id,
+		edited_at: editedAt,
+		narrative: draft.narrative,
+		needs_verification: true,
 		version: draft.version,
 		case_version: item.version,
-		case_status: item.status,
 	})
 }
 

@@ -688,18 +688,24 @@ export const handlers = [
 		if (revisionNo == null)
 			return HttpResponse.json({
 				draft_no: draft.draft_no,
-				// 목록은 본문 없이 메타만(명세 4번).
+				current_revision_no: draft.current_revision_no,
+				// 목록은 본문 없이 메타만(명세 4번). ai_original은 BE ListStrRevisions처럼 SYSTEM 행.
 				items: draft.revisions.map((item) => ({
 					revision_no: item.revision_no,
 					changed_sections: item.changed_sections,
 					edited_by: item.edited_by,
 					edited_at: item.edited_at,
+					ai_original: item.edited_by === "SYSTEM",
 				})),
 			})
 		// 없는 revision_no는 404 REVISION_NOT_FOUND (계약서 Q13, 11/4 채영)
 		const revision = draft.revisions.find((item) => item.revision_no === Number(revisionNo))
 		return revision
-			? HttpResponse.json(revision)
+			? HttpResponse.json({
+					draft_no: draft.draft_no,
+					...revision,
+					ai_original: revision.edited_by === "SYSTEM",
+				})
 			: HttpResponse.json(
 					{
 						error: {
