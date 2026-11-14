@@ -95,7 +95,7 @@ describe("승인함 — 목록", () => {
 })
 
 describe("승인함 — 승인·반려", () => {
-	it("승인은 본점 의심 정도를 고르기 전엔 막히고, 승인하면 목록에서 빠진다", async () => {
+	it("승인은 본점 의심 정도를 고르기 전엔 막히고, 승인하면 승인 완료 화면으로 간다", async () => {
 		const user = renderApprovals()
 		await user.click(within(await pendingRow()).getByRole("button", { name: "승인" }))
 		const dialog = await screen.findByRole("dialog", { name: "STR 승인" })
@@ -103,7 +103,7 @@ describe("승인함 — 승인·반려", () => {
 		expect(confirm).toBeDisabled()
 		await user.click(within(dialog).getByRole("radio", { name: "4" }))
 		await user.click(confirm)
-		expect(await screen.findByText("승인 대기 건이 없습니다.")).toBeInTheDocument()
+		expect(await screen.findByRole("heading", { name: "승인 완료" })).toBeInTheDocument()
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
 	})
 

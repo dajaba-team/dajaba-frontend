@@ -55,6 +55,8 @@ export function getErrorMessage(error) {
 	if (code === "DRAFT_REQUEST_CLOSED")
 		return "이미 끝난 초안 요청이에요. 현재 초안을 확인해 주세요."
 	if (code === "VERIFY_IN_PROGRESS") return "검증 중이에요. 잠시 후 결과를 확인해 주세요."
+	// 확정본 PDF가 아직 없음(BE 03_shared, details.pdf_status PENDING·FAILED) — 승인 완료 화면이 상태별로 더 자세히 안내해요
+	if (code === "REPORT_PDF_NOT_READY") return "보고서 PDF가 아직 준비되지 않았어요."
 	if (code === "INVALID_SECTION_TEXT")
 		return "비어 있거나 너무 긴 항목이 있어요. 각 항목은 1~5,000자로 써 주세요."
 	if (code === "REVISION_NOT_FOUND") return "해당 수정본을 찾을 수 없어요."

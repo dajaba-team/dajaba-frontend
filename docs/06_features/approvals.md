@@ -4,6 +4,11 @@
 
 - 프론트 폴더: `src/features/approvals/` · 백엔드 짝: `str` 승인 API (BE `06_features/str.md`)
 - **실제 화면 `/approvals` — 구현됨 (SCRUM-241, 11/13).** 승인 대기 목록(P1)·승인(P2)·반려(P3)를 BE `ApprovalController`(SCRUM-217~219)에 붙였어요. 반려는 [보완 요청]/[보고 안 함] 두 버튼으로 나눴어요(SCRUM-113 내용 포함). 승인 완료 뒤 모의 제출 화면은 SCRUM-111(BE P4 SCRUM-240 뒤).
+- **승인 완료 화면 `/approvals/:draftNo` — 구현됨 (SCRUM-111, 11/14, BE P4·S7·S8·P5 전이라 MSW).** 승인하면 여기로 와요. APPROVED: 마감 배지 · "제출 전" PDF 미리보기(S7, 화면 안 iframe) · [모의 제출](P4, 확인창). REPORTED: 모의 제출 시각 · [확정본 PDF 받기](S8) · 409 `REPORT_PDF_NOT_READY`의 `details.pdf_status`가 `PENDING`이면 "만드는 중", `FAILED`면 [PDF 다시 만들기](P5).
+    - **마감 배지**(`model/deadline.js`): 승인한 한국 날짜의 다음 영업일이 1일째, **3영업일째 23:59**. 영업일은 월~금, **공휴일 미반영**을 배지에 같이 써요. 〔미결 — 서식 안건 1〕 서버가 마감을 주게 되면 그 값으로 바꿔요.
+    - 승인 시각은 케이스 상세 이력의 `APPROVE` 행, 의심 정도는 S2(`suspicion_level_branch`·`_hq`)에서 읽어요. PDF 상태를 미리 알려 주는 API는 아직 없어요.
+    - **〔확인 필요 — SCRUM-240〕 버튼은 지금 역할(APPROVER)·케이스 상태로 켜요** — 승인 뒤 동작은 서버 `available_actions`가 아직 없어서예요. 서버가 다시 검사하고, 액션 목록이 생기면 그걸로 바꿔요.
+    - 이 경로는 승인자·관리자만 열려요. 관리자는 PDF 권한이 없어(BE `04_auth_user.md` 12-1·12-1a) 상태만 봐요. 담당 조사역의 PDF는 STR 화면 몫.
 - 시연(`/demo/approvals`)은 없앨 예정이라 고치지 않아요.
 - 코드: `api/approvalsApi.js`(P1~P3) · `hooks/useApprovals.js`(목록·작업 — 성공·409 뒤 승인함·케이스·초안 재조회) · `pages/ApprovalListPage.jsx` · `components/ApprovalDialog.jsx`(승인·반려 확인창). MSW는 `src/mocks/approvals.js` — 테스트는 `resetCases(user, { pendingApproval: true })`로 케이스 1001을 승인 대기로 둬요(기본 시드 4건은 그대로).
 
@@ -34,17 +39,20 @@
 
 ## 3. API
 
-| #    | API                                                                        | 비고                                       |
-| ---- | -------------------------------------------------------------------------- | ------------------------------------------ |
-| 16   | `GET /approvals`                                                           | GET은 ADMIN·APPROVER (10/29 메서드별 권한) |
-| 7    | `POST /approvals/{draft_no}/approve` `{case_version, suspicion_level_hq}`  | APPROVER, 담당 본인 제외                   |
-| 8    | `POST /approvals/{draft_no}/reject` `{case_version, reason_code, comment}` | APPROVER                                   |
-| 12-2 | `POST /approvals/{draft_no}/report`                                        | 모의 제출 〔초안〕                         |
+| #    | API                                                                        | 비고                                               |
+| ---- | -------------------------------------------------------------------------- | -------------------------------------------------- |
+| 16   | `GET /approvals`                                                           | GET은 ADMIN·APPROVER (10/29 메서드별 권한)         |
+| 7    | `POST /approvals/{draft_no}/approve` `{case_version, suspicion_level_hq}`  | APPROVER, 담당 본인 제외                           |
+| 8    | `POST /approvals/{draft_no}/reject` `{case_version, reason_code, comment}` | APPROVER                                           |
+| 12-2 | `POST /approvals/{draft_no}/report` `{case_version}`                       | 모의 제출 — BE 아직 없음(SCRUM-240), MSW           |
+| S7   | `GET /str-drafts/{draft_no}/report/preview.pdf`                            | 제출 전 미리보기(APPROVED) — MSW                   |
+| S8   | `GET /str-drafts/{draft_no}/report.pdf`                                    | 확정본(REPORTED), 409 `REPORT_PDF_NOT_READY` — MSW |
+| P5   | `POST /approvals/{draft_no}/report/pdf` → 202 `{pdf_status}`               | PDF `FAILED`일 때만 — MSW                          |
 
 경로 번호는 초안 번호로 정해졌고(BE 미결 1, 10/30), 이름은 **`{draft_no}`**(`DRF-` + 6자리)예요(계약서 2.2, 11/4 채영). 예전 프론트 문서·CASES 명세의 `{case_no}` 안은 쓰지 않아요.
 
 ## 4. 테스트에 있어야 하는 것
 
-`src/test/approvals.test.jsx`(SCRUM-241) — 승인자 목록·버튼, 관리자 목록만, 예전 담당 안내, 의심 정도 없이 승인 막힘, 반려 사유 공백 막힘, 409 `CONCURRENT_UPDATE` 안내 + 입력 유지 + 재조회, 409 `SELF_APPROVAL` 문구. 아래 "승인 뒤 잠금 표시"는 STR 화면 몫(SCRUM-224).
+`src/test/approvalDone.test.jsx`·`deadline.test.js`(SCRUM-111) — 승인 뒤 이동·마감 배지·미리보기·모의 제출·확정본·PDF 실패·만드는 중·409·관리자·승인 전 초안. `src/test/approvals.test.jsx`(SCRUM-241) — 승인자 목록·버튼, 관리자 목록만, 예전 담당 안내, 의심 정도 없이 승인 막힘, 반려 사유 공백 막힘, 409 `CONCURRENT_UPDATE` 안내 + 입력 유지 + 재조회, 409 `SELF_APPROVAL` 문구. 아래 "승인 뒤 잠금 표시"는 STR 화면 몫(SCRUM-224).
 
 자기 승인 버튼 숨김 + 직접 호출 409 `SELF_APPROVAL`, 반려 코드·사유 없으면 막힘, 승인 뒤 잠금 표시, ADMIN은 목록만, 승인 사이 다른 사람이 먼저 처리했을 때 409 안내 + 재조회.
