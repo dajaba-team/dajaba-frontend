@@ -25,3 +25,47 @@
 .approval-levels .approval-muted {
 	flex-basis: 100%;
 }
+
+/* 승인 완료 화면 (SCRUM-111) — case-panel 은 안쪽 여백이 없어서 여기서 줘요 */
+.approval-done {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	padding: var(--space-4);
+}
+
+.approval-done > p {
+	margin: 0;
+}
+
+.approval-summary {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+	gap: var(--space-3);
+	margin: 0;
+}
+
+.approval-summary dt {
+	color: var(--color-muted);
+	font-size: 0.875em;
+}
+
+.approval-summary dd {
+	margin: 0;
+}
+
+.approval-badge {
+	align-self: flex-start;
+	margin: 0;
+	padding: var(--space-1) var(--space-3);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-card);
+	font-weight: 600;
+}
+
+.approval-preview {
+	width: 100%;
+	min-height: 32rem;
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-card);
+}

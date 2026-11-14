@@ -9,6 +9,7 @@ import AdminAccountsPage from "../features/admin/users/pages/AdminAccountsPage"
 import AdminAuditPage from "../features/audit/pages/AdminAuditPage"
 import AdminBatchesPage from "../features/admin/batches/pages/AdminBatchesPage"
 import ApprovalListPage from "../features/approvals/pages/ApprovalListPage"
+import ApprovalDonePage from "../features/approvals/pages/ApprovalDonePage"
 import { useSession } from "../features/auth/hooks/useSession"
 import { homePathFor } from "./navigation/appNavigation"
 
@@ -78,8 +79,9 @@ export default function AppRouter() {
 					<Route path="admin/*" element={<NotYetPage />} />
 				</Route>
 				<Route element={<RequireRole roles={["APPROVER", "ADMIN"]} />}>
-					{/* 승인함(APR-01) — 목록·승인·반려 SCRUM-241. 모의 제출 화면은 SCRUM-111 */}
+					{/* 승인함(APR-01) — 목록·승인·반려 SCRUM-241. 승인 완료·모의 제출 화면 SCRUM-111 */}
 					<Route path="approvals" element={<ApprovalListPage />} />
+					<Route path="approvals/:draftNo" element={<ApprovalDonePage />} />
 					<Route path="approvals/*" element={<NotYetPage />} />
 				</Route>
 				<Route

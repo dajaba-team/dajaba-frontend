@@ -1,9 +1,29 @@
 import { apiClient } from "../../../shared/api/apiClient"
 
 // 승인함 API — 계약서 P1~P3, BE ApprovalController(SCRUM-217 목록·218 승인·219 반려, develop 구현).
-// 경로 번호는 초안 번호 `draft_no`(`DRF-` + 6자리, 계약서 2.2). 모의 제출(P4)은 BE 아직 없음(SCRUM-240) — SCRUM-111 에서.
+// 경로 번호는 초안 번호 `draft_no`(`DRF-` + 6자리, 계약서 2.2).
+// 모의 제출(P4)·PDF(S7 미리보기·S8 확정본·P5 다시 만들기)는 BE 아직 없음(SCRUM-240) — BE str.md 10~13번 모양대로 부르고,
+// 지금은 MSW(`src/mocks/approvals.js`)가 답해요. BE가 붙으면 이 파일은 그대로 써요(SCRUM-111).
 // 서버는 snake_case, 화면은 camelCase — 변환은 여기서 한 번만 해요.
 const approvalPath = (draftNo) => `/api/v1/approvals/${encodeURIComponent(draftNo)}`
+const draftPath = (draftNo) => `/api/v1/str-drafts/${encodeURIComponent(draftNo)}`
+
+// PDF는 blob으로 받아서 오류 본문도 blob이에요 — error.code 로 분기할 수 있게 JSON으로 되돌려요(01_code_rules §5).
+async function getPdf(url, signal) {
+	try {
+		return (await apiClient.get(url, { responseType: "blob", signal })).data
+	} catch (error) {
+		const body = error.response?.data
+		if (body && typeof body.text === "function") {
+			try {
+				error.response.data = JSON.parse(await body.text())
+			} catch {
+				// JSON이 아니면 그대로 둬요 — 상태별 기본 문구가 나가요
+			}
+		}
+		throw error
+	}
+}
 
 const toUser = (data) => (data ? { loginId: data.login_id, displayName: data.display_name } : null)
 
@@ -81,4 +101,19 @@ export const approvalsApi = {
 				})
 			).data,
 		),
+	/** P4 모의 제출 — APPROVED → REPORTED. 실제 기관 전송은 없어요. 승인자만. */
+	report: async ({ draftNo, caseVersion }) =>
+		toChange(
+			(await apiClient.post(`${approvalPath(draftNo)}/report`, { case_version: caseVersion }))
+				.data,
+		),
+	/** S7 제출 전 미리보기 — 서버가 "제출 전" 워터마크를 찍은 PDF(저장 안 함). APPROVED 일 때. */
+	previewPdf: ({ draftNo }, signal) => getPdf(`${draftPath(draftNo)}/report/preview.pdf`, signal),
+	/** S8 확정본 — REPORTED 일 때. 아직이면 409 REPORT_PDF_NOT_READY(details.pdf_status PENDING·FAILED). */
+	reportPdf: ({ draftNo }, signal) => getPdf(`${draftPath(draftNo)}/report.pdf`, signal),
+	/** P5 PDF 다시 만들기 — PDF FAILED 일 때만, 202 {pdf_status}. */
+	regeneratePdf: async ({ draftNo }) => {
+		const { data } = await apiClient.post(`${approvalPath(draftNo)}/report/pdf`, {})
+		return { pdfStatus: data.pdf_status }
+	},
 }
