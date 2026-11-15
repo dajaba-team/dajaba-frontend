@@ -327,6 +327,33 @@ describe("STR 초안 생성 (S1)", () => {
 		expect(within(panel).getByRole("button", { name: "저장본 검증" })).toBeEnabled()
 	})
 
+	it("[다시 생성]은 확인창에서 지금 초안이 대체된다고 알리고, 확정하면 새 초안을 열되 검증은 하지 않는다 (SCRUM-118)", async () => {
+		const user = renderStr("CASE-2022-001001")
+		expect(
+			await screen.findByText(/DRF-000124 · 초안 ACTIVE · 케이스 DRAFTED/),
+		).toBeInTheDocument()
+
+		// 취소하면 아무것도 바뀌지 않아요
+		await user.click(screen.getByRole("button", { name: "다시 생성" }))
+		let form = await screen.findByRole("form", { name: "STR 초안 다시 생성" })
+		expect(within(form).getByText(/지금 초안\(DRF-000124\)은 대체돼요/)).toBeInTheDocument()
+		expect(within(form).getByText(/생성과 검증은 따로예요/)).toBeInTheDocument()
+		await user.click(within(form).getByRole("button", { name: "취소" }))
+		expect(screen.queryByRole("form", { name: "STR 초안 다시 생성" })).not.toBeInTheDocument()
+		expect(screen.getByText(/DRF-000124 · 초안 ACTIVE · 케이스 DRAFTED/)).toBeInTheDocument()
+
+		// 확정하면 새 초안으로 바뀌고, 새 초안은 검증 기록이 없어요(자동 검증 없음 — 안건 17)
+		await user.click(screen.getByRole("button", { name: "다시 생성" }))
+		form = await screen.findByRole("form", { name: "STR 초안 다시 생성" })
+		await user.click(within(form).getByRole("button", { name: "다시 생성" }))
+		expect(
+			await screen.findByText(/DRF-000125 · 초안 ACTIVE · 케이스 DRAFTED/),
+		).toBeInTheDocument()
+		const panel = await verifyPanel()
+		expect(within(panel).getByText("아직 검증하지 않았어요.")).toBeInTheDocument()
+		expect(within(panel).getByRole("button", { name: "저장본 검증" })).toBeEnabled()
+	})
+
 	it("만드는 중(409 DRAFT_IN_PROGRESS)은 장애가 아니라 진행 중으로 안내한다", async () => {
 		await escalated()
 		server.use(
