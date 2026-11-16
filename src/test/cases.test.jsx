@@ -984,6 +984,17 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 			within(agg).getByText(/경유 거래와 내 계좌끼리 옮긴 돈은 합계에서/),
 		).toBeInTheDocument()
 
+		// 처음 열려 있는 탭은 자금 흐름 그래프
+		expect(screen.getByRole("button", { name: "자금 흐름" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		)
+		const graph = await screen.findByRole("img", { name: /거래 4건/ })
+		expect(within(graph).getAllByTestId("graph-edge")).toHaveLength(4)
+		expect(within(graph).getByText("011_****1021 (대상)")).toBeInTheDocument()
+		expect(screen.getByText("유입 2건")).toBeInTheDocument()
+
+		await user.click(screen.getByRole("button", { name: "근거 거래" }))
 		const table = await screen.findByRole("region", { name: "근거 거래" })
 		const rows = await within(table).findAllByRole("row")
 		expect(rows).toHaveLength(5) // 머리 + 4건
@@ -991,14 +1002,19 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		expect(within(rows[1]).getByText("2022-10-31 09:00:00")).toBeInTheDocument()
 		expect(within(rows[3]).getByText("III부 3 · 출금")).toBeInTheDocument()
 		expect(within(rows[4]).getByText("대상 계좌 미참여")).toBeInTheDocument()
-
-		await user.click(await screen.findByRole("button", { name: "자금 흐름" }))
+	})
+	it("그래프에서 거래 선을 누르면 그 거래 내용이 아래에 고정된다", async () => {
+		const user = renderApp(`/cases/${REVIEWING}`)
 		const graph = await screen.findByRole("img", { name: /거래 4건/ })
-		expect(within(graph).getAllByTestId("graph-edge")).toHaveLength(4)
-		expect(within(graph).getByText("011_****1021 (대상)")).toBeInTheDocument()
+		expect(screen.getByText(/누르면 고정돼요/)).toBeInTheDocument()
+		await user.click(within(graph).getAllByTestId("graph-edge")[0])
+		await user.unhover(graph)
+		expect(screen.getByText(/거래 4721/)).toBeInTheDocument()
+		expect(screen.queryByText(/누르면 고정돼요/)).not.toBeInTheDocument()
 	})
 	it("[거래 원본]은 C4 원본을 창으로 보여 주고, 404면 그 창에만 안내", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
+		await user.click(await screen.findByRole("button", { name: "근거 거래" }))
 		const table = await screen.findByRole("region", { name: "근거 거래" })
 		await user.click((await within(table).findAllByRole("button", { name: "거래 원본" }))[0])
 		const dialog = await screen.findByRole("dialog", { name: "거래 원본 · 4721" })
@@ -1078,8 +1094,9 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 				),
 			),
 		)
-		renderApp(`/cases/${REVIEWING}`)
+		const user = renderApp(`/cases/${REVIEWING}`)
 		expect(await screen.findByText(/전체 300건 중 200건만 그렸어요/)).toBeInTheDocument()
+		await user.click(screen.getByRole("button", { name: "근거 거래" }))
 		const table = screen.getByRole("region", { name: "근거 거래" })
 		expect(await within(table).findByRole("alert")).toHaveTextContent(
 			"데이터를 불러오지 못했습니다.",
