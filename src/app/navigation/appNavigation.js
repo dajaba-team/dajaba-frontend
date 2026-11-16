@@ -37,7 +37,7 @@ export const appNavigation = [
 		screenId: "APR-01",
 		roles: ["APPROVER", "ADMIN"],
 		roleOrder: { APPROVER: 0, ADMIN: 3 },
-		ready: false,
+		ready: true, // SCRUM-241 — 승인 대기 목록·승인·반려(BE SCRUM-217~219). 승인자 첫 화면(COM-01)이 /approvals 로 바뀌어요
 	},
 	{
 		id: "rules",
