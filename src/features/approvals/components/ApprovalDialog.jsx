@@ -19,13 +19,22 @@ const REJECT_TEXT = {
  * 승인은 본점 의심 정도 1~5(기본값 없음), 반려는 사유 1~2,000자가 필수 — 화면에서 먼저 막고 서버 400도 같은 자리에 보여요.
  * 실패해도 입력은 지우지 않아요(01_code_rules §1). 그사이 다른 사람이 처리했으면 목록을 다시 불러요(useApprovalCommand).
  * 승인에 성공하면 승인 완료 화면(`/approvals/:draftNo`, SCRUM-111)으로 가요 — 모의 제출이 이어지는 일이라서.
+ * item 은 페이지가 최신 목록에서 찾아 줘요 — 409 뒤 같은 입력으로 다시 누르면 새 case_version 으로 보내요.
+ * 다시 불러온 목록에 그 건이 없으면 페이지가 확인창을 닫고 onGone 으로 "이미 처리된 건" 안내를 띄워요.
  */
-export default function ApprovalDialog({ item, mode, onClose }) {
+export default function ApprovalDialog({ item, mode, onClose, onGone }) {
 	const levelName = useId()
 	const commentId = useId()
 	const approving = mode === "APPROVE"
 	const navigate = useNavigate()
-	const command = useApprovalCommand(item, approving ? "approve" : "reject")
+	const command = useApprovalCommand(item, approving ? "approve" : "reject", {
+		// 승인에 성공하면 승인 완료 화면으로 — 재조회 뒤라 새 상태로 열려요.
+		onDone: () => {
+			onClose()
+			if (approving) navigate(`/approvals/${encodeURIComponent(item.draftNo)}`)
+		},
+		onGone,
+	})
 	const [level, setLevel] = useState(null)
 	const [comment, setComment] = useState("")
 	const ready = approving ? level != null : comment.trim().length > 0
@@ -34,12 +43,7 @@ export default function ApprovalDialog({ item, mode, onClose }) {
 		const input = approving
 			? { suspicionLevelHq: level }
 			: { reasonCode: mode, comment: comment.trim() }
-		command.mutate(input, {
-			onSuccess: () => {
-				onClose()
-				if (approving) navigate(`/approvals/${encodeURIComponent(item.draftNo)}`)
-			},
-		})
+		command.mutate(input)
 	}
 	const title = approving ? "STR 승인" : `반려 — ${REJECTION_LABELS[mode]}`
 	return (

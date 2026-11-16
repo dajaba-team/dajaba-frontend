@@ -36,6 +36,25 @@ const pendingRow = async () => {
 const conflict = (code) =>
 	HttpResponse.json({ error: { code, message: code, details: {} } }, { status: 409 })
 
+// 목록 응답을 직접 만들 때 — rows 의 각 칸이 기본 줄(DRF-000124, 승인자 버튼 있음)을 덮어써요.
+const pendingList = (rows) => ({
+	items: rows.map((row) => ({
+		draft_no: "DRF-000124",
+		case_no: "CASE-2022-001001",
+		assignee: { login_id: "inv01", display_name: "예시 inv01" },
+		submitted_at: "2026-11-12T01:00:00Z",
+		verification: null,
+		last_rejection: null,
+		case_version: 4,
+		was_assignee: false,
+		available_actions: ["APPROVE", "REJECT"],
+		...row,
+	})),
+	page: 0,
+	size: 20,
+	total: rows.length,
+})
+
 describe("승인함 — 목록", () => {
 	it("승인자는 승인 대기 초안과 검증·담당·초안 보기 링크, [승인]·[보완 요청]·[보고 안 함]을 본다", async () => {
 		renderApprovals()
@@ -141,6 +160,69 @@ describe("승인함 — 승인·반려", () => {
 		).toBeInTheDocument()
 		expect(box).toHaveValue("거래 목적 보완 필요")
 		await waitFor(() => expect(listCalls).toBeGreaterThan(before))
+	})
+
+	it("409 뒤 목록을 다시 불러오면 같은 입력으로 다시 눌러 새 case_version 으로 성공한다", async () => {
+		// 다른 사람이 그사이 케이스를 바꾼 상황 — 처음 받은 목록은 옛 version(4), 서버는 7
+		const state = { listCalls: 0, done: false, sent: [] }
+		server.use(
+			http.get("*/api/v1/approvals", () => {
+				state.listCalls += 1
+				return HttpResponse.json(
+					pendingList(state.done ? [] : [{ case_version: state.listCalls > 1 ? 7 : 4 }]),
+				)
+			}),
+			http.post("*/api/v1/approvals/:draftNo/approve", async ({ request }) => {
+				const body = await request.json()
+				state.sent.push(body.case_version)
+				if (body.case_version !== 7) return conflict("CONCURRENT_UPDATE")
+				state.done = true
+				return HttpResponse.json({
+					case_no: "CASE-2022-001001",
+					status: "APPROVED",
+					current_draft_no: "DRF-000124",
+					version: 8,
+				})
+			}),
+		)
+		const user = renderApprovals()
+		await user.click(within(await pendingRow()).getByRole("button", { name: "승인" }))
+		const dialog = await screen.findByRole("dialog", { name: "STR 승인" })
+		await user.click(within(dialog).getByRole("radio", { name: "4" }))
+		await user.click(within(dialog).getByRole("button", { name: "승인" }))
+		expect(
+			await within(dialog).findByText(/다른 사용자가 먼저 변경했습니다/),
+		).toBeInTheDocument()
+		await waitFor(() => expect(state.listCalls).toBeGreaterThan(1))
+		// 확인창은 열린 채, 고른 값도 그대로 — 다시 누르면 새 version 으로 보내요
+		expect(within(dialog).getByRole("radio", { name: "4" })).toBeChecked()
+		await user.click(within(dialog).getByRole("button", { name: "승인" }))
+		// 승인에 성공하면 승인 완료 화면으로 가요(SCRUM-111)
+		expect(await screen.findByRole("heading", { name: "승인 완료" })).toBeInTheDocument()
+		expect(state.sent).toEqual([4, 7])
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+		expect(screen.queryByText(/이미 처리된 건이에요/)).not.toBeInTheDocument()
+	})
+
+	it("409 뒤 다시 불러온 목록에 그 건이 없으면 확인창을 닫고 이미 처리됐다고 알린다", async () => {
+		let listCalls = 0
+		server.use(
+			http.get("*/api/v1/approvals", () => {
+				listCalls += 1
+				return HttpResponse.json(pendingList(listCalls > 1 ? [] : [{}]))
+			}),
+			http.post("*/api/v1/approvals/:draftNo/approve", () =>
+				conflict("INVALID_CASE_TRANSITION"),
+			),
+		)
+		const user = renderApprovals()
+		await user.click(within(await pendingRow()).getByRole("button", { name: "승인" }))
+		const dialog = await screen.findByRole("dialog", { name: "STR 승인" })
+		await user.click(within(dialog).getByRole("radio", { name: "2" }))
+		await user.click(within(dialog).getByRole("button", { name: "승인" }))
+		expect(await screen.findByText(/이미 처리된 건이에요/)).toBeInTheDocument()
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+		expect(screen.getByText("승인 대기 건이 없습니다.")).toBeInTheDocument()
 	})
 
 	it("자기 승인으로 막히면(409 SELF_APPROVAL) 그 문구를 보여 준다", async () => {

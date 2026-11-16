@@ -10,7 +10,7 @@
     - **〔확인 필요 — SCRUM-240〕 버튼은 지금 역할(APPROVER)·케이스 상태로 켜요** — 승인 뒤 동작은 서버 `available_actions`가 아직 없어서예요. 서버가 다시 검사하고, 액션 목록이 생기면 그걸로 바꿔요.
     - 이 경로는 승인자·관리자만 열려요. 관리자는 PDF 권한이 없어(BE `04_auth_user.md` 12-1·12-1a) 상태만 봐요. 담당 조사역의 PDF는 STR 화면 몫.
 - 시연(`/demo/approvals`)은 없앨 예정이라 고치지 않아요.
-- 코드: `api/approvalsApi.js`(P1~P3) · `hooks/useApprovals.js`(목록·작업 — 성공·409 뒤 승인함·케이스·초안 재조회) · `pages/ApprovalListPage.jsx` · `components/ApprovalDialog.jsx`(승인·반려 확인창). MSW는 `src/mocks/approvals.js` — 테스트는 `resetCases(user, { pendingApproval: true })`로 케이스 1001을 승인 대기로 둬요(기본 시드 4건은 그대로).
+- 코드: `api/approvalsApi.js`(P1~P3) · `hooks/useApprovals.js`(목록·작업 — 성공·409 뒤 승인함·케이스·초안 재조회) · `pages/ApprovalListPage.jsx` · `components/ApprovalDialog.jsx`(승인·반려 확인창). 페이지는 확인창에 초안 번호만 들고 줄은 늘 최신 목록에서 찾아 넘겨요 — 409 뒤 다시 불러온 `case_version`으로 같은 입력을 다시 보낼 수 있고, 다시 불러온 목록에 그 건이 없으면 확인창을 닫고 "이미 처리된 건이에요"를 띄워요. MSW는 `src/mocks/approvals.js` — 테스트는 `resetCases(user, { pendingApproval: true })`로 케이스 1001을 승인 대기로 둬요(기본 시드 4건은 그대로).
 
 ## 1. 화면
 
@@ -53,6 +53,6 @@
 
 ## 4. 테스트에 있어야 하는 것
 
-`src/test/approvalDone.test.jsx`·`deadline.test.js`(SCRUM-111) — 승인 뒤 이동·마감 배지·미리보기·모의 제출·확정본·PDF 실패·만드는 중·409·관리자·승인 전 초안. `src/test/approvals.test.jsx`(SCRUM-241) — 승인자 목록·버튼, 관리자 목록만, 예전 담당 안내, 의심 정도 없이 승인 막힘, 반려 사유 공백 막힘, 409 `CONCURRENT_UPDATE` 안내 + 입력 유지 + 재조회, 409 `SELF_APPROVAL` 문구. 아래 "승인 뒤 잠금 표시"는 STR 화면 몫(SCRUM-224).
+`src/test/approvalDone.test.jsx`·`deadline.test.js`(SCRUM-111) — 승인 뒤 이동·마감 배지·미리보기·모의 제출·확정본·PDF 실패·만드는 중·409·BE에 없는 API 404 안내·관리자·승인 전 초안. `src/test/approvals.test.jsx`(SCRUM-241) — 승인자 목록·버튼, 관리자 목록만, 예전 담당 안내, 의심 정도 없이 승인 막힘, 반려 사유 공백 막힘, 409 `CONCURRENT_UPDATE` 안내 + 입력 유지 + 재조회, 409 → 재조회 → 같은 입력으로 다시 눌러 성공, 409 뒤 목록에서 빠진 건은 확인창 닫고 안내, 409 `SELF_APPROVAL` 문구. 아래 "승인 뒤 잠금 표시"는 STR 화면 몫(SCRUM-224).
 
 자기 승인 버튼 숨김 + 직접 호출 409 `SELF_APPROVAL`, 반려 코드·사유 없으면 막힘, 승인 뒤 잠금 표시, ADMIN은 목록만, 승인 사이 다른 사람이 먼저 처리했을 때 409 안내 + 재조회.
