@@ -22,6 +22,7 @@
 BE가 한 단계씩 붙으면 프론트 코드는 그대로예요(경로·모양을 계약서대로 미리 맞춰 둠). `VITE_USE_MOCKS=true`면 전부 MSW가 답해요.
 
 **S2 차이 (BE develop 11/16 기준)** — #84 `case_status`·`narrative[].label`·`latest_verification.is_current`, #109 `suspicion_*`·`generation_id`·`generator_version`·`references`(`[]`)·`META_ONLY`의 `case_no`·`case_status`, #115 `last_rejection`(`decided_by`는 승인자 표시 이름)이 들어왔어요. `available_actions`만 아직 없어요(BE `feat/SCRUM-232`). 프론트는:
+
 - `last_rejection`은 케이스가 보완 중(REJECTED·DRAFTED)일 때만 띠로 보여요(초안 기준이라 승인 뒤에도 남음). `narrative_unchanged: true`면 안내 + [승인 요청]을 막아요(S6 409 `NARRATIVE_UNCHANGED` 전에).
 - `suspicion_level_hq`는 승인 뒤 VI부에 "본점 의심 정도 N"으로 보여요.
 
