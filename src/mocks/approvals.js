@@ -165,3 +165,69 @@ export function seedPendingApproval(cases, drafts) {
 	record(item, "SUBMIT_FOR_APPROVAL", "PENDING_APPROVAL", { login_id: "inv01" })
 	draft.case_status = "PENDING_APPROVAL"
 }
+
+// ── 모의 제출(P4)·PDF(S7·S8·P5) — BE 아직 없음(SCRUM-240). BE str.md 10~13번 모양대로 흉내 내요(SCRUM-111). ──
+// PDF 상태(pdf_status)는 READY·PENDING·FAILED. 모의 제출 때 draft.next_pdf_status(테스트용, 기본 READY)로 정해요.
+// PDF 본문은 짧은 예시 바이트예요 — 실제 서식·워터마크는 서버가 만들어요〔미결 — 서식 안건 2〕.
+const MOCK_PDF = "%PDF-1.4\n% dajaba mock report\n%%EOF\n"
+const pdf = (label) => ({ status: 200, pdf: `${MOCK_PDF}% ${label}\n` })
+const canViewReport = (viewer, item) =>
+	viewer.role === "APPROVER" || item.assignee?.login_id === viewer.login_id
+
+/** P4 `POST /approvals/{draft_no}/report {case_version}` — APPROVED → REPORTED, REPORT 이력. 실제 전송 없음. */
+export function reportDraft(viewer, item, draft, body) {
+	if (viewer.role !== "APPROVER") return fail(403, "FORBIDDEN", "권한이 없습니다")
+	if (!Number.isInteger(body?.case_version))
+		return fail(400, "INVALID_REQUEST", "입력 값을 확인해 주세요", {
+			case_version: "필수입니다",
+		})
+	if (item.version !== body.case_version)
+		return fail(409, "CONCURRENT_UPDATE", "케이스가 그 사이 바뀌었습니다")
+	if (item.current_draft_no && item.current_draft_no !== draft.draft_no)
+		return fail(409, "DRAFT_SUPERSEDED", "대체된 초안입니다", {
+			draft_no: draft.draft_no,
+			current_draft_no: item.current_draft_no,
+		})
+	if (item.status !== "APPROVED")
+		return fail(409, "INVALID_CASE_TRANSITION", "승인 완료 상태가 아닙니다", {
+			action: "REPORT",
+			draft_no: draft.draft_no,
+		})
+	record(item, "REPORT", "REPORTED", viewer)
+	draft.case_status = "REPORTED"
+	draft.pdf_status = draft.next_pdf_status ?? "READY"
+	return ok(changeOf(item))
+}
+
+/** S7 `GET /str-drafts/{draft_no}/report/preview.pdf` — APPROVED 일 때, "제출 전" 워터마크(저장 안 함). */
+export function previewPdf(viewer, item) {
+	if (!canViewReport(viewer, item)) return fail(403, "NOT_ASSIGNEE", "권한이 없습니다")
+	if (item.status !== "APPROVED")
+		return fail(409, "INVALID_CASE_TRANSITION", "승인 완료 상태가 아닙니다")
+	return pdf("PREVIEW - 제출 전")
+}
+
+/** S8 `GET /str-drafts/{draft_no}/report.pdf` — REPORTED 일 때. 아직이면 409 REPORT_PDF_NOT_READY. */
+export function reportPdf(viewer, item, draft) {
+	if (!canViewReport(viewer, item)) return fail(403, "NOT_ASSIGNEE", "권한이 없습니다")
+	if (item.status !== "REPORTED")
+		return fail(409, "INVALID_CASE_TRANSITION", "보고된 케이스가 아닙니다")
+	if (draft.pdf_status === "PENDING") {
+		draft.pdf_status = "READY" // 다음 요청엔 다 만들어진 것처럼
+		return fail(409, "REPORT_PDF_NOT_READY", "PDF를 만드는 중입니다", { pdf_status: "PENDING" })
+	}
+	if (draft.pdf_status !== "READY")
+		return fail(409, "REPORT_PDF_NOT_READY", "PDF를 만들지 못했습니다", {
+			pdf_status: draft.pdf_status ?? "PENDING",
+		})
+	return pdf("REPORT")
+}
+
+/** P5 `POST /approvals/{draft_no}/report/pdf` — 승인자, PDF FAILED 일 때만 → 202 {pdf_status}. */
+export function regeneratePdf(viewer, item, draft) {
+	if (viewer.role !== "APPROVER") return fail(403, "FORBIDDEN", "권한이 없습니다")
+	if (item.status !== "REPORTED" || draft.pdf_status !== "FAILED")
+		return fail(409, "INVALID_CASE_TRANSITION", "다시 만들 수 있는 상태가 아닙니다")
+	draft.pdf_status = "PENDING"
+	return ok({ pdf_status: "PENDING" }, 202)
+}

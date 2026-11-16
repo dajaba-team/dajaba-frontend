@@ -1,6 +1,15 @@
 import { canViewStrContent, seedStrDrafts, visibleStrDraft } from "./strDrafts"
 import { createDraft, draftActions, saveRevision, submitDraft, verifyDraft } from "./strCommands"
-import { approveDraft, listApprovals, rejectDraft, seedPendingApproval } from "./approvals"
+import {
+	approveDraft,
+	listApprovals,
+	previewPdf,
+	regeneratePdf,
+	rejectDraft,
+	reportDraft,
+	reportPdf,
+	seedPendingApproval,
+} from "./approvals"
 import {
 	applyCommand,
 	changeResponse,
@@ -94,7 +103,11 @@ const draftNotFound = () =>
 		{ status: 404 },
 	)
 const caseOf = (draft) => cases.find((entry) => entry.case_no === draft.case_no) ?? null
-const reply = ({ status, body }) => HttpResponse.json(body, { status })
+// pdf 가 있으면 PDF 본문(S7·S8), 아니면 JSON
+const reply = ({ status, body, pdf }) =>
+	pdf != null
+		? new HttpResponse(pdf, { status, headers: { "Content-Type": "application/pdf" } })
+		: HttpResponse.json(body, { status })
 const unauthenticated = () =>
 	HttpResponse.json({ error: { code: "UNAUTHENTICATED" } }, { status: 401 })
 const base = new URL(import.meta.env.VITE_API_BASE_URL || "", window.location.origin).href.replace(
@@ -713,6 +726,9 @@ export const handlers = [
 	...[
 		["approve", approveDraft],
 		["reject", rejectDraft],
+		// P4·P5 — BE 아직 없음(SCRUM-240), str.md 10·13번 모양
+		["report", reportDraft],
+		["report/pdf", regeneratePdf],
 	].map(([command, run]) =>
 		http.post(`${base}/api/v1/approvals/:draftNo/${command}`, async ({ params, request }) => {
 			if (!currentUser) return unauthenticated()
@@ -720,6 +736,18 @@ export const handlers = [
 			if (!draft) return draftNotFound()
 			const body = await request.json().catch(() => null)
 			return reply(run(currentUser, caseOf(draft), draft, body))
+		}),
+	),
+	// S7 미리보기·S8 확정본 PDF — BE 아직 없음(SCRUM-240), str.md 11·12번 모양
+	...[
+		["report/preview.pdf", previewPdf],
+		["report.pdf", reportPdf],
+	].map(([path, run]) =>
+		http.get(`${base}/api/v1/str-drafts/:draftNo/${path}`, ({ params }) => {
+			if (!currentUser) return unauthenticated()
+			const draft = drafts.find((item) => item.draft_no === params.draftNo)
+			if (!draft) return draftNotFound()
+			return reply(run(currentUser, caseOf(draft), draft))
 		}),
 	),
 	// 목록은 본문 없이, `?revision_no=`면 그 한 행의 전·후 본문(명세 4번).
