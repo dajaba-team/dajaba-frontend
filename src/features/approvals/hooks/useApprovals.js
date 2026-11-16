@@ -25,7 +25,7 @@ const REFETCH_ON = [
 /**
  * 승인함 작업 — name: approve(P2)·reject(P3). 응답이 공통 변경 응답이라 성공 뒤 승인함·케이스·초안을 다시 불러요.
  * 낙관적 변경·자동 재시도 없음. 응답이 없으면(timeout·네트워크) 처리됐을 수 있으니 목록을 먼저 다시 읽어요.
- * onDone: 성공하면 재조회보다 먼저 불러요(확인창 닫기) — 재조회로 줄이 빠지는 걸 "남이 처리함"으로 잘못 읽지 않게요.
+ * onDone: 성공 + 재조회 뒤에 불러요(확인창 닫기·이동). 확인창이 이미 내려갔어도(재조회로 줄이 빠짐) 불려요.
  * onGone: 실패 뒤 다시 불러온 목록(지금 보고 있는 페이지)에 이 초안이 없을 때 불러요 — 다른 승인자가 이미 처리한 경우.
  */
 export function useApprovalCommand(item, name, { onDone, onGone } = {}) {
@@ -44,8 +44,8 @@ export function useApprovalCommand(item, name, { onDone, onGone } = {}) {
 		onMutate: () => ({ session: client.getQueryData(["auth", "me"]) }),
 		onSuccess: async (_result, _input, context) => {
 			if (context.session !== client.getQueryData(["auth", "me"])) return
-			onDone?.()
 			await refresh()
+			onDone?.()
 		},
 		onError: (error, _input, context) => {
 			if (context?.session !== client.getQueryData(["auth", "me"])) return
