@@ -9,6 +9,7 @@ import { REJECTION_LABELS, labelOf } from "../../cases/labels"
 import { VERIFICATION_STATUS_LABELS } from "../../str/verificationLabels"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
+import { useToast } from "../../../shared/ui/toast/useToast"
 
 // 버튼은 서버가 준 available_actions 만 보고 켜요(01_code_rules §1). 서버는 승인자이고 담당한 적 없을 때만 APPROVE·REJECT 를 줘요.
 const can = (item, action) => item.availableActions.includes(action)
@@ -30,7 +31,15 @@ export default function ApprovalListPage() {
 	const page = readPage(params)
 	const query = useApprovals(page)
 	const session = useSession()
+	const { show } = useToast()
+	// 확인창은 초안 번호만 들고, 줄은 늘 최신 목록에서 찾아요 — 409 뒤 다시 불러온 case_version 으로 다시 보낼 수 있어요.
 	const [dialog, setDialog] = useState(null)
+	const items = query.data?.items
+	const dialogItem = dialog ? items?.find((item) => item.draftNo === dialog.draftNo) : null
+	// 그사이 다른 승인자가 처리해 목록에서 빠졌으면 확인창을 닫아요(안내는 onGone — 409 뒤 재조회에서).
+	if (dialog && items && !dialogItem) setDialog(null)
+	const onGone = () =>
+		show({ tone: "info", text: "이미 처리된 건이에요. 목록을 새로 불러왔어요." })
 	const isAdmin = session.data?.role === "ADMIN"
 	const goTo = (next) => setParams(next > 1 ? { page: String(next) } : {})
 	return (
@@ -96,7 +105,7 @@ export default function ApprovalListPage() {
 																className="primary"
 																onClick={() =>
 																	setDialog({
-																		item,
+																		draftNo: item.draftNo,
 																		mode: "APPROVE",
 																	})
 																}
@@ -112,7 +121,8 @@ export default function ApprovalListPage() {
 																		type="button"
 																		onClick={() =>
 																			setDialog({
-																				item,
+																				draftNo:
+																					item.draftNo,
 																				mode,
 																			})
 																		}
@@ -155,11 +165,12 @@ export default function ApprovalListPage() {
 					</>
 				)}
 			</section>
-			{dialog && (
+			{dialogItem && (
 				<ApprovalDialog
-					item={dialog.item}
+					item={dialogItem}
 					mode={dialog.mode}
 					onClose={() => setDialog(null)}
+					onGone={onGone}
 				/>
 			)}
 		</>

@@ -25,8 +25,10 @@ const REFETCH_ON = [
 /**
  * 승인함 작업 — name: approve(P2)·reject(P3). 응답이 공통 변경 응답이라 성공 뒤 승인함·케이스·초안을 다시 불러요.
  * 낙관적 변경·자동 재시도 없음. 응답이 없으면(timeout·네트워크) 처리됐을 수 있으니 목록을 먼저 다시 읽어요.
+ * onDone: 성공하면 재조회보다 먼저 불러요(확인창 닫기) — 재조회로 줄이 빠지는 걸 "남이 처리함"으로 잘못 읽지 않게요.
+ * onGone: 실패 뒤 다시 불러온 목록(지금 보고 있는 페이지)에 이 초안이 없을 때 불러요 — 다른 승인자가 이미 처리한 경우.
  */
-export function useApprovalCommand(item, name) {
+export function useApprovalCommand(item, name, { onDone, onGone } = {}) {
 	const client = useQueryClient()
 	const refresh = () =>
 		Promise.all([
@@ -42,11 +44,22 @@ export function useApprovalCommand(item, name) {
 		onMutate: () => ({ session: client.getQueryData(["auth", "me"]) }),
 		onSuccess: async (_result, _input, context) => {
 			if (context.session !== client.getQueryData(["auth", "me"])) return
+			onDone?.()
 			await refresh()
 		},
 		onError: (error, _input, context) => {
 			if (context?.session !== client.getQueryData(["auth", "me"])) return
-			if (isNoResponse(error) || REFETCH_ON.includes(getErrorCode(error))) void refresh()
+			if (!isNoResponse(error) && !REFETCH_ON.includes(getErrorCode(error))) return
+			void refresh().then(() => {
+				// 승인함을 벗어났으면(보고 있는 목록 없음) 안내하지 않아요.
+				const lists = client
+					.getQueriesData({ queryKey: ["approvals"], type: "active" })
+					.filter(([, data]) => data)
+				const listed = lists.some(([, data]) =>
+					data.items.some((row) => row.draftNo === item.draftNo),
+				)
+				if (lists.length && !listed) onGone?.()
+			})
 		},
 	})
 }
