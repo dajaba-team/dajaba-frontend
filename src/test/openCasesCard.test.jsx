@@ -70,6 +70,44 @@ describe("케이스 생성 카드 (SCRUM-180)", () => {
 		expect(dates).toEqual(["2022-09-02"])
 		server.events.removeAllListeners()
 	})
+	it("성공한 날짜도 다시 실행하면 202로 받고, 새로 만들 경보가 없으면 그렇게 알려 줘요 (보충 실행, SCRUM-238)", async () => {
+		const user = renderApp()
+		const card = await runFor(user)
+		expect(await within(card).findByText(/조사 케이스 1건을 생성했어요/)).toBeInTheDocument()
+
+		await user.click(within(card).getByRole("button", { name: "케이스 생성" }))
+		const dialog = await screen.findByRole("dialog", { name: "케이스 생성" })
+		expect(dialog).toHaveTextContent("이미 케이스가 된 경보는 건너뛰어요")
+		await user.click(within(dialog).getByRole("button", { name: "생성" }))
+
+		expect(await within(card).findByText(/만들 케이스가 없어요/)).toBeInTheDocument()
+		expect(within(card).queryByRole("alert")).not.toBeInTheDocument() // 409 BATCH_ALREADY_DONE 아님
+	})
+
+	it("같은 날짜가 아직 실행 중이면 409 BATCH_RUNNING을 확인창에 보여 줘요", async () => {
+		server.use(
+			http.post("*/api/v1/admin/batches/open-cases", () =>
+				HttpResponse.json(
+					{
+						error: {
+							code: "BATCH_RUNNING",
+							message: "같은 날짜의 케이스 생성이 실행 중입니다",
+							details: {},
+						},
+					},
+					{ status: 409 },
+				),
+			),
+		)
+		const user = renderApp()
+		const card = await screen.findByRole("region", { name: "케이스 생성" })
+		await user.type(within(card).getByLabelText("경보 배치 기준일"), "2022-09-02")
+		await user.click(within(card).getByRole("button", { name: "케이스 생성" }))
+		const dialog = await screen.findByRole("dialog", { name: "케이스 생성" })
+		await user.click(within(dialog).getByRole("button", { name: "생성" }))
+		expect(await within(dialog).findByText(/실행 중/)).toBeInTheDocument()
+	})
+
 	it("RUNNING 이면 끝날 때까지 다시 불러요", async () => {
 		let calls = 0
 		server.use(
