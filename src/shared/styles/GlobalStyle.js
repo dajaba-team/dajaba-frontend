@@ -16,12 +16,15 @@ export const GlobalStyle = createGlobalStyle`
   label:has(> input[type="checkbox"]), label:has(> input[type="radio"]) { display: inline-flex; align-items: center; gap: var(--space-2); }
   input[type="checkbox"], input[type="radio"] { margin: 0; }
   th, td { vertical-align: middle; }
-  button { cursor: pointer; }
-  button:hover:enabled { background: var(--color-soft); }
+  /* 입력창은 경계가 보여야 해서 버튼보다 진한 테두리 */
+  select, textarea, input:not([type="checkbox"]):not([type="radio"]) { border-color: var(--color-input-border); }
+  button { cursor: pointer; font-weight: 550; box-shadow: var(--shadow-control); transition: background 0.12s ease, border-color 0.12s ease; }
+  button:hover:enabled { background: var(--color-soft); border-color: var(--color-control-border-hover); }
+  button:active:enabled { transform: translateY(1px); }
   /* 폼을 보내는 주 버튼은 강조색으로 채워요. */
   button[type="submit"]:enabled { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-on-dark); font-weight: 600; }
   button[type="submit"]:hover:enabled { border-color: var(--color-primary-strong); background: var(--color-primary-strong); }
-  button:disabled { cursor: not-allowed; color: var(--color-muted); background: var(--color-soft); }
+  button:disabled { cursor: not-allowed; color: var(--color-muted); background: var(--color-soft); box-shadow: none; }
   textarea { display: block; width: 100%; min-height: 10rem; margin-block: var(--space-2) var(--space-4); resize: vertical; }
   input[type="checkbox"] { accent-color: var(--color-primary); }
   :focus-visible { outline: var(--focus-width) solid var(--color-focus); outline-offset: var(--space-1); }
