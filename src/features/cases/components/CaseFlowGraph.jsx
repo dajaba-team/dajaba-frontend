@@ -29,7 +29,8 @@ function FlowGraphDetail({ active, graph, accountNos, accountRef }) {
 	if (!active) {
 		return (
 			<p className="flow-graph-hint">
-				선이나 계좌에 마우스를 올리면 거래 내용이 보여요. 누르면 고정돼요.
+				선이나 계좌에 마우스를 올리면 거래 내용이 보여요. 누르면 고정돼요. 계좌는 Tab으로
+				옮기고 Enter로 고정할 수 있어요.
 			</p>
 		)
 	}
@@ -112,6 +113,19 @@ function FlowGraphView({ data, accountRef }) {
 			setPinned(same(pinned, item) ? null : item)
 		},
 	})
+	// 계좌는 키보드로도 — Tab 으로 옮기면 올린 것과 같고, Enter·Space 로 고정해요. 선(거래)은 [근거 거래] 탭 표에서 봐요.
+	const nodeKeys = (item) => ({
+		role: "button",
+		tabIndex: 0,
+		"aria-pressed": Boolean(same(pinned, item)),
+		onFocus: () => setHovered(item),
+		onBlur: () => setHovered(null),
+		onKeyDown: (event) => {
+			if (event.key !== "Enter" && event.key !== " ") return
+			event.preventDefault()
+			setPinned(same(pinned, item) ? null : item)
+		},
+	})
 	const activeEdge = active?.type === "edge" ? active.edge : null
 	const amountLabel = activeEdge ? formatAmount(activeEdge.amount, activeEdge.currency) : ""
 	const labelWidth = amountLabel.length * 6.8 + 20
@@ -150,7 +164,7 @@ function FlowGraphView({ data, accountRef }) {
 					width={graph.width}
 					height={graph.height}
 					viewBox={`0 0 ${graph.width} ${graph.height}`}
-					role="img"
+					role="group"
 					aria-label={`계좌 ${data.nodes.length}개, 거래 ${data.returnedTransactionCount}건`}
 					onClick={() => setPinned(null)}
 				>
@@ -218,7 +232,9 @@ function FlowGraphView({ data, accountRef }) {
 							<g
 								key={node.accountRef}
 								className={className}
+								aria-label={`계좌 ${node.accountNo}${target ? " (조사 대상)" : ""}`}
 								{...handlers({ type: "node", ref: node.accountRef })}
+								{...nodeKeys({ type: "node", ref: node.accountRef })}
 							>
 								{target && (
 									<rect
@@ -279,7 +295,7 @@ function FlowGraphView({ data, accountRef }) {
 					)}
 				</svg>
 			</div>
-			<div className="flow-graph-detail">
+			<div className="flow-graph-detail" aria-live="polite">
 				<FlowGraphDetail
 					active={active}
 					graph={graph}

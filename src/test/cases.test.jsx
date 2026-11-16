@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { render, screen, waitFor, within } from "@testing-library/react"
+import { act, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router"
 import { QueryClientProvider } from "@tanstack/react-query"
@@ -989,7 +989,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 			"aria-pressed",
 			"true",
 		)
-		const graph = await screen.findByRole("img", { name: /거래 4건/ })
+		const graph = await screen.findByRole("group", { name: /거래 4건/ })
 		expect(within(graph).getAllByTestId("graph-edge")).toHaveLength(4)
 		expect(within(graph).getByText("011_****1021 (대상)")).toBeInTheDocument()
 		expect(screen.getByText("유입 2건")).toBeInTheDocument()
@@ -1005,12 +1005,29 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 	})
 	it("그래프에서 거래 선을 누르면 그 거래 내용이 아래에 고정된다", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
-		const graph = await screen.findByRole("img", { name: /거래 4건/ })
+		const graph = await screen.findByRole("group", { name: /거래 4건/ })
 		expect(screen.getByText(/누르면 고정돼요/)).toBeInTheDocument()
 		await user.click(within(graph).getAllByTestId("graph-edge")[0])
 		await user.unhover(graph)
 		expect(screen.getByText(/거래 4721/)).toBeInTheDocument()
 		expect(screen.queryByText(/누르면 고정돼요/)).not.toBeInTheDocument()
+	})
+	it("그래프의 계좌는 Tab으로 옮기고 Enter로 고정·해제할 수 있다", async () => {
+		const user = renderApp(`/cases/${REVIEWING}`)
+		const graph = await screen.findByRole("group", { name: /거래 4건/ })
+		const target = within(graph).getByRole("button", { name: /011_\*{4}1021 \(조사 대상\)/ })
+		act(() => target.focus())
+		expect(screen.getByText(/이 그림에서 보낸 거래/)).toBeInTheDocument()
+		await user.keyboard("{Enter}")
+		expect(target).toHaveAttribute("aria-pressed", "true")
+		// 포커스가 떠나도 고정된 내용은 남아요
+		act(() => target.blur())
+		expect(screen.getByText(/이 그림에서 보낸 거래/)).toBeInTheDocument()
+		act(() => target.focus())
+		await user.keyboard("{Enter}")
+		expect(target).toHaveAttribute("aria-pressed", "false")
+		act(() => target.blur())
+		expect(screen.getByText(/누르면 고정돼요/)).toBeInTheDocument()
 	})
 	it("[거래 원본]은 C4 원본을 창으로 보여 주고, 404면 그 창에만 안내", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)

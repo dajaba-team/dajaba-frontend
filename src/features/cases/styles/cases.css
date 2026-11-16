@@ -386,6 +386,14 @@
 .flow-graph-node.is-active .flow-graph-box {
 	stroke: var(--color-graph-ink);
 }
+/* 키보드로 옮겨 온 계좌 — 상자 테두리를 굵게(SVG g 의 outline 은 브라우저마다 달라요). */
+.flow-graph-node:focus {
+	outline: none;
+}
+.flow-graph-node:focus-visible .flow-graph-box {
+	stroke: var(--color-graph-ink);
+	stroke-width: 2.5;
+}
 /* 고른 거래·계좌와 이어진 것만 남기고 나머지는 흐리게. */
 .case-graph.has-active .flow-graph-edge:not(.is-active) {
 	opacity: 0.12;
