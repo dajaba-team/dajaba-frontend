@@ -274,8 +274,9 @@
 	font-variant-numeric: tabular-nums;
 }
 .flow-graph-stage {
+	max-block-size: 36rem;
 	padding: var(--space-4);
-	overflow-x: auto;
+	overflow: auto;
 	background-image: radial-gradient(var(--color-graph-grid) 0.0625rem, transparent 0.0625rem);
 	background-size: 1.375rem 1.375rem;
 }

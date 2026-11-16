@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatDataTime } from "../../../shared/format/time"
 import { useCaseGraph } from "../hooks/useCases"
@@ -89,6 +89,15 @@ function FlowGraphView({ data, accountRef }) {
 		return result
 	}, [graph])
 
+	// 계좌가 많아 무대가 스크롤되면, 처음에는 가운데(조사 대상 계좌)가 보이게 맞춰요.
+	const stageRef = useRef(null)
+	useEffect(() => {
+		const stage = stageRef.current
+		if (!stage) return
+		stage.scrollTop = (stage.scrollHeight - stage.clientHeight) / 2
+		stage.scrollLeft = (stage.scrollWidth - stage.clientWidth) / 2
+	}, [graph])
+
 	const active = hovered ?? pinned
 	const isEdgeActive = (edge, key) =>
 		active?.type === "edge"
@@ -154,6 +163,7 @@ function FlowGraphView({ data, accountRef }) {
 				</ul>
 			</div>
 			<div
+				ref={stageRef}
 				className="flow-graph-stage"
 				role="region"
 				aria-label="자금 흐름 그림"

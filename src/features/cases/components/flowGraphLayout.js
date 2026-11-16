@@ -7,10 +7,12 @@ export const TARGET_WIDTH = 176
 export const TARGET_HEIGHT = 60
 const COLUMN_GAP = 270
 const ROW_GAP = 58
+// 한 단에 계좌가 많으면 줄 간격을 좁혀요. 단을 옆으로 쪼개면 바깥 계좌의 선이 안쪽 계좌 위를 지나가서, 줄만 늘려요.
+const DENSE_ROW_GAP = 46
+const DENSE_ROWS = 9
 const PADDING_X = 36
 const PADDING_Y = 40
 const MIN_HEIGHT = 320
-const MAX_ROWS = 9
 const ARROW_GAP = 9
 
 /** 선 종류 — 대상 계좌가 받으면 유입, 보내면 유출, 끼지 않으면 경유. */
@@ -115,28 +117,22 @@ export function layoutFlowGraph(nodes, edges, targetRef) {
 		if (!byLayer.has(layer)) byLayer.set(layer, [])
 		byLayer.get(layer).push(node)
 	})
-	// 한 단에 계좌가 너무 많으면 여러 줄로 쪼개요.
-	const columns = []
-	;[...byLayer.keys()]
-		.sort((a, b) => a - b)
-		.forEach((layer) => {
-			const members = byLayer.get(layer)
-			for (let index = 0; index < members.length; index += MAX_ROWS) {
-				columns.push(members.slice(index, index + MAX_ROWS))
-			}
-		})
-	const rows = Math.max(...columns.map((column) => column.length), 1)
-	const height = Math.max(MIN_HEIGHT, PADDING_Y * 2 + TARGET_HEIGHT + (rows - 1) * ROW_GAP)
+	// 한 단은 세로 한 줄 — 계좌가 많으면 그림이 아래로 길어지고, 무대가 세로로 스크롤돼요.
+	const columns = [...byLayer.keys()].sort((a, b) => a - b).map((layer) => byLayer.get(layer))
+	const rowGap = (column) => (column.length > DENSE_ROWS ? DENSE_ROW_GAP : ROW_GAP)
+	const tallest = Math.max(...columns.map((column) => (column.length - 1) * rowGap(column)), 0)
+	const height = Math.max(MIN_HEIGHT, PADDING_Y * 2 + TARGET_HEIGHT + tallest)
 	const width = PADDING_X * 2 + TARGET_WIDTH + (columns.length - 1) * COLUMN_GAP
 	const points = new Map()
 	columns.forEach((column, columnIndex) => {
 		const x = PADDING_X + TARGET_WIDTH / 2 + columnIndex * COLUMN_GAP
-		const top = height / 2 - ((column.length - 1) * ROW_GAP) / 2
+		const gap = rowGap(column)
+		const top = height / 2 - ((column.length - 1) * gap) / 2
 		column.forEach((node, rowIndex) => {
 			const target = node.accountRef === targetRef
 			points.set(node.accountRef, {
 				x,
-				y: top + rowIndex * ROW_GAP,
+				y: top + rowIndex * gap,
 				width: target ? TARGET_WIDTH : NODE_WIDTH,
 				height: target ? TARGET_HEIGHT : NODE_HEIGHT,
 			})
