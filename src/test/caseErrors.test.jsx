@@ -81,7 +81,6 @@ describe("403 — 역할 권한 없음·담당 아님", () => {
 			),
 		)
 		const user = renderApp(`/cases/${REVIEWING}`)
-		await user.click(await screen.findByRole("button", { name: "자금 흐름" }))
 		const graph = await screen.findByRole("region", { name: "자금 흐름 그래프" })
 		expect(await within(graph).findByRole("alert")).toHaveTextContent("실행 권한이 없어요.")
 		await user.click(screen.getByRole("button", { name: "근거 거래" }))

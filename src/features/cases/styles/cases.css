@@ -199,28 +199,232 @@
 	font-weight: 700;
 	text-decoration: underline;
 }
+/* 자금 흐름 그래프 — 밝은 무대 위에 계좌(알약)와 거래(곡선). 색은 tokens.css 의 --color-graph-*.
+   선 색은 대상 계좌 기준 유입·유출·경유이고 범례에 글자로도 적어요. 참고 거래는 점선. */
+.flow-graph {
+	border: var(--border-width) solid var(--color-graph-border);
+	border-radius: var(--radius-card);
+	background: var(--color-graph-stage);
+	color: var(--color-graph-ink);
+	overflow: hidden;
+}
+.flow-graph-head,
+.flow-graph-detail {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2) var(--space-5);
+	padding: var(--space-3) var(--space-4);
+	background: var(--color-graph-surface);
+	font-size: var(--font-small);
+}
+.flow-graph-head {
+	border-block-end: var(--border-width) solid var(--color-graph-border);
+}
+.flow-graph-detail {
+	min-block-size: 3rem;
+	border-block-start: var(--border-width) solid var(--color-graph-border);
+}
+.flow-graph-head p,
+.flow-graph-detail p {
+	margin: 0;
+}
+.flow-graph-stats {
+	color: var(--color-graph-muted);
+}
+.flow-graph-stats strong {
+	color: var(--color-graph-ink);
+	font-size: var(--font-section);
+	font-variant-numeric: tabular-nums;
+}
+.flow-graph-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2) var(--space-4);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	color: var(--color-graph-muted);
+}
+.flow-graph-swatch {
+	display: inline-block;
+	inline-size: 1.25rem;
+	block-size: 0.1875rem;
+	margin-inline-end: var(--space-2);
+	border-radius: var(--radius-control);
+	vertical-align: middle;
+	background: currentColor;
+}
+.flow-graph-swatch.is-in {
+	color: var(--color-graph-in);
+}
+.flow-graph-swatch.is-out {
+	color: var(--color-graph-out);
+}
+.flow-graph-swatch.is-via {
+	color: var(--color-graph-via);
+}
+.flow-graph-swatch.is-context {
+	block-size: 0;
+	border-block-start: 0.125rem dashed var(--color-graph-muted);
+	border-radius: 0;
+	background: none;
+}
+.flow-graph-hint {
+	color: var(--color-graph-muted);
+}
+.flow-graph-mono {
+	font-variant-numeric: tabular-nums;
+}
+.flow-graph-amount {
+	margin-inline-start: var(--space-3);
+	font-size: var(--font-body);
+	font-variant-numeric: tabular-nums;
+}
+.flow-graph-stage {
+	max-block-size: 36rem;
+	padding: var(--space-4);
+	overflow: auto;
+	background-image: radial-gradient(var(--color-graph-grid) 0.0625rem, transparent 0.0625rem);
+	background-size: 1.375rem 1.375rem;
+}
 .case-graph {
 	display: block;
-	inline-size: 100%;
-	max-inline-size: 30rem;
+	max-inline-size: 100%;
+	min-inline-size: 34rem;
 	block-size: auto;
+	margin-inline: auto;
 }
-.case-graph .edge {
-	stroke: currentColor;
-	stroke-width: 1.5;
-	opacity: 0.7;
+.flow-graph-edge {
+	cursor: pointer;
+	transition: opacity 0.18s ease;
 }
-.case-graph .graph-node circle {
-	fill: var(--color-surface, #fff);
-	stroke: currentColor;
-	stroke-width: 1.5;
+.flow-graph-edge.is-in,
+.flow-graph-arrow.is-in {
+	color: var(--color-graph-in);
 }
-.case-graph .graph-node.target circle {
-	stroke-width: 3;
+.flow-graph-edge.is-out,
+.flow-graph-arrow.is-out {
+	color: var(--color-graph-out);
 }
-.case-graph text {
-	font-size: 11px;
+.flow-graph-edge.is-via,
+.flow-graph-arrow.is-via {
+	color: var(--color-graph-via);
+}
+.flow-graph-arrow path {
 	fill: currentColor;
+}
+.flow-graph-line {
+	fill: none;
+	stroke: currentColor;
+	stroke-linecap: round;
+}
+.flow-graph-edge.is-context .flow-graph-line {
+	stroke-dasharray: 6 5;
+	opacity: 0.6;
+}
+/* 선 위를 따라 흐르는 밝은 점 — 돈이 가는 방향. 모션을 줄이라고 하면 멈춰요. */
+.flow-graph-pulse {
+	fill: none;
+	stroke: var(--color-graph-surface);
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-dasharray: 1 26;
+	opacity: 0.85;
+	pointer-events: none;
+	animation: flow-graph-run 1.6s linear infinite;
+}
+@keyframes flow-graph-run {
+	from {
+		stroke-dashoffset: 27;
+	}
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+.flow-graph-hit {
+	fill: none;
+	stroke: transparent;
+	stroke-width: 16;
+}
+.flow-graph-node {
+	cursor: pointer;
+	transition: opacity 0.18s ease;
+}
+.flow-graph-box {
+	fill: var(--color-graph-node);
+	stroke: var(--color-graph-line);
+	stroke-width: 1.25;
+	transition: stroke 0.18s ease;
+	filter: var(--shadow-graph-node);
+}
+.flow-graph-node text {
+	fill: var(--color-graph-ink);
+	font-size: 12.5px;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.02em;
+	pointer-events: none;
+}
+.flow-graph-node .flow-graph-caption {
+	fill: var(--color-graph-muted);
+	font-size: 10.5px;
+	letter-spacing: 0.08em;
+}
+.flow-graph-node.is-target .flow-graph-box {
+	fill: var(--color-graph-node-strong);
+	stroke: var(--color-graph-ink);
+	stroke-width: 1.75;
+}
+.flow-graph-node.is-target .flow-graph-box {
+	filter: var(--shadow-graph-target);
+}
+.flow-graph-node.is-target text {
+	fill: var(--color-graph-on-strong);
+	font-weight: 700;
+}
+.flow-graph-node.is-target .flow-graph-caption {
+	fill: var(--color-graph-on-strong-muted);
+	font-weight: 400;
+}
+.flow-graph-node:hover .flow-graph-box,
+.flow-graph-node.is-active .flow-graph-box {
+	stroke: var(--color-graph-ink);
+}
+/* 키보드로 옮겨 온 계좌 — 상자 테두리를 굵게(SVG g 의 outline 은 브라우저마다 달라요). */
+.flow-graph-node:focus {
+	outline: none;
+}
+.flow-graph-node:focus-visible .flow-graph-box {
+	stroke: var(--color-focus);
+	stroke-width: 2.5;
+}
+/* 고른 거래·계좌와 이어진 것만 남기고 나머지는 흐리게. */
+.case-graph.has-active .flow-graph-edge:not(.is-active) {
+	opacity: 0.12;
+}
+.case-graph.has-active .flow-graph-node:not(.is-active) {
+	opacity: 0.35;
+}
+.flow-graph-edge.is-active .flow-graph-line {
+	opacity: 1;
+}
+.flow-graph-label {
+	pointer-events: none;
+}
+.flow-graph-label rect {
+	fill: var(--color-graph-ink);
+}
+.flow-graph-label text {
+	fill: var(--color-graph-stage);
+	font-size: 12px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+	.flow-graph-pulse {
+		display: none;
+	}
 }
 /* AI 조사 요약 (SCRUM-175) — 배지는 글자로도 상태를 말해서 색만으로 구분하지 않아요. */
 .case-ai-summary {
