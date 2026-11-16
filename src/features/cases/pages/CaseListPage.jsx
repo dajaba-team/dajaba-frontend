@@ -5,6 +5,7 @@ import { useCases } from "../hooks/useCases"
 import { REJECTION_LABELS, STATUS_LABELS, labelOf } from "../labels"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
+import CaseOverview from "../components/CaseOverview"
 import ReassignDialog from "../components/ReassignDialog"
 
 // 목록의 [담당자 변경]도 상세처럼 서버가 준 available_actions(REASSIGN)만 보고 켜요(#23 리뷰). 누르면 서버가 다시 검사해요.
@@ -99,6 +100,7 @@ export default function CaseListPage() {
 				<h1>케이스 목록</h1>
 				<p>의심 거래의 근거를 확인하고 조사 내용을 기록하세요.</p>
 			</header>
+			{!periodInvalid && query.data && !query.isError && <CaseOverview data={query.data} />}
 			<section className="case-panel" aria-label="케이스 조회">
 				<div className="case-filter">
 					<fieldset>

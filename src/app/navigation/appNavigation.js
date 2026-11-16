@@ -4,6 +4,15 @@
 
 export const appNavigation = [
 	{
+		id: "overview",
+		path: "/overview",
+		label: "업무 대시보드",
+		screenId: "OVR-01",
+		roles: ["INVESTIGATOR", "APPROVER", "ADMIN"],
+		roleOrder: { INVESTIGATOR: -1, APPROVER: -1, ADMIN: -1 },
+		ready: true,
+	},
+	{
 		id: "batches",
 		path: "/admin/batches",
 		label: "데이터·배치 운영",
@@ -91,6 +100,6 @@ const FIRST_SCREEN_BY_ROLE = {
 export function homePathFor(role, nav = appNavigation) {
 	const first = nav.find((m) => m.screenId === FIRST_SCREEN_BY_ROLE[role])
 	if (first && first.ready && first.roles.includes(role)) return first.path
-	const fallback = visibleMenus(role, nav)[0]
+	const fallback = visibleMenus(role, nav).find((menu) => menu.id !== "overview")
 	return fallback ? fallback.path : "/cases"
 }
