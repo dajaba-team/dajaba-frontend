@@ -56,15 +56,12 @@
 	min-width: 32rem;
 	border-collapse: collapse;
 }
+/* 행 간격은 화면 폭과 상관없이 좁게(세로 --space-3), 가로만 폭에 따라 넓혀요. */
 .case-table th,
 .case-table td {
-	padding: var(--space-4);
+	padding: var(--space-3) var(--space-4);
 	text-align: left;
 	border-block-end: var(--border-width) solid var(--color-border);
-}
-.case-table th,
-.case-table td {
-	padding-block: var(--space-3);
 }
 .case-table th {
 	background: var(--color-table-head);
@@ -185,7 +182,7 @@
 	}
 	.case-table th,
 	.case-table td {
-		padding: var(--space-5);
+		padding-inline: var(--space-5);
 	}
 }
 /* 근거 거래·그래프·합계 (SCRUM-179) */
