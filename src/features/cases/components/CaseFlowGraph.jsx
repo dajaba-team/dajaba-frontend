@@ -236,16 +236,6 @@ function FlowGraphView({ data, accountRef }) {
 								{...handlers({ type: "node", ref: node.accountRef })}
 								{...nodeKeys({ type: "node", ref: node.accountRef })}
 							>
-								{target && (
-									<rect
-										className="flow-graph-halo"
-										x={left - 7}
-										y={top - 7}
-										width={point.width + 14}
-										height={point.height + 14}
-										rx="20"
-									/>
-								)}
 								<rect
 									className="flow-graph-box"
 									x={left}
