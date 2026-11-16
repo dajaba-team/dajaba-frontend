@@ -145,6 +145,27 @@ describe("승인 완료 — 미리보기·모의 제출·확정본", () => {
 			await within(dialog).findByText(/다른 사용자가 먼저 변경했습니다/),
 		).toBeInTheDocument()
 	})
+
+	it("BE에 아직 없는 API(404 NOT_FOUND)면 미리보기·모의 제출 모두 준비 안 된 기능이라고 안내한다", async () => {
+		// SCRUM-240 전의 실서버 — 없는 경로는 404 NOT_FOUND(BE GlobalExceptionHandler)
+		const missing = () =>
+			HttpResponse.json(
+				{ error: { code: "NOT_FOUND", message: "not found", details: {} } },
+				{ status: 404 },
+			)
+		server.use(
+			http.get("*/api/v1/str-drafts/:draftNo/report/preview.pdf", missing),
+			http.post("*/api/v1/approvals/:draftNo/report", missing),
+		)
+		const user = renderAt("/approvals/DRF-000098")
+		await user.click(await screen.findByRole("button", { name: "제출 전 PDF 미리보기" }))
+		expect(await screen.findByText("아직 서버에 없는 기능이에요.")).toBeInTheDocument()
+		expect(URL.createObjectURL).not.toHaveBeenCalled()
+		await user.click(screen.getByRole("button", { name: "모의 제출" }))
+		const dialog = await screen.findByRole("dialog", { name: "모의 제출" })
+		await user.click(within(dialog).getByRole("button", { name: "모의 제출" }))
+		expect(await within(dialog).findByText("아직 서버에 없는 기능이에요.")).toBeInTheDocument()
+	})
 })
 
 describe("승인 완료 — 누가·어떤 상태", () => {
