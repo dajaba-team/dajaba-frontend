@@ -28,10 +28,13 @@ let cases = seedCases()
 let drafts = seedStrDrafts()
 let currentUser = null
 // 배치 실행 (B1~B5) — 적재·케이스 생성은 접수하면 RUNNING, 첫 상태 조회에서 끝나요. 룰 스캔·점수는 바로 끝나요.
-// 같은 유형·날짜가 성공했으면 409 BATCH_ALREADY_DONE(적재는 날짜와 상관없이 한 번). 점수는 다시 돌릴 수 있어요(V012).
+// 같은 유형·날짜가 성공했으면 409 BATCH_ALREADY_DONE(적재는 날짜와 상관없이 한 번).
+// 점수(V012)·케이스 생성(V014, SCRUM-238)은 성공한 날도 다시 돌릴 수 있어요 — 같은 날짜가 돌고 있으면 409 BATCH_RUNNING.
 let batchRuns = []
 // 점수(B3) 날짜별 실행 횟수 — 첫 실행은 1건 실패(다시 보낼 수 있음), 두 번째는 남은 1건 성공, 그 뒤는 대상 없음
 let scoreAttempts = {}
+// 케이스 생성(B4)을 같은 날짜로 다시 돌린 실행 번호 — 상태 조회 때 새로 만든 건수를 0으로 보여 줘요(응답 JSON 에는 안 넣어요)
+let openCasesReruns = new Set()
 const batchConflict = (code, message) =>
 	HttpResponse.json({ error: { code, message, details: {} } }, { status: 409 })
 const succeeded = (type, date) =>
@@ -96,6 +99,7 @@ export function resetCases(user = null, { pendingApproval = false } = {}) {
 	accounts = seedAccounts()
 	batchRuns = []
 	scoreAttempts = {}
+	openCasesReruns = new Set()
 }
 const draftNotFound = () =>
 	HttpResponse.json(
@@ -376,24 +380,25 @@ export const handlers = [
 				{ error: { code: "INVALID_REQUEST", message: "date 가 필요합니다", details: {} } },
 				{ status: 400 },
 			)
-		// 다른 유형(룰 스캔)이 같은 날짜에 성공해도 막지 않게 유형까지 봐요(SCRUM-220)
-		if (succeeded("OPEN_CASES", date))
-			return HttpResponse.json(
-				{
-					error: {
-						code: "BATCH_ALREADY_DONE",
-						message: "이미 성공한 날짜입니다",
-						details: {},
-					},
-				},
-				{ status: 409 },
+		// 성공한 날도 다시 받아요(보충 실행, BE V014·SCRUM-238). 같은 날짜가 돌고 있을 때만 409.
+		// 다른 유형(룰 스캔)이 같은 날짜에 돌아도 막지 않게 유형까지 봐요(SCRUM-220)
+		if (
+			batchRuns.some(
+				(item) =>
+					item.batch_type === "OPEN_CASES" &&
+					item.batch_date === date &&
+					item.status === "RUNNING",
 			)
+		)
+			return batchConflict("BATCH_RUNNING", "같은 날짜의 케이스 생성이 실행 중입니다")
 		const run = {
 			batch_run_id: 100 + batchRuns.length,
 			batch_type: "OPEN_CASES",
 			batch_date: date,
 			status: "RUNNING",
 		}
+		// 다시 돌리면 이미 케이스가 된 경보는 대상이 아니라 새로 만들 게 없어요(예시)
+		if (succeeded("OPEN_CASES", date)) openCasesReruns.add(run.batch_run_id)
 		batchRuns.push(run)
 		return HttpResponse.json(run, { status: 202 })
 	}),
@@ -410,8 +415,8 @@ export const handlers = [
 				status: "SUCCEEDED",
 				started_at: "2026-11-02T03:00:00Z",
 				finished_at: "2026-11-02T03:00:05Z",
-				rows_in: 2,
-				rows_out: 1,
+				rows_in: openCasesReruns.has(run.batch_run_id) ? 0 : 2,
+				rows_out: openCasesReruns.has(run.batch_run_id) ? 0 : 1,
 				error_message: null,
 				triggered_by: { login_id: currentUser.login_id },
 			})

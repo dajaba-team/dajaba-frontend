@@ -76,7 +76,7 @@ export default function OpenCasesCard({ maxPollMs = MAX_POLL_MS }) {
 			<h2 id="open-cases-title">케이스 생성</h2>
 			<p>
 				그 날짜 경보 중 점수가 HIGH인 것만 조사 케이스로 만들어요. 이미 만든 경보는
-				건너뛰어요.
+				건너뛰어서, 성공한 날짜도 다시 실행할 수 있어요(새로 점수가 매겨진 경보만).
 			</p>
 			<label htmlFor={dateId}>경보 배치 기준일</label>{" "}
 			<input
@@ -113,7 +113,7 @@ export default function OpenCasesCard({ maxPollMs = MAX_POLL_MS }) {
 			{confirming && (
 				<ConfirmDialog
 					title="케이스 생성"
-					body={`${date} 경보 중 HIGH만 케이스로 만들어요. 이 날짜가 한 번 성공하면 다시 실행할 수 없어요.`}
+					body={`${date} 경보 중 HIGH만 케이스로 만들어요. 이미 케이스가 된 경보는 건너뛰어요 — 성공한 날짜를 다시 실행하면 그 뒤 점수가 매겨진 경보만 새로 만들어요.`}
 					confirmLabel="생성"
 					confirming={start.isPending}
 					error={start.isError ? getErrorMessage(start.error) : null}
