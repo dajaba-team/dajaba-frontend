@@ -129,6 +129,11 @@ function StrWorkspace({ draft, detail }) {
 		!dirty && verification?.isCurrent
 			? verification.codeChecks.filter((check) => !check.match)
 			: []
+	// last_rejection은 초안 기준이라 다시 요청·승인 뒤에도 남아요. 보완 중(REJECTED·DRAFTED)일 때만 띠로.
+	const inRevision = ["REJECTED", "DRAFTED"].includes(detail.status)
+	const rejection = inRevision ? draft.lastRejection : null
+	const rejectionCode =
+		rejection?.reasonCode ?? (detail.status === "REJECTED" ? detail.rejectionReasonCode : null)
 	const blockReason = submitBlockReason({
 		actions,
 		caseStatus: detail.status,
@@ -136,10 +141,9 @@ function StrWorkspace({ draft, detail }) {
 		verification,
 		types,
 		level,
+		narrativeUnchanged: rejection?.narrativeUnchanged === true,
 	})
 	const notice = stateNotice(draft, detail)
-	const rejection = draft.lastRejection
-	const rejectionCode = rejection?.reasonCode ?? detail.rejectionReasonCode
 
 	const doSave = () => {
 		if (!dirty || invalid || save.isPending) return
@@ -167,6 +171,12 @@ function StrWorkspace({ draft, detail }) {
 							{rejection?.decidedAt && ` · ${formatSystemTime(rejection.decidedAt)}`}
 							{rejection?.revisionNo != null &&
 								` · 대상 ${revisionLabel(rejection.revisionNo)}`}
+						</p>
+					)}
+					{rejection?.reasonCode === "NEED_REVISION" && rejection.narrativeUnchanged && (
+						<p>
+							아직 반려 당시 본문 그대로예요. 고쳐 저장해야 다시 승인 요청할 수
+							있어요.
 						</p>
 					)}
 					{notice && <p>{notice}</p>}
@@ -240,6 +250,7 @@ function StrWorkspace({ draft, detail }) {
 						editable={editable}
 						types={types}
 						level={level}
+						levelHq={draft.suspicionLevelHq}
 						recommended={draft.suspicionTypesRecommended}
 						onTypesChange={setTypes}
 						onLevelChange={setLevel}

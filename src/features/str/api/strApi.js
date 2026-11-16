@@ -59,6 +59,8 @@ export const toVerification = (data, currentRevisionNo = null) => ({
 	llmChecks: Array.isArray(data.llm_checks) ? data.llm_checks.map(toLlmCheck) : null,
 })
 
+// 초안 기준 최신 반려(BE GetStrDraft, ApprovalRepository.findLatestRejection).
+// narrative_unchanged: 반려 당시 본문 해시 == 지금 본문 해시. true면 S6이 409 NARRATIVE_UNCHANGED.
 const toLastRejection = (data) => ({
 	reasonCode: data.reason_code,
 	comment: data.comment,
@@ -71,10 +73,12 @@ const toLastRejection = (data) => ({
 /**
  * S2 → 화면 모델. `access`가 정확히 "FULL"일 때만 본문 필드를 옮겨요(META_ONLY·없음·모르는 값은 상태·날짜만).
  *
- * S2 실제 응답(BE develop, SCRUM-205 #84)과 계약서의 차이 — 없는 키는 null로 두고 화면이 대신 판단하지 않아요.
- *   - generation_id·generator_version·last_rejection·suspicion_*·available_actions 아직 없음
- *     (case_status·narrative[].label·latest_verification.is_current는 #84에서 들어옴)
- *   - META_ONLY의 case_no·case_status는 null (계약서는 값)
+ * S2 실제 응답(BE develop)과 계약서의 차이 — 없는 키는 null로 두고 화면이 대신 판단하지 않아요.
+ *   - #84: case_status·narrative[].label·latest_verification.is_current
+ *   - #109: suspicion_types·_recommended([])·suspicion_level_branch·_hq·generation_id·
+ *     generator_version·references([]), META_ONLY의 case_no·case_status
+ *   - #115(SCRUM-231): last_rejection — decided_by는 승인자 표시 이름(문자열)
+ *   - 아직 없음: available_actions (BE feat/SCRUM-232 리뷰 중)
  *   - facts의 *account_key는 *account_no(가림)·*account_ref로 바뀌어 옴
  * availableActions는 키가 없으면 null — "서버가 아직 안 줌"과 "할 수 있는 게 없음([])"을 구분해요(strRules.strActionsFor).
  */

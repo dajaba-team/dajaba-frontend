@@ -102,6 +102,8 @@ describe("STR 화면 규칙", () => {
 			"고쳐 저장",
 		)
 		expect(submitBlockReason({ ...base, dirty: true })).toMatch("저장")
+		// 보완 요청 뒤 같은 본문 — 서버 last_rejection.narrative_unchanged
+		expect(submitBlockReason({ ...base, narrativeUnchanged: true })).toMatch("반려 당시와 본문")
 		expect(
 			submitBlockReason({ ...base, verification: { ...passed, isCurrent: false } }),
 		).toMatch("검증 통과")

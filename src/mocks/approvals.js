@@ -137,7 +137,14 @@ export function rejectDraft(viewer, item, draft, body) {
 	item.rejection_reason_code = body.reason_code
 	record(item, "REJECT", "REJECTED", viewer, body.reason_code, comment)
 	draft.case_status = "REJECTED"
-	draft.last_rejection = { reason_code: body.reason_code, comment, decided_at: item.updated_at }
+	// BE GetStrDraft.LastRejection 모양 — decided_by는 승인자 표시 이름, narrative_unchanged는 S2가 계산
+	draft.last_rejection = {
+		reason_code: body.reason_code,
+		comment,
+		revision_no: draft.current_revision_no,
+		decided_by: viewer.display_name ?? viewer.login_id,
+		decided_at: item.updated_at,
+	}
 	// 같은 초안으로 본문을 안 고치고 다시 올리면 S6 이 409 NARRATIVE_UNCHANGED (strCommands.submitDraft)
 	draft.rejected_narrative = draft.narrative.map((section) => ({ ...section }))
 	return ok(changeOf(item))

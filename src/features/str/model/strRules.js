@@ -76,12 +76,22 @@ export const VERIFICATION_TEXT = {
  * 승인 요청을 막는 이유(버튼 옆에 표시). 없으면 null.
  * 서버가 S6에서 다시 검사해요(ApprovalGate — 본문 해시·최신 검증·반려 후 미수정).
  */
-export function submitBlockReason({ actions, caseStatus, dirty, verification, types, level }) {
+export function submitBlockReason({
+	actions,
+	caseStatus,
+	dirty,
+	verification,
+	types,
+	level,
+	narrativeUnchanged = false,
+}) {
 	if (!actions.includes("SUBMIT")) {
 		if (caseStatus === "REJECTED") return "본문을 고쳐 저장하면 다시 승인 요청할 수 있어요."
 		return "지금은 승인 요청을 할 수 없는 상태예요."
 	}
 	if (dirty) return "먼저 변경 내용을 저장해 주세요."
+	// 보완 요청 뒤 같은 본문(서버 last_rejection.narrative_unchanged) — S6이 409 NARRATIVE_UNCHANGED
+	if (narrativeUnchanged) return "반려 당시와 본문이 같아요. 고쳐 저장한 뒤 다시 요청해 주세요."
 	if (verificationState(verification) !== "PASSED")
 		return "지금 저장된 본문의 검증 통과가 필요해요."
 	if (!verification.verificationId) return "검증 번호를 확인할 수 없어요. 다시 검증해 주세요."
