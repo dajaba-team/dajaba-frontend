@@ -1,10 +1,49 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import "../styles/dashboard-demo.css"
 import PageHeading from "../../../shared/ui/dashboard/PageHeading.jsx"
 import Icon from "../../../shared/ui/dashboard/Icon.jsx"
 import Badge from "../../../shared/ui/dashboard/Badge.jsx"
 import Button from "../../../shared/ui/dashboard/Button.jsx"
+import AnalyticsChart from "../../../shared/ui/charts/AnalyticsChart"
+import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo"
 export default function Evaluation() {
+	const { dark } = useDashboardDemo()
+	const charts = useMemo(
+		() =>
+			[
+				{
+					title: "탐지 성능",
+					labels: ["PR-AUC", "정밀도", "재현율", "오탐률"],
+					values: [0.873, 0.694, 0.812, 0.061],
+					note: "오탐률은 낮을수록 좋음",
+				},
+				{
+					title: "STR 품질",
+					labels: ["근거 정확도", "불일치 탐지율", "완전성", "환각률"],
+					values: [0.996, 0.982, 0.971, 0.012],
+					note: "환각률은 낮을수록 좋음",
+				},
+			].map((c) => ({
+				...c,
+				data: {
+					labels: c.labels,
+					datasets: [
+						{
+							label: "평가 예시",
+							data: c.values,
+							backgroundColor: [
+								"--brand-primary",
+								"--brand-sky",
+								"--brand-light",
+								"--chart-neutral",
+							],
+							maxBarThickness: 35,
+						},
+					],
+				},
+			})),
+		[],
+	)
 	const [copyState, setCopyState] = useState("")
 	const metrics = [
 		["탐지", "PR-AUC", "0.873"],
@@ -30,6 +69,27 @@ export default function Evaluation() {
 					<strong>모든 수치는 데모 지표</strong>실제 실험 결과 또는 검증 완료 수치가
 					아닙니다.
 				</span>
+			</div>
+			<div className="two-col" style={{ marginBottom: 20 }}>
+				{charts.map((c) => (
+					<section className="analytics-panel" key={c.title}>
+						<div className="analytics-head">
+							<div>
+								<h2>{c.title} 한눈에 보기</h2>
+								<p>0–1 척도 · {c.note} · 예시 수치</p>
+							</div>
+							<Badge>DEMO</Badge>
+						</div>
+						<div className="trend-canvas">
+							<AnalyticsChart
+								data={c.data}
+								ratio
+								dark={dark}
+								label={c.labels.map((v, i) => `${v} ${c.values[i]}`).join(", ")}
+							/>
+						</div>
+					</section>
+				))}
 			</div>
 			<div className="two-col">
 				<section className="panel table-card">

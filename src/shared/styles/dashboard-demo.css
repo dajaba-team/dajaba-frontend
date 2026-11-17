@@ -4,30 +4,6 @@
 	color: var(--text);
 	background: var(--app);
 	font-synthesis: none;
-	--navy: #10233f;
-	--navy-soft: #1a3559;
-	--blue: #2563eb;
-	--blue-hover: #1d4ed8;
-	--blue-soft: #eaf2ff;
-	--app: #f3f6fa;
-	--surface: #fff;
-	--surface-raised: #fff;
-	--surface-subtle: #f7f9fc;
-	--border: #dce3ec;
-	--border-strong: #c4cfdd;
-	--text: #162033;
-	--text-soft: #526178;
-	--muted: #7a879a;
-	--danger: #c73545;
-	--danger-soft: #fff0f2;
-	--warning: #b96808;
-	--warning-soft: #fff7e8;
-	--success: #13795b;
-	--success-soft: #e8f7f1;
-	--purple: #6d4dc3;
-	--purple-soft: #f1edff;
-	--shadow: 0 1px 2px rgba(16, 35, 63, 0.05), 0 8px 24px rgba(16, 35, 63, 0.04);
-	--mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
 .dashboard-demo * {
@@ -64,21 +40,6 @@
 	background: var(--app);
 }
 .dashboard-demo.dark {
-	--app: #0c1421;
-	--surface: #111c2d;
-	--surface-raised: #172438;
-	--surface-subtle: #142033;
-	--border: #29384c;
-	--border-strong: #3a4b63;
-	--text: #edf2f8;
-	--text-soft: #a8b5c8;
-	--muted: #7f90a8;
-	--blue-soft: #172e52;
-	--danger-soft: #3b2028;
-	--warning-soft: #382b19;
-	--success-soft: #15382f;
-	--purple-soft: #292449;
-	--shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 10px 28px rgba(0, 0, 0, 0.14);
 }
 .dashboard-demo .date-control input {
 	height: 34px;
@@ -694,11 +655,6 @@
 
 /* 시연 CSS가 실제 조사 화면의 토큰·요소 스타일을 덮어쓰지 않도록 루트 안에 가둡니다. */
 .dashboard-demo {
-	--color-surface: var(--surface);
-	--color-text: var(--text);
-	--color-muted: var(--muted);
-	--color-soft: var(--surface-subtle);
-	--color-control-border: var(--border);
 	font-size: 14px;
 	line-height: 1.6;
 }

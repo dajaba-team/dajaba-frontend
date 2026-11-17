@@ -44,6 +44,7 @@ export default function DemoSidebar() {
 					) : (
 						<Link
 							key={item.id}
+							aria-label={item.label}
 							className={`nav-item ${view === item.id ? "active" : ""}`}
 							aria-current={view === item.id ? "page" : undefined}
 							to={demoPath(item.id, db.cases[0]?.case_no)}

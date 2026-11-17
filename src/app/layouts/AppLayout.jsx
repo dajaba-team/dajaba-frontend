@@ -1,14 +1,16 @@
 import { useEffect } from "react"
-import { Link, NavLink, Outlet } from "react-router"
+import { Link, NavLink, Outlet, useLocation } from "react-router"
 import "../styles/app.css"
 import { useSession } from "../../features/auth/hooks/useSession"
 import AuthPanel from "../../features/auth/components/AuthPanel"
 import GuideBar from "../../shared/ui/GuideBar"
 import { useToast } from "../../shared/ui/toast/useToast"
+import Icon from "../../shared/ui/dashboard/Icon"
 import { visibleMenus } from "../navigation/appNavigation"
 
 export default function AppLayout() {
 	const session = useSession()
+	const isOverview = useLocation().pathname === "/overview"
 	const menus = session.data ? visibleMenus(session.data.role) : []
 	// 로그아웃·계정 전환·401 어느 길이든 loginId 가 바뀌면 이전 사람의 알림을 비워요.
 	const loginId = session.data?.loginId
@@ -23,8 +25,13 @@ export default function AppLayout() {
 			</a>
 			<div className="app-shell">
 				<aside className="app-sidebar" aria-label="업무 공간">
-					<Link className="app-brand" to="/cases">
-						DAJABA<span>AML 인텔리전스</span>
+					<Link className="app-brand" to="/overview">
+						<i className="app-brand-mark">
+							<Icon name="chart" size={23} />
+						</i>
+						<div>
+							DAJABA<span>AML 인텔리전스</span>
+						</div>
 					</Link>
 					<p className="sidebar-label">업무 공간</p>
 					{session.data && (
@@ -37,7 +44,8 @@ export default function AppLayout() {
 										`navigation-link${isActive ? " is-active" : ""}`
 									}
 								>
-									{m.label}
+									<Icon name={m.id === "overview" ? "grid" : "case"} size={17} />
+									<span>{m.label}</span>
 								</NavLink>
 							))}
 						</nav>
@@ -72,11 +80,14 @@ export default function AppLayout() {
 						)}
 						{/* URL을 유지하므로 로그인 후 원래 열었던 케이스로 돌아갑니다.
 						  세션 확인 전에는 업무 조회와 이전 계정 화면을 렌더링하지 않습니다. */}
-						{session.data && (
-							<GuideBar role={session.data.role}>
+						{session.data &&
+							(isOverview ? (
 								<Outlet key={session.data.loginId} />
-							</GuideBar>
-						)}
+							) : (
+								<GuideBar role={session.data.role}>
+									<Outlet key={session.data.loginId} />
+								</GuideBar>
+							))}
 					</main>
 				</div>
 			</div>

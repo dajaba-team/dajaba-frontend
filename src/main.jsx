@@ -4,7 +4,7 @@ import { BrowserRouter } from "react-router"
 import { QueryClientProvider } from "@tanstack/react-query"
 import App from "./app/App"
 import { createQueryClient } from "./app/queryClient"
-import { GlobalStyle } from "./shared/styles/GlobalStyle"
+import "./index.css"
 
 async function bootstrap() {
 	if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCKS === "true") {
@@ -15,7 +15,6 @@ async function bootstrap() {
 		<StrictMode>
 			<QueryClientProvider client={createQueryClient()}>
 				<BrowserRouter>
-					<GlobalStyle />
 					<App />
 				</BrowserRouter>
 			</QueryClientProvider>

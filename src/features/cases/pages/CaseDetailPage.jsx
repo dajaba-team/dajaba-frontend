@@ -16,9 +16,9 @@ import {
 } from "../labels"
 
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
-// 배치(화면 설계 CASE-02): 점수 카드 + 연결 경보 → 거래 근거(합계 + 자금 흐름·근거·참고 탭, 전체 폭 —
-// 표가 가로로 잘리지 않게) → 그 아래 메모·AI 요약·상태 이력 탭 + 다음 작업. 좁은 화면에선 한 줄로 쌓여요.
-// 점수 이유 상위 3개(SCRUM-208)는 점수 카드 바로 아래.
+// 배치는 시연 화면(/demo/cases)과 같은 2단: 왼쪽은 점수·연결 경보 → 점수 이유 상위 3개(SCRUM-208),
+// 오른쪽은 메모·AI 요약·상태 이력 탭 + 다음 작업. 거래 근거(합계 + 자금 흐름·근거·참고 탭)는 그 아래 전체 폭 —
+// 그래프 글자가 줄어들지 않고 표가 가로로 잘리지 않게. 좁은 화면에선 한 줄로 쌓여요.
 
 // 맨 위 score·scoreBand는 계약서 Q2 MVP대로 latest_score와 같은 값이에요(#78 리뷰). 혹시 비면 latest_score로.
 // 모델 점수라 범죄 확률이 아니에요. 등급은 서버 값(HIGH·MEDIUM·LOW) 그대로 — 정책이 없으면 등급 없이 점수만.
@@ -85,58 +85,80 @@ export default function CaseDetailPage() {
 	const query = useCaseDetail(caseNo)
 	const detail = query.data
 	return (
-		<>
-			<Link to={`/cases${listSearch}`}>← 케이스 목록</Link>
+		<div className="case-detail">
+			<Link className="case-back-link" to={`/cases${listSearch}`}>
+				← 케이스 목록
+			</Link>
 			<AsyncState query={query} />
 			{detail && (
 				<>
 					<header className="case-page-heading">
-						<h1>{detail.caseNo}</h1>
-						<p>
+						<div>
+							<p className="case-eyebrow">CASE v{detail.version}</p>
+							<h1>{detail.caseNo}</h1>
+							<p className="case-page-desc">
+								{[
+									detail.accountNo,
+									detail.alert && `연결 경보 ${detail.alert.alertNo}`,
+									detail.alert &&
+										`거래 시간 창 ${formatDataTime(detail.alert.windowStart)} ~ ${formatDataTime(detail.alert.windowEnd)}`,
+								]
+									.filter(Boolean)
+									.join(" · ")}
+							</p>
+						</div>
+						<p className="case-heading-badges">
 							<span className="case-status">
 								{labelOf(STATUS_LABELS, detail.status)}
-							</span>{" "}
-							담당자 {detail.assignee?.displayName || "미배정"} · 버전{" "}
-							{detail.version}
+							</span>
+							<span className="case-badge">
+								담당자 {detail.assignee?.displayName || "미배정"} · 버전{" "}
+								{detail.version}
+							</span>
 						</p>
 					</header>
-					<div className="case-detail-top">
-						<div className="case-detail-stack">
-							<section className="case-panel case-summary" aria-label="케이스 정보">
-								<ScoreBlock detail={detail} />
-								<dl>
-									<dt>계좌</dt>
-									<dd>{detail.accountNo}</dd>
-									<dt>생성</dt>
-									<dd>{formatSystemTime(detail.createdAt)}</dd>
-									{detail.rejectionReasonCode && (
-										<>
-											<dt>반려</dt>
-											<dd>
-												{labelOf(
-													REJECTION_LABELS,
-													detail.rejectionReasonCode,
-												)}
-											</dd>
-										</>
-									)}
-									{detail.closeReason && (
-										<>
-											<dt>종료 사유</dt>
-											<dd>
-												{labelOf(CLOSE_REASON_LABELS, detail.closeReason)}
-											</dd>
-										</>
-									)}
-								</dl>
-							</section>
+					<div className="case-detail-layout">
+						<div className="case-detail-main">
+							<div className="case-detail-top">
+								<section
+									className="case-panel case-summary"
+									aria-label="케이스 정보"
+								>
+									<ScoreBlock detail={detail} />
+									<dl>
+										<dt>계좌</dt>
+										<dd>{detail.accountNo}</dd>
+										<dt>생성</dt>
+										<dd>{formatSystemTime(detail.createdAt)}</dd>
+										{detail.rejectionReasonCode && (
+											<>
+												<dt>반려</dt>
+												<dd>
+													{labelOf(
+														REJECTION_LABELS,
+														detail.rejectionReasonCode,
+													)}
+												</dd>
+											</>
+										)}
+										{detail.closeReason && (
+											<>
+												<dt>종료 사유</dt>
+												<dd>
+													{labelOf(
+														CLOSE_REASON_LABELS,
+														detail.closeReason,
+													)}
+												</dd>
+											</>
+										)}
+									</dl>
+								</section>
+								<AlertPanel alert={detail.alert} />
+							</div>
 							<CaseScoreReasons latestScore={detail.latestScore} />
 						</div>
-						<AlertPanel alert={detail.alert} />
-					</div>
-					<div className="case-detail-grid">
-						<CaseEvidenceCard detail={detail} />
-						<div className="case-detail-aside">
+						<aside className="case-detail-aside" aria-label="메모와 다음 작업">
 							<CaseNotesCard detail={detail} onRefresh={() => query.refetch()} />
 							<CaseActions detail={detail} />
 							{detail.currentDraftNo && (
@@ -147,10 +169,13 @@ export default function CaseDetailPage() {
 									STR 화면으로 이동 →
 								</Link>
 							)}
+						</aside>
+						<div className="case-evidence">
+							<CaseEvidenceCard detail={detail} />
 						</div>
 					</div>
 				</>
 			)}
-		</>
+		</div>
 	)
 }

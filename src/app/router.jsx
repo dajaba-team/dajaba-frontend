@@ -11,7 +11,7 @@ import AdminBatchesPage from "../features/admin/batches/pages/AdminBatchesPage"
 import ApprovalListPage from "../features/approvals/pages/ApprovalListPage"
 import ApprovalDonePage from "../features/approvals/pages/ApprovalDonePage"
 import { useSession } from "../features/auth/hooks/useSession"
-import { homePathFor } from "./navigation/appNavigation"
+const OverviewPage = lazy(() => import("../features/overview/pages/OverviewPage"))
 
 // 전체 시연 묶음은 개발 모드에서만 불러옵니다. 운영 빌드에는 fixture를 포함하지 않습니다.
 const DashboardDemoRouter = import.meta.env.DEV
@@ -21,16 +21,11 @@ const DashboardDemoRouter = import.meta.env.DEV
 const ConnectionCheckPage = import.meta.env.DEV
 	? lazy(() => import("../features/connection/pages/ConnectionCheckPage"))
 	: null
-// 로그인 안 된 상태에서 /로 들어오면 develop 동작을 그대로 — DEV는 연동 확인, 운영은 /cases.
-const UNAUTH_HOME = import.meta.env.DEV ? "/dev/connection" : "/cases"
-
-// 로그인 뒤 /는 COM-01 역할별 첫 진입. 아직 ready:false인 메뉴면 그 역할의 첫 ready 메뉴로.
-// 세션 확인 전에는 리디렉션하지 않고 안내만 보여 줍니다(로그인/비로그인 선택을 세션 결과로 미룸).
+// The dashboard keeps the current URL through login. Role-specific work starts inside it.
 function HomeRedirect() {
 	const session = useSession()
 	if (session.isPending) return <p role="status">로그인 상태 확인 중…</p>
-	if (session.data) return <Navigate to={homePathFor(session.data.role)} replace />
-	return <Navigate to={UNAUTH_HOME} replace />
+	return <Navigate to="/overview" replace />
 }
 
 // 404 자리(아직 화면 없음) — RequireRole로 감싼 경로에서 admin/approver가 열면 보입니다.
@@ -68,6 +63,14 @@ export default function AppRouter() {
 				/>
 			)}
 			<Route element={<AppLayout />}>
+				<Route
+					path="overview"
+					element={
+						<Suspense fallback={<p role="status">대시보드를 불러오는 중…</p>}>
+							<OverviewPage />
+						</Suspense>
+					}
+				/>
 				<Route path="cases" element={<CaseListPage />} />
 				<Route path="cases/:caseNo" element={<CaseDetailPage />} />
 				<Route path="cases/:caseNo/str" element={<StrPage />} />
