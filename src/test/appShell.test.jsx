@@ -76,14 +76,26 @@ describe("appNavigation 표", () => {
 		expect(by.approvals).toBe("APR-01")
 		expect(by.accounts).toBe("ADM-03")
 	})
-	it("대시보드와 조사 케이스가 ready: true", () => {
-		expect(appNavigation.filter((m) => m.ready).map((m) => m.id)).toEqual(["overview", "cases"])
+	it("대시보드·배치·조사 케이스·감사 기록·계정 관리가 ready: true", () => {
+		expect(appNavigation.filter((m) => m.ready).map((m) => m.id)).toEqual([
+			"overview",
+			"batches",
+			"cases",
+			"audit",
+			"accounts",
+		])
 	})
 })
 
 describe("visibleMenus — ready:true만 노출", () => {
-	it("관리자 visibleMenus는 대시보드와 조사 케이스", () => {
-		expect(visibleMenus("ADMIN").map((m) => m.id)).toEqual(["overview", "cases"])
+	it("관리자 visibleMenus는 대시보드·배치·조사 케이스·감사 기록·계정 관리", () => {
+		expect(visibleMenus("ADMIN").map((m) => m.id)).toEqual([
+			"overview",
+			"batches",
+			"cases",
+			"audit",
+			"accounts",
+		])
 	})
 	it("승인자 visibleMenus도 대시보드와 조사 케이스", () => {
 		expect(visibleMenus("APPROVER").map((m) => m.id)).toEqual(["overview", "cases"])
@@ -91,14 +103,14 @@ describe("visibleMenus — ready:true만 노출", () => {
 })
 
 describe("homePathFor — COM-01 첫 화면 규칙", () => {
-	it("지금 상태에서 세 역할 모두 /cases로 간다", () => {
-		expect(homePathFor("ADMIN")).toBe("/cases")
+	it("지금 상태에서 관리자는 /admin/batches, 조사역·승인자는 /cases로 간다", () => {
+		expect(homePathFor("ADMIN")).toBe("/admin/batches")
 		expect(homePathFor("INVESTIGATOR")).toBe("/cases")
 		expect(homePathFor("APPROVER")).toBe("/cases")
 	})
-	it("ADM-01을 ready:true로 바꾸면 관리자 home은 /admin/batches", () => {
-		const nav = appNavigation.map((m) => (m.screenId === "ADM-01" ? { ...m, ready: true } : m))
-		expect(homePathFor("ADMIN", nav)).toBe("/admin/batches")
+	it("ADM-01을 ready:false로 바꾸면 관리자 home은 첫 ready 메뉴(/cases)", () => {
+		const nav = appNavigation.map((m) => (m.screenId === "ADM-01" ? { ...m, ready: false } : m))
+		expect(homePathFor("ADMIN", nav)).toBe("/cases")
 		// 조사역·승인자는 그대로 /cases
 		expect(homePathFor("INVESTIGATOR", nav)).toBe("/cases")
 		expect(homePathFor("APPROVER", nav)).toBe("/cases")
@@ -106,19 +118,27 @@ describe("homePathFor — COM-01 첫 화면 규칙", () => {
 })
 
 describe("앱 셸 — 사용자 흐름", () => {
-	it("admin 로그인 상태면 사이드바에 '조사 케이스'만 보이고 관리자 메뉴는 숨겨진다", async () => {
+	it("admin 로그인 상태면 사이드바에 준비된 관리자 메뉴가 보이고 미완성 메뉴는 숨겨진다", async () => {
 		renderApp("/cases", "admin")
 		const nav = await screen.findByRole("navigation", { name: "주요 메뉴" })
 		await waitFor(() =>
 			expect(within(nav).getByRole("link", { name: "조사 케이스" })).toBeInTheDocument(),
 		)
-		expect(
-			within(nav).queryByRole("link", { name: "데이터·배치 운영" }),
-		).not.toBeInTheDocument()
+		expect(within(nav).getByRole("link", { name: "데이터·배치 운영" })).toHaveAttribute(
+			"href",
+			"/admin/batches",
+		)
+		expect(within(nav).getByRole("link", { name: "감사 기록" })).toHaveAttribute(
+			"href",
+			"/admin/audit",
+		)
+		expect(within(nav).getByRole("link", { name: "계정 관리" })).toHaveAttribute(
+			"href",
+			"/admin/accounts",
+		)
 		expect(within(nav).queryByRole("link", { name: "경보 점검" })).not.toBeInTheDocument()
-		expect(within(nav).queryByRole("link", { name: "계정 관리" })).not.toBeInTheDocument()
 		expect(within(nav).queryByRole("link", { name: "탐지 룰" })).not.toBeInTheDocument()
-		expect(within(nav).queryByRole("link", { name: "감사 기록" })).not.toBeInTheDocument()
+		expect(within(nav).queryByRole("link", { name: "승인함" })).not.toBeInTheDocument()
 	})
 
 	it("inv01이 /admin/batches를 직접 열면 '권한이 없어요'가 보이고 리디렉션하지 않는다", async () => {
@@ -137,6 +157,7 @@ describe("앱 셸 — 사용자 흐름", () => {
 		await waitFor(() =>
 			expect(within(nav).getByRole("link", { name: "조사 케이스" })).toBeInTheDocument(),
 		)
+		expect(within(nav).queryByRole("link", { name: "계정 관리" })).not.toBeInTheDocument()
 		await user.click(screen.getByRole("button", { name: "로그아웃" }))
 		await screen.findByLabelText("아이디")
 		await user.type(screen.getByLabelText("아이디"), "admin")
@@ -145,10 +166,8 @@ describe("앱 셸 — 사용자 흐름", () => {
 		await waitFor(() => expect(screen.getByText(/예시 admin/)).toBeInTheDocument())
 		const nav2 = screen.getByRole("navigation", { name: "주요 메뉴" })
 		expect(within(nav2).getByRole("link", { name: "조사 케이스" })).toBeInTheDocument()
-		// admin 전용 메뉴는 아직 ready:false라 안 보임
-		expect(
-			within(nav2).queryByRole("link", { name: "데이터·배치 운영" }),
-		).not.toBeInTheDocument()
+		// 관리자로 바뀌면 관리자 메뉴가 보이고, 조사역 때는 없었음
+		expect(within(nav2).getByRole("link", { name: "계정 관리" })).toBeInTheDocument()
 	})
 
 	it("로그인 상태에서 /로 들어가면 일반 대시보드로 간다", async () => {

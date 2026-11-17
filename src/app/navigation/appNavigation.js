@@ -5,6 +5,7 @@
 export const appNavigation = [
 	{
 		id: "overview",
+		icon: "grid",
 		path: "/overview",
 		label: "업무 대시보드",
 		screenId: "OVR-01",
@@ -14,15 +15,18 @@ export const appNavigation = [
 	},
 	{
 		id: "batches",
+		icon: "database",
 		path: "/admin/batches",
 		label: "데이터·배치 운영",
 		screenId: "ADM-01",
 		roles: ["ADMIN"],
 		roleOrder: { ADMIN: 0 },
-		ready: false,
+		// 케이스 생성 카드(SCRUM-180) + 배치 API 머지됨 → 켬(SCRUM-266)
+		ready: true,
 	},
 	{
 		id: "alerts",
+		icon: "alert",
 		path: "/admin/alerts",
 		label: "경보 점검",
 		screenId: "ADM-02",
@@ -32,6 +36,7 @@ export const appNavigation = [
 	},
 	{
 		id: "cases",
+		icon: "case",
 		path: "/cases",
 		label: "조사 케이스",
 		screenId: "CASE-01",
@@ -41,6 +46,7 @@ export const appNavigation = [
 	},
 	{
 		id: "approvals",
+		icon: "approval",
 		path: "/approvals",
 		label: "승인함",
 		screenId: "APR-01",
@@ -50,6 +56,7 @@ export const appNavigation = [
 	},
 	{
 		id: "rules",
+		icon: "rules",
 		path: "/admin/rules",
 		label: "탐지 룰",
 		screenId: "ADM-04",
@@ -59,23 +66,25 @@ export const appNavigation = [
 	},
 	{
 		id: "audit",
+		icon: "audit",
 		path: "/admin/audit",
 		label: "감사 기록",
 		screenId: "ADM-05",
 		roles: ["ADMIN"],
 		roleOrder: { ADMIN: 5 },
-		// 화면은 있어요(SCRUM-170). 접근 기록 API(SCRUM-168)가 머지될 때 true 로 켜요 — 계정 관리와 같은 이유
-		ready: false,
+		// 화면(SCRUM-170) + 접근 기록 API(SCRUM-168) 머지됨 → 켬(SCRUM-266)
+		ready: true,
 	},
 	{
 		id: "accounts",
+		icon: "user",
 		path: "/admin/accounts",
 		label: "계정 관리",
 		screenId: "ADM-03",
 		roles: ["ADMIN"],
 		roleOrder: { ADMIN: 6 },
-		// 화면은 있어요(SCRUM-169). 발급·역할 변경·비활성화·초기화 API(SCRUM-135 ②)가 머지될 때 true 로 켜요(#28 리뷰)
-		ready: false,
+		// 화면(SCRUM-169) + 계정 관리 API(SCRUM-135 ②) 머지됨 → 켬(SCRUM-266)
+		ready: true,
 	},
 ]
 
