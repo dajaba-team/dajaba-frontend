@@ -52,7 +52,9 @@ export const appNavigation = [
 		screenId: "APR-01",
 		roles: ["APPROVER", "ADMIN"],
 		roleOrder: { APPROVER: 0, ADMIN: 3 },
-		ready: false,
+		// 화면(SCRUM-241) + 승인 대기 목록·승인·반려 API(BE SCRUM-217~219) 머지됨 → 켬.
+		// SCRUM-233 → develop 머지(23f1be9)에서 false로 되돌아간 것을 복구(SCRUM-266 후속)
+		ready: true,
 	},
 	{
 		id: "rules",

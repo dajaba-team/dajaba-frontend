@@ -76,11 +76,12 @@ describe("appNavigation 표", () => {
 		expect(by.approvals).toBe("APR-01")
 		expect(by.accounts).toBe("ADM-03")
 	})
-	it("대시보드·배치·조사 케이스·감사 기록·계정 관리가 ready: true", () => {
+	it("대시보드·배치·조사 케이스·승인함·감사 기록·계정 관리가 ready: true", () => {
 		expect(appNavigation.filter((m) => m.ready).map((m) => m.id)).toEqual([
 			"overview",
 			"batches",
 			"cases",
+			"approvals",
 			"audit",
 			"accounts",
 		])
@@ -88,32 +89,37 @@ describe("appNavigation 표", () => {
 })
 
 describe("visibleMenus — ready:true만 노출", () => {
-	it("관리자 visibleMenus는 대시보드·배치·조사 케이스·감사 기록·계정 관리", () => {
+	it("관리자 visibleMenus는 대시보드·배치·조사 케이스·승인함·감사 기록·계정 관리", () => {
 		expect(visibleMenus("ADMIN").map((m) => m.id)).toEqual([
 			"overview",
 			"batches",
 			"cases",
+			"approvals",
 			"audit",
 			"accounts",
 		])
 	})
-	it("승인자 visibleMenus도 대시보드와 조사 케이스", () => {
-		expect(visibleMenus("APPROVER").map((m) => m.id)).toEqual(["overview", "cases"])
+	it("승인자 visibleMenus는 대시보드 다음 승인함·조사 케이스 — 승인함이 먼저(SCRUM-241)", () => {
+		expect(visibleMenus("APPROVER").map((m) => m.id)).toEqual([
+			"overview",
+			"approvals",
+			"cases",
+		])
 	})
 })
 
 describe("homePathFor — COM-01 첫 화면 규칙", () => {
-	it("지금 상태에서 관리자는 /admin/batches, 조사역·승인자는 /cases로 간다", () => {
+	it("관리자는 /admin/batches, 조사역은 /cases, 승인자는 /approvals로 간다", () => {
 		expect(homePathFor("ADMIN")).toBe("/admin/batches")
 		expect(homePathFor("INVESTIGATOR")).toBe("/cases")
-		expect(homePathFor("APPROVER")).toBe("/cases")
+		expect(homePathFor("APPROVER")).toBe("/approvals")
 	})
 	it("ADM-01을 ready:false로 바꾸면 관리자 home은 첫 ready 메뉴(/cases)", () => {
 		const nav = appNavigation.map((m) => (m.screenId === "ADM-01" ? { ...m, ready: false } : m))
 		expect(homePathFor("ADMIN", nav)).toBe("/cases")
-		// 조사역·승인자는 그대로 /cases
+		// 조사역은 /cases, 승인자는 /approvals 그대로
 		expect(homePathFor("INVESTIGATOR", nav)).toBe("/cases")
-		expect(homePathFor("APPROVER", nav)).toBe("/cases")
+		expect(homePathFor("APPROVER", nav)).toBe("/approvals")
 	})
 })
 
@@ -138,7 +144,10 @@ describe("앱 셸 — 사용자 흐름", () => {
 		)
 		expect(within(nav).queryByRole("link", { name: "경보 점검" })).not.toBeInTheDocument()
 		expect(within(nav).queryByRole("link", { name: "탐지 룰" })).not.toBeInTheDocument()
-		expect(within(nav).queryByRole("link", { name: "승인함" })).not.toBeInTheDocument()
+		expect(within(nav).getByRole("link", { name: "승인함" })).toHaveAttribute(
+			"href",
+			"/approvals",
+		)
 	})
 
 	it("inv01이 /admin/batches를 직접 열면 '권한이 없어요'가 보이고 리디렉션하지 않는다", async () => {
