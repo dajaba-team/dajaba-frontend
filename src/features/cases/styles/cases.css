@@ -456,25 +456,6 @@
 .summary-badge.is-stale {
 	color: var(--color-fail);
 }
-/* 케이스 상세 배치 (화면 설계 CASE-02) — 점수 카드·연결 경보 → 거래 근거(전체 폭) → 메모 탭·다음 작업. 좁으면 한 줄로 쌓아요. */
-.case-detail-top,
-.case-detail-stack,
-.case-detail-grid,
-.case-detail-aside {
-	display: grid;
-	gap: var(--space-4);
-	min-inline-size: 0;
-}
-.case-detail-top {
-	margin-block-end: var(--space-4);
-}
-.case-detail-top,
-.case-detail-grid {
-	align-items: start;
-}
-.case-detail-top .case-panel > h2 {
-	margin: var(--space-4) var(--space-4) 0;
-}
 .case-score {
 	padding: var(--space-4) var(--space-4) 0;
 }
@@ -588,16 +569,6 @@
 .case-tab-panel > section + section {
 	margin-block-start: var(--space-5);
 }
-@media (min-width: 75rem) {
-	.case-detail-top {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-	/* 거래 근거는 표가 가로로 잘리지 않게 한 줄 전체를 쓰고, 메모·다음 작업은 그 아래에 나란히. */
-	.case-detail-aside {
-		grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 1fr);
-		align-items: start;
-	}
-}
 /* 점수 이유 상위 3개 (SCRUM-208) — 이유마다 관측값·기준값·모델 기여를 한 묶음으로 */
 .case-reasons {
 	display: grid;
@@ -607,4 +578,133 @@
 }
 .case-reasons li > dl {
 	padding: var(--space-2) 0 0;
+}
+
+/* 케이스 상세 — 시연 화면(/demo/cases)과 같은 모양: 위에 작은 머리글(CASE v·번호·한 줄 설명 + 오른쪽 배지),
+   아래는 왼쪽 본문 + 오른쪽 메모·다음 작업 2단, 거래 근거는 그 밑 전체 폭. 카드 제목은 구분선 있는 머리 띠로 보여요. 좁으면 한 줄로 쌓아요. */
+.case-detail {
+	--case-card-shadow: 0 1px 2px rgb(16 35 63 / 5%), 0 8px 24px rgb(16 35 63 / 4%);
+}
+.case-back-link {
+	display: inline-block;
+	margin-block-end: var(--space-4);
+	font-size: var(--font-small);
+	font-weight: 600;
+	text-decoration: none;
+}
+.case-back-link:hover {
+	text-decoration: underline;
+}
+.case-detail .case-page-heading {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: var(--space-3) var(--space-5);
+}
+.case-detail .case-page-heading h1 {
+	margin: 0;
+	letter-spacing: -0.02em;
+}
+.case-detail .case-page-heading p {
+	margin: 0;
+}
+.case-eyebrow {
+	margin-block-end: var(--space-1);
+	color: var(--color-primary);
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+}
+.case-page-desc {
+	margin-block-start: var(--space-1);
+	color: var(--color-muted);
+	font-size: var(--font-small);
+	font-variant-numeric: tabular-nums;
+}
+.case-heading-badges {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2);
+}
+.case-badge {
+	display: inline-flex;
+	padding: 0.125rem 0.625rem;
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-pill);
+	background: var(--color-table-head);
+	color: var(--color-muted);
+	font-size: var(--font-small);
+	font-weight: 600;
+}
+.case-layout,
+.case-main,
+.case-aside,
+.case-evidence,
+.case-detail-top {
+	display: grid;
+	gap: var(--space-4);
+	align-items: start;
+	min-inline-size: 0;
+}
+.case-detail .case-panel {
+	box-shadow: var(--case-card-shadow);
+}
+.case-detail .case-card .case-panel {
+	box-shadow: none;
+}
+/* 카드 제목 띠 — 바깥 카드의 첫 제목만(카드 안에 들어간 합계·메모 제목은 그대로). */
+.case-detail-top > .case-panel > h2,
+.case-main > .case-summary > h2,
+.case-detail .case-card > .case-card-head,
+.case-aside .case-actions > h2 {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--space-1) var(--space-4);
+	margin: 0;
+	padding: var(--space-3) var(--space-4);
+	border-block-end: var(--border-width) solid var(--color-border);
+	font-size: var(--font-body);
+	font-weight: 700;
+}
+.case-detail .case-card > .case-card-head,
+.case-aside .case-actions > h2 {
+	margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) var(--space-4);
+}
+.case-detail .case-card > .case-card-head h2 {
+	margin: 0;
+	font-size: var(--font-body);
+}
+.case-main > .case-summary > h2 + p {
+	margin-block-start: var(--space-3);
+}
+.case-aside .case-str-link {
+	padding: var(--space-3) var(--space-4);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-card);
+	background: var(--color-surface);
+	box-shadow: var(--case-card-shadow);
+	text-decoration: none;
+}
+@media (min-width: 48rem) {
+	.case-detail-top {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+/* 1240px 아래에선 오른쪽 단이 본문 밑으로 내려가 둘씩 나란히 — 시연 화면과 같은 기준. */
+@media (min-width: 48rem) and (max-width: 77.49rem) {
+	.case-aside {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (min-width: 77.5rem) {
+	.case-layout {
+		grid-template-columns: minmax(0, 1fr) 23rem;
+	}
+	.case-evidence {
+		grid-column: 1 / -1;
+	}
 }
