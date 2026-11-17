@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
 	changedSections,
+	currentRejection,
 	sectionError,
 	strActionsFor,
 	submitBlockReason,
@@ -104,6 +105,8 @@ describe("STR 화면 규칙", () => {
 		expect(submitBlockReason({ ...base, dirty: true })).toMatch("저장")
 		// 보완 요청 뒤 같은 본문 — 서버 last_rejection.narrative_unchanged
 		expect(submitBlockReason({ ...base, narrativeUnchanged: true })).toMatch("반려 당시와 본문")
+		// 고쳐 저장해서 서버가 false를 주면 막지 않아요
+		expect(submitBlockReason({ ...base, narrativeUnchanged: false })).toBeNull()
 		expect(
 			submitBlockReason({ ...base, verification: { ...passed, isCurrent: false } }),
 		).toMatch("검증 통과")
@@ -136,5 +139,59 @@ describe("STR 화면 규칙", () => {
 		expect(mismatchMarks("3건, 13건", [three]).map((m) => m.start)).toEqual([0])
 		expect(mismatchMarks("9월 초", [{ match: false, draftValue: "2022-09-03" }])).toEqual([])
 		expect(mismatchMarks("본문", [{ match: false, draftValue: null }])).toEqual([])
+	})
+
+	describe("currentRejection — 띠에 보일 반려(STR-04)", () => {
+		const s2 = {
+			reasonCode: "NEED_REVISION",
+			comment: "S2 사유",
+			revisionNo: 2,
+			decidedBy: "예시 apr01",
+			decidedAt: "2026-11-16T02:00:00Z",
+			narrativeUnchanged: true,
+		}
+		const reject = {
+			action: "REJECT",
+			reasonCode: "NEED_REVISION",
+			comment: "이력 사유",
+			createdBy: "apr01",
+			createdAt: "2026-11-16T02:00:00Z",
+		}
+		const submit = (createdAt) => ({ action: "SUBMIT_FOR_APPROVAL", createdAt })
+		const detail = (status, history) => ({ status, history })
+
+		it("지금 초안의 S2 last_rejection이 먼저", () => {
+			expect(
+				currentRejection({ lastRejection: s2 }, detail("REJECTED", [reject])),
+			).toMatchObject({ comment: "S2 사유", revisionNo: 2, previousDraft: false })
+		})
+
+		it("보완 중이 아니면(승인 대기·승인) 띠 없음", () => {
+			expect(
+				currentRejection({ lastRejection: s2 }, detail("PENDING_APPROVAL", [])),
+			).toBeNull()
+			expect(currentRejection({ lastRejection: s2 }, detail("APPROVED", []))).toBeNull()
+		})
+
+		it("반려 뒤 다시 생성한 새 초안이면 케이스 이력의 최신 반려로", () => {
+			const history = [reject, submit("2026-11-16T01:00:00Z")]
+			expect(currentRejection({ lastRejection: null }, detail("DRAFTED", history))).toEqual({
+				reasonCode: "NEED_REVISION",
+				comment: "이력 사유",
+				revisionNo: null,
+				decidedBy: "apr01",
+				decidedAt: "2026-11-16T02:00:00Z",
+				narrativeUnchanged: false,
+				previousDraft: true,
+			})
+		})
+
+		it("반려 뒤 이미 다시 승인 요청했거나 반려가 없으면 띠 없음", () => {
+			const resubmitted = [submit("2026-11-16T03:00:00Z"), reject]
+			expect(
+				currentRejection({ lastRejection: null }, detail("DRAFTED", resubmitted)),
+			).toBeNull()
+			expect(currentRejection({ lastRejection: null }, detail("DRAFTED", []))).toBeNull()
+		})
 	})
 })

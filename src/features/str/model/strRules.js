@@ -183,3 +183,32 @@ export function mismatchMarks(text, checks) {
 	}
 	return marks.sort((a, b) => a.start - b.start)
 }
+
+/**
+ * 화면에 띄울 반려 정보(STR-04 — 코드·사유·결정자·시각·대상 수정본). 보완 중(REJECTED·DRAFTED)만, 아니면 null.
+ * - 지금 초안의 S2 last_rejection이 먼저(초안 기준이라 승인 뒤에도 남아서 상태로 거름).
+ * - 반려 뒤 [다시 생성]한 새 초안엔 last_rejection이 없어요. 그때는 케이스 이력(C2 history)의 최신 REJECT로
+ *   대신 보여 줘요 — 그 뒤에 승인 요청이 없을 때만(이미 다시 요청한 반려는 지난 일). 대상 수정본은 이전 초안
+ *   것이라 없고(previousDraft: true), 같은 본문 검사(narrative_unchanged)도 새 초안엔 해당 없음.
+ */
+export function currentRejection(draft, detail) {
+	if (!["REJECTED", "DRAFTED"].includes(detail?.status)) return null
+	if (draft?.lastRejection) return { ...draft.lastRejection, previousDraft: false }
+	const history = detail.history ?? []
+	const latest = (action) =>
+		history
+			.filter((entry) => entry.action === action)
+			.reduce((a, b) => (a && a.createdAt >= b.createdAt ? a : b), null)
+	const reject = latest("REJECT")
+	const submit = latest("SUBMIT_FOR_APPROVAL")
+	if (!reject || (submit && submit.createdAt > reject.createdAt)) return null
+	return {
+		reasonCode: reject.reasonCode ?? detail.rejectionReasonCode ?? null,
+		comment: reject.comment ?? null,
+		revisionNo: null,
+		decidedBy: reject.createdBy ?? null,
+		decidedAt: reject.createdAt ?? null,
+		narrativeUnchanged: false,
+		previousDraft: true,
+	}
+}

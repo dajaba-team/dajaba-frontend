@@ -19,6 +19,7 @@ import StrRevisionHistory from "../components/StrRevisionHistory"
 import StrGenerateForm from "../components/StrGenerateForm"
 import {
 	changedSections,
+	currentRejection,
 	sectionError,
 	stateNotice,
 	strActionsFor,
@@ -129,9 +130,8 @@ function StrWorkspace({ draft, detail }) {
 		!dirty && verification?.isCurrent
 			? verification.codeChecks.filter((check) => !check.match)
 			: []
-	// last_rejection은 초안 기준이라 다시 요청·승인 뒤에도 남아요. 보완 중(REJECTED·DRAFTED)일 때만 띠로.
-	const inRevision = ["REJECTED", "DRAFTED"].includes(detail.status)
-	const rejection = inRevision ? draft.lastRejection : null
+	// 반려 띠: 보완 중(REJECTED·DRAFTED)만 — S2 last_rejection, 새 초안이면 케이스 이력의 최신 반려(STR-04)
+	const rejection = currentRejection(draft, detail)
 	const rejectionCode =
 		rejection?.reasonCode ?? (detail.status === "REJECTED" ? detail.rejectionReasonCode : null)
 	const blockReason = submitBlockReason({
@@ -171,6 +171,7 @@ function StrWorkspace({ draft, detail }) {
 							{rejection?.decidedAt && ` · ${formatSystemTime(rejection.decidedAt)}`}
 							{rejection?.revisionNo != null &&
 								` · 대상 ${revisionLabel(rejection.revisionNo)}`}
+							{rejection?.previousDraft && " · 이전 초안에 대한 반려"}
 						</p>
 					)}
 					{rejection?.reasonCode === "NEED_REVISION" && rejection.narrativeUnchanged && (
