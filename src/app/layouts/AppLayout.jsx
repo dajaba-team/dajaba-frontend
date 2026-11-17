@@ -44,7 +44,7 @@ export default function AppLayout() {
 										`navigation-link${isActive ? " is-active" : ""}`
 									}
 								>
-									<Icon name={m.id === "overview" ? "grid" : "case"} size={17} />
+									<Icon name={m.icon ?? "case"} size={17} />
 									<span>{m.label}</span>
 								</NavLink>
 							))}
