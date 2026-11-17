@@ -15,6 +15,7 @@ export default function StrSuspicionPanel({
 	editable,
 	types,
 	level,
+	levelHq = null,
 	recommended,
 	onTypesChange,
 	onLevelChange,
@@ -27,6 +28,8 @@ export default function StrSuspicionPanel({
 				<h2 id="str-vi-heading">VI. 의심 유형·지점 의심 정도</h2>
 				<p>
 					선택 {types.length}개 · 지점 의심 정도 {level ?? "미입력"}
+					{/* 본점 정도는 승인(P2) 때 승인자가 정해요 — 승인 전엔 null이라 안 보여요 */}
+					{levelHq != null && ` · 본점 의심 정도 ${levelHq}`}
 					{editable && " · 승인 요청 때 함께 보내요(따로 저장하지 않아요)"}
 				</p>
 			</div>

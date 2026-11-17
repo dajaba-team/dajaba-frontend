@@ -19,6 +19,7 @@ import StrRevisionHistory from "../components/StrRevisionHistory"
 import StrGenerateForm from "../components/StrGenerateForm"
 import {
 	changedSections,
+	currentRejection,
 	sectionError,
 	stateNotice,
 	strActionsFor,
@@ -129,6 +130,10 @@ function StrWorkspace({ draft, detail }) {
 		!dirty && verification?.isCurrent
 			? verification.codeChecks.filter((check) => !check.match)
 			: []
+	// 반려 띠: 보완 중(REJECTED·DRAFTED)만 — S2 last_rejection, 새 초안이면 케이스 이력의 최신 반려(STR-04)
+	const rejection = currentRejection(draft, detail)
+	const rejectionCode =
+		rejection?.reasonCode ?? (detail.status === "REJECTED" ? detail.rejectionReasonCode : null)
 	const blockReason = submitBlockReason({
 		actions,
 		caseStatus: detail.status,
@@ -136,10 +141,9 @@ function StrWorkspace({ draft, detail }) {
 		verification,
 		types,
 		level,
+		narrativeUnchanged: rejection?.narrativeUnchanged === true,
 	})
 	const notice = stateNotice(draft, detail)
-	const rejection = draft.lastRejection
-	const rejectionCode = rejection?.reasonCode ?? detail.rejectionReasonCode
 
 	const doSave = () => {
 		if (!dirty || invalid || save.isPending) return
@@ -167,6 +171,13 @@ function StrWorkspace({ draft, detail }) {
 							{rejection?.decidedAt && ` · ${formatSystemTime(rejection.decidedAt)}`}
 							{rejection?.revisionNo != null &&
 								` · 대상 ${revisionLabel(rejection.revisionNo)}`}
+							{rejection?.previousDraft && " · 이전 초안에 대한 반려"}
+						</p>
+					)}
+					{rejection?.reasonCode === "NEED_REVISION" && rejection.narrativeUnchanged && (
+						<p>
+							아직 반려 당시 본문 그대로예요. 고쳐 저장해야 다시 승인 요청할 수
+							있어요.
 						</p>
 					)}
 					{notice && <p>{notice}</p>}
@@ -240,6 +251,7 @@ function StrWorkspace({ draft, detail }) {
 						editable={editable}
 						types={types}
 						level={level}
+						levelHq={draft.suspicionLevelHq}
 						recommended={draft.suspicionTypesRecommended}
 						onTypesChange={setTypes}
 						onLevelChange={setLevel}

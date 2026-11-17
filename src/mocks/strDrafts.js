@@ -316,6 +316,10 @@ export function canViewStrContent(user, draft) {
 // 관리자·비담당 조사역은 `access: "META_ONLY"`로 상태·날짜만(11/3 결정, 11/4 채영 필드 확정).
 // 허용 필드만 골라 만들어 본문 필드가 새로 생겨도 새지 않게 하고, 본문 키는 빼지 않고 null로 줘요(계약서 2.3).
 // item(케이스)이 있으면 케이스 상태·version·available_actions·is_current를 그때그때 계산해 넣어요(S3·S5·S6 뒤에도 맞게).
+const sameText = (a, b) =>
+	JSON.stringify(a.map(({ section, text }) => [section, text])) ===
+	JSON.stringify(b.map(({ section, text }) => [section, text]))
+
 export function visibleStrDraft(user, draft, item = null, actionsOf = null) {
 	const caseStatus = item?.current_draft_no === draft.draft_no ? item.status : draft.case_status
 	if (!canViewStrContent(user, draft))
@@ -335,8 +339,16 @@ export function visibleStrDraft(user, draft, item = null, actionsOf = null) {
 	// eslint-disable-next-line no-unused-vars
 	const { assignee_login_id, revisions, rejected_narrative, ...body } = draft
 	const verification = draft.latest_verification
+	const rejection = draft.last_rejection
 	return {
 		...body,
+		// BE처럼 반려 당시 본문과 지금 본문을 비교해 그때그때 계산
+		last_rejection: rejection
+			? {
+					...rejection,
+					narrative_unchanged: sameText(draft.rejected_narrative ?? [], draft.narrative),
+				}
+			: null,
 		case_status: caseStatus,
 		case_version: item ? item.version : draft.case_version,
 		available_actions:
