@@ -638,9 +638,9 @@
 	font-size: var(--font-small);
 	font-weight: 600;
 }
-.case-layout,
-.case-main,
-.case-aside,
+.case-detail-layout,
+.case-detail-main,
+.case-detail-aside,
 .case-evidence,
 .case-detail-top {
 	display: grid;
@@ -656,9 +656,9 @@
 }
 /* 카드 제목 띠 — 바깥 카드의 첫 제목만(카드 안에 들어간 합계·메모 제목은 그대로). */
 .case-detail-top > .case-panel > h2,
-.case-main > .case-summary > h2,
+.case-detail-main > .case-summary > h2,
 .case-detail .case-card > .case-card-head,
-.case-aside .case-actions > h2 {
+.case-detail-aside .case-actions > h2 {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
@@ -671,17 +671,17 @@
 	font-weight: 700;
 }
 .case-detail .case-card > .case-card-head,
-.case-aside .case-actions > h2 {
+.case-detail-aside .case-actions > h2 {
 	margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) var(--space-4);
 }
 .case-detail .case-card > .case-card-head h2 {
 	margin: 0;
 	font-size: var(--font-body);
 }
-.case-main > .case-summary > h2 + p {
+.case-detail-main > .case-summary > h2 + p {
 	margin-block-start: var(--space-3);
 }
-.case-aside .case-str-link {
+.case-detail-aside .case-str-link {
 	padding: var(--space-3) var(--space-4);
 	border: var(--border-width) solid var(--color-border);
 	border-radius: var(--radius-card);
@@ -696,12 +696,12 @@
 }
 /* 1240px 아래에선 오른쪽 단이 본문 밑으로 내려가 둘씩 나란히 — 시연 화면과 같은 기준. */
 @media (min-width: 48rem) and (max-width: 77.49rem) {
-	.case-aside {
+	.case-detail-aside {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 }
 @media (min-width: 77.5rem) {
-	.case-layout {
+	.case-detail-layout {
 		grid-template-columns: minmax(0, 1fr) 23rem;
 	}
 	.case-evidence {

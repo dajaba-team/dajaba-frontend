@@ -117,8 +117,8 @@ export default function CaseDetailPage() {
 							</span>
 						</p>
 					</header>
-					<div className="case-layout">
-						<div className="case-main">
+					<div className="case-detail-layout">
+						<div className="case-detail-main">
 							<div className="case-detail-top">
 								<section
 									className="case-panel case-summary"
@@ -158,7 +158,7 @@ export default function CaseDetailPage() {
 							</div>
 							<CaseScoreReasons latestScore={detail.latestScore} />
 						</div>
-						<aside className="case-aside" aria-label="메모와 다음 작업">
+						<aside className="case-detail-aside" aria-label="메모와 다음 작업">
 							<CaseNotesCard detail={detail} onRefresh={() => query.refetch()} />
 							<CaseActions detail={detail} />
 							{detail.currentDraftNo && (
