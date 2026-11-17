@@ -39,7 +39,7 @@ describe("대시보드 URL과 화면 분리", () => {
 	it("메뉴를 URL로 이동하고 뒤로가기로 이전 화면을 복원한다", async () => {
 		const user = renderDemo("/demo")
 		await screen.findByRole("heading", {
-			name: "합성 데이터 기반 AML 조사·STR 작성 지원 시스템",
+			name: "흐름을 읽고, 위험을 발견하다.",
 		})
 		expect(screen.getByTestId("location")).toHaveTextContent("/demo/overview")
 		await user.click(screen.getByRole("link", { name: "경보 점검" }))
@@ -48,7 +48,7 @@ describe("대시보드 URL과 화면 분리", () => {
 		await user.click(screen.getByRole("button", { name: "이전 경로" }))
 		expect(
 			await screen.findByRole("heading", {
-				name: "합성 데이터 기반 AML 조사·STR 작성 지원 시스템",
+				name: "흐름을 읽고, 위험을 발견하다.",
 			}),
 		).toBeInTheDocument()
 	})

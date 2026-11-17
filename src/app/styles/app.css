@@ -79,12 +79,11 @@
 	background: var(--color-primary-soft);
 	color: var(--color-primary);
 }
-/* 선택한 메뉴는 옅은 강조색 면 + 강조색 글자 + 왼쪽 선 — 본문보다 먼저 눈에 띄지 않게. */
+/* 선택한 메뉴는 강조색 면 + 흰 굵은 글자 — 선·상자 없이. */
 .navigation-link.is-active {
 	background: var(--color-sidebar-active);
-	color: var(--color-primary);
-	font-weight: 650;
-	box-shadow: inset 0.1875rem 0 0 var(--color-primary);
+	color: var(--color-on-dark);
+	font-weight: 700;
 }
 .sidebar-note {
 	margin-block-start: auto;

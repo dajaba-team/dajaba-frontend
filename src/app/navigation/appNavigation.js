@@ -4,13 +4,22 @@
 
 export const appNavigation = [
 	{
+		id: "overview",
+		path: "/overview",
+		label: "업무 대시보드",
+		screenId: "OVR-01",
+		roles: ["INVESTIGATOR", "APPROVER", "ADMIN"],
+		roleOrder: { INVESTIGATOR: -1, APPROVER: -1, ADMIN: -1 },
+		ready: true,
+	},
+	{
 		id: "batches",
 		path: "/admin/batches",
 		label: "데이터·배치 운영",
 		screenId: "ADM-01",
 		roles: ["ADMIN"],
 		roleOrder: { ADMIN: 0 },
-		ready: true, // SCRUM-220 화면 틀 — 관리자 첫 화면(COM-01)이 /admin/batches 로 바뀌어요
+		ready: false,
 	},
 	{
 		id: "alerts",
@@ -37,7 +46,7 @@ export const appNavigation = [
 		screenId: "APR-01",
 		roles: ["APPROVER", "ADMIN"],
 		roleOrder: { APPROVER: 0, ADMIN: 3 },
-		ready: true, // SCRUM-241 — 승인 대기 목록·승인·반려(BE SCRUM-217~219). 승인자 첫 화면(COM-01)이 /approvals 로 바뀌어요
+		ready: false,
 	},
 	{
 		id: "rules",
@@ -91,6 +100,6 @@ const FIRST_SCREEN_BY_ROLE = {
 export function homePathFor(role, nav = appNavigation) {
 	const first = nav.find((m) => m.screenId === FIRST_SCREEN_BY_ROLE[role])
 	if (first && first.ready && first.roles.includes(role)) return first.path
-	const fallback = visibleMenus(role, nav)[0]
+	const fallback = visibleMenus(role, nav).find((menu) => menu.id !== "overview")
 	return fallback ? fallback.path : "/cases"
 }

@@ -1,69 +1,33 @@
 import "../styles/dashboard-demo.css"
-import PageHeading from "../../../shared/ui/dashboard/PageHeading.jsx"
+import DashboardView from "../components/DashboardView"
 import Badge from "../../../shared/ui/dashboard/Badge.jsx"
 import { statusKo } from "../../../shared/demo/labels.js"
 import Icon from "../../../shared/ui/dashboard/Icon.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
 export default function Overview() {
-	const { db, role, go } = useDashboardDemo()
+	const { db, go, dark } = useDashboardDemo()
 	const item = db.cases[0]
-	const cards =
-		role === "ADMIN"
-			? [
-					["원천 적재", "완료", "18,420건 · 실측 예시"],
-					[
-						"룰 스캔",
-						db.batches.some((b) => b.type === "RULE_SCAN") ? "완료" : "대기",
-						"선택 날짜 기준",
-					],
-					[
-						"점수 산출",
-						`${db.alerts.filter((a) => a.score_status === "SCORED").length} / 실패 ${db.alerts.filter((a) => a.score_status === "FAILED").length}`,
-						"경보별 실패 분리",
-					],
-					["케이스 생성", item ? "1건" : "0건", "HIGH·SCORED 대상"],
-				]
-			: role === "INVESTIGATOR"
-				? [
-						["미배정 케이스", item.status === "OPEN" ? "1" : "0", "OPEN"],
-						[
-							"내 조사 중",
-							item.assignee_id === "inv01" && item.status === "REVIEWING" ? "1" : "0",
-							"담당자 기준",
-						],
-						[
-							"STR 작성 대상",
-							["ESCALATED", "DRAFTED"].includes(item.status) ? "1" : "0",
-							"현재 케이스",
-						],
-						["반려 후 보완", item.status === "REJECTED" ? "1" : "0", "재검증 필요"],
-					]
-				: [
-						["승인 대기", item.status === "PENDING_APPROVAL" ? "1" : "0", "현재 큐"],
-						["승인 완료", item.status === "APPROVED" ? "1" : "0", "결정 기록"],
-						["반려", item.status === "REJECTED" ? "1" : "0", "보완 요청"],
-						[
-							"처리 이력",
-							db.histories.filter((h) => h.category === "DECISION").length.toString(),
-							"승인·반려",
-						],
-					]
+	const items = db.cases.map((c) => ({
+		caseNo: c.case_no,
+		status: c.status,
+		accountNo: c.masked_account_no ?? null,
+		assignee: c.assignee_id ? { displayName: c.assignee_id } : null,
+		score: c.latest_score ?? null,
+		scoreBand: c.score_band ?? null,
+	}))
+
 	return (
 		<main className="page">
-			<PageHeading
-				eyebrow="AML OPERATIONS"
-				title="합성 데이터 기반 AML 조사·STR 작성 지원 시스템"
-				description="의심거래 조사 지원용이며 범죄 여부를 확정하지 않습니다."
+			<DashboardView
+				items={items}
+				total={items.length}
+				description="거래 탐지부터 조사, STR 보고까지. 하나로 연결되는 AML 워크스페이스."
+				onStart={() => go("cases")}
+				demo
+				dark={dark}
+				listPath="/demo/cases"
+				casePath={(n) => `/demo/cases/${encodeURIComponent(n)}`}
 			/>
-			<section className="kpi-grid">
-				{cards.map(([label, value, note]) => (
-					<div className="kpi-card" key={label}>
-						<span>{label}</span>
-						<strong>{value}</strong>
-						<small>{note}</small>
-					</div>
-				))}
-			</section>
 			<section className="panel pipeline-card">
 				<div className="section-head">
 					<div>
