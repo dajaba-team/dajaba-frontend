@@ -399,6 +399,12 @@
 .case-score {
 	margin-right: 20px;
 }
+/* 대시보드 케이스 줄 — 점수·상태를 오른쪽 정렬하고 폭을 고정해 줄마다 끝선이 맞게 (SCRUM-285) */
+.focus-case .case-score {
+	min-width: 7.5rem;
+	text-align: right;
+	white-space: nowrap;
+}
 .case-score strong {
 	font-size: 22px;
 	font-weight: 600;
