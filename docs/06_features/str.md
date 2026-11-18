@@ -23,7 +23,7 @@ BE가 한 단계씩 붙으면 프론트 코드는 그대로예요(경로·모양
 
 **S2 차이 (BE develop 11/18 기준)** — #84 `case_status`·`narrative[].label`·`latest_verification.is_current`, #109 `suspicion_*`·`generation_id`·`generator_version`·`references`(`[]`)·`META_ONLY`의 `case_no`·`case_status`, #115 `last_rejection`(`decided_by`는 승인자 표시 이름)이 들어왔어요. `available_actions`도 SCRUM-232로 들어왔어요. 프론트는:
 
-- `last_rejection`은 케이스가 보완 중(REJECTED·DRAFTED)일 때만 띠로 보여요(초안 기준이라 승인 뒤에도 남음). 반려 뒤 [다시 생성]한 새 초안엔 `last_rejection`이 없어서, 그때는 케이스 이력(C2 `history`)의 최신 REJECT로 대신 보여요("이전 초안에 대한 반려" — 그 뒤 승인 요청이 있으면 안 보임, `strRules.currentRejection`). `narrative_unchanged: true`면 안내 + [승인 요청]을 막아요(S6 409 `NARRATIVE_UNCHANGED` 전에).
+- `last_rejection`은 케이스가 보완 중(REJECTED·DRAFTED)일 때만 띠로 보여요(초안 기준이라 승인 뒤에도 남음). 반려 뒤 [다시 생성]한 새 초안엔 `last_rejection`이 없어서, 그때는 케이스 이력(C2 `history`)의 최신 REJECT로 대신 보여요("이전 초안에 대한 반려" — 그 뒤 승인 요청이 있으면 안 보임, `strRules.currentRejection`). 이력 반려의 결정자는 login_id(C2 `created_by`)라 S2 반려의 표시 이름과 모양이 달라요. 이력은 BE가 최신순 최근 20줄(NOTE 제외)로 줘서 배열 순서로 판단하고, 반려 뒤 이력이 20줄을 넘으면 띠가 사라져요. `narrative_unchanged: true`면 안내 + [승인 요청]을 막아요(S6 409 `NARRATIVE_UNCHANGED` 전에).
 - `suspicion_level_hq`는 승인 뒤 VI부에 "본점 의심 정도 N"으로 보여요.
 
 - 버튼은 S2 `available_actions`로만 켜요(`strRules.strActionsFor`, 케이스 C2로 대신 계산하던 임시 다리는 지움). 승인자는 `APPROVE`·`REJECT`를 받아 STR 화면에서 바로 승인·보완 요청·보고 안 함을 해요(승인함과 같은 `ApprovalDialog`). 자기 승인이면 서버가 `[]`를 줘요.

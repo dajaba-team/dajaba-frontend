@@ -181,18 +181,21 @@ export function mismatchMarks(text, checks) {
 export function currentRejection(draft, detail) {
 	if (!["REJECTED", "DRAFTED"].includes(detail?.status)) return null
 	if (draft?.lastRejection) return { ...draft.lastRejection, previousDraft: false }
+	// C2 history는 BE가 최신순(id 내림차순, NOTE 빼고 최근 20줄)으로 줘요(GetCaseDetail).
+	// created_at은 초 단위라 같은 초에 겹칠 수 있어서, 시각 비교 대신 배열 순서로 봐요:
+	// 최신 REJECT보다 앞(더 최근)에 SUBMIT_FOR_APPROVAL이 있으면 이미 다시 요청한 지난 반려.
+	// 반려 뒤 이력이 20줄을 넘으면 REJECT가 밀려나 띠가 사라져요 — 보완 중엔 생기기 어려운 경우.
 	const history = detail.history ?? []
-	const latest = (action) =>
-		history
-			.filter((entry) => entry.action === action)
-			.reduce((a, b) => (a && a.createdAt >= b.createdAt ? a : b), null)
-	const reject = latest("REJECT")
-	const submit = latest("SUBMIT_FOR_APPROVAL")
-	if (!reject || (submit && submit.createdAt > reject.createdAt)) return null
+	const rejectAt = history.findIndex((entry) => entry.action === "REJECT")
+	if (rejectAt < 0) return null
+	if (history.slice(0, rejectAt).some((entry) => entry.action === "SUBMIT_FOR_APPROVAL"))
+		return null
+	const reject = history[rejectAt]
 	return {
 		reasonCode: reject.reasonCode ?? detail.rejectionReasonCode ?? null,
 		comment: reject.comment ?? null,
 		revisionNo: null,
+		// 이력의 created_by는 login_id예요(S2 last_rejection.decided_by는 표시 이름)
 		decidedBy: reject.createdBy ?? null,
 		decidedAt: reject.createdAt ?? null,
 		narrativeUnchanged: false,
