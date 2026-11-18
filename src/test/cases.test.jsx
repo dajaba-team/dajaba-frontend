@@ -977,9 +977,9 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 	it("상세에 통화별 합계, 근거 거래 표, 자금 흐름 그래프가 보인다", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
 		const agg = await screen.findByRole("region", { name: "유입·유출 합계" })
-		expect(within(agg).getByText("유입 (2건)")).toBeInTheDocument()
+		expect(within(agg).getByText("유입 합계 (2건)")).toBeInTheDocument()
 		expect(within(agg).getByText("1,000 US Dollar")).toBeInTheDocument()
-		expect(within(agg).getByText("유출 (1건)")).toBeInTheDocument()
+		expect(within(agg).getByText("유출 합계 (1건)")).toBeInTheDocument()
 		expect(
 			within(agg).getByText(/경유 거래와 내 계좌끼리 옮긴 돈은 합계에서/),
 		).toBeInTheDocument()

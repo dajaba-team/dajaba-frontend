@@ -110,6 +110,14 @@ const iconPaths = {
 		</>
 	),
 	plus: <path d="M12 5v14M5 12h14" />,
+	// 위 띠 역할 칩·시연 도구(SCRUM-280 시안)
+	help: (
+		<>
+			<circle cx="12" cy="12" r="9.5" />
+			<path d="M9.2 9.2a2.9 2.9 0 1 1 3.9 2.7c-.7.3-1.1.8-1.1 1.6v.4M12 16.8v.2" />
+		</>
+	),
+	chevron: <path d="m6 9 6 6 6-6" />,
 	minus: <path d="M5 12h14" />,
 }
 export default function Icon({ name, size = 18 }) {

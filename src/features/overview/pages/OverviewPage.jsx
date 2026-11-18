@@ -3,6 +3,7 @@ import { useCases } from "../../cases/hooks/useCases"
 import { useSession } from "../../auth/hooks/useSession"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import DashboardView from "../components/DashboardView"
+import RoleHero from "../components/RoleHero"
 import { homePathFor } from "../../../app/navigation/appNavigation"
 export default function OverviewPage() {
 	const query = useCases({ page: 1, size: 20, sort: "score,desc" })
@@ -17,6 +18,7 @@ export default function OverviewPage() {
 					total={query.data.total}
 					description={`${session?.displayName ?? ""}님, 오늘의 조사 흐름을 한눈에 확인하세요.`}
 					onStart={() => navigate(homePathFor(session?.role))}
+					hero={<RoleHero role={session?.role} loginId={session?.loginId} />}
 				/>
 			)}
 		</>

@@ -773,3 +773,355 @@
 		grid-column: 1 / -1;
 	}
 }
+
+/* ── 거래 근거 카드 — 팀 검토 시안 모양으로(SCRUM-280) ─────────────────
+   머리(거래 분석 01 · 거래 근거 · 직접/경유 건수) → 유입·유출 합계 띠 → 밑줄 탭 → 경로 지도(점 무늬 캔버스) → 경로 거래 표 → 바닥 설명 */
+.case-detail .case-card > .evidence-head {
+	align-items: flex-end;
+	margin-block-end: 0;
+	padding: var(--space-4) var(--space-4) var(--space-3);
+	border-block-end: 0;
+}
+.kicker {
+	margin: 0;
+	color: #485e7e;
+	font-size: 0.6875rem;
+	font-weight: 730;
+	letter-spacing: 0.045em;
+}
+.kicker span {
+	margin-inline-start: 0.5rem;
+	padding: 0.125rem 0.3125rem;
+	border-radius: 0.25rem;
+	background: #e8f0ff;
+	color: #2853ad;
+	letter-spacing: 0;
+}
+.case-detail .case-card > .evidence-head h2 {
+	margin-block-start: 0.1875rem;
+	color: #1b2638;
+	font-size: 1.25rem;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+}
+.minor-pair {
+	display: flex;
+	align-items: center;
+	gap: 0.3125rem;
+	margin: 0;
+	color: var(--color-muted);
+	font-size: 0.75rem;
+}
+.minor-pair b {
+	color: var(--color-text);
+}
+.minor-pair i {
+	height: 0.9375rem;
+	margin: 0 0.1875rem;
+	border-inline-start: var(--border-width) solid #c5cfdd;
+}
+.case-ledger {
+	margin: 0 0 var(--space-2);
+	padding-block-start: var(--space-3);
+	border-block-start: var(--border-width) solid #e2e8f2;
+}
+.ledger-strip {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3) var(--space-6);
+	margin: 0;
+}
+.ledger-side {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4375rem;
+}
+.ledger-side dt {
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.ledger-side dt small {
+	font-size: 0.75rem;
+}
+.ledger-side dd {
+	margin: 0 0 0 0.25rem;
+	color: var(--color-text);
+	font-size: 1.0625rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.01em;
+}
+.ledger-side dd.is-empty {
+	color: var(--color-muted);
+	font-weight: 500;
+}
+.cash-dot {
+	display: grid;
+	place-items: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	border-radius: 0.5rem;
+	font-size: 0.9375rem;
+	font-weight: 800;
+}
+.cash-dot.in {
+	background: #e3f5ef;
+	color: #06734f;
+}
+.cash-dot.out {
+	background: #e9efff;
+	color: #2756b8;
+}
+.ledger-note {
+	margin: var(--space-2) 0 0;
+	color: var(--color-muted);
+	font-size: 0.75rem;
+}
+/* 탭: 시안처럼 굵은 강조색 밑줄 */
+.case-card .case-tabs {
+	gap: 0.75rem;
+	margin-block: var(--space-3) var(--space-3);
+	border-block-end-color: #d9e2ef;
+}
+.case-card .case-tabs button {
+	min-height: 2.25rem;
+	padding: 0.375rem 0.25rem;
+	font-size: 0.9375rem;
+}
+.case-card .case-tabs button:hover:enabled {
+	color: var(--color-primary);
+}
+.case-card .case-tabs [aria-pressed="true"],
+.case-card .case-tabs [aria-pressed="true"]:hover:enabled {
+	border-block-end-width: 0.1875rem;
+	color: #164ac7;
+	font-weight: 750;
+}
+.case-flow {
+	border: 0;
+	box-shadow: none;
+	overflow: visible;
+}
+/* 경로 지도 */
+.route-canvas {
+	margin: 0 0 var(--space-3);
+	padding: 0.875rem 1.25rem 1.25rem;
+	border: var(--border-width) solid #d9e5f5;
+	border-radius: 0.75rem;
+	background-color: #f5f8ff;
+	background-image: radial-gradient(#c9d8ef 0.8px, transparent 0.8px);
+	background-size: 14px 14px;
+}
+.canvas-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	color: #485e7e;
+	font-size: 0.75rem;
+}
+.canvas-head > span:first-child {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.1875rem 0.5625rem;
+	border: var(--border-width) solid #d5e1f2;
+	border-radius: 0.3125rem;
+	background: #fff;
+	color: var(--brand-navy);
+	font-weight: 700;
+}
+.canvas-head i {
+	display: inline-block;
+	width: 0.4375rem;
+	height: 0.4375rem;
+	margin-inline-end: 0.375rem;
+	border-radius: 50%;
+	background: var(--color-primary);
+}
+.route-track {
+	display: grid;
+	align-items: start;
+	margin: 0;
+	padding: 0.875rem 0.625rem 0;
+	list-style: none;
+}
+.route-step {
+	display: contents;
+}
+.route-node {
+	display: grid;
+	justify-items: center;
+	gap: 0.125rem;
+	min-width: 0;
+	text-align: center;
+}
+.node-circle {
+	display: grid;
+	place-items: center;
+	width: 2.75rem;
+	height: 2.75rem;
+	margin-block-end: 0.375rem;
+	border: var(--border-width) solid #aabdd9;
+	border-radius: 0.875rem;
+	background: #fff;
+	color: #344f78;
+	font-size: 1.25rem;
+	font-weight: 750;
+	box-shadow: 0 2px 4px rgb(27 58 96 / 7%);
+}
+.route-node.target .node-circle {
+	border-color: var(--color-primary);
+	background: var(--color-primary);
+	color: #fff;
+	box-shadow: 0 0 0 4px #e2ebff;
+}
+.route-node b {
+	color: #1b2638;
+	font-size: var(--font-small);
+}
+.route-node small {
+	color: #485e7e;
+	font:
+		0.6875rem ui-monospace,
+		SFMono-Regular,
+		Menlo,
+		monospace;
+}
+.route-hop {
+	display: grid;
+	justify-items: center;
+	margin: 0.375rem -0.1875rem 0;
+	color: #405b81;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	text-align: center;
+}
+.route-hop i {
+	position: relative;
+	display: block;
+	justify-self: stretch;
+	height: 1.5px;
+	margin: 0.25rem 0;
+	background: #879cbb;
+}
+.route-hop i::after {
+	content: "";
+	position: absolute;
+	inset-inline-end: 0;
+	inset-block-start: -2.5px;
+	width: 5px;
+	height: 5px;
+	border: solid #7187a9;
+	border-width: 1.5px 1.5px 0 0;
+	transform: rotate(45deg);
+}
+.route-hop small {
+	font-size: 0.75rem;
+	font-variant-numeric: tabular-nums;
+}
+.hop-amount {
+	margin-block-start: 0.1875rem;
+	color: #465e80;
+	font-size: var(--font-small);
+	font-weight: 650;
+}
+.route-ledger,
+.flow-graph-more {
+	margin-block-start: 0.4375rem;
+}
+.route-ledger > summary,
+.flow-graph-more > summary {
+	padding: 0.4375rem 0;
+	color: #2553aa;
+	font-size: var(--font-small);
+	font-weight: 650;
+	list-style: none;
+	cursor: pointer;
+}
+.route-ledger > summary::-webkit-details-marker,
+.flow-graph-more > summary::-webkit-details-marker {
+	display: none;
+}
+.route-ledger > summary::before,
+.flow-graph-more > summary::before {
+	content: "▸";
+	margin-inline-end: 0.375rem;
+}
+.route-ledger[open] > summary::before,
+.flow-graph-more[open] > summary::before {
+	content: "▾";
+}
+.route-ledger > summary span,
+.flow-graph-more > summary span {
+	margin-inline-start: 0.375rem;
+	color: var(--color-muted);
+	font-size: 0.75rem;
+	font-weight: 450;
+}
+.path-table {
+	font-size: 0.8125rem;
+}
+/* 경로가 없을 때의 전체 그래프 무대도 같은 점 무늬 캔버스로 */
+.case-card .flow-graph {
+	border-color: #d9e5f5;
+	border-radius: 0.75rem;
+}
+.case-card .flow-graph-stage {
+	background-color: #f5f8ff;
+	background-image: radial-gradient(#c9d8ef 0.8px, transparent 0.8px);
+	background-size: 14px 14px;
+}
+.case-card > .evidence-foot {
+	margin: var(--space-3) 0 0;
+	padding-block-start: 0.5625rem;
+	border-block-start: var(--border-width) solid #e2e8f2;
+	color: var(--color-muted);
+	font-size: 0.75rem;
+}
+@media (max-width: 36rem) {
+	.ledger-strip {
+		display: grid;
+		grid-template-columns: 1fr;
+	}
+	.route-canvas {
+		padding: 0.5625rem 0.75rem;
+	}
+	/* 좁은 화면: 경로를 세로로 — 계좌 원 왼쪽, 거래는 점선 따라 아래로 */
+	.route-track {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1875rem;
+		padding: 0.5rem 0 0;
+	}
+	.route-node {
+		grid-template-columns: 1.875rem 1fr;
+		grid-template-rows: auto auto;
+		justify-items: start;
+		align-items: center;
+		gap: 0 0.5rem;
+		text-align: left;
+	}
+	.route-node .node-circle {
+		grid-row: 1 / 3;
+		width: 1.75rem;
+		height: 1.75rem;
+		margin: 0;
+		border-radius: 0.5rem;
+		font-size: 0.8125rem;
+	}
+	.route-hop {
+		display: flex;
+		gap: 0.75rem;
+		width: max-content;
+		margin: 0 0 0 0.8125rem;
+		padding: 0.1875rem 0 0.1875rem 1.4375rem;
+		border-inline-start: 1px dashed #91a8cb;
+	}
+	.route-hop i {
+		display: none;
+	}
+	.route-ledger > summary span {
+		display: none;
+	}
+}

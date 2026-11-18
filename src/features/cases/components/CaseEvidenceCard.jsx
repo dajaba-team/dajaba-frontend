@@ -16,11 +16,29 @@ export default function CaseEvidenceCard({ detail }) {
 	const [tab, setTab] = useState("GRAPH")
 	// 그래프 탭에 있는 동안에도 마지막에 보던 거래 범위를 그대로 둬요.
 	const [scope, setScope] = useState("EVIDENCE")
+	const agg = detail.aggregates
+	const counts =
+		agg && agg.transactionCount > 0
+			? (() => {
+					const direct = agg.inbound.transactionCount + agg.outbound.transactionCount
+					return { direct, via: Math.max(agg.transactionCount - direct, 0) }
+				})()
+			: null
 	return (
 		<section className="case-panel case-card" aria-labelledby="evidence-card-title">
-			<div className="case-card-head">
-				<h2 id="evidence-card-title">거래 근거</h2>
-				<p className="case-action-note">통화별 합계 · 환산 없음</p>
+			<div className="case-card-head evidence-head">
+				<div>
+					<p className="kicker">
+						거래 분석 <span>01</span>
+					</p>
+					<h2 id="evidence-card-title">거래 근거</h2>
+				</div>
+				{counts && (
+					<p className="minor-pair">
+						대상 계좌 직접 거래 <b>{counts.direct}건</b>
+						<i aria-hidden="true" /> 경유 <b>{counts.via}건</b>
+					</p>
+				)}
 			</div>
 			<CaseAggregatesPanel aggregates={detail.aggregates} />
 			<div className="case-tabs" role="group" aria-label="거래 근거 보기">
@@ -44,6 +62,9 @@ export default function CaseEvidenceCard({ detail }) {
 			<div className="case-tab-panel" hidden={tab !== "GRAPH"}>
 				<CaseFlowGraph caseNo={detail.caseNo} accountRef={detail.accountRef} />
 			</div>
+			<p className="evidence-foot">
+				통화별로 따로 집계하고 환산하지 않아요. 경유·참고 거래는 입출금 합계에서 제외해요.
+			</p>
 		</section>
 	)
 }

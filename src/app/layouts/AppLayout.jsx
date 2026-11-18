@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { Link, NavLink, Outlet, useLocation } from "react-router"
 import "../styles/app.css"
 import { useSession } from "../../features/auth/hooks/useSession"
@@ -27,6 +27,26 @@ export default function AppLayout() {
 	useEffect(() => {
 		dismiss()
 	}, [loginId, dismiss])
+	// 위 띠의 역할 칩·시연 도구 메뉴는 한 번에 하나만 — 바깥을 누르거나 Esc, 화면을 옮기면 닫아요.
+	const headUtils = useRef(null)
+	useEffect(() => {
+		const closeAll = (except) =>
+			headUtils.current?.querySelectorAll("details[open]").forEach((d) => {
+				if (d !== except) d.open = false
+			})
+		const onClick = (event) => {
+			const inside = event.target.closest?.(".head-utils details")
+			closeAll(inside && headUtils.current?.contains(inside) ? inside : null)
+		}
+		const onKey = (event) => event.key === "Escape" && closeAll(null)
+		document.addEventListener("click", onClick)
+		document.addEventListener("keydown", onKey)
+		closeAll(null)
+		return () => {
+			document.removeEventListener("click", onClick)
+			document.removeEventListener("keydown", onKey)
+		}
+	}, [pathname])
 	return (
 		<>
 			<a className="skip-link" href="#main-content">
@@ -61,21 +81,6 @@ export default function AppLayout() {
 							</nav>
 						</div>
 					)}
-					{import.meta.env.DEV && (
-						<div className="sidebar-group is-dev">
-							<p className="sidebar-label">개발 도구</p>
-							<nav className="app-navigation" aria-label="개발 메뉴">
-								<NavLink to="/demo/overview" className="navigation-link">
-									<Icon name="sparkle" size={18} />
-									<span>대시보드 시연</span>
-								</NavLink>
-								<NavLink to="/dev/connection" className="navigation-link">
-									<Icon name="refresh" size={18} />
-									<span>백엔드 연동 확인</span>
-								</NavLink>
-							</nav>
-						</div>
-					)}
 					<p className="sidebar-note">
 						<strong>AML 조사 워크스페이스</strong>
 						거래 근거부터 조사 메모까지
@@ -89,7 +94,26 @@ export default function AppLayout() {
 								{current ? current.label : "조사 · 검토 · 보고"}
 							</span>
 						</div>
-						<AuthPanel placement="header" />
+						<div className="head-utils" ref={headUtils}>
+							<AuthPanel placement="header" />
+							{import.meta.env.DEV && (
+								// 시안의 "시연 도구" — 개발 모드에서만. 시연 화면·연동 확인으로 가는 길을 여기 모아요.
+								<details className="demo-tools">
+									<summary>
+										<Icon name="help" size={16} /> 시연 도구
+									</summary>
+									<nav aria-label="개발 메뉴">
+										<span>
+											{import.meta.env.VITE_USE_MOCKS === "true"
+												? "예시 데이터 모드 · 새로고침하면 초기화"
+												: "개발 모드 · 팀 검토용"}
+										</span>
+										<NavLink to="/demo/overview">대시보드 시연</NavLink>
+										<NavLink to="/dev/connection">백엔드 연동 확인</NavLink>
+									</nav>
+								</details>
+							)}
+						</div>
 					</header>
 					<main
 						id="main-content"
@@ -97,11 +121,13 @@ export default function AppLayout() {
 						tabIndex={-1}
 					>
 						<AuthPanel />
-						{import.meta.env.DEV && import.meta.env.VITE_USE_MOCKS === "true" && (
-							<p className="environment-note" role="note">
-								예시 데이터 모드 · 변경 내용은 새로고침하면 초기화됩니다.
-							</p>
-						)}
+						{!session.data &&
+							import.meta.env.DEV &&
+							import.meta.env.VITE_USE_MOCKS === "true" && (
+								<p className="environment-note" role="note">
+									예시 데이터 모드 · 변경 내용은 새로고침하면 초기화됩니다.
+								</p>
+							)}
 						{/* URL을 유지하므로 로그인 후 원래 열었던 케이스로 돌아갑니다.
 						  세션 확인 전에는 업무 조회와 이전 계정 화면을 렌더링하지 않습니다. */}
 						{session.data &&

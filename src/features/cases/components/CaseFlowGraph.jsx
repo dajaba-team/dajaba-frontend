@@ -4,6 +4,8 @@ import { formatDataTime } from "../../../shared/format/time"
 import { useCaseGraph } from "../hooks/useCases"
 import { formatAmount } from "./caseMoney"
 import { layoutFlowGraph } from "./flowGraphLayout"
+import { findReturnRoutes } from "./flowRoutes"
+import CaseRouteMap from "./CaseRouteMap"
 
 // 자금 흐름 그래프 — 계약서 C5 `GET /cases/{case_no}/graph`. 노드 = 계좌(account_ref), 선 = 거래 하나.
 // 돈이 왼쪽 → 오른쪽으로 흐르게 놓아요: 보낸 계좌 · 대상 계좌(가운데) · 받은 계좌. 배치는 flowGraphLayout.
@@ -310,9 +312,20 @@ function FlowGraphView({ data, accountRef }) {
 export default function CaseFlowGraph({ caseNo, accountRef }) {
 	const query = useCaseGraph(caseNo)
 	const data = query.data
+	// 대상 계좌로 돌아온 길이 있으면 경로 지도를 먼저 보여 주고, 전체 그래프는 펼쳐서 봐요.
+	const routes = useMemo(
+		() => (data ? findReturnRoutes(data.edges, accountRef) : []),
+		[data, accountRef],
+	)
+	const accountNos = useMemo(
+		() => new Map((data?.nodes ?? []).map((node) => [node.accountRef, node.accountNo])),
+		[data],
+	)
 	return (
-		<section className="case-panel" aria-labelledby="graph-title">
-			<h2 id="graph-title">자금 흐름 그래프</h2>
+		<section className="case-panel case-flow" aria-labelledby="graph-title">
+			<h2 id="graph-title" className="visually-hidden">
+				자금 흐름 그래프
+			</h2>
 			<AsyncState query={query} />
 			{data && data.truncated && (
 				<p className="case-action-note">
@@ -322,7 +335,26 @@ export default function CaseFlowGraph({ caseNo, accountRef }) {
 			)}
 			{data &&
 				(data.edges.length ? (
-					<FlowGraphView data={data} accountRef={accountRef} />
+					routes.length ? (
+						<>
+							<CaseRouteMap
+								routes={routes}
+								targetRef={accountRef}
+								accountNos={accountNos}
+							/>
+							<details className="flow-graph-more">
+								<summary>
+									전체 계좌 그래프{" "}
+									<span>
+										계좌 {data.nodes.length}개 · 거래 {data.edges.length}건
+									</span>
+								</summary>
+								<FlowGraphView data={data} accountRef={accountRef} />
+							</details>
+						</>
+					) : (
+						<FlowGraphView data={data} accountRef={accountRef} />
+					)
 				) : (
 					<p>그릴 거래가 없어요.</p>
 				))}

@@ -181,7 +181,7 @@ describe("앱 셸 — 사용자 흐름", () => {
 
 	it("로그인 상태에서 /로 들어가면 일반 대시보드로 간다", async () => {
 		renderApp("/", "admin")
-		await screen.findByRole("heading", { name: "흐름을 읽고, 위험을 발견하다." })
+		await screen.findByRole("heading", { name: "관리자 대시보드" })
 	})
 
 	it("로그인 전 첫 진입은 대시보드 경로에서 로그인 화면을 보여 준다", async () => {
