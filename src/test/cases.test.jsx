@@ -1073,6 +1073,22 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		await user.click(screen.getByRole("button", { name: "근거 거래" }))
 		expect(await screen.findByRole("region", { name: "근거 거래" })).toBeInTheDocument()
 	})
+	it("대상 계좌로 돌아온 돈은 경로 지도와 경로 거래 표로 보여 준다 (SCRUM-280)", async () => {
+		renderApp("/cases/CASE-2022-001001")
+		const route = await screen.findByRole("figure", {
+			name: "경로 1: 010_****8842 → 021_****7F12 → 033_****A901 → 010_****8842",
+		})
+		expect(within(route).getByText("3단계 · 대상 계좌 복귀")).toBeInTheDocument()
+		expect(within(route).getByText("대상 계좌 복귀")).toBeInTheDocument()
+		expect(within(route).getByText("4,600 Euro")).toBeInTheDocument()
+		// 경로 표에 거래 ID가 단계 순서대로
+		const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1)
+		expect(rows.map((row) => within(row).getAllByRole("cell").at(-1).textContent)).toEqual([
+			"5101",
+			"5102",
+			"5103",
+		])
+	})
 	it("근거 거래가 없는 케이스는 합계·표·그래프가 비어 있다고 알린다", async () => {
 		renderApp("/cases/CASE-2022-001002")
 		expect(await screen.findByText("근거 거래가 없어요.")).toBeInTheDocument()
