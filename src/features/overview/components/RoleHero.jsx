@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { Link } from "react-router"
 
-// 업무 대시보드 머리말 + 역할별 시작 타일(SCRUM-280, 팀 검토 시안의 bear-start).
+// 업무 대시보드 머리말 + 역할별 시작 타일(SCRUM-280, SCRUM-286 시안 B).
+// 문구 아래에 폭을 꽉 채운 이동 카드를 두고, 전신 곰이 카드 안에서 살짝 올라와 버튼을 안내해요.
 // 안내 문장은 처음 한 번 보여 주고 [안내 접기]로 숨겨요. 숨김은 이 브라우저에만 기억해요.
 const ROLE_COPY = {
 	INVESTIGATOR: {
@@ -11,6 +12,7 @@ const ROLE_COPY = {
 		heading: "오늘 확인할 조사 업무",
 		hint: "케이스를 열고 점수가 오른 이유와 근거 거래부터 확인해 보세요.",
 		cta: "내 담당 케이스 보기",
+		sub: "배정 케이스 · 근거 거래 확인",
 		to: "/cases?mine=1",
 	},
 	APPROVER: {
@@ -20,6 +22,7 @@ const ROLE_COPY = {
 		heading: "오늘의 검토와 제출 현황",
 		hint: "오래 기다린 요청부터 열어보세요. 재요청 건은 지난 보완 요청과 바뀐 문장을 함께 볼 수 있어요.",
 		cta: "승인함 열기",
+		sub: "검토 요청 · 모의 제출",
 		to: "/approvals",
 	},
 	ADMIN: {
@@ -29,6 +32,7 @@ const ROLE_COPY = {
 		heading: "오늘의 배치와 배정 현황",
 		hint: "배치 결과에서 실패한 작업을 확인하세요. 새로 생성된 케이스에는 담당 조사역을 배정해 주세요.",
 		cta: "데이터·배치 운영 열기",
+		sub: "배치 결과 확인 · 담당 배정",
 		to: "/admin/batches",
 	},
 }
@@ -64,7 +68,6 @@ export default function RoleHero({ role, loginId }) {
 				<p>{copy.description}</p>
 			</header>
 			<section className="role-band" aria-labelledby="role-band-title">
-				<span className="bear-face" aria-hidden="true" />
 				<div className="role-band-copy">
 					<p className="ux-eyebrow">
 						{copy.eyebrow} {loginId} · 업무 시작
@@ -85,7 +88,14 @@ export default function RoleHero({ role, loginId }) {
 					)}
 				</div>
 				<Link className="role-band-cta" to={copy.to}>
-					{copy.cta} <span aria-hidden="true">→</span>
+					<span className="bear-full" aria-hidden="true" />
+					<small>{copy.sub}</small>
+					<strong>
+						{copy.cta}
+						<span className="cta-arrow" aria-hidden="true">
+							→
+						</span>
+					</strong>
 				</Link>
 			</section>
 		</>
