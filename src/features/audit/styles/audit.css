@@ -33,7 +33,7 @@
 		color 0.15s ease,
 		box-shadow 0.15s ease;
 }
-.audit-tabs button:hover:enabled {
+.audit-tabs button:not([aria-selected="true"]):hover:enabled {
 	background: transparent;
 	color: var(--color-text);
 }
