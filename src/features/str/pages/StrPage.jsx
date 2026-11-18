@@ -111,6 +111,21 @@ function StrWorkspace({ draft, detail }) {
 	const [panel, setPanel] = useState(null) // "history" | "regenerate" | "close" | "submit"
 	// 승인자 결정(P2·P3) 확인창 — 승인함과 같은 ApprovalDialog. mode: APPROVE·NEED_REVISION·NOT_REPORTABLE
 	const [decision, setDecision] = useState(null)
+	// 409 등으로 재조회가 끝났을 때 한 번 확인 — 서버가 그 동작을 더는 안 주면(다른 승인자가 먼저 처리)
+	// 확인창을 닫고 안내해요. 아직 주면(예: 메모 수정으로 version만 바뀜) 확인창을 두고 새 version으로 다시 눌러요.
+	// 재조회 직후엔 화면이 아직 옛 draft로 그려져 있어서, 캐시에 들어온 최신 S2로 판단해요.
+	const [decisionGone, setDecisionGone] = useState(false)
+	const checkDecisionStale = () => {
+		const fresh = client.getQueryData(draftKey(draft.draftNo))
+		const needed = decision === "APPROVE" ? "APPROVE" : "REJECT"
+		if (fresh && strActionsFor(fresh).includes(needed)) return
+		setDecision(null)
+		setDecisionGone(true)
+	}
+	const openDecision = (mode) => {
+		setDecisionGone(false)
+		setDecision(mode)
+	}
 	const caseVersion = detail.version ?? draft.caseVersion
 
 	const save = useStrCommand(detail.caseNo, draft.draftNo, "saveRevision")
@@ -305,7 +320,7 @@ function StrWorkspace({ draft, detail }) {
 					<button
 						type="button"
 						className="primary"
-						onClick={() => setDecision("APPROVE")}
+						onClick={() => openDecision("APPROVE")}
 						disabled={Boolean(decision)}
 					>
 						승인
@@ -316,7 +331,7 @@ function StrWorkspace({ draft, detail }) {
 						<button
 							key={mode}
 							type="button"
-							onClick={() => setDecision(mode)}
+							onClick={() => openDecision(mode)}
 							disabled={Boolean(decision)}
 						>
 							{REJECTION_LABELS[mode]}
@@ -376,6 +391,11 @@ function StrWorkspace({ draft, detail }) {
 					onDone={() => setPanel(null)}
 				/>
 			)}
+			{decisionGone && (
+				<p role="status">
+					다른 승인자가 먼저 처리한 건이에요. 최신 상태를 다시 불러왔어요.
+				</p>
+			)}
 			{decision && (
 				<ApprovalDialog
 					item={{
@@ -386,6 +406,7 @@ function StrWorkspace({ draft, detail }) {
 					}}
 					mode={decision}
 					onClose={() => setDecision(null)}
+					onStale={checkDecisionStale}
 				/>
 			)}
 			{panel === "close" && (

@@ -22,7 +22,7 @@ const REJECT_TEXT = {
  * item 은 페이지가 최신 목록에서 찾아 줘요 — 409 뒤 같은 입력으로 다시 누르면 새 case_version 으로 보내요.
  * 다시 불러온 목록에 그 건이 없으면 페이지가 확인창을 닫고 onGone 으로 "이미 처리된 건" 안내를 띄워요.
  */
-export default function ApprovalDialog({ item, mode, onClose, onGone }) {
+export default function ApprovalDialog({ item, mode, onClose, onGone, onStale }) {
 	const levelName = useId()
 	const commentId = useId()
 	const approving = mode === "APPROVE"
@@ -34,6 +34,7 @@ export default function ApprovalDialog({ item, mode, onClose, onGone }) {
 			if (approving) navigate(`/approvals/${encodeURIComponent(item.draftNo)}`)
 		},
 		onGone,
+		onStale,
 	})
 	const [level, setLevel] = useState(null)
 	const [comment, setComment] = useState("")

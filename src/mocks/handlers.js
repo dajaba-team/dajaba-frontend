@@ -91,10 +91,23 @@ const accountFail = (status, code, message, details = {}) =>
 	HttpResponse.json({ error: { code, message, details } }, { status })
 
 // pendingApproval: 케이스 1001을 승인 대기로 둔 시드(승인함 테스트 — mocks/approvals.js seedPendingApproval)
-export function resetCases(user = null, { pendingApproval = false } = {}) {
+// formerAssignee: 승인 대기 케이스 1001을 예전에 담당했던 사람(login_id) — 이력에 REASSIGN 행을 남겨요(자기 승인 막기 시험).
+export function resetCases(user = null, { pendingApproval = false, formerAssignee = null } = {}) {
 	cases = seedCases()
 	drafts = seedStrDrafts()
 	if (pendingApproval) seedPendingApproval(cases, drafts)
+	if (formerAssignee) {
+		const item = cases.find((entry) => entry.case_no === "CASE-2022-001001")
+		item.history.push({
+			action: "REASSIGN",
+			from_status: item.status,
+			to_status: item.status,
+			reason_code: null,
+			comment: null,
+			created_by: formerAssignee,
+			created_at: "2026-11-01T00:00:00Z",
+		})
+	}
 	currentUser = user
 	accounts = seedAccounts()
 	batchRuns = []
