@@ -16,6 +16,7 @@ export default function DashboardView({
 	listPath = "/cases",
 	demo = false,
 	dark = false,
+	hero = null,
 }) {
 	const [mode, setMode] = useState("status")
 	const [period, setPeriod] = useState(10)
@@ -104,12 +105,15 @@ export default function DashboardView({
 	}, [demo, items, mode, period])
 	return (
 		<section className="intelligence-page" aria-label="업무 대시보드">
-			<DashboardHero
-				description={description}
-				actionLabel="업무 시작하기"
-				onAction={onStart}
-				replay={replay}
-			/>
+			{/* 업무 화면은 역할별 머리말(hero)을, 시연 화면은 기존 큰 배너를 써요. */}
+			{hero ?? (
+				<DashboardHero
+					description={description}
+					actionLabel="업무 시작하기"
+					onAction={onStart}
+					replay={replay}
+				/>
+			)}
 			<div className="dashboard-section-label">
 				<span>WORKSPACE AT A GLANCE</span>
 				<button onClick={() => setReplay((v) => v + 1)}>

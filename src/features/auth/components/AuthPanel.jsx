@@ -4,10 +4,14 @@ import { useSession, sessionKey } from "../hooks/useSession"
 import { clearBusinessData, sessionEndedKey } from "../../../app/queryClient"
 import { authApi } from "../api/authApi"
 import { getErrorMessage } from "../../../shared/api/apiClient"
+import Icon from "../../../shared/ui/dashboard/Icon"
 
 const usingMocks = import.meta.env.VITE_USE_MOCKS === "true"
+const ROLE_LABELS = { INVESTIGATOR: "조사역", APPROVER: "승인자", ADMIN: "운영 관리자" }
 
-export default function AuthPanel() {
+// 로그인 뒤에는 위 띠(placement="header")에 프로필 칩으로, 로그인 전에는 본문 가운데 로그인 카드로 보여요.
+// 두 자리 모두 늘 마운트해 두고 한쪽만 그려서, 로그인·로그아웃 순간에 컴포넌트가 다시 만들어지지 않게 해요.
+export default function AuthPanel({ placement = "main" }) {
 	const [loginId, setLoginId] = useState("")
 	const [password, setPassword] = useState("")
 	const queryClient = useQueryClient()
@@ -50,20 +54,22 @@ export default function AuthPanel() {
 		},
 	})
 	const busy = switching || login.isPending || logout.isPending
-
-	return (
-		<section className="auth-panel" aria-label="로그인">
-			<p role="status">
-				{me.isPending
-					? "로그인 상태 확인 중…"
-					: me.data
-						? `${me.data.displayName} (${me.data.loginId}) · ${me.data.role}`
-						: me.data === null
-							? "로그인이 필요합니다."
-							: "로그인 상태를 확인하지 못했습니다."}
-			</p>
-			{me.data && (
-				<>
+	if ((placement === "header") !== Boolean(me.data)) return null
+	// 위 띠: 역할 칩(시안 "조사역 A · inv01 ⌄")을 누르면 로그인 정보·현재 사용자 확인·로그아웃이 펼쳐져요.
+	if (placement === "header")
+		return (
+			<details className="persona">
+				<summary>
+					<Icon name="user" size={16} />
+					<span>
+						{ROLE_LABELS[me.data.role] ?? me.data.role} · {me.data.loginId}
+					</span>
+					<Icon name="chevron" size={16} />
+				</summary>
+				<section className="persona-menu" aria-label="로그인">
+					<p role="status" className="auth-identity">
+						{`${me.data.displayName} (${me.data.loginId}) · ${me.data.role}`}
+					</p>
 					<button
 						type="button"
 						disabled={me.isFetching || busy}
@@ -73,13 +79,31 @@ export default function AuthPanel() {
 					</button>
 					<button
 						type="button"
+						className="is-logout"
 						disabled={busy || me.isFetching}
 						onClick={() => logout.mutate()}
 					>
 						{logout.isPending ? "로그아웃 중…" : "로그아웃"}
 					</button>
-				</>
+				</section>
+			</details>
+		)
+
+	return (
+		<section className="auth-panel" aria-label="로그인">
+			{me.data === null && !sessionEnded && (
+				<header className="auth-heading">
+					<h2>DAJABA에 로그인</h2>
+					<p>AML 조사 워크스페이스를 이용하려면 계정으로 로그인해 주세요.</p>
+				</header>
 			)}
+			<p role="status" className="auth-identity">
+				{me.isPending
+					? "로그인 상태 확인 중…"
+					: me.data === null
+						? "로그인이 필요합니다."
+						: "로그인 상태를 확인하지 못했습니다."}
+			</p>
 			{me.isError && !me.data && (
 				// 401이 아닌 실패(네트워크·500)는 로그인 여부를 모르는 상태 — 다시 확인할 길을 줘요(SCRUM-173).
 				<div className="auth-error">

@@ -82,6 +82,21 @@ const TRANSACTIONS_1004 = [
 	tx(4724, 30, OTHER(4), OTHER(5), 880, 880, "INDIRECT"),
 ]
 
+// 순환 거래 예시(CASE-2022-001001) — 대상 계좌에서 나간 돈이 두 계좌를 거쳐 돌아와요(A → B → C → A).
+// 화면의 경로 지도(자금 흐름 탭)가 이 모양을 그려요.
+const ACCOUNT_1001 = ["ACR-0001", "010_****8842"]
+const ROUTE_B = ["ACR-201", "021_****7F12"]
+const ROUTE_C = ["ACR-202", "033_****A901"]
+const routeTx = (id, time, from, to, amount, currency, direction) => ({
+	...tx(id, 0, from, to, amount, amount, direction, currency),
+	ts: `2022-10-31T${time}:00`,
+})
+const TRANSACTIONS_1001 = [
+	routeTx(5101, "10:14", ACCOUNT_1001, ROUTE_B, 5000, "US Dollar", "OUTBOUND"),
+	routeTx(5102, "13:40", ROUTE_B, ROUTE_C, 4600, "Euro", "INDIRECT"),
+	routeTx(5103, "18:05", ROUTE_C, ACCOUNT_1001, 4800, "US Dollar", "INBOUND"),
+]
+
 export function seedCases() {
 	return [
 		{
@@ -92,6 +107,7 @@ export function seedCases() {
 			assignee: user("inv01"),
 			investigator_notes: "거래 목적 확인 필요",
 			current_draft_no: "DRF-000124",
+			transactions: TRANSACTIONS_1001,
 			rejection_reason_code: null,
 			close_reason: null,
 			version: 3,

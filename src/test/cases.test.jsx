@@ -977,9 +977,9 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 	it("상세에 통화별 합계, 근거 거래 표, 자금 흐름 그래프가 보인다", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
 		const agg = await screen.findByRole("region", { name: "유입·유출 합계" })
-		expect(within(agg).getByText("유입 (2건)")).toBeInTheDocument()
+		expect(within(agg).getByText("유입 합계 (2건)")).toBeInTheDocument()
 		expect(within(agg).getByText("1,000 US Dollar")).toBeInTheDocument()
-		expect(within(agg).getByText("유출 (1건)")).toBeInTheDocument()
+		expect(within(agg).getByText("유출 합계 (1건)")).toBeInTheDocument()
 		expect(
 			within(agg).getByText(/경유 거래와 내 계좌끼리 옮긴 돈은 합계에서/),
 		).toBeInTheDocument()
@@ -1072,6 +1072,22 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		await user.click(screen.getByRole("button", { name: "자금 흐름" }))
 		await user.click(screen.getByRole("button", { name: "근거 거래" }))
 		expect(await screen.findByRole("region", { name: "근거 거래" })).toBeInTheDocument()
+	})
+	it("대상 계좌로 돌아온 돈은 경로 지도와 경로 거래 표로 보여 준다 (SCRUM-280)", async () => {
+		renderApp("/cases/CASE-2022-001001")
+		const route = await screen.findByRole("figure", {
+			name: "경로 1: 010_****8842 → 021_****7F12 → 033_****A901 → 010_****8842",
+		})
+		expect(within(route).getByText("3단계 · 대상 계좌 복귀")).toBeInTheDocument()
+		expect(within(route).getByText("대상 계좌 복귀")).toBeInTheDocument()
+		expect(within(route).getByText("4,600 Euro")).toBeInTheDocument()
+		// 경로 표에 거래 ID가 단계 순서대로
+		const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1)
+		expect(rows.map((row) => within(row).getAllByRole("cell").at(-1).textContent)).toEqual([
+			"5101",
+			"5102",
+			"5103",
+		])
 	})
 	it("근거 거래가 없는 케이스는 합계·표·그래프가 비어 있다고 알린다", async () => {
 		renderApp("/cases/CASE-2022-001002")

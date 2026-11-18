@@ -4,6 +4,8 @@ import { formatDataTime } from "../../../shared/format/time"
 import { useCaseGraph } from "../hooks/useCases"
 import { formatAmount } from "./caseMoney"
 import { layoutFlowGraph } from "./flowGraphLayout"
+import { findReturnRoutes } from "./flowRoutes"
+import CaseRouteMap from "./CaseRouteMap"
 
 // 자금 흐름 그래프 — 계약서 C5 `GET /cases/{case_no}/graph`. 노드 = 계좌(account_ref), 선 = 거래 하나.
 // 돈이 왼쪽 → 오른쪽으로 흐르게 놓아요: 보낸 계좌 · 대상 계좌(가운데) · 받은 계좌. 배치는 flowGraphLayout.
@@ -178,20 +180,38 @@ function FlowGraphView({ data, accountRef }) {
 					aria-label={`계좌 ${data.nodes.length}개, 거래 ${data.returnedTransactionCount}건`}
 					onClick={() => setPinned(null)}
 				>
+					{/* 선 끝은 노드 가장자리의 작은 원(포트) — 보내는 쪽은 속이 빈 원, 받는 쪽은 채운 원이라 방향이 보여요.
+					    받는 쪽 선은 상자 앞 9px(ARROW_GAP)에서 끝나서, 마커 안의 짧은 선으로 상자까지 이어 붙여요. */}
 					<defs>
 						{KINDS.map(([kind]) => (
 							<marker
-								key={kind}
+								key={`end-${kind}`}
 								id={`flow-graph-arrow-${kind}`}
 								className={`flow-graph-arrow is-${kind}`}
 								markerUnits="userSpaceOnUse"
-								markerWidth="10"
-								markerHeight="10"
+								markerWidth="16"
+								markerHeight="12"
 								refX="1"
-								refY="5"
+								refY="6"
 								orient="auto"
 							>
-								<path d="M0,0.5 L10,5 L0,9.5 L2.6,5 z" />
+								<path className="flow-graph-port-stub" d="M0,6 H10" />
+								<circle className="flow-graph-port is-in" cx="10" cy="6" r="4" />
+							</marker>
+						))}
+						{KINDS.map(([kind]) => (
+							<marker
+								key={`start-${kind}`}
+								id={`flow-graph-start-${kind}`}
+								className={`flow-graph-arrow is-${kind}`}
+								markerUnits="userSpaceOnUse"
+								markerWidth="12"
+								markerHeight="12"
+								refX="6"
+								refY="6"
+								orient="auto"
+							>
+								<circle className="flow-graph-port is-out" cx="6" cy="6" r="4" />
 							</marker>
 						))}
 					</defs>
@@ -218,9 +238,7 @@ function FlowGraphView({ data, accountRef }) {
 									className="flow-graph-line"
 									d={edge.d}
 									strokeWidth={edge.weight}
-									markerEnd={`url(#flow-graph-arrow-${edge.kind})`}
 								/>
-								{!context && <path className="flow-graph-pulse" d={edge.d} />}
 								<path className="flow-graph-hit" d={edge.d} />
 							</g>
 						)
@@ -252,7 +270,7 @@ function FlowGraphView({ data, accountRef }) {
 									y={top}
 									width={point.width}
 									height={point.height}
-									rx={target ? 14 : point.height / 2}
+									rx={target ? 10 : 8}
 								/>
 								{target && (
 									<text
@@ -273,6 +291,28 @@ function FlowGraphView({ data, accountRef }) {
 									{target ? " (대상)" : ""}
 								</text>
 							</g>
+						)
+					})}
+					{/* 포트(선 끝 원)는 상자에 가리지 않게 계좌 상자 위에 한 번 더 그려요. */}
+					{graph.edges.map((edge, index) => {
+						if (!edge.d) return null
+						const key = edgeKey(edge, index)
+						return (
+							<path
+								key={`port-${key}`}
+								className={[
+									"flow-graph-edge",
+									"flow-graph-ports",
+									`is-${edge.kind}`,
+									isEdgeActive(edge, key) && "is-active",
+								]
+									.filter(Boolean)
+									.join(" ")}
+								d={edge.d}
+								aria-hidden="true"
+								markerStart={`url(#flow-graph-start-${edge.kind})`}
+								markerEnd={`url(#flow-graph-arrow-${edge.kind})`}
+							/>
 						)
 					})}
 					{activeEdge?.labelAt && (
@@ -310,9 +350,20 @@ function FlowGraphView({ data, accountRef }) {
 export default function CaseFlowGraph({ caseNo, accountRef }) {
 	const query = useCaseGraph(caseNo)
 	const data = query.data
+	// 대상 계좌로 돌아온 길이 있으면 경로 지도를 먼저 보여 주고, 전체 그래프는 펼쳐서 봐요.
+	const routes = useMemo(
+		() => (data ? findReturnRoutes(data.edges, accountRef) : []),
+		[data, accountRef],
+	)
+	const accountNos = useMemo(
+		() => new Map((data?.nodes ?? []).map((node) => [node.accountRef, node.accountNo])),
+		[data],
+	)
 	return (
-		<section className="case-panel" aria-labelledby="graph-title">
-			<h2 id="graph-title">자금 흐름 그래프</h2>
+		<section className="case-panel case-flow" aria-labelledby="graph-title">
+			<h2 id="graph-title" className="visually-hidden">
+				자금 흐름 그래프
+			</h2>
 			<AsyncState query={query} />
 			{data && data.truncated && (
 				<p className="case-action-note">
@@ -322,7 +373,26 @@ export default function CaseFlowGraph({ caseNo, accountRef }) {
 			)}
 			{data &&
 				(data.edges.length ? (
-					<FlowGraphView data={data} accountRef={accountRef} />
+					routes.length ? (
+						<>
+							<CaseRouteMap
+								routes={routes}
+								targetRef={accountRef}
+								accountNos={accountNos}
+							/>
+							<details className="flow-graph-more">
+								<summary>
+									전체 계좌 그래프{" "}
+									<span>
+										계좌 {data.nodes.length}개 · 거래 {data.edges.length}건
+									</span>
+								</summary>
+								<FlowGraphView data={data} accountRef={accountRef} />
+							</details>
+						</>
+					) : (
+						<FlowGraphView data={data} accountRef={accountRef} />
+					)
 				) : (
 					<p>그릴 거래가 없어요.</p>
 				))}

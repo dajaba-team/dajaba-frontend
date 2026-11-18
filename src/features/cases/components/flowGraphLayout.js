@@ -168,7 +168,8 @@ export function layoutFlowGraph(nodes, edges, targetRef) {
 			kind: edgeKind(edge, targetRef),
 			d: `M${start.x},${start.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${end.x},${end.y}`,
 			labelAt: bezierMiddle(start, c1, c2, end),
-			weight: 1.5 + 2.5 * ratio,
+			// 시안처럼 가는 선 — 금액 차이는 1.5~3px 안에서만 보여요.
+			weight: 1.5 + 1.5 * ratio,
 		}
 	})
 	return { width, height, points, edges: placed }

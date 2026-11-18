@@ -20,28 +20,82 @@
 	box-shadow: var(--shadow-card);
 	overflow: hidden;
 }
+/* 조회 조건 툴바 — 상태는 누르는 칩, 날짜·정렬은 한 줄에(DashStack 필터 바). */
 .case-filter {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: var(--space-3);
-	padding: var(--space-4);
+	gap: var(--space-3) var(--space-4);
+	padding: var(--space-4) var(--space-5);
+	border-block-end: var(--border-width) solid var(--color-border);
 }
 .case-filter label {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--space-2);
+	color: var(--color-muted);
+	font-size: var(--font-small);
+	font-weight: 600;
+}
+.case-filter label :is(input, select) {
+	color: var(--color-text);
+	font-weight: 400;
 }
 .case-filter fieldset {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: var(--space-2) var(--space-4);
-	min-height: var(--control-height);
+	gap: var(--space-2);
+	flex-basis: 100%;
+	min-width: 0;
 	margin: 0;
-	padding: var(--space-2) var(--space-3);
+	padding: 0 0 var(--space-3);
+	border: 0;
+	border-block-end: var(--border-width) dashed var(--color-border);
+}
+.case-filter legend {
+	float: left;
+	margin-inline-end: var(--space-2);
+	padding: 0;
+	color: var(--color-text);
+	font-size: var(--font-small);
+	font-weight: 700;
+}
+.case-filter fieldset label {
+	position: relative;
+	min-height: 2rem;
+	padding: 0 var(--space-3);
 	border: var(--border-width) solid var(--color-border);
-	border-radius: var(--radius-control);
+	border-radius: var(--radius-pill);
+	background: var(--color-surface);
+	color: var(--color-sidebar-text);
+	font-weight: 500;
+	cursor: pointer;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease,
+		color 0.15s ease;
+}
+/* 체크박스는 칩 안에 두되 보이지 않게 — 키보드 초점은 칩 테두리로 보여요. */
+.case-filter fieldset input[type="checkbox"] {
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+.case-filter fieldset label:hover {
+	border-color: var(--color-primary);
+	color: var(--color-primary);
+}
+.case-filter fieldset label:has(:checked) {
+	border-color: var(--color-primary);
+	background: var(--color-primary);
+	color: var(--color-on-dark);
+	font-weight: 600;
+}
+.case-filter fieldset label:has(:focus-visible) {
+	outline: var(--focus-width) solid var(--color-focus);
+	outline-offset: 2px;
 }
 .case-panel > p,
 .case-panel > [role="alert"] {
@@ -59,7 +113,7 @@
 /* 행 간격은 화면 폭과 상관없이 좁게(세로 --space-3), 가로만 폭에 따라 넓혀요. */
 .case-table th,
 .case-table td {
-	padding: var(--space-3) var(--space-4);
+	padding: var(--space-3) var(--space-5);
 	text-align: left;
 	border-block-end: var(--border-width) solid var(--color-border);
 }
@@ -68,6 +122,12 @@
 	color: var(--color-muted);
 	font-size: var(--font-small);
 	font-weight: 600;
+}
+.case-table tbody tr {
+	transition: background-color 0.12s ease;
+}
+.case-table tbody tr:last-child td {
+	border-block-end: 0;
 }
 .case-table tbody tr:hover {
 	background: var(--color-table-head);
@@ -95,6 +155,9 @@
 	align-items: center;
 	gap: var(--space-4);
 	padding: var(--space-4);
+	border-block-start: var(--border-width) solid var(--color-border);
+	color: var(--color-muted);
+	font-size: var(--font-small);
 }
 .visually-hidden {
 	position: absolute;
@@ -296,6 +359,7 @@
 	block-size: auto;
 	margin-inline: auto;
 }
+/* 노드 편집기 느낌(SCRUM-280): 가는 곡선 + 노드 가장자리 포트(원) + 흰 카드 상자. 선 색은 유입·유출·경유 그대로. */
 .flow-graph-edge {
 	cursor: pointer;
 	transition: opacity 0.18s ease;
@@ -312,36 +376,46 @@
 .flow-graph-arrow.is-via {
 	color: var(--color-graph-via);
 }
-.flow-graph-arrow path {
-	fill: currentColor;
-}
 .flow-graph-line {
 	fill: none;
 	stroke: currentColor;
 	stroke-linecap: round;
+	stroke-opacity: 0.72;
+	transition:
+		stroke-opacity 0.18s ease,
+		stroke-width 0.18s ease;
+}
+.flow-graph-port-stub {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.75;
+	stroke-opacity: 0.72;
+}
+/* 포트: 보내는 쪽(is-out)은 흰 속 + 색 테두리, 받는 쪽(is-in)은 색으로 채운 원 */
+.flow-graph-port {
+	stroke: currentColor;
+	stroke-width: 1.75;
+}
+.flow-graph-port.is-out {
+	fill: var(--color-graph-surface);
+}
+.flow-graph-port.is-in {
+	fill: currentColor;
+	stroke: var(--color-graph-surface);
+	stroke-width: 1.5;
+}
+.flow-graph-edge:hover .flow-graph-line,
+.flow-graph-edge.is-active .flow-graph-line {
+	stroke-opacity: 1;
 }
 .flow-graph-edge.is-context .flow-graph-line {
-	stroke-dasharray: 6 5;
-	opacity: 0.6;
+	stroke-dasharray: 5 5;
+	stroke-opacity: 0.5;
 }
-/* 선 위를 따라 흐르는 밝은 점 — 돈이 가는 방향. 모션을 줄이라고 하면 멈춰요. */
-.flow-graph-pulse {
+.flow-graph-ports {
 	fill: none;
-	stroke: var(--color-graph-surface);
-	stroke-width: 2;
-	stroke-linecap: round;
-	stroke-dasharray: 1 26;
-	opacity: 0.85;
+	stroke: none;
 	pointer-events: none;
-	animation: flow-graph-run 1.6s linear infinite;
-}
-@keyframes flow-graph-run {
-	from {
-		stroke-dashoffset: 27;
-	}
-	to {
-		stroke-dashoffset: 0;
-	}
 }
 .flow-graph-hit {
 	fill: none;
@@ -354,42 +428,46 @@
 }
 .flow-graph-box {
 	fill: var(--color-graph-node);
-	stroke: var(--color-graph-line);
-	stroke-width: 1.25;
-	transition: stroke 0.18s ease;
-	filter: var(--shadow-graph-node);
+	stroke: #d5dbe5;
+	stroke-width: 1;
+	transition:
+		stroke 0.18s ease,
+		filter 0.18s ease;
+	filter: drop-shadow(0 1px 1px rgb(16 24 40 / 6%)) drop-shadow(0 4px 10px rgb(16 24 40 / 7%));
 }
 .flow-graph-node text {
-	fill: var(--color-graph-ink);
+	fill: #2a3340;
 	font-size: 12.5px;
+	font-weight: 500;
 	font-variant-numeric: tabular-nums;
-	letter-spacing: 0.02em;
+	letter-spacing: 0.01em;
 	pointer-events: none;
 }
 .flow-graph-node .flow-graph-caption {
-	fill: var(--color-graph-muted);
+	fill: var(--color-primary);
 	font-size: 10.5px;
-	letter-spacing: 0.08em;
+	font-weight: 700;
+	letter-spacing: 0.06em;
 }
+/* 조사 대상 계좌: 어두운 상자 대신 강조색 테두리 + 옅은 빛(시안의 선택된 노드처럼) */
 .flow-graph-node.is-target .flow-graph-box {
-	fill: var(--color-graph-node-strong);
-	stroke: var(--color-graph-ink);
+	fill: #fff;
+	stroke: var(--color-primary);
 	stroke-width: 1.75;
-}
-.flow-graph-node.is-target .flow-graph-box {
-	filter: var(--shadow-graph-target);
+	filter: drop-shadow(0 0 6px rgb(0 70 255 / 28%)) drop-shadow(0 6px 14px rgb(0 35 110 / 12%));
 }
 .flow-graph-node.is-target text {
-	fill: var(--color-graph-on-strong);
-	font-weight: 700;
+	fill: #1b2638;
+	font-weight: 750;
 }
 .flow-graph-node.is-target .flow-graph-caption {
-	fill: var(--color-graph-on-strong-muted);
-	font-weight: 400;
+	fill: var(--color-primary);
+	font-weight: 700;
 }
 .flow-graph-node:hover .flow-graph-box,
 .flow-graph-node.is-active .flow-graph-box {
-	stroke: var(--color-graph-ink);
+	stroke: var(--color-primary);
+	filter: drop-shadow(0 0 5px rgb(0 70 255 / 22%)) drop-shadow(0 4px 10px rgb(16 24 40 / 8%));
 }
 /* 키보드로 옮겨 온 계좌 — 상자 테두리를 굵게(SVG g 의 outline 은 브라우저마다 달라요). */
 .flow-graph-node:focus {
@@ -420,11 +498,6 @@
 	font-size: 12px;
 	font-weight: 700;
 	font-variant-numeric: tabular-nums;
-}
-@media (prefers-reduced-motion: reduce) {
-	.flow-graph-pulse {
-		display: none;
-	}
 }
 /* AI 조사 요약 (SCRUM-175) — 배지는 글자로도 상태를 말해서 색만으로 구분하지 않아요. */
 .case-ai-summary {
@@ -583,7 +656,7 @@
 /* 케이스 상세 — 시연 화면(/demo/cases)과 같은 모양: 위에 작은 머리글(CASE v·번호·한 줄 설명 + 오른쪽 배지),
    아래는 왼쪽 본문 + 오른쪽 메모·다음 작업 2단, 거래 근거는 그 밑 전체 폭. 카드 제목은 구분선 있는 머리 띠로 보여요. 좁으면 한 줄로 쌓아요. */
 .case-detail {
-	--case-card-shadow: 0 1px 2px rgb(16 35 63 / 5%), 0 8px 24px rgb(16 35 63 / 4%);
+	--case-card-shadow: var(--shadow-card);
 }
 .case-back-link {
 	display: inline-block;
@@ -690,8 +763,10 @@
 	text-decoration: none;
 }
 @media (min-width: 48rem) {
+	/* 위쪽 두 카드(점수·연결 경보)는 높이를 맞춰 한 줄로 보이게. */
 	.case-detail-top {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+		align-items: stretch;
 	}
 }
 /* 1240px 아래에선 오른쪽 단이 본문 밑으로 내려가 둘씩 나란히 — 시연 화면과 같은 기준. */
@@ -706,5 +781,357 @@
 	}
 	.case-evidence {
 		grid-column: 1 / -1;
+	}
+}
+
+/* ── 거래 근거 카드 — 팀 검토 시안 모양으로(SCRUM-280) ─────────────────
+   머리(거래 분석 01 · 거래 근거 · 직접/경유 건수) → 유입·유출 합계 띠 → 밑줄 탭 → 경로 지도(점 무늬 캔버스) → 경로 거래 표 → 바닥 설명 */
+.case-detail .case-card > .evidence-head {
+	align-items: flex-end;
+	margin-block-end: 0;
+	padding: var(--space-4) var(--space-4) var(--space-3);
+	border-block-end: 0;
+}
+.kicker {
+	margin: 0;
+	color: #485e7e;
+	font-size: 0.6875rem;
+	font-weight: 730;
+	letter-spacing: 0.045em;
+}
+.kicker span {
+	margin-inline-start: 0.5rem;
+	padding: 0.125rem 0.3125rem;
+	border-radius: 0.25rem;
+	background: #e8f0ff;
+	color: #2853ad;
+	letter-spacing: 0;
+}
+.case-detail .case-card > .evidence-head h2 {
+	margin-block-start: 0.1875rem;
+	color: #1b2638;
+	font-size: 1.25rem;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+}
+.minor-pair {
+	display: flex;
+	align-items: center;
+	gap: 0.3125rem;
+	margin: 0;
+	color: var(--color-muted);
+	font-size: 0.75rem;
+}
+.minor-pair b {
+	color: var(--color-text);
+}
+.minor-pair i {
+	height: 0.9375rem;
+	margin: 0 0.1875rem;
+	border-inline-start: var(--border-width) solid #c5cfdd;
+}
+.case-ledger {
+	margin: 0 0 var(--space-2);
+	padding-block-start: var(--space-3);
+	border-block-start: var(--border-width) solid #e2e8f2;
+}
+.ledger-strip {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3) var(--space-6);
+	margin: 0;
+}
+.ledger-side {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4375rem;
+}
+.ledger-side dt {
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.ledger-side dt small {
+	font-size: 0.75rem;
+}
+.ledger-side dd {
+	margin: 0 0 0 0.25rem;
+	color: var(--color-text);
+	font-size: 1.0625rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.01em;
+}
+.ledger-side dd.is-empty {
+	color: var(--color-muted);
+	font-weight: 500;
+}
+.cash-dot {
+	display: grid;
+	place-items: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	border-radius: 0.5rem;
+	font-size: 0.9375rem;
+	font-weight: 800;
+}
+.cash-dot.in {
+	background: #e3f5ef;
+	color: #06734f;
+}
+.cash-dot.out {
+	background: #e9efff;
+	color: #2756b8;
+}
+.ledger-note {
+	margin: var(--space-2) 0 0;
+	color: var(--color-muted);
+	font-size: 0.75rem;
+}
+/* 탭: 시안처럼 굵은 강조색 밑줄 */
+.case-card .case-tabs {
+	gap: 0.75rem;
+	margin-block: var(--space-3) var(--space-3);
+	border-block-end-color: #d9e2ef;
+}
+.case-card .case-tabs button {
+	min-height: 2.25rem;
+	padding: 0.375rem 0.25rem;
+	font-size: 0.9375rem;
+}
+.case-card .case-tabs button:hover:enabled {
+	color: var(--color-primary);
+}
+.case-card .case-tabs [aria-pressed="true"],
+.case-card .case-tabs [aria-pressed="true"]:hover:enabled {
+	border-block-end-width: 0.1875rem;
+	color: #164ac7;
+	font-weight: 750;
+}
+.case-flow {
+	border: 0;
+	box-shadow: none;
+	overflow: visible;
+}
+/* 경로 지도 */
+.route-canvas {
+	margin: 0 0 var(--space-3);
+	padding: 0.875rem 1.25rem 1.25rem;
+	border: var(--border-width) solid #d9e5f5;
+	border-radius: 0.75rem;
+	background-color: #f5f8ff;
+	background-image: radial-gradient(#c9d8ef 0.8px, transparent 0.8px);
+	background-size: 14px 14px;
+}
+.canvas-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	color: #485e7e;
+	font-size: 0.75rem;
+}
+.canvas-head > span:first-child {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.1875rem 0.5625rem;
+	border: var(--border-width) solid #d5e1f2;
+	border-radius: 0.3125rem;
+	background: #fff;
+	color: var(--brand-navy);
+	font-weight: 700;
+}
+.canvas-head i {
+	display: inline-block;
+	width: 0.4375rem;
+	height: 0.4375rem;
+	margin-inline-end: 0.375rem;
+	border-radius: 50%;
+	background: var(--color-primary);
+}
+.route-track {
+	display: grid;
+	align-items: start;
+	margin: 0;
+	padding: 0.875rem 0.625rem 0;
+	list-style: none;
+}
+.route-step {
+	display: contents;
+}
+.route-node {
+	display: grid;
+	justify-items: center;
+	gap: 0.125rem;
+	min-width: 0;
+	text-align: center;
+}
+.node-circle {
+	display: grid;
+	place-items: center;
+	width: 2.75rem;
+	height: 2.75rem;
+	margin-block-end: 0.375rem;
+	border: var(--border-width) solid #aabdd9;
+	border-radius: 0.875rem;
+	background: #fff;
+	color: #344f78;
+	font-size: 1.25rem;
+	font-weight: 750;
+	box-shadow: 0 2px 4px rgb(27 58 96 / 7%);
+}
+.route-node.target .node-circle {
+	border-color: var(--color-primary);
+	background: var(--color-primary);
+	color: #fff;
+	box-shadow: 0 0 0 4px #e2ebff;
+}
+.route-node b {
+	color: #1b2638;
+	font-size: var(--font-small);
+}
+.route-node small {
+	color: #485e7e;
+	font:
+		0.6875rem ui-monospace,
+		SFMono-Regular,
+		Menlo,
+		monospace;
+}
+.route-hop {
+	display: grid;
+	justify-items: center;
+	margin: 0.375rem -0.1875rem 0;
+	color: #405b81;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	text-align: center;
+}
+.route-hop i {
+	position: relative;
+	display: block;
+	justify-self: stretch;
+	height: 1.5px;
+	margin: 0.25rem 0;
+	background: #879cbb;
+}
+.route-hop i::after {
+	content: "";
+	position: absolute;
+	inset-inline-end: 0;
+	inset-block-start: -2.5px;
+	width: 5px;
+	height: 5px;
+	border: solid #7187a9;
+	border-width: 1.5px 1.5px 0 0;
+	transform: rotate(45deg);
+}
+.route-hop small {
+	font-size: 0.75rem;
+	font-variant-numeric: tabular-nums;
+}
+.hop-amount {
+	margin-block-start: 0.1875rem;
+	color: #465e80;
+	font-size: var(--font-small);
+	font-weight: 650;
+}
+.route-ledger,
+.flow-graph-more {
+	margin-block-start: 0.4375rem;
+}
+.route-ledger > summary,
+.flow-graph-more > summary {
+	padding: 0.4375rem 0;
+	color: #2553aa;
+	font-size: var(--font-small);
+	font-weight: 650;
+	list-style: none;
+	cursor: pointer;
+}
+.route-ledger > summary::-webkit-details-marker,
+.flow-graph-more > summary::-webkit-details-marker {
+	display: none;
+}
+.route-ledger > summary::before,
+.flow-graph-more > summary::before {
+	content: "▸";
+	margin-inline-end: 0.375rem;
+}
+.route-ledger[open] > summary::before,
+.flow-graph-more[open] > summary::before {
+	content: "▾";
+}
+.route-ledger > summary span,
+.flow-graph-more > summary span {
+	margin-inline-start: 0.375rem;
+	color: var(--color-muted);
+	font-size: 0.75rem;
+	font-weight: 450;
+}
+.path-table {
+	font-size: 0.8125rem;
+}
+/* 경로가 없을 때의 전체 그래프 무대도 같은 점 무늬 캔버스로 */
+.case-card .flow-graph {
+	border-color: #d9e5f5;
+	border-radius: 0.75rem;
+}
+.case-card .flow-graph-stage {
+	background-color: #f5f8ff;
+	background-image: radial-gradient(#c9d8ef 0.8px, transparent 0.8px);
+	background-size: 14px 14px;
+}
+.case-card > .evidence-foot {
+	margin: var(--space-3) 0 0;
+	padding-block-start: 0.5625rem;
+	border-block-start: var(--border-width) solid #e2e8f2;
+	color: var(--color-muted);
+	font-size: 0.75rem;
+}
+@media (max-width: 36rem) {
+	.ledger-strip {
+		display: grid;
+		grid-template-columns: 1fr;
+	}
+	.route-canvas {
+		padding: 0.5625rem 0.75rem;
+	}
+	/* 좁은 화면: 경로를 세로로 — 계좌 원 왼쪽, 거래는 점선 따라 아래로 */
+	.route-track {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1875rem;
+		padding: 0.5rem 0 0;
+	}
+	.route-node {
+		grid-template-columns: 1.875rem 1fr;
+		grid-template-rows: auto auto;
+		justify-items: start;
+		align-items: center;
+		gap: 0 0.5rem;
+		text-align: left;
+	}
+	.route-node .node-circle {
+		grid-row: 1 / 3;
+		width: 1.75rem;
+		height: 1.75rem;
+		margin: 0;
+		border-radius: 0.5rem;
+		font-size: 0.8125rem;
+	}
+	.route-hop {
+		display: flex;
+		gap: 0.75rem;
+		width: max-content;
+		margin: 0 0 0 0.8125rem;
+		padding: 0.1875rem 0 0.1875rem 1.4375rem;
+		border-inline-start: 1px dashed #91a8cb;
+	}
+	.route-hop i {
+		display: none;
+	}
+	.route-ledger > summary span {
+		display: none;
 	}
 }

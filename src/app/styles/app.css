@@ -1,93 +1,134 @@
-/* 모바일은 세로 탐색, 넓은 화면은 사이드바와 업무 영역으로 분리합니다. */
-.auth-panel {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: var(--space-3);
-	padding: var(--space-4);
-	margin-bottom: var(--space-4);
-	background: var(--color-surface);
-	border: var(--border-width) solid var(--color-border);
-	border-radius: var(--radius-control);
-}
-.auth-error {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: var(--space-2);
-}
-.auth-panel form {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: var(--space-2);
-}
+/* 앱 셸 — DashStack 배치 참고(SCRUM-280): 옅은 회색 캔버스 위에 흰 사이드바·위 띠·카드.
+   포인트 컬러(#0046ff)는 선택한 메뉴·주 버튼·링크에만 써요. */
 .app-shell {
 	min-height: 100dvh;
+	background: var(--color-canvas);
 }
+
+/* ── 사이드바 ───────────────────────────── */
 .app-sidebar {
 	display: flex;
 	flex-direction: column;
-	gap: var(--space-4);
-	padding: var(--space-5) var(--space-3);
+	gap: var(--space-5);
+	padding: var(--space-5) var(--space-4);
 	background: var(--color-sidebar);
 	color: var(--color-sidebar-text);
 	border-block-end: var(--border-width) solid var(--color-border);
 }
 .app-brand {
 	display: flex;
-	flex-direction: column;
-	color: var(--color-primary);
-	font-size: var(--font-section);
-	font-weight: 750;
+	align-items: center;
+	gap: var(--space-3);
+	padding-inline: var(--space-2);
+	color: var(--color-text);
+	font-size: 1.125rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
 	text-decoration: none;
 }
-.app-brand span,
-.sidebar-label,
-.sidebar-note {
-	font-size: var(--font-small);
-}
 .app-brand span {
-	color: var(--color-sidebar-text);
-	font-weight: 400;
+	display: block;
+	margin-block-start: 0.125rem;
+	color: var(--color-muted);
+	font-size: 0.6875rem;
+	font-weight: 500;
+	letter-spacing: 0;
 }
-.sidebar-label,
-.sidebar-note {
+.app-brand-mark {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 2.25rem;
+	height: 2.25rem;
+	border-radius: 0.75rem;
+	color: var(--color-on-dark);
+	background: linear-gradient(135deg, var(--brand-primary), var(--brand-royal));
+	box-shadow: 0 6px 14px -6px rgb(0 70 255 / 55%);
+}
+.sidebar-group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.sidebar-group.is-dev {
+	padding-block-start: var(--space-4);
+	border-block-start: var(--border-width) solid var(--color-border);
+}
+.app-brand + .sidebar-group.is-dev {
+	padding-block-start: 0;
+	border: 0;
+}
+.sidebar-label {
 	margin: 0;
-}
-/* 로고·작은 글자의 왼쪽 끝을 메뉴 글자와 같은 선에 맞춰요. */
-.app-brand,
-.sidebar-label,
-.sidebar-note {
-	padding-inline: var(--space-4);
+	padding-inline: var(--space-3);
+	color: var(--color-muted);
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
 }
 .app-navigation {
 	display: flex;
-	flex-wrap: wrap;
-	gap: var(--space-2);
+	gap: var(--space-1);
+	overflow-x: auto;
+	scrollbar-width: none;
 }
 .navigation-link {
+	position: relative;
 	display: flex;
+	flex-shrink: 0;
 	align-items: center;
-	min-height: var(--control-height);
-	padding: var(--space-2) var(--space-4);
-	color: var(--color-sidebar-text);
-	text-decoration: none;
+	gap: var(--space-3);
+	min-height: 2.75rem;
+	padding: var(--space-2) var(--space-3);
 	border-radius: var(--radius-control);
+	color: var(--color-sidebar-text);
+	font-size: 0.875rem;
+	font-weight: 500;
+	text-decoration: none;
+	white-space: nowrap;
+	transition:
+		background-color 0.15s ease,
+		color 0.15s ease;
+}
+.navigation-link svg {
+	flex-shrink: 0;
+	opacity: 0.75;
 }
 .navigation-link:hover {
 	background: var(--color-primary-soft);
 	color: var(--color-primary);
 }
-/* 선택한 메뉴는 강조색 면 + 흰 굵은 글자 — 선·상자 없이. */
+.navigation-link:hover svg {
+	opacity: 1;
+}
+/* 선택한 메뉴: 강조색 면 + 흰 굵은 글자, 왼쪽 가장자리에 짧은 표시 막대(DashStack). */
 .navigation-link.is-active {
 	background: var(--color-sidebar-active);
 	color: var(--color-on-dark);
 	font-weight: 700;
+	box-shadow: 0 8px 18px -10px rgb(0 70 255 / 70%);
+}
+.navigation-link.is-active svg {
+	opacity: 1;
 }
 .sidebar-note {
-	margin-block-start: auto;
+	display: none;
+	margin: 0;
+	padding: var(--space-4);
+	border-radius: var(--radius-control);
+	background: var(--color-soft);
+	color: var(--color-muted);
+	font-size: 0.75rem;
+	line-height: 1.5;
 }
+.sidebar-note strong {
+	display: block;
+	margin-block-end: var(--space-1);
+	color: var(--color-text);
+	font-size: 0.8125rem;
+}
+
+/* ── 위 띠 ───────────────────────────── */
 .app-workspace {
 	min-width: 0;
 }
@@ -97,22 +138,241 @@
 	justify-content: space-between;
 	align-items: center;
 	gap: var(--space-3);
-	padding: var(--space-4);
-	background: var(--color-surface);
+	min-height: 4.25rem;
+	padding: var(--space-3) var(--space-4);
+	background: rgb(255 255 255 / 88%);
+	backdrop-filter: saturate(160%) blur(10px);
 	border-bottom: var(--border-width) solid var(--color-border);
+}
+.app-header-context {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+.app-header-kicker {
+	color: var(--color-muted);
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.12em;
+}
+.app-header-title {
+	color: var(--color-text);
+	font-size: 1rem;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+}
+
+/* ── 로그인 정보 ─────────────────────────
+   로그인 뒤: 위 띠 오른쪽 프로필 칩. 로그인 전: 본문 가운데 로그인 카드. */
+.auth-panel {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+}
+/* 위 띠 오른쪽 — 역할 칩 + 시연 도구(SCRUM-280 시안). 둘 다 <details> 로 눌러서 펼쳐요. */
+.head-utils {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+.persona,
+.demo-tools {
+	position: relative;
+}
+.persona > summary,
+.demo-tools > summary {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	list-style: none;
+	cursor: pointer;
+	user-select: none;
+}
+.persona > summary::-webkit-details-marker,
+.demo-tools > summary::-webkit-details-marker {
+	display: none;
+}
+.persona > summary {
+	min-height: 2.375rem;
+	padding: 0 var(--space-3);
+	border: var(--border-width) solid #e2e8ef;
+	border-radius: 0.5rem;
+	background: #f3f6fb;
+	color: #344964;
+	font-size: var(--font-small);
+	font-weight: 700;
+}
+.persona > summary span {
+	margin-inline: 0.25rem 0.5rem;
+}
+.persona > summary svg:last-child {
+	color: var(--color-muted);
+	transition: transform 0.15s ease;
+}
+.persona[open] > summary svg:last-child {
+	transform: rotate(180deg);
+}
+.persona > summary:hover {
+	border-color: #c9d6ea;
+}
+.demo-tools > summary {
+	padding: 0.375rem;
+	border-radius: 0.4375rem;
 	color: var(--color-muted);
 	font-size: var(--font-small);
+	font-weight: 600;
 }
+.demo-tools > summary:hover {
+	color: var(--color-primary);
+}
+.persona-menu,
+.demo-tools > nav {
+	position: absolute;
+	inset-inline-end: 0;
+	inset-block-start: calc(100% + 0.375rem);
+	z-index: 50;
+	display: flex;
+	flex-direction: column;
+	gap: 0.125rem;
+	width: 15rem;
+	padding: var(--space-2);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: 0.8125rem;
+	background: var(--color-surface);
+	box-shadow: 0 10px 35px rgb(21 46 85 / 16%);
+}
+.persona-menu .auth-identity,
+.demo-tools > nav span {
+	margin: 0;
+	padding: var(--space-2) 0.625rem;
+	color: var(--color-muted);
+	font-size: 0.75rem;
+	font-weight: 500;
+}
+.persona-menu button,
+.demo-tools > nav a {
+	display: flex;
+	align-items: center;
+	min-height: 2.25rem;
+	padding: var(--space-1) 0.625rem;
+	border: 0;
+	border-radius: 0.5rem;
+	background: transparent;
+	color: var(--color-text);
+	font-size: var(--font-small);
+	text-align: left;
+	text-decoration: none;
+}
+.persona-menu button:hover:enabled,
+.demo-tools > nav a:hover {
+	background: var(--color-primary-soft);
+	color: var(--color-primary);
+}
+.persona-menu .is-logout {
+	border-block-start: var(--border-width) solid var(--color-border);
+	border-radius: 0 0 0.5rem 0.5rem;
+	color: var(--color-fail);
+}
+.auth-error {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+.app-main.is-signed-out {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: calc(100dvh - 4.25rem);
+}
+.app-main.is-signed-out .auth-panel {
+	flex-direction: column;
+	align-items: stretch;
+	width: min(100%, 26rem);
+	padding: var(--space-6);
+	background: var(--color-surface);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-card);
+	box-shadow: var(--shadow-card);
+}
+.app-main.is-signed-out .auth-identity {
+	margin: 0;
+	color: var(--color-muted);
+	font-weight: 500;
+}
+/* 로그인 카드 제목이 있으면 "로그인이 필요합니다." 줄은 화면 읽기 프로그램에만 남겨요. */
+.app-main.is-signed-out .auth-heading + .auth-identity {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+.auth-heading h2 {
+	margin: 0 0 var(--space-1);
+	font-size: 1.375rem;
+	letter-spacing: -0.02em;
+}
+.auth-heading p {
+	margin: 0;
+	color: var(--color-muted);
+}
+.auth-panel form {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+.app-main.is-signed-out .auth-panel form {
+	flex-direction: column;
+	align-items: stretch;
+}
+.app-main.is-signed-out .auth-panel label {
+	margin-block-start: var(--space-2);
+	font-size: 0.8125rem;
+	font-weight: 600;
+}
+.app-main.is-signed-out .auth-panel input {
+	width: 100%;
+}
+.app-main.is-signed-out .auth-panel button[type="submit"] {
+	margin-block-start: var(--space-3);
+}
+.app-main.is-signed-out .auth-panel small {
+	color: var(--color-muted);
+	text-align: center;
+}
+.app-main.is-signed-out .environment-note {
+	margin-block-start: var(--space-4);
+}
+
+/* ── 본문 ───────────────────────────── */
 .app-main {
 	max-width: 90rem;
 	margin-inline: auto;
 	padding: var(--space-4);
 }
 .environment-note {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
 	margin-block: 0 var(--space-4);
-	padding: var(--space-3) var(--space-4);
-	background: var(--color-soft);
-	border-radius: var(--radius-control);
+	padding: var(--space-1) var(--space-3);
+	border-radius: var(--radius-pill);
+	background: var(--warning-soft);
+	color: var(--warning);
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+.environment-note::before {
+	content: "";
+	width: 0.375rem;
+	height: 0.375rem;
+	border-radius: 50%;
+	background: currentcolor;
 }
 .skip-link {
 	position: absolute;
@@ -121,26 +381,61 @@
 	padding: var(--space-3);
 	background: var(--color-surface);
 	transform: translateY(-200%);
-	z-index: 1;
+	z-index: 30;
 }
 .skip-link:focus {
 	transform: translateY(0);
 }
+@media (max-width: 47.99rem) {
+	.app-sidebar {
+		gap: var(--space-3);
+		padding: var(--space-3) var(--space-4);
+	}
+	.sidebar-label {
+		display: none;
+	}
+	.sidebar-group.is-dev {
+		padding-block-start: 0;
+		border: 0;
+	}
+	.head-utils {
+		gap: var(--space-1);
+	}
+}
 @media (min-width: 48rem) {
 	.app-shell {
 		display: grid;
-		grid-template-columns: 15rem minmax(0, 1fr);
+		grid-template-columns: 16rem minmax(0, 1fr);
 	}
 	.app-sidebar {
-		min-height: 100dvh;
+		position: sticky;
+		inset-block-start: 0;
+		height: 100dvh;
+		overflow-y: auto;
 		border-block-end: 0;
 		border-inline-end: var(--border-width) solid var(--color-border);
 	}
 	.app-navigation {
 		flex-direction: column;
+		overflow: visible;
 	}
-	/* 위 띠 글자의 왼쪽·오른쪽 끝을 본문 카드와 같은 선에 맞춰요. */
+	.navigation-link.is-active::before {
+		content: "";
+		position: absolute;
+		inset-block: 0.5rem;
+		inset-inline-start: calc(-1 * var(--space-4));
+		width: 0.25rem;
+		border-radius: 0 0.25rem 0.25rem 0;
+		background: var(--color-sidebar-active);
+	}
+	.sidebar-note {
+		display: block;
+		margin-block-start: auto;
+	}
 	.app-header {
+		position: sticky;
+		inset-block-start: 0;
+		z-index: 20;
 		padding-inline: var(--space-6);
 	}
 	.app-main {
@@ -157,17 +452,39 @@
 	display: flex;
 	align-items: center;
 	gap: var(--space-3);
-	padding: var(--space-3) var(--space-4);
+	padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
 	background: var(--color-surface);
-	border: 1px solid var(--color-border);
-	border-radius: 6px;
-	margin-block-end: var(--space-4);
+	border: var(--border-width) solid var(--color-border);
+	border-inline-start: 0.25rem solid var(--color-primary);
+	border-radius: var(--radius-control);
+	box-shadow: var(--shadow-card);
+	margin-block-end: var(--space-5);
+}
+.guide-bar-icon {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 2rem;
+	height: 2rem;
+	border-radius: 0.625rem;
+	background: var(--color-primary-soft);
+	color: var(--color-primary);
 }
 .guide-bar-text {
 	flex: 1;
+	font-weight: 500;
 }
 .guide-bar-full {
 	flex-shrink: 0;
+	min-height: 2.25rem;
+	border-color: var(--color-primary-soft);
+	background: var(--color-primary-soft);
+	color: var(--color-primary);
+	font-weight: 600;
+}
+.guide-bar-full:hover:enabled {
+	background: var(--color-primary);
+	color: var(--color-on-dark);
 }
 .guide-flow section + section {
 	margin-block-start: var(--space-3);
@@ -190,7 +507,7 @@
 }
 .toast {
 	padding: var(--space-3) var(--space-4);
-	border-radius: 6px;
+	border-radius: var(--radius-control);
 	background: var(--color-surface);
 	border: 1px solid var(--color-border);
 	box-shadow: 0 6px 16px rgba(32, 48, 68, 0.12);
