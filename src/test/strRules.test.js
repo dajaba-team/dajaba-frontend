@@ -162,6 +162,18 @@ describe("STR 화면 규칙", () => {
 			})
 		})
 
+		it("이력은 최신순 배열 순서로 본다 — 같은 초에 찍힌 재요청도 지난 반려로", () => {
+			const sameSecond = [submit("2026-11-16T02:00:00Z"), reject]
+			expect(
+				currentRejection({ lastRejection: null }, detail("DRAFTED", sameSecond)),
+			).toBeNull()
+			// 반려가 더 최근(앞)이면 시각이 같아도 띠
+			const rejectFirst = [reject, submit("2026-11-16T02:00:00Z")]
+			expect(
+				currentRejection({ lastRejection: null }, detail("DRAFTED", rejectFirst)),
+			).toMatchObject({ previousDraft: true, decidedBy: "apr01" })
+		})
+
 		it("반려 뒤 이미 다시 승인 요청했거나 반려가 없으면 띠 없음", () => {
 			const resubmitted = [submit("2026-11-16T03:00:00Z"), reject]
 			expect(
