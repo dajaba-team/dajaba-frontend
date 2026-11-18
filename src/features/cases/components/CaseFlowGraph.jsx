@@ -180,20 +180,38 @@ function FlowGraphView({ data, accountRef }) {
 					aria-label={`계좌 ${data.nodes.length}개, 거래 ${data.returnedTransactionCount}건`}
 					onClick={() => setPinned(null)}
 				>
+					{/* 선 끝은 노드 가장자리의 작은 원(포트) — 보내는 쪽은 속이 빈 원, 받는 쪽은 채운 원이라 방향이 보여요.
+					    받는 쪽 선은 상자 앞 9px(ARROW_GAP)에서 끝나서, 마커 안의 짧은 선으로 상자까지 이어 붙여요. */}
 					<defs>
 						{KINDS.map(([kind]) => (
 							<marker
-								key={kind}
+								key={`end-${kind}`}
 								id={`flow-graph-arrow-${kind}`}
 								className={`flow-graph-arrow is-${kind}`}
 								markerUnits="userSpaceOnUse"
-								markerWidth="10"
-								markerHeight="10"
+								markerWidth="16"
+								markerHeight="12"
 								refX="1"
-								refY="5"
+								refY="6"
 								orient="auto"
 							>
-								<path d="M0,0.5 L10,5 L0,9.5 L2.6,5 z" />
+								<path className="flow-graph-port-stub" d="M0,6 H10" />
+								<circle className="flow-graph-port is-in" cx="10" cy="6" r="4" />
+							</marker>
+						))}
+						{KINDS.map(([kind]) => (
+							<marker
+								key={`start-${kind}`}
+								id={`flow-graph-start-${kind}`}
+								className={`flow-graph-arrow is-${kind}`}
+								markerUnits="userSpaceOnUse"
+								markerWidth="12"
+								markerHeight="12"
+								refX="6"
+								refY="6"
+								orient="auto"
+							>
+								<circle className="flow-graph-port is-out" cx="6" cy="6" r="4" />
 							</marker>
 						))}
 					</defs>
@@ -220,9 +238,7 @@ function FlowGraphView({ data, accountRef }) {
 									className="flow-graph-line"
 									d={edge.d}
 									strokeWidth={edge.weight}
-									markerEnd={`url(#flow-graph-arrow-${edge.kind})`}
 								/>
-								{!context && <path className="flow-graph-pulse" d={edge.d} />}
 								<path className="flow-graph-hit" d={edge.d} />
 							</g>
 						)
@@ -254,7 +270,7 @@ function FlowGraphView({ data, accountRef }) {
 									y={top}
 									width={point.width}
 									height={point.height}
-									rx={target ? 14 : point.height / 2}
+									rx={target ? 10 : 8}
 								/>
 								{target && (
 									<text
@@ -275,6 +291,28 @@ function FlowGraphView({ data, accountRef }) {
 									{target ? " (대상)" : ""}
 								</text>
 							</g>
+						)
+					})}
+					{/* 포트(선 끝 원)는 상자에 가리지 않게 계좌 상자 위에 한 번 더 그려요. */}
+					{graph.edges.map((edge, index) => {
+						if (!edge.d) return null
+						const key = edgeKey(edge, index)
+						return (
+							<path
+								key={`port-${key}`}
+								className={[
+									"flow-graph-edge",
+									"flow-graph-ports",
+									`is-${edge.kind}`,
+									isEdgeActive(edge, key) && "is-active",
+								]
+									.filter(Boolean)
+									.join(" ")}
+								d={edge.d}
+								aria-hidden="true"
+								markerStart={`url(#flow-graph-start-${edge.kind})`}
+								markerEnd={`url(#flow-graph-arrow-${edge.kind})`}
+							/>
 						)
 					})}
 					{activeEdge?.labelAt && (
