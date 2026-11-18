@@ -81,9 +81,11 @@
 	--brand-light: #8cd2f5;
 	--brand-navy: #00236e;
 	--chart-neutral: #dfe5ef;
-	/* HIGH 위험 강조색 — 브랜드 파랑(#0046ff)과 채도를 맞춘 산호빛 빨강 (SCRUM-285) */
-	--risk-high: #f04452;
-	--risk-high-soft: #ffeef0;
+	/* 위험 등급 색 (SCRUM-285) — 빨강·인디고·라벤더. 브랜드 파랑과 겹치지 않게 MEDIUM·LOW 는 보라 계열 */
+	--risk-high: #e5484d;
+	--risk-high-soft: #feeceb;
+	--risk-medium: #5b5bd6;
+	--risk-low: #b4b9f8;
 	--color-surface-raised: #fff;
 	--app: var(--color-canvas);
 	--surface: var(--color-surface);
@@ -123,4 +125,6 @@
 	--chart-neutral: #42536d;
 	--risk-high: #ff6b75;
 	--risk-high-soft: #3a1f2a;
+	--risk-medium: #8d8df0;
+	--risk-low: #5a5fa8;
 }

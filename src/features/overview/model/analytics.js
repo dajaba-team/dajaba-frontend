@@ -1,5 +1,5 @@
 export const riskNames = ["높음 · HIGH", "중간 · MEDIUM", "낮음 · LOW", "미산출·등급 없음"]
-export const riskColors = ["--risk-high", "--brand-primary", "--brand-light", "--chart-neutral"]
+export const riskColors = ["--risk-high", "--risk-medium", "--risk-low", "--chart-neutral"]
 const bandColors = { HIGH: riskColors[0], MEDIUM: riskColors[1], LOW: riskColors[2] }
 // 우선순위 막대 색 — 도넛과 같은 등급 색. 등급이 없으면 회색.
 export const bandColor = (band) => bandColors[band] ?? riskColors[3]

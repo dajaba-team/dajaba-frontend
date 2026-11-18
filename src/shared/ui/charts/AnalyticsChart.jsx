@@ -13,6 +13,7 @@ import {
 	Filler,
 	Tooltip,
 } from "chart.js"
+import { barDepth, withDepth } from "./barDepth"
 Chart.register(
 	LineController,
 	LineElement,
@@ -49,21 +50,34 @@ export default function AnalyticsChart({
 			type,
 			data: {
 				...data,
-				datasets: data.datasets.map((d) => ({
-					...d,
-					borderColor: resolve(d.borderColor),
-					backgroundColor: Array.isArray(d.backgroundColor)
+				datasets: data.datasets.map((d) => {
+					const fill = Array.isArray(d.backgroundColor)
 						? d.backgroundColor.map(resolve)
-						: resolve(d.backgroundColor),
-				})),
+						: resolve(d.backgroundColor)
+					return {
+						...d,
+						borderColor: resolve(d.borderColor),
+						// 가로 막대는 그라디언트 + 트랙·그림자·광택(barDepth)으로 입체감
+						backgroundColor: horizontal ? withDepth(fill) : fill,
+					}
+				}),
 			},
+			plugins: horizontal
+				? [
+						barDepth({
+							track: resolve("--color-soft"),
+							text: resolve("--color-text"),
+							format: (v) => (ratio ? Number(v).toFixed(2) : String(v)),
+						}),
+					]
+				: [],
 			options: {
 				responsive: true,
 				maintainAspectRatio: false,
 				animation: motion.matches ? false : { duration: 1100, easing: "easeOutQuart" },
 				interaction: { mode: type === "doughnut" ? "nearest" : "index", intersect: false },
 				cutout: "78%",
-				layout: { padding: 8 },
+				layout: { padding: horizontal ? { top: 8, bottom: 8, left: 8, right: 16 } : 8 },
 				plugins: {
 					legend: { display: false },
 					tooltip: { backgroundColor: "#00236e", padding: 13, cornerRadius: 12 },
@@ -87,7 +101,9 @@ export default function AnalyticsChart({
 									beginAtZero: true,
 									...(ratio ? { max: 1 } : {}),
 									border: { display: false },
-									grid: { color: style.getPropertyValue("--color-border") },
+									grid: horizontal
+										? { display: false }
+										: { color: style.getPropertyValue("--color-border") },
 									ticks: {
 										color: style.getPropertyValue("--color-muted"),
 										maxTicksLimit: 5,

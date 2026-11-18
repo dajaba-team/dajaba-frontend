@@ -74,7 +74,7 @@ export default function DashboardView({
 						label: "조사 우선순위 점수",
 						data: scored.map((i) => i.score),
 						backgroundColor: scored.map((i) => bandColor(i.scoreBand)),
-						maxBarThickness: 18,
+						maxBarThickness: 20,
 					},
 				],
 			}
