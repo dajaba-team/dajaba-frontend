@@ -8,10 +8,19 @@ import { useToast } from "../../shared/ui/toast/useToast"
 import Icon from "../../shared/ui/dashboard/Icon"
 import { visibleMenus } from "../navigation/appNavigation"
 
+// 위 띠 왼쪽에 지금 열린 메뉴 이름을 보여 줘요. 상세 화면(/cases/:caseNo)은 가장 긴 경로가 같은 메뉴로.
+function currentMenu(menus, pathname) {
+	return menus
+		.filter((m) => pathname === m.path || pathname.startsWith(`${m.path}/`))
+		.sort((a, b) => b.path.length - a.path.length)[0]
+}
+
 export default function AppLayout() {
 	const session = useSession()
-	const isOverview = useLocation().pathname === "/overview"
+	const { pathname } = useLocation()
+	const isOverview = pathname === "/overview"
 	const menus = session.data ? visibleMenus(session.data.role) : []
+	const current = currentMenu(menus, pathname)
 	// 로그아웃·계정 전환·401 어느 길이든 loginId 가 바뀌면 이전 사람의 알림을 비워요.
 	const loginId = session.data?.loginId
 	const { dismiss } = useToast()
@@ -27,51 +36,66 @@ export default function AppLayout() {
 				<aside className="app-sidebar" aria-label="업무 공간">
 					<Link className="app-brand" to="/overview">
 						<i className="app-brand-mark">
-							<Icon name="chart" size={23} />
+							<Icon name="chart" size={21} />
 						</i>
 						<div>
 							DAJABA<span>AML 인텔리전스</span>
 						</div>
 					</Link>
-					<p className="sidebar-label">업무 공간</p>
 					{session.data && (
-						<nav className="app-navigation" aria-label="주요 메뉴">
-							{menus.map((m) => (
-								<NavLink
-									key={m.id}
-									to={m.path}
-									className={({ isActive }) =>
-										`navigation-link${isActive ? " is-active" : ""}`
-									}
-								>
-									<Icon name={m.icon ?? "case"} size={17} />
-									<span>{m.label}</span>
-								</NavLink>
-							))}
-						</nav>
+						<div className="sidebar-group">
+							<p className="sidebar-label">업무 공간</p>
+							<nav className="app-navigation" aria-label="주요 메뉴">
+								{menus.map((m) => (
+									<NavLink
+										key={m.id}
+										to={m.path}
+										className={({ isActive }) =>
+											`navigation-link${isActive ? " is-active" : ""}`
+										}
+									>
+										<Icon name={m.icon ?? "case"} size={18} />
+										<span>{m.label}</span>
+									</NavLink>
+								))}
+							</nav>
+						</div>
 					)}
 					{import.meta.env.DEV && (
-						<nav className="app-navigation" aria-label="개발 메뉴">
-							<NavLink to="/demo/overview" className="navigation-link">
-								대시보드 시연
-							</NavLink>
-							<NavLink to="/dev/connection" className="navigation-link">
-								백엔드 연동 확인
-							</NavLink>
-						</nav>
+						<div className="sidebar-group is-dev">
+							<p className="sidebar-label">개발 도구</p>
+							<nav className="app-navigation" aria-label="개발 메뉴">
+								<NavLink to="/demo/overview" className="navigation-link">
+									<Icon name="sparkle" size={18} />
+									<span>대시보드 시연</span>
+								</NavLink>
+								<NavLink to="/dev/connection" className="navigation-link">
+									<Icon name="refresh" size={18} />
+									<span>백엔드 연동 확인</span>
+								</NavLink>
+							</nav>
+						</div>
 					)}
 					<p className="sidebar-note">
+						<strong>AML 조사 워크스페이스</strong>
 						거래 근거부터 조사 메모까지
-						<br />
-						AML 조사 워크스페이스
 					</p>
 				</aside>
 				<div className="app-workspace">
 					<header className="app-header">
-						<span>AML OPERATIONS</span>
-						<span>조사 · 검토 · 보고</span>
+						<div className="app-header-context">
+							<span className="app-header-kicker">AML OPERATIONS</span>
+							<span className="app-header-title">
+								{current ? current.label : "조사 · 검토 · 보고"}
+							</span>
+						</div>
+						<AuthPanel placement="header" />
 					</header>
-					<main id="main-content" className="app-main" tabIndex={-1}>
+					<main
+						id="main-content"
+						className={`app-main${session.data ? "" : " is-signed-out"}`}
+						tabIndex={-1}
+					>
 						<AuthPanel />
 						{import.meta.env.DEV && import.meta.env.VITE_USE_MOCKS === "true" && (
 							<p className="environment-note" role="note">

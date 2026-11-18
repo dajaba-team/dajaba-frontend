@@ -7,7 +7,9 @@ import { getErrorMessage } from "../../../shared/api/apiClient"
 
 const usingMocks = import.meta.env.VITE_USE_MOCKS === "true"
 
-export default function AuthPanel() {
+// 로그인 뒤에는 위 띠(placement="header")에 프로필 칩으로, 로그인 전에는 본문 가운데 로그인 카드로 보여요.
+// 두 자리 모두 늘 마운트해 두고 한쪽만 그려서, 로그인·로그아웃 순간에 컴포넌트가 다시 만들어지지 않게 해요.
+export default function AuthPanel({ placement = "main" }) {
 	const [loginId, setLoginId] = useState("")
 	const [password, setPassword] = useState("")
 	const queryClient = useQueryClient()
@@ -50,10 +52,25 @@ export default function AuthPanel() {
 		},
 	})
 	const busy = switching || login.isPending || logout.isPending
+	if ((placement === "header") !== Boolean(me.data)) return null
 
 	return (
-		<section className="auth-panel" aria-label="로그인">
-			<p role="status">
+		<section className={`auth-panel${me.data ? " is-signed-in" : ""}`} aria-label="로그인">
+			{me.data && (
+				<span className="auth-avatar" aria-hidden="true">
+					{(me.data.displayName || me.data.loginId || "?")
+						.replace(/^예시\s*/, "")
+						.charAt(0)
+						.toUpperCase()}
+				</span>
+			)}
+			{me.data === null && !sessionEnded && (
+				<header className="auth-heading">
+					<h2>DAJABA에 로그인</h2>
+					<p>AML 조사 워크스페이스를 이용하려면 계정으로 로그인해 주세요.</p>
+				</header>
+			)}
+			<p role="status" className="auth-identity">
 				{me.isPending
 					? "로그인 상태 확인 중…"
 					: me.data
@@ -66,6 +83,7 @@ export default function AuthPanel() {
 				<>
 					<button
 						type="button"
+						className="auth-button"
 						disabled={me.isFetching || busy}
 						onClick={() => me.refetch()}
 					>
@@ -73,6 +91,7 @@ export default function AuthPanel() {
 					</button>
 					<button
 						type="button"
+						className="auth-button is-logout"
 						disabled={busy || me.isFetching}
 						onClick={() => logout.mutate()}
 					>

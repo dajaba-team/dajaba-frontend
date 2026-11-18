@@ -20,28 +20,82 @@
 	box-shadow: var(--shadow-card);
 	overflow: hidden;
 }
+/* 조회 조건 툴바 — 상태는 누르는 칩, 날짜·정렬은 한 줄에(DashStack 필터 바). */
 .case-filter {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: var(--space-3);
-	padding: var(--space-4);
+	gap: var(--space-3) var(--space-4);
+	padding: var(--space-4) var(--space-5);
+	border-block-end: var(--border-width) solid var(--color-border);
 }
 .case-filter label {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--space-2);
+	color: var(--color-muted);
+	font-size: var(--font-small);
+	font-weight: 600;
+}
+.case-filter label :is(input, select) {
+	color: var(--color-text);
+	font-weight: 400;
 }
 .case-filter fieldset {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: var(--space-2) var(--space-4);
-	min-height: var(--control-height);
+	gap: var(--space-2);
+	flex-basis: 100%;
+	min-width: 0;
 	margin: 0;
-	padding: var(--space-2) var(--space-3);
+	padding: 0 0 var(--space-3);
+	border: 0;
+	border-block-end: var(--border-width) dashed var(--color-border);
+}
+.case-filter legend {
+	float: left;
+	margin-inline-end: var(--space-2);
+	padding: 0;
+	color: var(--color-text);
+	font-size: var(--font-small);
+	font-weight: 700;
+}
+.case-filter fieldset label {
+	position: relative;
+	min-height: 2rem;
+	padding: 0 var(--space-3);
 	border: var(--border-width) solid var(--color-border);
-	border-radius: var(--radius-control);
+	border-radius: var(--radius-pill);
+	background: var(--color-surface);
+	color: var(--color-sidebar-text);
+	font-weight: 500;
+	cursor: pointer;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease,
+		color 0.15s ease;
+}
+/* 체크박스는 칩 안에 두되 보이지 않게 — 키보드 초점은 칩 테두리로 보여요. */
+.case-filter fieldset input[type="checkbox"] {
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+.case-filter fieldset label:hover {
+	border-color: var(--color-primary);
+	color: var(--color-primary);
+}
+.case-filter fieldset label:has(:checked) {
+	border-color: var(--color-primary);
+	background: var(--color-primary);
+	color: var(--color-on-dark);
+	font-weight: 600;
+}
+.case-filter fieldset label:has(:focus-visible) {
+	outline: var(--focus-width) solid var(--color-focus);
+	outline-offset: 2px;
 }
 .case-panel > p,
 .case-panel > [role="alert"] {
@@ -59,7 +113,7 @@
 /* 행 간격은 화면 폭과 상관없이 좁게(세로 --space-3), 가로만 폭에 따라 넓혀요. */
 .case-table th,
 .case-table td {
-	padding: var(--space-3) var(--space-4);
+	padding: var(--space-3) var(--space-5);
 	text-align: left;
 	border-block-end: var(--border-width) solid var(--color-border);
 }
@@ -68,6 +122,12 @@
 	color: var(--color-muted);
 	font-size: var(--font-small);
 	font-weight: 600;
+}
+.case-table tbody tr {
+	transition: background-color 0.12s ease;
+}
+.case-table tbody tr:last-child td {
+	border-block-end: 0;
 }
 .case-table tbody tr:hover {
 	background: var(--color-table-head);
@@ -95,6 +155,9 @@
 	align-items: center;
 	gap: var(--space-4);
 	padding: var(--space-4);
+	border-block-start: var(--border-width) solid var(--color-border);
+	color: var(--color-muted);
+	font-size: var(--font-small);
 }
 .visually-hidden {
 	position: absolute;
@@ -583,7 +646,7 @@
 /* 케이스 상세 — 시연 화면(/demo/cases)과 같은 모양: 위에 작은 머리글(CASE v·번호·한 줄 설명 + 오른쪽 배지),
    아래는 왼쪽 본문 + 오른쪽 메모·다음 작업 2단, 거래 근거는 그 밑 전체 폭. 카드 제목은 구분선 있는 머리 띠로 보여요. 좁으면 한 줄로 쌓아요. */
 .case-detail {
-	--case-card-shadow: 0 1px 2px rgb(16 35 63 / 5%), 0 8px 24px rgb(16 35 63 / 4%);
+	--case-card-shadow: var(--shadow-card);
 }
 .case-back-link {
 	display: inline-block;
@@ -690,8 +753,10 @@
 	text-decoration: none;
 }
 @media (min-width: 48rem) {
+	/* 위쪽 두 카드(점수·연결 경보)는 높이를 맞춰 한 줄로 보이게. */
 	.case-detail-top {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+		align-items: stretch;
 	}
 }
 /* 1240px 아래에선 오른쪽 단이 본문 밑으로 내려가 둘씩 나란히 — 시연 화면과 같은 기준. */

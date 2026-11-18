@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import Modal from "./dashboard/Modal"
+import Icon from "./dashboard/Icon"
 import { GuideContext } from "./useGuide"
 
 // 역할 기본 문구는 〔초안〕입니다. UI/UX v1.4 COM-02에 역할별 GuideBar 문구가 없어서
@@ -23,6 +24,9 @@ export default function GuideBar({ role, children }) {
 				aria-label="다음 할 일 안내"
 				aria-live="polite"
 			>
+				<span className="guide-bar-icon">
+					<Icon name="sparkle" size={16} />
+				</span>
 				<span className="guide-bar-text">{text}</span>
 				<button type="button" className="guide-bar-full" onClick={() => setOpen(true)}>
 					전체 흐름
