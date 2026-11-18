@@ -8,6 +8,7 @@ import App from "../app/App"
 import { createQueryClient } from "../app/queryClient"
 import { resetCases } from "../mocks/handlers"
 import { server } from "../mocks/server"
+import { seedStrDrafts, visibleStrDraft } from "../mocks/strDrafts"
 
 // 승인 완료 화면(SCRUM-111) — 마감 배지·제출 전 PDF 미리보기(S7)·모의 제출(P4)·확정본(S8)·PDF 다시 만들기(P5).
 // BE 아직 없음(SCRUM-240) — MSW 시드: 케이스 1003(DRF-000098)이 승인 완료, inv01 담당.
@@ -169,6 +170,44 @@ describe("승인 완료 — 미리보기·모의 제출·확정본", () => {
 })
 
 describe("승인 완료 — 누가·어떤 상태", () => {
+	it("[모의 제출]은 S2 available_actions의 REPORT로만 켠다 — 다른 승인자는 안내만", async () => {
+		const seeded = seedStrDrafts().find((draft) => draft.draft_no === "DRF-000098")
+		server.use(
+			http.get("*/api/v1/str-drafts/:draftNo", () =>
+				HttpResponse.json({
+					...visibleStrDraft(users.apr01, seeded),
+					case_status: "APPROVED",
+					available_actions: [],
+				}),
+			),
+		)
+		renderAt("/approvals/DRF-000098")
+		expect(
+			await screen.findByText("모의 제출은 이 초안을 승인한 사람이 해요."),
+		).toBeInTheDocument()
+		expect(screen.queryByRole("button", { name: "모의 제출" })).not.toBeInTheDocument()
+		// PDF 미리보기는 S2에 동작이 아직 없어 승인자 역할로 켜요
+		expect(screen.getByRole("button", { name: "제출 전 PDF 미리보기" })).toBeInTheDocument()
+	})
+
+	it("다른 승인자가 보내면 서버가 403 NOT_DRAFT_APPROVER — 확인창에 안내", async () => {
+		server.use(
+			http.post("*/api/v1/approvals/:draftNo/report", () =>
+				HttpResponse.json(
+					{ error: { code: "NOT_DRAFT_APPROVER", message: "-", details: {} } },
+					{ status: 403 },
+				),
+			),
+		)
+		const user = renderAt("/approvals/DRF-000098")
+		await user.click(await screen.findByRole("button", { name: "모의 제출" }))
+		const dialog = await screen.findByRole("dialog", { name: "모의 제출" })
+		await user.click(within(dialog).getByRole("button", { name: "모의 제출" }))
+		expect(
+			await within(dialog).findByText("이 초안을 승인한 승인자만 모의 제출할 수 있어요."),
+		).toBeInTheDocument()
+	})
+
 	it("관리자는 상태만 보고 PDF·[모의 제출] 버튼이 없다(PDF 권한 없음)", async () => {
 		renderAt("/approvals/DRF-000098", "admin")
 		expect(

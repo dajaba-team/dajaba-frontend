@@ -7,6 +7,7 @@ import { approvalsApi } from "../api/approvalsApi"
 import { useApprovalCommand } from "../hooks/useApprovals"
 import { deadlineStatus, deadlineText } from "../model/deadline"
 import { useStrDraft } from "../../str/hooks/useStrDraft"
+import { strActionsFor } from "../../str/model/strRules"
 import { useCaseDetail } from "../../cases/hooks/useCases"
 import { useSession } from "../../auth/hooks/useSession"
 import { STATUS_LABELS, labelOf } from "../../cases/labels"
@@ -41,9 +42,10 @@ function saveFile(blob, name) {
 /**
  * 승인 완료 화면 (SCRUM-111, FR-APR-06·07) — `/approvals/:draftNo`. 승인(P2) 뒤 여기로 와요.
  * APPROVED: 마감 배지 · "제출 전" PDF 미리보기(S7) · [모의 제출](P4). REPORTED: 확정본 PDF(S8) · 실패면 [PDF 다시 만들기](P5).
- * 〔SCRUM-240 전〕 P4·S7·S8·P5 는 BE 가 아직 없어 MSW 가 답해요.
- * 〔확인 필요〕 버튼은 원래 서버 available_actions 만 보고 켜는데(01_code_rules §1), 승인 뒤 동작은 서버가 아직 주지 않아요.
- *   그래서 지금은 역할(APPROVER)·케이스 상태로 켜고, 서버가 다시 검사해요. SCRUM-240 에서 액션 목록이 생기면 그걸로 바꿔요.
+ * [모의 제출]은 S2 available_actions 의 REPORT 로만 켜요(BE StrDraftActions, SCRUM-261) — 케이스 APPROVED·초안 LOCKED 이고
+ *   이 초안을 승인한 사람에게만 와요. 다른 승인자는 안내만 봐요(P4도 403 NOT_DRAFT_APPROVER).
+ * 〔BE PDF 전〕 S7·S8·P5 는 BE 가 아직 없어 MSW 가 답하고, S2 에도 PDF 동작이 없어서 PDF 버튼만 역할(APPROVER)로 켜요.
+ *   PDF 동작이 S2 에 생기면 그걸로 바꿔요.
  * 이 경로(/approvals/*)는 승인자·관리자만 열어요. 관리자는 PDF 권한이 없어(BE 04_auth_user 12-1·12-1a) 상태만 봐요.
  * 담당 조사역의 PDF 미리보기·확정본은 STR 화면 몫이에요.
  */
@@ -55,6 +57,7 @@ export default function ApprovalDonePage() {
 	const session = useSession()
 	const isApprover = session.data?.role === "APPROVER"
 	const status = draft.data?.caseStatus ?? null
+	const canReport = strActionsFor(draft.data).includes("REPORT")
 
 	const target = { draftNo, caseNo, caseVersion: draft.data?.caseVersion }
 	const report = useApprovalCommand(target, "report")
@@ -150,13 +153,19 @@ export default function ApprovalDonePage() {
 											? "불러오는 중…"
 											: "제출 전 PDF 미리보기"}
 									</button>
-									<button
-										type="button"
-										className="primary"
-										onClick={() => setConfirming(true)}
-									>
-										모의 제출
-									</button>
+									{canReport ? (
+										<button
+											type="button"
+											className="primary"
+											onClick={() => setConfirming(true)}
+										>
+											모의 제출
+										</button>
+									) : (
+										<p className="approval-muted">
+											모의 제출은 이 초안을 승인한 사람이 해요.
+										</p>
+									)}
 								</div>
 							) : (
 								<p className="approval-muted">

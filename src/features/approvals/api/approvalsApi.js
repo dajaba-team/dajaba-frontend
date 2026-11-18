@@ -65,6 +65,19 @@ const toChange = (data) => ({
 	updatedAt: data.updated_at ?? null,
 })
 
+// P4 응답 {case_no, case_status, case_version, draft_no, report_no, report_due_at, reported_at, late, pdf_status}
+const toReported = (data) => ({
+	caseNo: data.case_no,
+	caseStatus: data.case_status,
+	caseVersion: data.case_version,
+	draftNo: data.draft_no,
+	reportNo: data.report_no ?? null,
+	reportDueAt: data.report_due_at ?? null,
+	reportedAt: data.reported_at ?? null,
+	late: data.late === true,
+	pdfStatus: data.pdf_status ?? null,
+})
+
 export const approvalsApi = {
 	/** P1 — 화면 page는 1부터, API page는 0부터. 정렬은 서버가 요청 오래된 순으로 고정. */
 	list: async ({ page = 1, size = 20 } = {}, signal) => {
@@ -101,9 +114,12 @@ export const approvalsApi = {
 				})
 			).data,
 		),
-	/** P4 모의 제출 — APPROVED → REPORTED. 실제 기관 전송은 없어요. 승인자만. */
+	/**
+	 * P4 모의 제출 — APPROVED → REPORTED. 실제 기관 전송은 없어요. 이 초안을 승인한 승인자만(BE #131 전후).
+	 * 응답은 케이스 공통 변경 응답이 아니라 BE ReportStrDraftResponse예요.
+	 */
 	report: async ({ draftNo, caseVersion }) =>
-		toChange(
+		toReported(
 			(await apiClient.post(`${approvalPath(draftNo)}/report`, { case_version: caseVersion }))
 				.data,
 		),
