@@ -39,11 +39,16 @@ function saveFile(blob, name) {
 	setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }
 
+// 403 NOT_DRAFT_APPROVER 안내(apiClient)·docs 와 같은 규칙 문장. 보는 사람이 승인자가 아니라고 단정하지 않아요.
+const REPORT_UNAVAILABLE =
+	"지금은 모의 제출할 수 없어요. 모의 제출은 이 초안을 승인한 승인자만 할 수 있어요."
+
 /**
  * 승인 완료 화면 (SCRUM-111, FR-APR-06·07) — `/approvals/:draftNo`. 승인(P2) 뒤 여기로 와요.
  * APPROVED: 마감 배지 · "제출 전" PDF 미리보기(S7) · [모의 제출](P4). REPORTED: 확정본 PDF(S8) · 실패면 [PDF 다시 만들기](P5).
  * [모의 제출]은 S2 available_actions 의 REPORT 로만 켜요(BE StrDraftActions, SCRUM-261) — 케이스 APPROVED·초안 LOCKED 이고
- *   이 초안을 승인한 사람에게만 와요. 다른 승인자는 안내만 봐요(P4도 403 NOT_DRAFT_APPROVER).
+ *   이 초안을 승인한 사람에게만 와요(P4도 아니면 403 NOT_DRAFT_APPROVER). REPORT 가 없으면 안내만 보여요 — 다른
+ *   승인자 말고도 서버가 빼는 경우가 있어 단정하지 않는 문구로(REPORT_UNAVAILABLE).
  * 〔BE PDF 전〕 S7·S8·P5 는 BE 가 아직 없어 MSW 가 답하고, S2 에도 PDF 동작이 없어서 PDF 버튼만 역할(APPROVER)로 켜요.
  *   PDF 동작이 S2 에 생기면 그걸로 바꿔요.
  * 이 경로(/approvals/*)는 승인자·관리자만 열어요. 관리자는 PDF 권한이 없어(BE 04_auth_user 12-1·12-1a) 상태만 봐요.
@@ -162,9 +167,7 @@ export default function ApprovalDonePage() {
 											모의 제출
 										</button>
 									) : (
-										<p className="approval-muted">
-											모의 제출은 이 초안을 승인한 사람이 해요.
-										</p>
+										<p className="approval-muted">{REPORT_UNAVAILABLE}</p>
 									)}
 								</div>
 							) : (

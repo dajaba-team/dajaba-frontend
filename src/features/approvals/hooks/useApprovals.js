@@ -20,6 +20,8 @@ const REFETCH_ON = [
 	"DRAFT_SUPERSEDED",
 	"DRAFT_NOT_VERIFIED",
 	"SELF_APPROVAL",
+	// 모의 제출(P4) — 화면이 들고 있던 S2가 낡았을 수 있어요(다른 탭에서 계정 전환 등). 다시 불러 [모의 제출]을 내려요.
+	"NOT_DRAFT_APPROVER",
 ]
 
 /**

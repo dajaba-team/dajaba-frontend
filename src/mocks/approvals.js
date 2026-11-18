@@ -222,7 +222,7 @@ export function reportDraft(viewer, item, draft, body) {
 		report_due_at: null,
 		reported_at: item.updated_at,
 		late: false,
-		pdf_status: "PENDING",
+		pdf_status: draft.pdf_status,
 	})
 }
 

@@ -115,7 +115,8 @@ export const approvalsApi = {
 			).data,
 		),
 	/**
-	 * P4 모의 제출 — APPROVED → REPORTED. 실제 기관 전송은 없어요. 이 초안을 승인한 승인자만(BE #131 전후).
+	 * P4 모의 제출 — APPROVED → REPORTED. 실제 기관 전송은 없어요. 이 초안을 승인한 승인자만
+	 * (BE SCRUM-258 ReportStrDraft — 아니면 403 NOT_DRAFT_APPROVER. 버튼은 S2 REPORT, SCRUM-261).
 	 * 응답은 케이스 공통 변경 응답이 아니라 BE ReportStrDraftResponse예요.
 	 */
 	report: async ({ draftNo, caseVersion }) =>
