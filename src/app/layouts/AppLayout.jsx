@@ -7,6 +7,7 @@ import GuideBar from "../../shared/ui/GuideBar"
 import { useToast } from "../../shared/ui/toast/useToast"
 import Icon from "../../shared/ui/dashboard/Icon"
 import { visibleMenus } from "../navigation/appNavigation"
+import brandMark from "../../assets/brand-mark.png"
 
 // 위 띠 왼쪽에 지금 열린 메뉴 이름을 보여 줘요. 상세 화면(/cases/:caseNo)은 가장 긴 경로가 같은 메뉴로.
 function currentMenu(menus, pathname) {
@@ -55,9 +56,7 @@ export default function AppLayout() {
 			<div className="app-shell">
 				<aside className="app-sidebar" aria-label="업무 공간">
 					<Link className="app-brand" to="/overview">
-						<i className="app-brand-mark">
-							<Icon name="chart" size={21} />
-						</i>
+						<img className="app-brand-mark" src={brandMark} alt="" />
 						<div>
 							DAJABA<span>AML 인텔리전스</span>
 						</div>
