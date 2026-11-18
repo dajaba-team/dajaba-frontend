@@ -135,8 +135,8 @@
 	background: var(--color-primary-soft);
 }
 .signal-kpi:nth-child(2) .metric-label svg {
-	color: var(--warning);
-	background: var(--warning-soft);
+	color: var(--risk-high);
+	background: var(--risk-high-soft);
 }
 .signal-kpi:nth-child(3) .metric-label svg {
 	color: var(--brand-royal);

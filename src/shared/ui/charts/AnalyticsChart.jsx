@@ -34,6 +34,7 @@ export default function AnalyticsChart({
 	replay = 0,
 	dark = false,
 	ratio = false,
+	horizontal = false,
 }) {
 	const canvas = useRef(null)
 	useEffect(() => {
@@ -67,20 +68,22 @@ export default function AnalyticsChart({
 					legend: { display: false },
 					tooltip: { backgroundColor: "#00236e", padding: 13, cornerRadius: 12 },
 				},
+				// horizontal 이면 막대가 가로 — 이름 축이 y, 값 축이 x (SCRUM-285)
+				indexAxis: horizontal ? "y" : "x",
 				scales:
 					type === "doughnut"
 						? {}
 						: {
-								x: {
+								[horizontal ? "y" : "x"]: {
 									grid: { display: false },
 									border: { display: false },
 									ticks: {
 										color: style.getPropertyValue("--color-muted"),
 										font: { size: 10 },
-										maxRotation: 30,
+										maxRotation: horizontal ? 0 : 30,
 									},
 								},
-								y: {
+								[horizontal ? "x" : "y"]: {
 									beginAtZero: true,
 									...(ratio ? { max: 1 } : {}),
 									border: { display: false },
@@ -111,7 +114,7 @@ export default function AnalyticsChart({
 			motion.removeEventListener("change", reduce)
 			chart.destroy()
 		}
-	}, [type, data, replay, dark, ratio])
+	}, [type, data, replay, dark, ratio, horizontal])
 	return (
 		<canvas ref={canvas} role="img" aria-label={label}>
 			{label}
