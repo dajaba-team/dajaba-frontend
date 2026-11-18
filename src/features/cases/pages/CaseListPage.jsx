@@ -186,7 +186,7 @@ export default function CaseListPage() {
 								aria-label="케이스 목록 표"
 								tabIndex={0}
 							>
-								<table className="case-table">
+								<table className="case-table case-list-table">
 									<caption className="visually-hidden">
 										조건에 맞는 케이스와 담당자
 									</caption>

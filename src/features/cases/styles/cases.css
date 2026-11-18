@@ -141,12 +141,22 @@
 }
 .case-status {
 	display: inline-flex;
+	white-space: nowrap;
 	padding: 0.125rem 0.625rem;
 	border-radius: var(--radius-pill);
 	background: var(--color-primary-soft);
 	color: var(--color-primary);
 	font-size: var(--font-small);
 	font-weight: 600;
+}
+/* 케이스 목록 표 — 칸이 좁아져도 글자를 쪼개지 않고 한 줄로 두고, 넘치면 .case-table-scroll 로 가로 스크롤해요 (SCRUM-285). */
+.case-list-table th,
+.case-list-table td {
+	white-space: nowrap;
+	vertical-align: middle;
+}
+.case-list-table button {
+	white-space: nowrap;
 }
 .case-pagination {
 	display: flex;
