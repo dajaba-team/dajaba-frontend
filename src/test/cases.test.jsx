@@ -177,7 +177,13 @@ describe("케이스 조사", () => {
 		expect(within(row).getByText("011_****1021")).toBeInTheDocument()
 		expect(within(row).getByText("조사 중")).toBeInTheDocument()
 		expect(within(row).getByText("예시 inv01")).toBeInTheDocument()
-		expect(screen.getByText(/1 \/ 1 페이지 · 전체 4건/)).toBeInTheDocument()
+		const pager = screen.getByRole("navigation", { name: "페이지" })
+		expect(pager).toHaveTextContent("전체 4건 · 1–4")
+		expect(within(pager).getByRole("button", { name: "1 페이지" })).toHaveAttribute(
+			"aria-current",
+			"page",
+		)
+		expect(within(pager).getByRole("button", { name: "다음 페이지" })).toBeDisabled()
 		expect(query).toBe("page=0&size=20")
 		server.events.removeAllListeners()
 	})

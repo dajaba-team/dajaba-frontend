@@ -7,6 +7,7 @@ import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
 import CaseOverview from "../components/CaseOverview"
 import ReassignDialog from "../components/ReassignDialog"
+import Pagination from "../../../shared/ui/Pagination"
 
 // 목록의 [담당자 변경]도 상세처럼 서버가 준 available_actions(REASSIGN)만 보고 켜요(#23 리뷰). 누르면 서버가 다시 검사해요.
 const canReassign = (item) => item.availableActions.includes("REASSIGN")
@@ -248,28 +249,13 @@ export default function CaseListPage() {
 								)}
 							</div>
 						)}
-						<nav className="case-pagination" aria-label="페이지">
-							<button
-								disabled={filters.page <= 1}
-								onClick={() =>
-									setParams(toParams({ ...filters, page: filters.page - 1 }))
-								}
-							>
-								이전
-							</button>{" "}
-							<span aria-live="polite">
-								{filters.page} / {Math.max(query.data.totalPages, 1)} 페이지 · 전체{" "}
-								{query.data.total}건
-							</span>{" "}
-							<button
-								disabled={filters.page >= query.data.totalPages}
-								onClick={() =>
-									setParams(toParams({ ...filters, page: filters.page + 1 }))
-								}
-							>
-								다음
-							</button>
-						</nav>
+						<Pagination
+							page={filters.page}
+							totalPages={query.data.totalPages}
+							total={query.data.total}
+							size={query.data.size}
+							onChange={(page) => setParams(toParams({ ...filters, page }))}
+						/>
 					</>
 				)}
 			</section>

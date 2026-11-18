@@ -10,6 +10,7 @@ import { VERIFICATION_STATUS_LABELS } from "../../str/verificationLabels"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
 import { useToast } from "../../../shared/ui/toast/useToast"
+import Pagination from "../../../shared/ui/Pagination"
 
 // 버튼은 서버가 준 available_actions 만 보고 켜요(01_code_rules §1). 서버는 승인자이고 담당한 적 없을 때만 APPROVE·REJECT 를 줘요.
 const can = (item, action) => item.availableActions.includes(action)
@@ -147,21 +148,13 @@ export default function ApprovalListPage() {
 						) : (
 							<p>승인 대기 건이 없습니다.</p>
 						)}
-						<nav className="case-pagination" aria-label="페이지">
-							<button disabled={page <= 1} onClick={() => goTo(page - 1)}>
-								이전
-							</button>{" "}
-							<span aria-live="polite">
-								{page} / {Math.max(query.data.totalPages, 1)} 페이지 · 전체{" "}
-								{query.data.total}건
-							</span>{" "}
-							<button
-								disabled={page >= query.data.totalPages}
-								onClick={() => goTo(page + 1)}
-							>
-								다음
-							</button>
-						</nav>
+						<Pagination
+							page={page}
+							totalPages={query.data.totalPages}
+							total={query.data.total}
+							size={query.data.size}
+							onChange={goTo}
+						/>
 					</>
 				)}
 			</section>
