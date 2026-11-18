@@ -78,9 +78,10 @@ const toLastRejection = (data) => ({
  *   - #109: suspicion_types·_recommended([])·suspicion_level_branch·_hq·generation_id·
  *     generator_version·references([]), META_ONLY의 case_no·case_status
  *   - #115(SCRUM-231): last_rejection — decided_by는 승인자 표시 이름(문자열)
- *   - 아직 없음: available_actions (BE feat/SCRUM-232 리뷰 중)
+ *   - SCRUM-232: available_actions — 조사역 REVISE·VERIFY·SUBMIT·REGENERATE·CLOSE_WITH_DRAFT,
+ *     승인자 APPROVE·REJECT
  *   - facts의 *account_key는 *account_no(가림)·*account_ref로 바뀌어 옴
- * availableActions는 키가 없으면 null — "서버가 아직 안 줌"과 "할 수 있는 게 없음([])"을 구분해요(strRules.strActionsFor).
+ * availableActions는 키가 없으면 null(옛 응답) — strRules.strActionsFor가 빈 목록으로 봐요.
  */
 export function toDraft(data) {
 	const meta = {

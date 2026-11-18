@@ -20,28 +20,15 @@ export function changedSections(narrative, inputs) {
 }
 
 /**
- * 이 화면에서 쓸 STR 동작 목록.
- *
- * 원칙: 버튼은 서버가 준 S2 `available_actions`만 보고 켜요(계약서 Q16).
- * 다리(임시): S2 실제 응답(BE develop, SCRUM-205 #84)엔 아직 available_actions가 없어요(null). 그동안은 케이스 상세 C2의
- * available_actions(BE CaseAction — 담당·상태를 서버가 이미 판단한 값)에서 STR 동작을 옮겨 와요.
- *   - GENERATE_DRAFT(담당 + ESCALATED·DRAFTED·REJECTED/NEED_REVISION) → 초안 ACTIVE면 REVISE·REGENERATE
- *   - 그중 케이스가 DRAFTED면 VERIFY·SUBMIT — 보완 요청 반려(REJECTED)에선 둘 다 없음. 저장하면 DRAFTED가 돼서
- *     그때 켜져요(BE #95 VerifyStrDraft: DRAFTED에서만, 아니면 409 INVALID_CASE_TRANSITION · 계약서 4절)
- * S2가 available_actions를 주기 시작하면 이 다리는 타지 않아요. 그때 지워요. TODO(SCRUM-205 후속)
+ * 이 화면에서 쓸 STR 동작 목록 — 서버가 준 S2 `available_actions` 그대로(계약서 Q16, BE StrDraftActions SCRUM-232).
+ *   - 조사역(담당): REVISE·REGENERATE, 케이스 DRAFTED면 VERIFY·SUBMIT도, CLOSE_WITH_DRAFT는 C2와 같은 값
+ *   - 승인자: 케이스 PENDING_APPROVAL이고 지금·예전 담당이 아니면 APPROVE·REJECT
+ *   - 그 밖(관리자·비담당·대체·잠긴 초안·제한 응답): []
+ * 키가 없는 옛 응답(null)은 빈 목록으로 봐요 — 화면이 상태로 대신 판단하지 않아요.
  */
-export function strActionsFor(draft, caseDetail) {
+export function strActionsFor(draft) {
 	if (!draft?.contentVisible) return []
-	if (Array.isArray(draft.availableActions)) return draft.availableActions
-	const caseActions = caseDetail?.availableActions ?? []
-	const actions = []
-	if (draft.status === "ACTIVE" && caseActions.includes("GENERATE_DRAFT")) {
-		actions.push("REVISE")
-		if (caseDetail.status === "DRAFTED") actions.push("VERIFY", "SUBMIT")
-		actions.push("REGENERATE")
-	}
-	if (caseActions.includes("CLOSE_WITH_DRAFT")) actions.push("CLOSE_WITH_DRAFT")
-	return actions
+	return Array.isArray(draft.availableActions) ? draft.availableActions : []
 }
 
 /**

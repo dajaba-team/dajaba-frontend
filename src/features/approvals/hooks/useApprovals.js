@@ -27,8 +27,9 @@ const REFETCH_ON = [
  * 낙관적 변경·자동 재시도 없음. 응답이 없으면(timeout·네트워크) 처리됐을 수 있으니 목록을 먼저 다시 읽어요.
  * onDone: 성공 + 재조회 뒤에 불러요(확인창 닫기·이동). 확인창이 이미 내려갔어도(재조회로 줄이 빠짐) 불려요.
  * onGone: 실패 뒤 다시 불러온 목록(지금 보고 있는 페이지)에 이 초안이 없을 때 불러요 — 다른 승인자가 이미 처리한 경우.
+ * onStale: 실패 뒤 재조회가 끝나면 늘 불러요(승인함 목록이 없는 STR 화면용) — 화면이 새 available_actions로 판단.
  */
-export function useApprovalCommand(item, name, { onDone, onGone } = {}) {
+export function useApprovalCommand(item, name, { onDone, onGone, onStale } = {}) {
 	const client = useQueryClient()
 	const refresh = () =>
 		Promise.all([
@@ -51,6 +52,7 @@ export function useApprovalCommand(item, name, { onDone, onGone } = {}) {
 			if (context?.session !== client.getQueryData(["auth", "me"])) return
 			if (!isNoResponse(error) && !REFETCH_ON.includes(getErrorCode(error))) return
 			void refresh().then(() => {
+				onStale?.()
 				// 승인함을 벗어났으면(보고 있는 목록 없음) 안내하지 않아요.
 				const lists = client
 					.getQueriesData({ queryKey: ["approvals"], type: "active" })

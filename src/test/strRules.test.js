@@ -24,39 +24,15 @@ const draft = (over = {}) => ({
 const passed = { verificationId: "V1", isCurrent: true, status: "PASSED", passed: true }
 
 describe("STR 화면 규칙", () => {
-	it("S2가 available_actions를 주면 그대로 쓴다", () => {
-		expect(strActionsFor(draft({ availableActions: ["VERIFY"] }), {})).toEqual(["VERIFY"])
-		expect(
-			strActionsFor(draft({ availableActions: [] }), {
-				availableActions: ["GENERATE_DRAFT"],
-			}),
-		).toEqual([])
-	})
-
-	it("S2에 available_actions가 없으면(null) 케이스 C2 동작에서 옮겨 온다 — 임시 다리", () => {
-		const drafted = {
-			status: "DRAFTED",
-			availableActions: ["GENERATE_DRAFT", "CLOSE_WITH_DRAFT"],
-		}
-		expect(strActionsFor(draft(), drafted)).toEqual([
-			"REVISE",
-			"VERIFY",
-			"SUBMIT",
-			"REGENERATE",
-			"CLOSE_WITH_DRAFT",
+	it("버튼은 S2 available_actions 그대로 — 없거나(옛 응답) 제한 응답이면 빈 목록", () => {
+		expect(strActionsFor(draft({ availableActions: ["VERIFY"] }))).toEqual(["VERIFY"])
+		expect(strActionsFor(draft({ availableActions: ["APPROVE", "REJECT"] }))).toEqual([
+			"APPROVE",
+			"REJECT",
 		])
-		// 보완 요청 반려 — 저장해서 DRAFTED가 되기 전엔 검증·승인 요청 없음(BE #95: 검증도 DRAFTED에서만)
-		expect(
-			strActionsFor(draft(), { status: "REJECTED", availableActions: ["GENERATE_DRAFT"] }),
-		).toEqual(["REVISE", "REGENERATE"])
-		// 승인 대기·비담당(케이스 동작 없음)·과거 초안·제한 응답은 아무것도 없음
-		expect(
-			strActionsFor(draft(), { status: "PENDING_APPROVAL", availableActions: [] }),
-		).toEqual([])
-		expect(strActionsFor(draft({ status: "SUPERSEDED" }), drafted)).toEqual([
-			"CLOSE_WITH_DRAFT",
-		])
-		expect(strActionsFor({ contentVisible: false }, drafted)).toEqual([])
+		expect(strActionsFor(draft({ availableActions: [] }))).toEqual([])
+		expect(strActionsFor(draft({ availableActions: null }))).toEqual([])
+		expect(strActionsFor({ contentVisible: false, availableActions: ["VERIFY"] })).toEqual([])
 	})
 
 	it("고친 항목만 보낸다", () => {
