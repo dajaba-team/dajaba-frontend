@@ -2,6 +2,7 @@ import { useId, useState } from "react"
 import { useSearchParams } from "react-router"
 import { useQuery } from "@tanstack/react-query"
 import "../../cases/styles/cases.css"
+import "../styles/audit.css"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
 import { auditApi } from "../api/auditApi"
@@ -59,7 +60,7 @@ function FilterForm({ tab, applied, onApply, onReset }) {
 	const set = (key) => (event) => setDraft({ ...draft, [key]: event.target.value })
 	return (
 		<form
-			className="case-filter"
+			className="audit-filter"
 			aria-label={`${TABS[tab].label} 필터`}
 			onSubmit={(event) => {
 				event.preventDefault()
@@ -70,8 +71,8 @@ function FilterForm({ tab, applied, onApply, onReset }) {
 				const id = `${formId}-${field.key}`
 				const disabled = field.needs && !draft[field.needs]
 				return (
-					<span key={field.key}>
-						<label htmlFor={id}>{field.label}</label>{" "}
+					<div key={field.key} className="audit-field">
+						<label htmlFor={id}>{field.label}</label>
 						{field.options ? (
 							<select id={id} value={draft[field.key]} onChange={set(field.key)}>
 								<option value="">전체</option>
@@ -90,20 +91,20 @@ function FilterForm({ tab, applied, onApply, onReset }) {
 								onChange={set(field.key)}
 							/>
 						)}
-					</span>
+					</div>
 				)
 			})}
-			<span>
-				<label htmlFor={`${formId}-from`}>시작일</label>{" "}
+			<div className="audit-field">
+				<label htmlFor={`${formId}-from`}>시작일</label>
 				<input
 					id={`${formId}-from`}
 					type="date"
 					value={draft.from}
 					onChange={set("from")}
 				/>
-			</span>
-			<span>
-				<label htmlFor={`${formId}-to`}>종료일</label>{" "}
+			</div>
+			<div className="audit-field">
+				<label htmlFor={`${formId}-to`}>종료일</label>
 				<input
 					id={`${formId}-to`}
 					type="date"
@@ -111,14 +112,16 @@ function FilterForm({ tab, applied, onApply, onReset }) {
 					aria-invalid={periodInvalid || undefined}
 					onChange={set("to")}
 				/>
-			</span>
-			<button type="submit" disabled={periodInvalid}>
-				조회
-			</button>
-			<button type="button" onClick={onReset}>
-				필터 초기화
-			</button>
-			{periodInvalid && <p role="alert">시작일은 종료일보다 늦을 수 없어요.</p>}
+			</div>
+			<div className="audit-filter-footer">
+				{periodInvalid && <p role="alert">시작일은 종료일보다 늦을 수 없어요.</p>}
+				<button type="button" onClick={onReset}>
+					필터 초기화
+				</button>
+				<button type="submit" disabled={periodInvalid}>
+					조회
+				</button>
+			</div>
 		</form>
 	)
 }
@@ -216,7 +219,7 @@ export default function AdminAuditPage() {
 		setParams(Object.fromEntries(Object.entries(next).filter(([, value]) => value)))
 	const reset = () => go({ tab })
 	return (
-		<>
+		<div className="audit-page">
 			<header className="case-page-heading">
 				<h1>감사 기록</h1>
 				<p>
@@ -224,7 +227,7 @@ export default function AdminAuditPage() {
 					본문·메모·계좌번호는 없어요.
 				</p>
 			</header>
-			<div className="case-action-buttons" role="tablist" aria-label="감사 기록 종류">
+			<div className="audit-tabs" role="tablist" aria-label="감사 기록 종류">
 				{Object.entries(TABS).map(([key, value]) => (
 					<button
 						key={key}
@@ -260,7 +263,7 @@ export default function AdminAuditPage() {
 							)}
 						</div>
 					) : (
-						<div>
+						<div className="audit-empty">
 							<p>{filtered ? "조건에 맞는 기록이 없어요." : "아직 기록이 없어요."}</p>
 							{filtered && (
 								<button type="button" onClick={reset}>
@@ -291,6 +294,6 @@ export default function AdminAuditPage() {
 					</nav>
 				)}
 			</section>
-		</>
+		</div>
 	)
 }
