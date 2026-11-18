@@ -5,9 +5,6 @@ export default function DashboardHero({ description, onAction, actionLabel, repl
 	return (
 		<header className="dashboard-hero">
 			<div className="hero-copy">
-				<div className="hero-eyebrow">
-					<i /> DAJAVA / AML INTELLIGENCE
-				</div>
 				<h1>
 					흐름을 읽고, <span>위험을 발견하다.</span>
 				</h1>
@@ -85,17 +82,13 @@ export default function DashboardHero({ description, onAction, actionLabel, repl
 				<div className="hero-core">
 					<Icon name="chart" size={30} />
 					<strong>DAJAVA</strong>
-					<span>CONNECTED INTELLIGENCE</span>
 				</div>
 				<div className="hero-node hero-node-detect">
-					<span>01 / DETECT</span>
 					<strong>이상 흐름 탐지</strong>
 				</div>
 				<div className="hero-node hero-node-decide">
-					<span>02 / CONNECT</span>
 					<strong>근거를 연결하다</strong>
 				</div>
-				<div className="hero-art-label">FROM SIGNAL TO INSIGHT</div>
 			</div>
 		</header>
 	)

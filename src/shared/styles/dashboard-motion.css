@@ -31,21 +31,6 @@
 	position: relative;
 	z-index: 2;
 }
-.hero-eyebrow {
-	display: flex;
-	align-items: center;
-	gap: 9px;
-	font: 9px var(--mono);
-	letter-spacing: 0.15em;
-	color: #b2d3ff;
-}
-.hero-eyebrow i {
-	width: 5px;
-	height: 5px;
-	border-radius: 50%;
-	background: var(--brand-light);
-	box-shadow: 0 0 12px #8cd2f5;
-}
 :is(.app-shell, .dashboard-demo) .dashboard-hero h1 {
 	margin: 20px 0 13px;
 	font-size: clamp(30px, 3vw, 48px);
@@ -161,12 +146,6 @@
 	font-size: 16px;
 	letter-spacing: 0.1em;
 }
-.hero-core span {
-	font: 5px var(--mono);
-	letter-spacing: 0.06em;
-	color: #b7d8ff;
-	margin-top: 5px;
-}
 .hero-node {
 	position: absolute;
 	padding: 12px 15px;
@@ -176,16 +155,9 @@
 	border-radius: 12px;
 	box-shadow: 0 15px 25px #00134330;
 }
-.hero-node span {
-	display: block;
-	color: #a4ceff;
-	font: 7px var(--mono);
-	letter-spacing: 0.1em;
-}
 .hero-node strong {
 	display: block;
 	font-size: 11px;
-	margin-top: 5px;
 	font-weight: 500;
 }
 .hero-node-detect {
@@ -197,14 +169,6 @@
 	bottom: 25px;
 	right: 0;
 	transform: rotate(5deg);
-}
-.hero-art-label {
-	position: absolute;
-	bottom: 0;
-	left: 0;
-	font: 7px var(--mono);
-	letter-spacing: 0.22em;
-	color: #91b5e3;
 }
 @media (prefers-reduced-motion: no-preference) {
 	.dashboard-hero {
@@ -419,8 +383,5 @@
 	}
 	:is(.app-shell, .dashboard-demo) .dashboard-hero h1 {
 		font-size: 30px;
-	}
-	.hero-eyebrow {
-		font-size: 7px;
 	}
 }
