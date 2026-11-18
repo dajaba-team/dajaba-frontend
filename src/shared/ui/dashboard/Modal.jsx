@@ -9,7 +9,8 @@ const FOCUSABLE =
 const BODY_INPUT =
 	'input:not(:disabled):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]), select:not(:disabled), textarea:not(:disabled)'
 
-export default function Modal({ title, children, onClose, footer }) {
+// className 으로 창마다 폭·본문 배치를 바꿔요(예: "modal-wide").
+export default function Modal({ title, children, onClose, footer, className }) {
 	const titleId = useId()
 	const dialog = useRef(null)
 	// useState 의 초기값 함수는 첫 렌더 때 한 번만 돌아가요 — autoFocus 가 끼어들기 전 조작 요소를 잡아요.
@@ -72,7 +73,7 @@ export default function Modal({ title, children, onClose, footer }) {
 			onMouseDown={(event) => event.target === event.currentTarget && onClose()}
 		>
 			<section
-				className="modal"
+				className={className ? `modal ${className}` : "modal"}
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={titleId}
