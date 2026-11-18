@@ -45,6 +45,7 @@ export function getErrorMessage(error) {
 	// AI 초안 생성이 이미 진행 중이라는 뜻이라 AI 장애(502)와 다르게 안내합니다.
 	if (code === "DRAFT_IN_PROGRESS") return "초안을 만드는 중이에요. 잠시 후 상태를 확인해 주세요."
 	if (code === "SELF_APPROVAL") return "본인이 담당한 케이스는 승인할 수 없습니다."
+	if (code === "NOT_DRAFT_APPROVER") return "이 초안을 승인한 승인자만 모의 제출할 수 있어요."
 	if (code === "NARRATIVE_UNCHANGED") return "반려된 본문을 보완한 후 다시 요청해 주세요."
 	// STR 초안·검증·승인 요청 (BE str 도메인 예외 이름 → UPPER_SNAKE)
 	if (code === "DRAFT_NOT_VERIFIED")

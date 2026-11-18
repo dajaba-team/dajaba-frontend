@@ -18,6 +18,10 @@ export function wasAssignee(viewer, item) {
 	)
 }
 
+// 이 초안을 승인한 사람 — BE는 확정 보고서 created_by, MSW는 최신 APPROVE 이력의 작성자(이력은 최신순).
+export const approvedBy = (item) =>
+	item.history.find((row) => row.action === "APPROVE")?.created_by ?? null
+
 const submittedAt = (item) =>
 	item.history.find((row) => row.action === "SUBMIT_FOR_APPROVAL")?.created_at ?? item.updated_at
 
@@ -182,12 +186,17 @@ const canViewReport = (viewer, item) =>
 	viewer.role === "APPROVER" || item.assignee?.login_id === viewer.login_id
 
 /** P4 `POST /approvals/{draft_no}/report {case_version}` — APPROVED → REPORTED, REPORT 이력. 실제 전송 없음. */
+// 검사 순서는 BE ReportStrDraft 그대로: 400(본문) → 403 NOT_APPROVER(역할) → 403 NOT_DRAFT_APPROVER(이 초안을
+// 승인한 사람인가 — 권한을 상태보다 먼저, 승인 기록이 있을 때만) → 409 CONCURRENT_UPDATE·DRAFT_SUPERSEDED·INVALID_CASE_TRANSITION.
 export function reportDraft(viewer, item, draft, body) {
-	if (viewer.role !== "APPROVER") return fail(403, "FORBIDDEN", "권한이 없습니다")
 	if (!Number.isInteger(body?.case_version))
 		return fail(400, "INVALID_REQUEST", "입력 값을 확인해 주세요", {
 			case_version: "필수입니다",
 		})
+	if (viewer.role !== "APPROVER") return fail(403, "NOT_APPROVER", "승인자만 할 수 있습니다")
+	const approver = approvedBy(item)
+	if (approver && approver !== viewer.login_id)
+		return fail(403, "NOT_DRAFT_APPROVER", "이 초안을 승인한 사람만 제출할 수 있습니다")
 	if (item.version !== body.case_version)
 		return fail(409, "CONCURRENT_UPDATE", "케이스가 그 사이 바뀌었습니다")
 	if (item.current_draft_no && item.current_draft_no !== draft.draft_no)
@@ -203,7 +212,18 @@ export function reportDraft(viewer, item, draft, body) {
 	record(item, "REPORT", "REPORTED", viewer)
 	draft.case_status = "REPORTED"
 	draft.pdf_status = draft.next_pdf_status ?? "READY"
-	return ok(changeOf(item))
+	// BE ReportStrDraftResponse 모양
+	return ok({
+		case_no: item.case_no,
+		case_status: item.status,
+		case_version: item.version,
+		draft_no: draft.draft_no,
+		report_no: `RPT-${draft.draft_no.slice(4)}`,
+		report_due_at: null,
+		reported_at: item.updated_at,
+		late: false,
+		pdf_status: draft.pdf_status,
+	})
 }
 
 /** S7 `GET /str-drafts/{draft_no}/report/preview.pdf` — APPROVED 일 때, "제출 전" 워터마크(저장 안 함). */
