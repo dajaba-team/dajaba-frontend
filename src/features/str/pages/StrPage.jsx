@@ -17,6 +17,7 @@ import StrFacts from "../components/StrFacts"
 import StrSuspicionPanel from "../components/StrSuspicionPanel"
 import StrRevisionHistory from "../components/StrRevisionHistory"
 import StrGenerateForm from "../components/StrGenerateForm"
+import ApprovalDialog from "../../approvals/components/ApprovalDialog"
 import {
 	changedSections,
 	currentRejection,
@@ -93,7 +94,7 @@ export default function StrPage() {
 
 function StrWorkspace({ draft, detail }) {
 	const client = useQueryClient()
-	const actions = strActionsFor(draft, detail)
+	const actions = strActionsFor(draft)
 	const can = (action) => actions.includes(action)
 	const editable = can("REVISE")
 
@@ -108,6 +109,8 @@ function StrWorkspace({ draft, detail }) {
 	const [level, setLevel] = useState(draft.suspicionLevelBranch)
 
 	const [panel, setPanel] = useState(null) // "history" | "regenerate" | "close" | "submit"
+	// 승인자 결정(P2·P3) 확인창 — 승인함과 같은 ApprovalDialog. mode: APPROVE·NEED_REVISION·NOT_REPORTABLE
+	const [decision, setDecision] = useState(null)
 	const caseVersion = detail.version ?? draft.caseVersion
 
 	const save = useStrCommand(detail.caseNo, draft.draftNo, "saveRevision")
@@ -297,6 +300,28 @@ function StrWorkspace({ draft, detail }) {
 						종료
 					</button>
 				)}
+				{/* 승인자: 본문을 보면서 바로 결정(APR-02). 자기 승인이면 서버가 []를 줘서 안 보여요 */}
+				{can("APPROVE") && (
+					<button
+						type="button"
+						className="primary"
+						onClick={() => setDecision("APPROVE")}
+						disabled={Boolean(decision)}
+					>
+						승인
+					</button>
+				)}
+				{can("REJECT") &&
+					["NEED_REVISION", "NOT_REPORTABLE"].map((mode) => (
+						<button
+							key={mode}
+							type="button"
+							onClick={() => setDecision(mode)}
+							disabled={Boolean(decision)}
+						>
+							{REJECTION_LABELS[mode]}
+						</button>
+					))}
 				{(editable || can("SUBMIT")) && blockReason && (
 					<span className="str-block-reason">{blockReason}</span>
 				)}
@@ -349,6 +374,18 @@ function StrWorkspace({ draft, detail }) {
 					regenerate
 					blockedReason={dirty ? "변경한 내용을 먼저 저장하거나 되돌려 주세요." : null}
 					onDone={() => setPanel(null)}
+				/>
+			)}
+			{decision && (
+				<ApprovalDialog
+					item={{
+						draftNo: draft.draftNo,
+						caseNo: detail.caseNo,
+						caseVersion,
+						assignee: detail.assignee,
+					}}
+					mode={decision}
+					onClose={() => setDecision(null)}
 				/>
 			)}
 			{panel === "close" && (

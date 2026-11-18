@@ -228,10 +228,11 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 			],
 		}
 		const seeded = seedStrDrafts().find((draft) => draft.draft_no === "DRF-000124")
-		// 버튼은 케이스 C2에서 옮겨 오게(임시 다리) available_actions 키를 빼요.
-		const { available_actions: _unused, ...draft } = {
+		// 버튼은 S2 available_actions로만 켜요 — 담당 조사역·DRAFTED 값을 그대로 넣어 둬요.
+		const draft = {
 			...seeded,
 			latest_verification: llmFailed,
+			available_actions: ["REVISE", "VERIFY", "SUBMIT", "REGENERATE", "CLOSE_WITH_DRAFT"],
 		}
 		server.use(
 			http.post("*/api/v1/str-drafts/:draftNo/verify", () => HttpResponse.json(llmFailed)),

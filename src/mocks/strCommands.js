@@ -3,6 +3,7 @@
 // 검증(S5)은 AI를 흉내 내요 — 본문에 "9월 3일"이 있으면 날짜 대조 불일치(UI/UX 검토 자료 시나리오: 원본은 9월 2일),
 // "검증불가"가 있으면 VERIFY_UNAVAILABLE. 그 밖은 통과.
 import { availableActions as caseActions } from "./cases"
+import { wasAssignee } from "./approvals"
 
 const fail = (status, code, message, details = {}) => ({
 	status,
@@ -49,6 +50,11 @@ const pushHistory = (item, action, from, to, by) =>
 /** S2 available_actions (계약서 Q16) — 케이스 C2 규칙(cases.availableActions) + 초안 상태로. 조사역 동작만 흉내 내요. */
 export function draftActions(viewer, item, draft) {
 	if (!item || item.current_draft_no !== draft.draft_no || draft.status !== "ACTIVE") return []
+	// 승인자: 승인 대기 + 지금·예전 담당 아님 → APPROVE·REJECT (BE StrDraftActions, WasCaseAssignee)
+	if (viewer.role === "APPROVER")
+		return item.status === "PENDING_APPROVAL" && !wasAssignee(viewer, item)
+			? ["APPROVE", "REJECT"]
+			: []
 	const base = caseActions(viewer, item)
 	const actions = []
 	if (base.includes("GENERATE_DRAFT")) {
