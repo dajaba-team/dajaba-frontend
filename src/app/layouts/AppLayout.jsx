@@ -88,7 +88,6 @@ export default function AppLayout() {
 				<div className="app-workspace">
 					<header className="app-header">
 						<div className="app-header-context">
-							<span className="app-header-kicker">AML OPERATIONS</span>
 							<span className="app-header-title">
 								{current ? current.label : "조사 · 검토 · 보고"}
 							</span>
