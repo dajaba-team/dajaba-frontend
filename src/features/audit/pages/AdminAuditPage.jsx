@@ -4,9 +4,16 @@ import { useQuery } from "@tanstack/react-query"
 import "../../cases/styles/cases.css"
 import "../styles/audit.css"
 import { AsyncState } from "../../../shared/ui/AsyncState"
+import { getErrorCode } from "../../../shared/api/apiClient"
 import { formatSystemTime } from "../../../shared/format/time"
 import { auditApi } from "../api/auditApi"
-import { ACCESS_ACTIONS, ACCESS_TARGET_TYPES, AI_ENDPOINTS, AI_TARGET_TYPES } from "../auditLabels"
+import {
+	ACCESS_ACTIONS,
+	ACCESS_TARGET_ID_EXAMPLES,
+	ACCESS_TARGET_TYPES,
+	AI_ENDPOINTS,
+	AI_TARGET_TYPES,
+} from "../auditLabels"
 import Pagination from "../../../shared/ui/Pagination"
 
 // 감사 기록 (ADM-05, SCRUM-170) — 관리자만(라우트 RequireRole + 서버 403). 메타만 보여 줘요.
@@ -39,11 +46,37 @@ const TABS = {
 			{ key: "login_id", label: "사용자 아이디" },
 			{ key: "action", label: "동작", options: ACCESS_ACTIONS },
 			{ key: "target_type", label: "대상 종류", options: ACCESS_TARGET_TYPES },
+			{
+				key: "target_id",
+				label: "대상 번호",
+				needs: "target_type",
+				examples: ACCESS_TARGET_ID_EXAMPLES,
+			},
 		],
 		query: auditApi.accessLogs,
 	},
 }
 const KEYS = (tab) => [...TABS[tab].fields.map((f) => f.key), "from", "to"]
+
+// 400 INVALID_REQUEST details(키 → 서버 문구)를 필터 칸으로. 칸 이름과 다른 키는 가까운 칸에 붙여요(계약서 5.9·5.10).
+const DETAIL_FIELD = { target_id_with_type: "target_id", real_dates: "from", period_in_order: "to" }
+function fieldErrorsOf(error) {
+	if (error?.response?.status !== 400 || getErrorCode(error) !== "INVALID_REQUEST") return {}
+	const details = error.response.data.error.details ?? {}
+	const errors = {}
+	for (const [key, message] of Object.entries(details)) {
+		// 쿼리 타입 오류(주소를 손으로 고쳐 없는 action·target_type 값 등)는 { parameter: "action" } 처럼
+		// 칸 이름이 값으로 와요(BE #76) — 그 칸에 붙여요.
+		if (key === "parameter") {
+			if (typeof message === "string" && message)
+				errors[DETAIL_FIELD[message] ?? message] ??= "값을 확인해 주세요."
+			continue
+		}
+		const field = DETAIL_FIELD[key] ?? key
+		errors[field] = typeof message === "string" ? message : "형식을 확인해 주세요."
+	}
+	return errors
+}
 
 function readState(params) {
 	const tab = params.get("tab") === "access" ? "access" : "ai"
@@ -54,7 +87,7 @@ function readState(params) {
 	return { tab, filters, page: Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1 }
 }
 
-function FilterForm({ tab, applied, onApply, onReset }) {
+function FilterForm({ tab, applied, errors = {}, onApply, onReset }) {
 	const [draft, setDraft] = useState(applied)
 	const formId = useId()
 	const periodInvalid = Boolean(draft.from && draft.to && draft.from > draft.to)
@@ -71,11 +104,19 @@ function FilterForm({ tab, applied, onApply, onReset }) {
 			{TABS[tab].fields.map((field) => {
 				const id = `${formId}-${field.key}`
 				const disabled = field.needs && !draft[field.needs]
+				const error = errors[field.key]
+				const example = field.examples?.[draft[field.needs]]
 				return (
 					<div key={field.key} className="audit-field">
 						<label htmlFor={id}>{field.label}</label>
 						{field.options ? (
-							<select id={id} value={draft[field.key]} onChange={set(field.key)}>
+							<select
+								id={id}
+								value={draft[field.key]}
+								aria-invalid={error ? true : undefined}
+								aria-describedby={error ? `${id}-error` : undefined}
+								onChange={set(field.key)}
+							>
 								<option value="">전체</option>
 								{Object.entries(field.options).map(([value, label]) => (
 									<option key={value} value={value}>
@@ -88,10 +129,17 @@ function FilterForm({ tab, applied, onApply, onReset }) {
 								id={id}
 								value={draft[field.key]}
 								disabled={disabled}
-								placeholder={disabled ? "대상 종류를 먼저 골라요" : undefined}
+								placeholder={
+									disabled
+										? "대상 종류를 먼저 골라요"
+										: example && `예: ${example}`
+								}
+								aria-invalid={error ? true : undefined}
+								aria-describedby={error ? `${id}-error` : undefined}
 								onChange={set(field.key)}
 							/>
 						)}
+						<FieldError id={`${id}-error`} message={error} />
 					</div>
 				)
 			})}
@@ -101,8 +149,11 @@ function FilterForm({ tab, applied, onApply, onReset }) {
 					id={`${formId}-from`}
 					type="date"
 					value={draft.from}
+					aria-invalid={errors.from ? true : undefined}
+					aria-describedby={errors.from ? `${formId}-from-error` : undefined}
 					onChange={set("from")}
 				/>
+				<FieldError id={`${formId}-from-error`} message={errors.from} />
 			</div>
 			<div className="audit-field">
 				<label htmlFor={`${formId}-to`}>종료일</label>
@@ -110,9 +161,11 @@ function FilterForm({ tab, applied, onApply, onReset }) {
 					id={`${formId}-to`}
 					type="date"
 					value={draft.to}
-					aria-invalid={periodInvalid || undefined}
+					aria-invalid={periodInvalid || errors.to ? true : undefined}
+					aria-describedby={errors.to ? `${formId}-to-error` : undefined}
 					onChange={set("to")}
 				/>
+				<FieldError id={`${formId}-to-error`} message={errors.to} />
 			</div>
 			<div className="audit-filter-footer">
 				{periodInvalid && <p role="alert">시작일은 종료일보다 늦을 수 없어요.</p>}
@@ -125,6 +178,14 @@ function FilterForm({ tab, applied, onApply, onReset }) {
 			</div>
 		</form>
 	)
+}
+
+function FieldError({ id, message }) {
+	return message ? (
+		<p id={id} className="audit-field-error" role="alert">
+			{message}
+		</p>
+	) : null
 }
 
 function AiCallRows({ items }) {
@@ -171,6 +232,20 @@ function AiCallRows({ items }) {
 	)
 }
 
+// 사람 칸 — 로그인 실패는 사람이 정해지지 않아 입력한 아이디만 와요(계약서 5.10).
+function AccessUser({ row }) {
+	if (row.loginId)
+		return row.displayName ? (
+			<>
+				{row.displayName} <small>{row.loginId}</small>
+			</>
+		) : (
+			row.loginId
+		)
+	if (row.loginIdAttempted) return <>입력한 아이디 {row.loginIdAttempted}</>
+	return "—"
+}
+
 function AccessLogRows({ items }) {
 	return (
 		<table className="case-table">
@@ -186,7 +261,9 @@ function AccessLogRows({ items }) {
 				{items.map((row) => (
 					<tr key={row.id}>
 						<td>{formatSystemTime(row.createdAt)}</td>
-						<td>{row.loginId ?? "—"}</td>
+						<td>
+							<AccessUser row={row} />
+						</td>
 						<td>{ACCESS_ACTIONS[row.action] ?? row.action}</td>
 						<td>
 							{row.targetType
@@ -246,6 +323,7 @@ export default function AdminAuditPage() {
 					key={`${tab}-${params.toString()}`}
 					tab={tab}
 					applied={filters}
+					errors={fieldErrorsOf(query.error)}
 					onApply={(draft) => go({ tab, ...draft })}
 					onReset={reset}
 				/>

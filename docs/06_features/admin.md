@@ -1,6 +1,6 @@
 # admin — 배치·경보 점검·룰·계정·로그
 
-> v0.1 · 2026-10-31 · 초안(팀 확인 중) · 정리 지윤
+> v0.2 · 2026-11-19 · 초안(팀 확인 중) · 정리 지윤 · 11/19 접근 기록 응답 모양(계약서 5.10, SCRUM-316)
 
 - 프론트 폴더: `src/features/admin/batches/`, `src/features/alerts/`, `src/features/rules/` (+ 계정은 만들 때 `features/admin/users/`)
 - 백엔드 짝: `source`·`detection` (BE `06_features/source_detection.md`, SD 명세 〔초안〕), `shared/batch`, `user` (BE 04 §7)
@@ -59,9 +59,13 @@
 화면: `features/audit/pages/AdminAuditPage.jsx`, API `features/audit/api/auditApi.js`. 라우트 `RequireRole` ADMIN. 메뉴 "감사 기록"은 접근 기록 API(SCRUM-168, 진희)가 머지될 때 `ready: true`로 켜요 — 그 전엔 주소로만 들어가요.
 
 - 탭 두 개, 탭·필터·페이지는 주소 query. 메타만 보여 줘요(본문·메모 전문·계좌번호·프롬프트 없음, API도 안 줌)
-- **AI 호출 기록** `GET /admin/ai-calls`(계약서 5.9, BE #69): 엔드포인트·결과(`outcome`)·대상 종류/번호(번호는 종류를 고른 뒤에만)·요청 ID·실패 코드·기간. 실패는 `실패 · 코드`, 타임아웃은 HTTP "응답 없음"
-- **접근 기록** `GET /admin/access-logs`(SCRUM-168): 사용자 아이디·동작(`access_logs.action` 10개)·대상 종류·기간. 〔가정〕 응답 한 줄 `{id, login_id, action, target_type, target_id, created_at}` — 계약서에 모양이 들어오면 맞춰요
+- **AI 호출 기록** `GET /admin/ai-calls`(계약서 5.9, BE #69): 엔드포인트(여섯 개 — 점수 배치·STR 초안·STR 검증·케이스 요약·질문 답변 `/v1/cases/ask`·AI 상태 확인)·결과(`outcome`)·대상 종류/번호(번호는 종류를 고른 뒤에만)·요청 ID·실패 코드·기간. 실패는 `실패 · 코드`, 타임아웃은 HTTP "응답 없음"
+- **접근 기록** `GET /admin/access-logs`(계약서 5.10, BE #102): 사용자 아이디·동작(`access_logs.action` 10개)·대상 종류/번호(번호는 종류를 고른 뒤에만)·기간. 응답 한 줄 `{id, login_id, display_name, login_id_attempted, action, target_type, target_id, created_at}`
+    - 사용자 칸은 `display_name (login_id)`. 로그인 실패(`LOGIN_FAIL`)는 `login_id`·`display_name`이 `null`이라 "입력한 아이디 {login_id_attempted}"로 보여 줘요
+    - `target_id`는 화면 번호(`CASE-2022-000057`·`DRF-000123`·`ALT-20220902-000142`·사용자는 아이디) 그대로. 대상 번호 칸 안내도 이 모양
+    - `login_id` 필터는 그 사람이 **한** 줄만이라 로그인 실패 줄은 안 잡혀요 — 실패는 동작 필터 "로그인 실패"로
 - 기간은 한국 날짜로 고르고 UTC `Z`로 보내요(`from` 포함, `to`는 다음 날 0시 제외). 시작일 > 종료일이면 [조회]를 막아요
+- 400 `INVALID_REQUEST`의 `details`(키 → 서버 문구)는 그 필터 칸 아래에 보여 줘요. 칸에 바로 안 맞는 키는 가까운 칸으로: `target_id_with_type` → 대상 번호, `real_dates` → 시작일, `period_in_order` → 종료일 (두 탭 같음, 계약서 5.9·5.10). 쿼리 타입 오류(주소를 고쳐 없는 `action`·`target_type` 값 등)는 `details: { parameter: "action" }`처럼 칸 이름이 값으로 와서, 그 칸(선택 칸 포함) 아래에 "값을 확인해 주세요."를 붙여요 (BE #76)
 - 결과 없음("조건에 맞는 기록이 없어요" + [필터 초기화])과 조회 실패(실패 안내 + [다시 불러오기])를 다르게(COM-02)
 
 ## 6. 테스트에 있어야 하는 것

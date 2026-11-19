@@ -2,7 +2,7 @@ import { apiClient } from "../../../shared/api/apiClient"
 
 // 감사 기록 — 메타만(본문·메모 전문·계좌번호·프롬프트 없음, NFR-COM-06). 관리자만.
 // AI 호출 기록: 계약서 5.9 `GET /admin/ai-calls` (BE #69, SCRUM-134).
-// 접근 기록: `GET /admin/access-logs` (SCRUM-168, 진희) — 응답 모양이 아직 계약서에 없어 access_logs 칸 + 공통 목록 모양으로 가정했어요〔가정〕.
+// 접근 기록: 계약서 5.10 `GET /admin/access-logs` (BE #102, SCRUM-168). target_id 는 화면 번호(문자열).
 const toPage = (data, toItem) => ({
 	items: data.items.map(toItem),
 	page: data.page + 1,
@@ -29,9 +29,12 @@ const toAiCall = (d) => ({
 	createdAt: d.created_at,
 })
 
+// LOGIN_FAIL 은 loginId·displayName 이 null 이고 loginIdAttempted(입력한 아이디 앞 64자)만 와요. 나머지 동작은 그 반대.
 const toAccessLog = (d) => ({
 	id: d.id,
 	loginId: d.login_id ?? null,
+	displayName: d.display_name ?? null,
+	loginIdAttempted: d.login_id_attempted ?? null,
 	action: d.action,
 	targetType: d.target_type ?? null,
 	targetId: d.target_id ?? null,

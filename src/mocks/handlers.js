@@ -218,34 +218,43 @@ const AI_CALLS = [
 		created_at: "2026-11-01T00:00:00Z",
 	},
 ]
+// 접근 기록 — 계약서 5.10(BE #102). target_id 는 화면 번호, LOGIN_FAIL 은 사람 칸 null + login_id_attempted.
 const ACCESS_LOGS = [
 	{
 		id: 5,
 		login_id: "admin",
+		display_name: "예시 admin",
+		login_id_attempted: null,
 		action: "ROLE_CHANGED",
 		target_type: "USER",
-		target_id: 2,
+		target_id: "inv02",
 		created_at: "2026-11-02T04:00:00Z",
 	},
 	{
 		id: 4,
 		login_id: "inv01",
+		display_name: "예시 inv01",
+		login_id_attempted: null,
 		action: "STR_VIEW",
 		target_type: "STR_DRAFT",
-		target_id: 124,
+		target_id: "DRF-000124",
 		created_at: "2026-11-02T02:50:00Z",
 	},
 	{
 		id: 3,
 		login_id: "inv01",
+		display_name: "예시 inv01",
+		login_id_attempted: null,
 		action: "VIEW",
 		target_type: "CASE",
-		target_id: 1004,
+		target_id: "CASE-2022-001004",
 		created_at: "2026-11-02T02:00:00Z",
 	},
 	{
 		id: 2,
-		login_id: "nobody",
+		login_id: null,
+		display_name: null,
+		login_id_attempted: "nobody",
 		action: "LOGIN_FAIL",
 		target_type: null,
 		target_id: null,
@@ -254,6 +263,8 @@ const ACCESS_LOGS = [
 	{
 		id: 1,
 		login_id: "inv01",
+		display_name: "예시 inv01",
+		login_id_attempted: null,
 		action: "LOGIN_OK",
 		target_type: null,
 		target_id: null,
@@ -297,7 +308,10 @@ export const handlers = [
 		if (denied) return denied
 		const url = new URL(request.url)
 		return HttpResponse.json(
-			pageOf(byFilters(ACCESS_LOGS, url, ["login_id", "action", "target_type"]), url),
+			pageOf(
+				byFilters(ACCESS_LOGS, url, ["login_id", "action", "target_type", "target_id"]),
+				url,
+			),
 		)
 	}),
 	http.post(`${base}/api/v1/admin/batches/load`, () => {

@@ -9,7 +9,7 @@ import { createQueryClient } from "../app/queryClient"
 import { resetCases } from "../mocks/handlers"
 import { server } from "../mocks/server"
 
-// 감사 기록 화면 (SCRUM-170, ADM-05). AI 호출 기록은 계약서 5.9 그대로, 접근 기록은 SCRUM-168 전 가정 모양.
+// 감사 기록 화면 (SCRUM-170, ADM-05). AI 호출 기록은 계약서 5.9, 접근 기록은 5.10(BE #102, SCRUM-316) 그대로.
 const USERS = {
 	admin: { id: 4, login_id: "admin", display_name: "예시 admin", role: "ADMIN" },
 	inv01: { id: 1, login_id: "inv01", display_name: "예시 inv01", role: "INVESTIGATOR" },
@@ -91,6 +91,22 @@ describe("AI 호출 기록 탭", () => {
 		expect(within(form).getByRole("button", { name: "조회" })).toBeDisabled()
 		server.events.removeAllListeners()
 	})
+	it("엔드포인트 필터에 질문 답변(/v1/cases/ask)이 있다 — 계약서 5.9 여섯 개", async () => {
+		renderApp()
+		const form = await screen.findByRole("form", { name: "AI 호출 기록 필터" })
+		const options = within(within(form).getByLabelText("엔드포인트"))
+			.getAllByRole("option")
+			.map((option) => option.value)
+		expect(options).toEqual([
+			"",
+			"/v1/scores",
+			"/v1/str/drafts",
+			"/v1/str/verify",
+			"/v1/cases/summary",
+			"/v1/cases/ask",
+			"/v1/health",
+		])
+	})
 	it("결과가 없으면 안내와 [필터 초기화]", async () => {
 		const user = renderApp("/admin/audit?tab=ai&error_code=NOPE")
 		expect(await screen.findByText("조건에 맞는 기록이 없어요.")).toBeInTheDocument()
@@ -121,14 +137,87 @@ describe("접근 기록 탭", () => {
 		const list = await rows("접근 기록")
 		expect(list).toHaveLength(5)
 		expect(within(list[0]).getByText("역할 변경")).toBeInTheDocument()
-		expect(within(list[0]).getByText("계정 2")).toBeInTheDocument()
+		expect(within(list[0]).getByText("계정 inv02")).toBeInTheDocument()
+		expect(within(list[0]).getByText("예시 admin")).toBeInTheDocument()
+		expect(within(list[2]).getByText("케이스 CASE-2022-001004")).toBeInTheDocument()
 		const form = screen.getByRole("form", { name: "접근 기록 필터" })
 		await user.selectOptions(within(form).getByLabelText("동작"), "LOGIN_FAIL")
 		await user.click(within(form).getByRole("button", { name: "조회" }))
 		await waitFor(async () => expect(await rows("접근 기록")).toHaveLength(1))
-		expect(within((await rows("접근 기록"))[0]).getByText("nobody")).toBeInTheDocument()
+		expect(
+			within((await rows("접근 기록"))[0]).getByText("입력한 아이디 nobody"),
+		).toBeInTheDocument()
 		expect(urls.at(-1).searchParams.get("action")).toBe("LOGIN_FAIL")
 		server.events.removeAllListeners()
+	})
+	it("대상 번호는 대상 종류를 고른 뒤 그 종류의 번호 모양으로 안내하고, 화면 번호 그대로 보낸다", async () => {
+		const urls = recordUrls("/api/v1/admin/access-logs")
+		const user = renderApp("/admin/audit?tab=access")
+		await rows("접근 기록")
+		const form = screen.getByRole("form", { name: "접근 기록 필터" })
+		expect(within(form).getByLabelText("대상 번호")).toBeDisabled()
+		await user.selectOptions(within(form).getByLabelText("대상 종류"), "STR_DRAFT")
+		expect(within(form).getByLabelText("대상 번호")).toHaveAttribute(
+			"placeholder",
+			"예: DRF-000123",
+		)
+		await user.type(within(form).getByLabelText("대상 번호"), "DRF-000124")
+		await user.click(within(form).getByRole("button", { name: "조회" }))
+		await waitFor(async () => expect(await rows("접근 기록")).toHaveLength(1))
+		expect(urls.at(-1).searchParams.get("target_type")).toBe("STR_DRAFT")
+		expect(urls.at(-1).searchParams.get("target_id")).toBe("DRF-000124")
+		server.events.removeAllListeners()
+	})
+	it("400 details 는 그 필터 칸 아래에 서버 문구로 — target_id_with_type 은 대상 번호, real_dates 는 시작일", async () => {
+		server.use(
+			http.get("*/api/v1/admin/access-logs", () =>
+				HttpResponse.json(
+					{
+						error: {
+							code: "INVALID_REQUEST",
+							message: "요청 값이 올바르지 않습니다",
+							details: {
+								target_id: "CASE 번호 형식이 아닙니다 (예: CASE-2022-000057)",
+								real_dates: "from·to 에 없는 날짜가 있습니다",
+							},
+						},
+					},
+					{ status: 400 },
+				),
+			),
+		)
+		renderApp("/admin/audit?tab=access&target_type=CASE&target_id=DRF-000001")
+		const form = await screen.findByRole("form", { name: "접근 기록 필터" })
+		const targetId = within(form).getByLabelText("대상 번호")
+		await waitFor(() => expect(targetId).toHaveAttribute("aria-invalid", "true"))
+		expect(
+			within(form).getByText("CASE 번호 형식이 아닙니다 (예: CASE-2022-000057)"),
+		).toBeInTheDocument()
+		expect(within(form).getByLabelText("시작일")).toHaveAttribute("aria-invalid", "true")
+		expect(within(form).getByText("from·to 에 없는 날짜가 있습니다")).toBeInTheDocument()
+		// 입력은 그대로 남아 고쳐서 다시 조회할 수 있다
+		expect(targetId).toHaveValue("DRF-000001")
+	})
+	it("400 details.parameter(쿼리 타입 오류)는 그 값이 가리키는 칸 아래에 '값을 확인해 주세요'", async () => {
+		server.use(
+			http.get("*/api/v1/admin/access-logs", () =>
+				HttpResponse.json(
+					{
+						error: {
+							code: "INVALID_REQUEST",
+							message: "요청 파라미터가 올바르지 않습니다",
+							details: { parameter: "action" },
+						},
+					},
+					{ status: 400 },
+				),
+			),
+		)
+		renderApp("/admin/audit?tab=access&action=NOPE")
+		const form = await screen.findByRole("form", { name: "접근 기록 필터" })
+		const action = within(form).getByLabelText("동작")
+		await waitFor(() => expect(action).toHaveAttribute("aria-invalid", "true"))
+		expect(action).toHaveAccessibleDescription("값을 확인해 주세요.")
 	})
 	it("관리자가 아니면 화면을 볼 수 없다", async () => {
 		renderApp("/admin/audit", "inv01")
