@@ -40,6 +40,9 @@ describe("일반 대시보드의 데이터 범위", () => {
 		expect(
 			screen.getByRole("heading", { name: "지금 바로 확인해야 할 케이스" }),
 		).toBeInTheDocument()
+		// 계기판: 바늘은 HIGH 비율(3건 중 1건 → 60도), 읽기 칸은 HIGH 건수
+		expect(document.querySelector(".risk-gauge-needle")).toHaveStyle("--needle: 60deg")
+		expect(document.querySelector(".risk-gauge-readout")).toHaveTextContent("전체 3건 중 33%")
 		// 확인할 케이스 줄: 점수 있는 케이스만 등급 배지, 미산출은 배지·등급색 없음
 		const rows = document.querySelectorAll(".focus-case")
 		expect(rows[0]).toHaveAttribute("data-band", "HIGH")

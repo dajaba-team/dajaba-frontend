@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { Link } from "react-router"
 import AnalyticsChart from "../../../shared/ui/charts/AnalyticsChart"
+import RiskGauge from "./RiskGauge"
 import DashboardHero from "../../../shared/ui/dashboard/DashboardHero"
 import CountUp from "../../../shared/ui/dashboard/CountUp"
 import Icon from "../../../shared/ui/dashboard/Icon"
@@ -21,13 +22,6 @@ export default function DashboardView({
 	const [period, setPeriod] = useState(10)
 	const [replay, setReplay] = useState(0)
 	const counts = useMemo(() => riskCounts(items), [items])
-	const risk = useMemo(
-		() => ({
-			labels: riskNames,
-			datasets: [{ data: counts, backgroundColor: riskColors, hoverOffset: 6 }],
-		}),
-		[counts],
-	)
 	const scope = demo
 		? `현재 시연 케이스 ${items.length}건 기준`
 		: `점수순 상위 ${items.length}건 기준`
@@ -206,23 +200,11 @@ export default function DashboardView({
 						</div>
 						<i className="soft-dot" />
 					</div>
-					<div className="risk-visual">
-						{items.length > 0 && (
-							<AnalyticsChart
-								type="doughnut"
-								data={risk}
-								dark={dark}
-								replay={replay}
-								label={riskNames.map((n, i) => `${n} ${counts[i]}건`).join(", ")}
-							/>
-						)}
-						<div className="donut-center">
-							<strong>
-								<CountUp value={items.length} replay={replay} />
-							</strong>
-							<span>건</span>
-						</div>
-					</div>
+					<RiskGauge
+						counts={counts}
+						replay={replay}
+						label={riskNames.map((n, i) => `${n} ${counts[i]}건`).join(", ")}
+					/>
 					<div className="risk-legend">
 						{riskNames.map((n, i) => (
 							<div key={n}>

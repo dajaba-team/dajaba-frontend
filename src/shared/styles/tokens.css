@@ -88,6 +88,11 @@
 	--risk-medium: #f5a524;
 	--risk-medium-strong: #b26a00;
 	--risk-medium-soft: #fff4dc;
+	/* LOW 는 도넛·범례와 같은 연하늘. 계기판 조각은 -light → 기본색으로 그라데이션 */
+	--risk-low: var(--brand-light);
+	--risk-high-light: #f57983;
+	--risk-medium-light: #f8c46a;
+	--risk-low-light: #b5e2f9;
 	--color-surface-raised: #fff;
 	--app: var(--color-canvas);
 	--surface: var(--color-surface);

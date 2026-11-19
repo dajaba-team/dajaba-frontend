@@ -286,32 +286,126 @@
 	height: 242px;
 	padding: 5px 14px 14px;
 }
-.risk-visual {
-	position: relative;
-	width: 170px;
-	height: 170px;
-	margin: 5px auto 16px;
+.risk-gauge {
+	width: min(100%, 250px);
+	margin: 14px auto 18px;
+	text-align: center;
 }
-.donut-center {
-	position: absolute;
-	inset: 0;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
+.risk-gauge svg {
+	display: block;
+	width: 100%;
+	overflow: visible;
+}
+.risk-gauge-track {
+	fill: none;
+	stroke: var(--color-soft);
+	stroke-linecap: round;
+}
+/* HIGH 조각만 같은 색으로 은은하게 번져 보이게 */
+.risk-gauge-hot {
+	filter: drop-shadow(0 3px 6px color-mix(in srgb, var(--risk-high) 35%, transparent));
+}
+.risk-gauge-tick {
+	fill: var(--color-control-border);
+	opacity: 0.45;
+}
+.risk-gauge-tick.is-major {
+	opacity: 0.8;
+}
+/* 바늘 — 왼쪽(0)을 향해 그려 두고 HIGH 비율만큼 돌린다 */
+.risk-gauge-needle {
+	transform-box: view-box;
+	transform-origin: 120px 116px;
+	transform: rotate(var(--needle));
+	fill: var(--color-text);
+	opacity: 0.88;
+}
+.risk-gauge-hub {
+	fill: var(--color-surface-raised);
+	stroke: var(--color-text);
+	stroke-width: 2;
+	opacity: 0.95;
+}
+.risk-gauge-hub-dot {
+	fill: var(--risk-high);
+}
+.risk-gauge-readout {
+	display: grid;
+	justify-items: center;
+	gap: 2px;
+	margin-top: 10px;
+}
+.risk-gauge-label {
+	display: inline-flex;
 	align-items: center;
-	pointer-events: none;
+	gap: 6px;
+	color: var(--risk-high);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.14em;
 }
-.donut-center strong {
+.risk-gauge-label i {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--risk-high);
+	box-shadow: 0 0 0 3px var(--risk-high-soft);
+}
+.risk-gauge-readout strong {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 4px;
 	font-size: 34px;
-	font-weight: 600;
-	line-height: 1.2;
+	font-weight: 650;
+	line-height: 1.1;
 	letter-spacing: -0.04em;
 }
-.donut-center > span {
-	margin-top: 6px;
+.risk-gauge-readout strong .count-up {
+	font-weight: inherit;
+}
+.risk-gauge-readout small {
 	color: var(--color-muted);
-	font: 9px var(--mono);
-	letter-spacing: 0.1em;
+	font-size: 12px;
+	font-weight: 500;
+	letter-spacing: 0;
+}
+.risk-gauge-note {
+	color: var(--color-muted);
+	font-size: 11px;
+}
+.risk-gauge-note b {
+	color: var(--color-text);
+	font-weight: 600;
+}
+@media (prefers-reduced-motion: no-preference) {
+	/* 조각이 왼쪽부터 차오르고, 바늘이 0에서 출렁이며 자리를 잡는 계기판 효과 */
+	.risk-gauge-sweep {
+		stroke-dasharray: 1;
+		stroke-dashoffset: 1;
+		animation: risk-gauge-sweep 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+	}
+	.risk-gauge-needle {
+		animation: risk-gauge-needle 1.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+	}
+}
+@keyframes risk-gauge-sweep {
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+@keyframes risk-gauge-needle {
+	0% {
+		transform: rotate(0deg);
+	}
+	55% {
+		transform: rotate(calc(var(--needle) + 6deg));
+	}
+	78% {
+		transform: rotate(calc(var(--needle) - 2deg));
+	}
+	100% {
+		transform: rotate(var(--needle));
+	}
 }
 .risk-legend {
 	display: grid;
@@ -567,10 +661,6 @@
 	}
 	.analytics-grid {
 		grid-template-columns: minmax(0, 1fr);
-	}
-	.risk-visual {
-		width: 180px;
-		height: 180px;
 	}
 	.risk-legend {
 		max-width: 420px;
