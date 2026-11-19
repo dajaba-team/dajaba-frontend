@@ -54,6 +54,9 @@ const sectionHeadings = async () => {
 }
 
 // 검증 결과 패널(#32 VerificationPanel) — 화면에 하나만 있어요.
+// 머리글의 초안 정보 칩(케이스 번호·초안 번호·케이스 상태) — 디버그성 한 줄 대신
+const draftInfo = () => screen.findByRole("list", { name: "초안 정보" })
+
 const verifyPanel = async () =>
 	(await screen.findByRole("heading", { name: "검증 결과" })).closest("section")
 // 패널 맨 위 결과 줄(서버 status 그대로의 라벨)
@@ -113,7 +116,7 @@ describe("STR 화면 — 서버가 준 서술부 목록대로 그리기 (SCRUM-1
 		expect(await screen.findByRole("note")).toHaveTextContent(
 			"본문은 담당 조사역과 승인자만 볼 수 있어요",
 		)
-		expect(screen.getByText(/DRF-000124 · 초안 ACTIVE/)).toBeInTheDocument()
+		expect(await draftInfo()).toHaveTextContent("DRF-000124")
 		expect(screen.queryByRole("list", { name: "서술부" })).not.toBeInTheDocument()
 		expect(screen.queryByText(/Sole Proprietorship/)).not.toBeInTheDocument()
 	})
@@ -129,7 +132,7 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		const user = renderStr("CASE-2022-001001")
 		const date = await sectionBox("일자")
 		await replaceText(user, date, "2022년 9월 3일 하루 동안.")
-		expect(screen.getByText("미저장 변경이 있어요")).toBeInTheDocument()
+		expect(screen.getByText("저장하지 않은 변경이 있어요")).toBeInTheDocument()
 		const panel = await verifyPanel()
 		// MSW 초안엔 수정본 1번 검증 기록이 있어요(SCRUM-116 예시) — 그래서 버튼 이름은 [다시 검증]
 		expect(within(panel).getByRole("button", { name: "다시 검증" })).toBeDisabled()
@@ -175,6 +178,11 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		expect(
 			await screen.findByText("승인 대기 중이라 본문을 수정할 수 없어요."),
 		).toBeInTheDocument()
+		// 안내는 마지막 작업 하나만 — 앞선 저장 안내가 같이 남지 않아요
+		expect(
+			screen.getByText("승인 요청을 보냈어요. 승인자 결정을 기다려요."),
+		).toBeInTheDocument()
+		expect(screen.queryByText(/저장했어요/)).not.toBeInTheDocument()
 		expect(screen.queryByRole("textbox")).not.toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "변경 저장" })).not.toBeInTheDocument()
 	})
@@ -319,9 +327,9 @@ describe("STR 초안 생성 (S1)", () => {
 		const user = renderAs("CASE-2022-001004")
 		await user.click(await screen.findByRole("button", { name: "STR 초안 생성" }))
 		await user.click(screen.getByRole("button", { name: "초안 생성" }))
-		expect(
-			await screen.findByText(/DRF-000125 · 초안 ACTIVE · 케이스 DRAFTED/),
-		).toBeInTheDocument()
+		await waitFor(async () =>
+			expect(await draftInfo()).toHaveTextContent(/DRF-000125.*초안 작성됨/),
+		)
 		// 새 초안은 검증 기록이 없어요 — #32 패널 문구 + [저장본 검증]
 		const panel = await verifyPanel()
 		expect(within(panel).getByText("아직 검증하지 않았어요.")).toBeInTheDocument()
@@ -330,9 +338,7 @@ describe("STR 초안 생성 (S1)", () => {
 
 	it("[다시 생성]은 확인창에서 지금 초안이 대체된다고 알리고, 확정하면 새 초안을 열되 검증은 하지 않는다 (SCRUM-118)", async () => {
 		const user = renderStr("CASE-2022-001001")
-		expect(
-			await screen.findByText(/DRF-000124 · 초안 ACTIVE · 케이스 DRAFTED/),
-		).toBeInTheDocument()
+		expect(await draftInfo()).toHaveTextContent(/DRF-000124.*초안 작성됨/)
 
 		// 취소하면 아무것도 바뀌지 않아요
 		await user.click(screen.getByRole("button", { name: "다시 생성" }))
@@ -341,15 +347,15 @@ describe("STR 초안 생성 (S1)", () => {
 		expect(within(form).getByText(/생성과 검증은 따로예요/)).toBeInTheDocument()
 		await user.click(within(form).getByRole("button", { name: "취소" }))
 		expect(screen.queryByRole("form", { name: "STR 초안 다시 생성" })).not.toBeInTheDocument()
-		expect(screen.getByText(/DRF-000124 · 초안 ACTIVE · 케이스 DRAFTED/)).toBeInTheDocument()
+		expect(await draftInfo()).toHaveTextContent(/DRF-000124.*초안 작성됨/)
 
 		// 확정하면 새 초안으로 바뀌고, 새 초안은 검증 기록이 없어요(자동 검증 없음 — 안건 17)
 		await user.click(screen.getByRole("button", { name: "다시 생성" }))
 		form = await screen.findByRole("form", { name: "STR 초안 다시 생성" })
 		await user.click(within(form).getByRole("button", { name: "다시 생성" }))
-		expect(
-			await screen.findByText(/DRF-000125 · 초안 ACTIVE · 케이스 DRAFTED/),
-		).toBeInTheDocument()
+		await waitFor(async () =>
+			expect(await draftInfo()).toHaveTextContent(/DRF-000125.*초안 작성됨/),
+		)
 		const panel = await verifyPanel()
 		expect(within(panel).getByText("아직 검증하지 않았어요.")).toBeInTheDocument()
 		expect(within(panel).getByRole("button", { name: "저장본 검증" })).toBeEnabled()
@@ -393,5 +399,26 @@ describe("STR 초안 생성 (S1)", () => {
 		await user.click(screen.getByRole("button", { name: "초안 생성" }))
 		await screen.findByText(/초안 DRF-000777을 저장했어요/)
 		expect(body).toEqual({ case_version: 2 })
+	})
+})
+
+describe("변경 비교 (GitHub 리뷰처럼) — 기준 수정본 ↔ 지금 저장본", () => {
+	it("고쳐 저장하면 [변경 비교]에서 바뀐 항목만 지운 곳·더한 곳으로 보인다", async () => {
+		const user = renderStr("CASE-2022-001001")
+		// 수정본 1번(AI 원문)뿐이면 비교할 게 없어 버튼이 없어요
+		await draftInfo()
+		expect(screen.queryByRole("button", { name: "변경 비교" })).not.toBeInTheDocument()
+		const place = await sectionBox("장소")
+		await user.type(place, " 추가 확인함.")
+		await user.click(screen.getByRole("button", { name: "변경 저장" }))
+		await user.click(await screen.findByRole("button", { name: "변경 비교" }))
+		const review = await screen.findByRole("region", { name: "변경 비교" })
+		expect(await within(review).findByText(/1개 항목이 바뀌었어요/)).toBeInTheDocument()
+		expect(within(review).getByRole("radio", { name: "AI 원문 (수정본 1번)" })).toBeChecked()
+		const added = review.querySelector("ins.str-diff-add")
+		expect(added).toHaveTextContent("추가 확인함.")
+		expect(
+			within(review).getByRole("button", { name: "변경 없는 항목 6개 보기" }),
+		).toBeInTheDocument()
 	})
 })

@@ -1,19 +1,27 @@
-import { useState } from "react"
 import { Link, useSearchParams } from "react-router"
 import "../../cases/styles/cases.css"
 import "../styles/approvals.css"
 import { useApprovals } from "../hooks/useApprovals"
-import ApprovalDialog from "../components/ApprovalDialog"
 import { useSession } from "../../auth/hooks/useSession"
 import { REJECTION_LABELS, labelOf } from "../../cases/labels"
 import { VERIFICATION_STATUS_LABELS } from "../../str/verificationLabels"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
-import { useToast } from "../../../shared/ui/toast/useToast"
 import Pagination from "../../../shared/ui/Pagination"
 
-// 버튼은 서버가 준 available_actions 만 보고 켜요(01_code_rules §1). 서버는 승인자이고 담당한 적 없을 때만 APPROVE·REJECT 를 줘요.
+// 상태 글자는 서버가 준 available_actions·was_assignee 만 보고 정해요(01_code_rules §1).
+// 서버는 승인자이고 담당한 적 없을 때만 APPROVE·REJECT 를 줘요.
 const can = (item, action) => item.availableActions.includes(action)
+
+// 목록 줄의 "지금 이 건에서 내가 할 일"
+function stateOf(item, isAdmin) {
+	if (isAdmin) return { tone: "muted", text: "승인 대기 · 승인자가 검토해요" }
+	if (item.wasAssignee)
+		return { tone: "muted", text: "내가 담당했던 케이스 · 다른 승인자가 결정해요" }
+	if (can(item, "APPROVE") || can(item, "REJECT"))
+		return { tone: "todo", text: "검토 대기 · 초안에서 승인·반려" }
+	return { tone: "muted", text: "승인 대기" }
+}
 
 function verificationText(verification) {
 	if (!verification) return "검증 없음"
@@ -26,21 +34,13 @@ function readPage(params) {
 }
 
 // 승인함 (APR-01) — 계약서 P1 `GET /approvals`. 승인 요청 오래된 순(서버 고정), 페이지는 주소(?page=)에 둬요.
-// 본문은 없어요 — [초안 보기]로 STR 화면(S2)을 열어 확인해요. ADMIN 은 목록만(SCRUM-120).
+// 본문·결정 버튼은 없어요 — [초안 검토하기]로 STR 화면(S2)을 열어 본문·변경 비교를 보고 거기서 승인·반려해요.
+// ADMIN 은 목록만(SCRUM-120).
 export default function ApprovalListPage() {
 	const [params, setParams] = useSearchParams()
 	const page = readPage(params)
 	const query = useApprovals(page)
 	const session = useSession()
-	const { show } = useToast()
-	// 확인창은 초안 번호만 들고, 줄은 늘 최신 목록에서 찾아요 — 409 뒤 다시 불러온 case_version 으로 다시 보낼 수 있어요.
-	const [dialog, setDialog] = useState(null)
-	const items = query.data?.items
-	const dialogItem = dialog ? items?.find((item) => item.draftNo === dialog.draftNo) : null
-	// 그사이 다른 승인자가 처리해 목록에서 빠졌으면 확인창을 닫아요(안내는 onGone — 409 뒤 재조회에서).
-	if (dialog && items && !dialogItem) setDialog(null)
-	const onGone = () =>
-		show({ tone: "info", text: "이미 처리된 건이에요. 목록을 새로 불러왔어요." })
 	const isAdmin = session.data?.role === "ADMIN"
 	const goTo = (next) => setParams(next > 1 ? { page: String(next) } : {})
 	return (
@@ -50,7 +50,7 @@ export default function ApprovalListPage() {
 				<p>
 					{isAdmin
 						? "관리자는 승인 대기 목록만 볼 수 있어요. 승인·반려는 승인자가 해요."
-						: "검증을 통과한 STR 초안을 확인하고 승인하거나 반려하세요."}
+						: "검증을 통과한 STR 초안을 열어 본문과 바뀐 곳을 확인한 뒤, 초안 화면에서 승인하거나 반려하세요."}
 				</p>
 			</header>
 			<section className="case-panel" aria-label="승인 대기 목록">
@@ -76,20 +76,17 @@ export default function ApprovalListPage() {
 											<th scope="col">승인 요청</th>
 											<th scope="col">검증</th>
 											<th scope="col">지난 반려</th>
-											<th scope="col">작업</th>
+											<th scope="col">상태</th>
+											<th scope="col">
+												<span className="visually-hidden">초안 열기</span>
+											</th>
 										</tr>
 									</thead>
 									<tbody>
 										{query.data.items.map((item) => (
 											<tr key={item.draftNo}>
 												<td>{item.draftNo}</td>
-												<td>
-													<Link
-														to={`/cases/${encodeURIComponent(item.caseNo)}/str`}
-													>
-														{item.caseNo} 초안 보기
-													</Link>
-												</td>
+												<td>{item.caseNo}</td>
 												<td>{item.assignee?.displayName ?? "-"}</td>
 												<td>{formatSystemTime(item.submittedAt)}</td>
 												<td>{verificationText(item.verification)}</td>
@@ -99,46 +96,24 @@ export default function ApprovalListPage() {
 														: "없음"}
 												</td>
 												<td>
-													<div className="approval-actions">
-														{can(item, "APPROVE") && (
-															<button
-																type="button"
-																className="primary"
-																onClick={() =>
-																	setDialog({
-																		draftNo: item.draftNo,
-																		mode: "APPROVE",
-																	})
-																}
-															>
-																승인
-															</button>
-														)}
-														{can(item, "REJECT") &&
-															["NEED_REVISION", "NOT_REPORTABLE"].map(
-																(mode) => (
-																	<button
-																		key={mode}
-																		type="button"
-																		onClick={() =>
-																			setDialog({
-																				draftNo:
-																					item.draftNo,
-																				mode,
-																			})
-																		}
-																	>
-																		{REJECTION_LABELS[mode]}
-																	</button>
-																),
-															)}
-														{item.wasAssignee && (
-															<span className="approval-muted">
-																내가 담당했던 케이스라 승인·반려할
-																수 없어요.
-															</span>
-														)}
-													</div>
+													<span
+														className={`approval-state approval-state-${stateOf(item, isAdmin).tone}`}
+													>
+														{stateOf(item, isAdmin).text}
+													</span>
+												</td>
+												<td>
+													{/* 결정은 본문을 보면서 초안 화면에서(APR-02) — 목록엔 버튼을 두지 않아요 */}
+													<Link
+														className="approval-review-link"
+														to={`/cases/${encodeURIComponent(item.caseNo)}/str`}
+														aria-label={`${item.caseNo} ${isAdmin ? "초안 상태 보기" : "초안 검토하기"}`}
+													>
+														{isAdmin
+															? "초안 상태 보기"
+															: "초안 검토하기"}{" "}
+														→
+													</Link>
 												</td>
 											</tr>
 										))}
@@ -158,14 +133,6 @@ export default function ApprovalListPage() {
 					</>
 				)}
 			</section>
-			{dialogItem && (
-				<ApprovalDialog
-					item={dialogItem}
-					mode={dialog.mode}
-					onClose={() => setDialog(null)}
-					onGone={onGone}
-				/>
-			)}
 		</>
 	)
 }

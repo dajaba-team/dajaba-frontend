@@ -574,10 +574,12 @@ describe("케이스 조사", () => {
 		const historySection = await screen.findByRole("region", { name: "메모 이력" })
 		expect(await within(historySection).findByText("(메모 비움)")).toBeInTheDocument()
 	})
-	it("초안이 있는 케이스에서 STR 화면으로 갈 수 있다", async () => {
+	it("초안이 있는 케이스에서 [케이스 보고서 상세보기]로 STR 화면에 간다", async () => {
 		const user = renderApp("/cases/CASE-2022-001001")
-		await user.click(await screen.findByRole("link", { name: /STR 화면으로/ }))
-		expect(screen.getByRole("heading", { name: "STR 초안" })).toBeInTheDocument()
+		const link = await screen.findByRole("link", { name: /케이스 보고서 상세보기/ })
+		expect(link).toHaveTextContent("STR 초안 DRF-000124")
+		await user.click(link)
+		expect(screen.getByRole("heading", { name: "STR 보고서 초안" })).toBeInTheDocument()
 	})
 	it("메모를 저장하면 새 버전으로 다시 불러온다", async () => {
 		const bodies = recordBodies("/notes")

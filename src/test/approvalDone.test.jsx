@@ -52,10 +52,15 @@ beforeEach(() => {
 afterEach(() => clickSpy.mockRestore())
 
 describe("승인 완료 — 승인 뒤", () => {
-	it("승인함에서 승인하면 이 화면으로 와서 마감 배지와 [모의 제출]이 보인다", async () => {
+	it("승인함 → 초안 화면에서 승인하면 이 화면으로 와서 마감 배지와 [모의 제출]이 보인다", async () => {
 		const user = renderAt("/approvals", "apr01", { pendingApproval: true })
 		const table = await screen.findByRole("region", { name: "승인 대기 표" })
-		await user.click(within(table).getByRole("button", { name: "승인" }))
+		// 결정은 초안 화면에서 — 목록에서 [초안 검토하기]로 들어가요
+		await user.click(
+			within(table).getByRole("link", { name: "CASE-2022-001001 초안 검토하기" }),
+		)
+		const bar = await screen.findByRole("region", { name: "STR 작업" })
+		await user.click(within(bar).getByRole("button", { name: "승인" }))
 		const dialog = await screen.findByRole("dialog", { name: "STR 승인" })
 		await user.click(within(dialog).getByRole("radio", { name: "5" }))
 		await user.click(within(dialog).getByRole("button", { name: "승인" }))

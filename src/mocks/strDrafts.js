@@ -169,8 +169,9 @@ export function seedStrDrafts() {
 					changed_sections: ["METHOD"],
 					edited_by: "inv01",
 					edited_at: "2026-10-21T10:21:40Z",
-					narrative_before: [method(METHOD_BEFORE)],
-					narrative_after: [method(METHOD_AFTER)],
+					// BE처럼 전체 본문 스냅샷 — 바뀐 항목만 담으면 비교에서 나머지가 "새 항목"으로 보여요
+					narrative_before: [instrument, method(METHOD_BEFORE)],
+					narrative_after: [instrument, method(METHOD_AFTER)],
 				},
 				{
 					revision_no: 1,

@@ -169,10 +169,9 @@ export function saveRevision(viewer, item, draft, body) {
 		changed_sections: sections.map((entry) => entry.section),
 		edited_by: viewer.login_id,
 		edited_at: editedAt,
-		narrative_before: before.filter((s) => sections.some((e) => e.section === s.section)),
-		narrative_after: draft.narrative.filter((s) =>
-			sections.some((e) => e.section === s.section),
-		),
+		// BE StrRevision처럼 고치기 전·후 본문 전체(변경 항목은 changed_sections)
+		narrative_before: before,
+		narrative_after: draft.narrative.map((section) => ({ ...section })),
 	})
 	draft.current_revision_no = revisionNo
 	draft.version += 1

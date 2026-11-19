@@ -88,11 +88,19 @@ export function submitBlockReason({
 }
 
 /** 화면 상단 안내(STR-04). 편집 가능 여부와 별개로, 지금 상태를 한 줄로. */
-export function stateNotice(draft, caseDetail) {
+// viewer: {role, canDecide} — 승인자는 본문을 고칠 수 없어서 상태 대신 역할에 맞는 안내를 보여 줘요.
+export function stateNotice(draft, caseDetail, viewer = {}) {
 	if (!draft.contentVisible) return null
 	if (draft.status === "SUPERSEDED") return "대체된 과거 초안이에요. 읽기만 할 수 있어요."
 	if (draft.status === "LOCKED") return "승인된 보고서예요. 본문이 잠겨 고칠 수 없어요."
 	const status = caseDetail?.status ?? draft.caseStatus
+	if (viewer.role === "APPROVER") {
+		if (viewer.canDecide)
+			return "승인자는 초안을 고칠 수 없어요. 본문과 검증 결과를 확인한 뒤 승인하거나 반려해 주세요."
+		if (status === "PENDING_APPROVAL")
+			return "승인자는 초안을 고칠 수 없어요. 이 건은 다른 승인자가 결정해요(읽기 전용)."
+		return "승인자는 초안을 고칠 수 없어요. 담당 조사역이 작업 중이에요(읽기 전용)."
+	}
 	if (status === "PENDING_APPROVAL") return "승인 대기 중이라 본문을 수정할 수 없어요."
 	if (status === "REJECTED" && caseDetail?.rejectionReasonCode === "NOT_REPORTABLE")
 		return "보고 안 함으로 반려됐어요. 종료 사유를 남겨 마무리해 주세요."

@@ -166,7 +166,8 @@ export default function CaseDetailPage() {
 									className="case-str-link"
 									to={`/cases/${encodeURIComponent(detail.caseNo)}/str`}
 								>
-									STR 화면으로 이동 →
+									<span>케이스 보고서 상세보기</span>
+									<small>STR 초안 {detail.currentDraftNo} · 본문·검증·승인</small>
 								</Link>
 							)}
 						</aside>
