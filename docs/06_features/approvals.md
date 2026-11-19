@@ -10,7 +10,7 @@
     - **[모의 제출]은 S2 `available_actions`의 `REPORT`로만 켜요**(BE SCRUM-261) — 케이스 APPROVED·초안 LOCKED이고 이 초안을 승인한 승인자에게만 와요. `REPORT`가 없으면 버튼 대신 "지금은 모의 제출할 수 없어요. 모의 제출은 이 초안을 승인한 승인자만 할 수 있어요." 안내를 보여요(다른 승인자 말고도 서버가 빼는 경우가 있어 단정하지 않아요). P4도 다른 승인자면 403 `NOT_DRAFT_APPROVER`이고, 그 뒤 S2를 다시 불러 버튼을 내려요(`REFETCH_ON`). PDF 버튼(S7·S8·P5)은 BE에 API·동작이 아직 없어 승인자 역할로 켜요.
     - 이 경로는 승인자·관리자만 열려요. 관리자는 PDF 권한이 없어(BE `04_auth_user.md` 12-1·12-1a) 상태만 봐요. 담당 조사역의 PDF는 STR 화면 몫.
 - 시연(`/demo/approvals`)은 없앨 예정이라 고치지 않아요.
-- 코드: `api/approvalsApi.js`(P1~P3) · `hooks/useApprovals.js`(목록·작업 — 성공·409 뒤 승인함·케이스·초안 재조회) · `pages/ApprovalListPage.jsx` · `components/ApprovalDialog.jsx`(승인·반려 확인창). 페이지는 확인창에 초안 번호만 들고 줄은 늘 최신 목록에서 찾아 넘겨요 — 409 뒤 다시 불러온 `case_version`으로 같은 입력을 다시 보낼 수 있고, 다시 불러온 목록에 그 건이 없으면 확인창을 닫고 "이미 처리된 건이에요"를 띄워요. MSW는 `src/mocks/approvals.js` — 테스트는 `resetCases(user, { pendingApproval: true })`로 케이스 1001을 승인 대기로 둬요(기본 시드 4건은 그대로).
+- 코드: `api/approvalsApi.js`(P1~P3) · `hooks/useApprovals.js`(목록·작업 — 성공·409 뒤 승인함·케이스·초안 재조회) · `pages/ApprovalListPage.jsx`(목록 — 상태만) · `components/ApprovalDialog.jsx`(승인·반려 확인창, STR 화면에서 열어요). **결정은 초안 화면(APR-02)에서만 해요(SCRUM-295)** — 확인창은 409 뒤 승인함·케이스·초안을 다시 불러온 다음, 최신 S2에 그 동작(`APPROVE`·`REJECT`)이 아직 있으면 확인창과 입력을 그대로 두고 새 `case_version`으로 다시 보낼 수 있어요. 없으면(다른 승인자가 먼저 처리) 확인창을 닫고 "다른 승인자가 먼저 처리한 건이에요. 최신 상태를 다시 불러왔어요."를 띄워요(`StrPage.checkDecisionStale`). MSW는 `src/mocks/approvals.js` — 테스트는 `resetCases(user, { pendingApproval: true })`로 케이스 1001을 승인 대기로 둬요(기본 시드 4건은 그대로).
 
 ## 1. 화면
 
@@ -19,10 +19,10 @@
 | `/approvals`                                  | 승인 대기 케이스·초안 목록                                | APPROVER, ADMIN(조회만) |
 | `/approvals/:draftNo` 또는 STR 화면 읽기 전용 | 대상 초안·수정본·최신 검증·이전 반려 사유, 승인·반려 버튼 | APPROVER                |
 
-- **지금 구현:** 목록 한 줄에 초안 번호·케이스(→ [초안 보기]로 STR 화면 `/cases/:caseNo/str`)·담당 조사역·승인 요청 시각·최신 검증(상태·수정본)·지난 반려(이 초안 기준)와 버튼. 별도 상세(`/approvals/:draftNo`)는 만들지 않았어요 — 본문은 STR 화면에서 봐요. STR 화면의 승인 버튼은 SCRUM-224(채영).
-- 버튼은 서버 `available_actions`(`APPROVE`·`REJECT`)만 보고 켜요. 서버는 승인자이고 담당한 적 없을 때만 줘요 — `was_assignee`면 "내가 담당했던 케이스라 승인·반려할 수 없어요" 안내만.
+- **지금 구현(SCRUM-295):** 목록 한 줄에 초안 번호·케이스·담당 조사역·승인 요청 시각·최신 검증(상태·수정본)·지난 반려(이 초안 기준)·상태. **목록엔 승인·반려 버튼이 없어요** — [초안 검토하기]로 STR 화면 `/cases/:caseNo/str`에 가서 본문·검증을 보며 결정해요(APR-01 → APR-02). 초안 화면엔 [← 승인함으로 돌아가기]가 있어요.
+- 초안 화면의 결정 버튼은 S2 `available_actions`(`APPROVE`·`REJECT`)만 보고 켜요. 서버는 승인자이고 담당한 적 없을 때만 줘요 — 목록은 `was_assignee`면 "내가 담당했던 케이스 · 다른 승인자가 결정해요"를 상태로 보여요.
 
-- 메뉴는 APPROVER·ADMIN에게만. ADMIN에겐 버튼 없이 목록만.
+- 메뉴는 APPROVER·ADMIN에게만. ADMIN은 목록·상태만([초안 상태 보기] — 본문은 볼 수 없어요, `META_ONLY`).
 - **담당 조사역 본인이었던 케이스엔 승인·반려 버튼을 숨겨요.** 서버도 409 `SELF_APPROVAL`로 막아요.
 
 ## 2. 버튼 [BE flows 06, 안건 24]
@@ -53,6 +53,6 @@
 
 ## 4. 테스트에 있어야 하는 것
 
-`src/test/approvalDone.test.jsx`·`deadline.test.js`(SCRUM-111) — 승인 뒤 이동·마감 배지·미리보기·모의 제출·확정본·PDF 실패·만드는 중·409·BE에 없는 API 404 안내·관리자·승인 전 초안. `src/test/approvals.test.jsx`(SCRUM-241) — 승인자 목록·버튼, 관리자 목록만, 예전 담당 안내, 의심 정도 없이 승인 막힘, 반려 사유 공백 막힘, 409 `CONCURRENT_UPDATE` 안내 + 입력 유지 + 재조회, 409 → 재조회 → 같은 입력으로 다시 눌러 성공, 409 뒤 목록에서 빠진 건은 확인창 닫고 안내, 409 `SELF_APPROVAL` 문구. 아래 "승인 뒤 잠금 표시"는 STR 화면 몫(SCRUM-224).
+`src/test/approvalDone.test.jsx`·`deadline.test.js`(SCRUM-111) — 승인 뒤 이동·마감 배지·미리보기·모의 제출·확정본·PDF 실패·만드는 중·409·BE에 없는 API 404 안내·관리자·승인 전 초안. `src/test/approvals.test.jsx`(SCRUM-241 → SCRUM-295) — 목록은 상태만(승인·반려 버튼 없음), 관리자 목록만, 예전 담당 안내 / 목록 → 초안 화면에서: 돌아가기 링크·승인자 안내, 의심 정도 없이 승인 막힘, 반려 사유 공백 막힘, 409 `CONCURRENT_UPDATE` 안내 + 입력 유지 → 다시 눌러 성공, 409 뒤 서버가 그 동작을 더는 안 주면 확인창 닫고 "다른 승인자가 먼저 처리" 안내, 409 `SELF_APPROVAL` 문구. 아래 "승인 뒤 잠금 표시"는 STR 화면 몫(SCRUM-224).
 
 자기 승인 버튼 숨김 + 직접 호출 409 `SELF_APPROVAL`, 반려 코드·사유 없으면 막힘, 승인 뒤 잠금 표시, ADMIN은 목록만, 승인 사이 다른 사람이 먼저 처리했을 때 409 안내 + 재조회.

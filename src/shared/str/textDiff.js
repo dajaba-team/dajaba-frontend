@@ -82,6 +82,9 @@ export function diffStats(segments) {
 /**
  * 단락 목록 두 개(base·current) 비교 — 서버가 준 current 순서대로.
  * 결과: [{section, base, current, segments, changed}] — base에 없던 항목은 통째로 추가로 봐요.
+ * base에만 있는 항목은 생기지 않아요: 비교 대상(반려본·AI 원본·이전 수정본)은 모두 같은 초안의 수정본이고,
+ * 수정은 이미 있는 단락의 문장만 바꿔요(BE StrDraft.revise — 앞 본문에 고친 문장을 덮어씀, 이 초안에 없는 단락은 400).
+ * 단락을 지우거나 더하는 API가 생기면 "지운 항목" 줄을 더해야 해요(#63 리뷰).
  */
 export function diffNarratives(base, current) {
 	return current.map((item) => {

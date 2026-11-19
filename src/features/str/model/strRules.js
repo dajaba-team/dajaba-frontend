@@ -89,6 +89,7 @@ export function submitBlockReason({
 
 /** 화면 상단 안내(STR-04). 편집 가능 여부와 별개로, 지금 상태를 한 줄로. */
 // viewer: {role, canDecide} — 승인자는 본문을 고칠 수 없어서 상태 대신 역할에 맞는 안내를 보여 줘요.
+// 관리자는 본문 권한이 META_ONLY(contentVisible=false)라 첫 줄에서 null — 권한 안내는 StrPage의 메타 영역이 보여 줘요(#63 리뷰).
 export function stateNotice(draft, caseDetail, viewer = {}) {
 	if (!draft.contentVisible) return null
 	if (draft.status === "SUPERSEDED") return "대체된 과거 초안이에요. 읽기만 할 수 있어요."

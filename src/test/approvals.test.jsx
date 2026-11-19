@@ -157,6 +157,61 @@ describe("승인함 → 초안 화면에서 결정 (APR-02)", () => {
 		expect(await screen.findByText("승인 대기 건이 없습니다.")).toBeInTheDocument()
 	})
 
+	// 목록에 있던 409 테스트를 초안 화면으로 옮겼어요(#63 리뷰) — 확인창은 409 뒤 승인함·케이스·초안을 다시 부르고,
+	// 최신 S2에 그 동작이 아직 있으면 그대로 두고, 없으면 닫고 안내해요(StrPage.checkDecisionStale).
+	it("그사이 케이스가 바뀌면(409 CONCURRENT_UPDATE) 확인창·입력을 그대로 두고, 다시 누르면 승인된다", async () => {
+		let calls = 0
+		server.use(
+			http.post("*/api/v1/approvals/:draftNo/approve", () => {
+				calls += 1
+				return calls === 1 ? conflict("CONCURRENT_UPDATE") : undefined // 두 번째는 기본 핸들러로
+			}),
+		)
+		const { user, bar } = await openDraftFromList()
+		await user.click(within(bar).getByRole("button", { name: "승인" }))
+		const dialog = await screen.findByRole("dialog", { name: "STR 승인" })
+		await user.click(within(dialog).getByRole("radio", { name: "4" }))
+		await user.click(within(dialog).getByRole("button", { name: "승인" }))
+		expect(
+			await within(dialog).findByText(/다른 사용자가 먼저 변경했습니다/),
+		).toBeInTheDocument()
+		expect(within(dialog).getByRole("radio", { name: "4" })).toBeChecked()
+		await user.click(within(dialog).getByRole("button", { name: "승인" }))
+		expect(await screen.findByRole("heading", { name: "승인 완료" })).toBeInTheDocument()
+		expect(calls).toBe(2)
+		expect(screen.queryByText(/다른 승인자가 먼저 처리한 건이에요/)).not.toBeInTheDocument()
+	})
+
+	it("다른 승인자가 먼저 처리했으면(409 뒤 S2에 APPROVE 없음) 확인창을 닫고 알린다", async () => {
+		// 첫 요청을 기본 핸들러로 한 번 보내 케이스를 실제로 승인 상태로 바꾼 뒤(= 누군가 먼저 처리), 화면엔 409를 돌려줘요.
+		// 다시 불러온 S2는 APPROVED라 APPROVE를 주지 않아요.
+		let forwarded = false
+		server.use(
+			http.post("*/api/v1/approvals/:draftNo/approve", async ({ request }) => {
+				if (forwarded) return undefined
+				forwarded = true
+				await fetch(request.url, {
+					method: "POST",
+					headers: request.headers,
+					body: await request.clone().text(),
+				})
+				return conflict("INVALID_CASE_TRANSITION")
+			}),
+		)
+		const { user, bar } = await openDraftFromList()
+		await user.click(within(bar).getByRole("button", { name: "승인" }))
+		const dialog = await screen.findByRole("dialog", { name: "STR 승인" })
+		await user.click(within(dialog).getByRole("radio", { name: "2" }))
+		await user.click(within(dialog).getByRole("button", { name: "승인" }))
+		expect(
+			await screen.findByText(
+				"다른 승인자가 먼저 처리한 건이에요. 최신 상태를 다시 불러왔어요.",
+			),
+		).toBeInTheDocument()
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+		expect(screen.queryByRole("button", { name: "승인" })).not.toBeInTheDocument()
+	})
+
 	it("자기 승인으로 막히면(409 SELF_APPROVAL) 확인창에 그 문구를 보여 준다", async () => {
 		server.use(
 			http.post("*/api/v1/approvals/:draftNo/approve", () => conflict("SELF_APPROVAL")),
