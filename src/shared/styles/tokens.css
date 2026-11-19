@@ -81,8 +81,6 @@
 	--brand-light: #8cd2f5;
 	--brand-navy: #00236e;
 	--chart-neutral: #dfe5ef;
-	/* 우선순위 막대 그라데이션 끝 색 — 빨강에서 이 회색으로 옅어짐 */
-	--chart-fade: #c5cbd5;
 	/* HIGH 위험 강조색 — 브랜드 파랑(#0046ff)과 채도를 맞춘 산호빛 빨강 (SCRUM-285) */
 	--risk-high: #f04452;
 	--risk-high-soft: #ffeef0;
