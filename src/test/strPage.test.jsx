@@ -98,7 +98,11 @@ describe("STR 화면 — 서버가 준 서술부 목록대로 그리기 (SCRUM-1
 			"의심 사유",
 			"결론",
 		])
-		expect(screen.getByText(/DRF-000098 · 초안 LOCKED · 케이스 APPROVED/)).toBeInTheDocument()
+		// 머리 칩: 초안 번호 · 케이스 상태 · 초안 상태(ACTIVE가 아니면) — 코드 대신 라벨로 보여요(SCRUM-295)
+		const chips = within(screen.getByRole("list", { name: "초안 정보" }))
+			.getAllByRole("listitem")
+			.map((item) => item.textContent)
+		expect(chips).toEqual(["CASE-2022-001003", "DRF-000098", "승인", "승인·잠김"])
 	})
 
 	it("제목은 서버 label이 먼저고, 모르는 섹션 이름은 그대로 보여 준다", () => {

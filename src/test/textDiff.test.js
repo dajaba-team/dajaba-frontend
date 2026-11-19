@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { diffNarratives, diffStats, diffWords } from "../shared/str/textDiff"
-import { baseOptions } from "../features/str/components/StrChangeReview"
+import { baseOptions } from "../features/str/model/changeReview"
 
 const join = (segments, keep) =>
 	segments

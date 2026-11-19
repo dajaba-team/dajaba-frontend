@@ -470,7 +470,9 @@ describe("케이스 조사", () => {
 		const draftBodies = recordBodies("/close-with-draft")
 		const user = renderApp("/cases/CASE-2022-001001")
 		await user.click(await screen.findByRole("button", { name: "종료" }))
-		expect(screen.getByText(/DRF-000124/)).toHaveTextContent("대체됨")
+		// 케이스 상세의 STR 링크에도 초안 번호가 있어서(SCRUM-295) 종료 폼 안에서만 찾아요.
+		const closeForm = await screen.findByRole("form", { name: "케이스 종료" })
+		expect(within(closeForm).getByText(/DRF-000124/)).toHaveTextContent("대체됨")
 		await user.click(screen.getByRole("radio", { name: "중복 경보" }))
 		await user.type(screen.getByLabelText("종료 설명"), "같은 경보가 다른 케이스로 조사 중")
 		await user.click(screen.getByRole("button", { name: "종료 실행" }))
