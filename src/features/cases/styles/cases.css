@@ -934,6 +934,11 @@
 	overflow: visible;
 }
 /* 경로 지도 */
+.route-note {
+	margin: 0 0 var(--space-2);
+	color: #6b7c96;
+	font-size: 0.75rem;
+}
 .route-canvas {
 	margin: 0 0 var(--space-3);
 	padding: 0.875rem 1.25rem 1.25rem;
@@ -969,12 +974,76 @@
 	border-radius: 50%;
 	background: var(--color-primary);
 }
+/* 왼쪽 작은 원(순환 모양) + 오른쪽 일자형. 일자형은 한 줄에 3단계까지, 넘치면 다음 줄로 — 가로 스크롤 없음 */
+.route-body {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: center;
+	gap: var(--space-4);
+	padding-block-start: 0.875rem;
+}
+.route-ring {
+	display: grid;
+	justify-items: center;
+	gap: 0.125rem;
+	padding-inline-end: var(--space-4);
+	border-inline-end: 1px dashed #c4d3ea;
+}
+.route-ring small {
+	color: #485e7e;
+	font-size: 0.6875rem;
+}
+.route-ring circle {
+	fill: #fff;
+	stroke: #aabdd9;
+}
+.route-ring text {
+	fill: #344f78;
+	font-size: 0.6875rem;
+	font-weight: 750;
+}
+.route-ring .is-target circle {
+	fill: var(--color-primary);
+	stroke: #e2ebff;
+	stroke-width: 3;
+}
+.route-ring .is-target text {
+	fill: #fff;
+}
+.route-ring .route-ring-steps {
+	fill: #485e7e;
+	font-size: 0.625rem;
+	font-weight: 500;
+}
+.route-ring-arc {
+	fill: none;
+	stroke: #879cbb;
+	stroke-width: 1.4;
+}
+.route-ring-arrow {
+	fill: #7187a9;
+}
+.route-rows {
+	display: grid;
+	gap: var(--space-3);
+	min-width: 0;
+}
 .route-track {
 	display: grid;
+	grid-template-columns:
+		minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 0.9fr)
+		minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1fr);
 	align-items: start;
 	margin: 0;
-	padding: 0.875rem 0.625rem 0;
+	padding: 0 0.625rem;
 	list-style: none;
+}
+.route-node.continued {
+	opacity: 0.6;
+}
+.route-node.continued .node-circle {
+	border-style: dashed;
+	box-shadow: none;
 }
 .route-step {
 	display: contents;
@@ -1027,19 +1096,20 @@
 	line-height: 1.5;
 	text-align: center;
 }
+/* 선은 배경 높이(1.5px)가 아니라 테두리로 — 줄 위치가 픽셀 사이에 걸려도 굵기가 줄마다 같게 그려져요 */
 .route-hop i {
 	position: relative;
 	display: block;
 	justify-self: stretch;
-	height: 1.5px;
+	height: 0;
 	margin: 0.25rem 0;
-	background: #879cbb;
+	border-top: 1.5px solid #879cbb;
 }
 .route-hop i::after {
 	content: "";
 	position: absolute;
 	inset-inline-end: 0;
-	inset-block-start: -2.5px;
+	inset-block-start: -4px;
 	width: 5px;
 	height: 5px;
 	border: solid #7187a9;
@@ -1117,12 +1187,29 @@
 	.route-canvas {
 		padding: 0.5625rem 0.75rem;
 	}
-	/* 좁은 화면: 경로를 세로로 — 계좌 원 왼쪽, 거래는 점선 따라 아래로 */
+	/* 좁은 화면: 작은 원은 위로, 경로는 세로로 — 계좌 원 왼쪽, 거래는 점선 따라 아래로 */
+	.route-body {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.5rem;
+		padding-block-start: 0.5rem;
+	}
+	.route-ring {
+		padding: 0 0 0.5rem;
+		border-inline-end: 0;
+		border-block-end: 1px dashed #c4d3ea;
+	}
+	.route-rows {
+		gap: 0.1875rem;
+	}
 	.route-track {
 		display: flex;
 		flex-direction: column;
 		gap: 0.1875rem;
-		padding: 0.5rem 0 0;
+		padding: 0;
+	}
+	/* 세로로 이어 그리면 줄이 끊기지 않으니 "이어서" 계좌는 숨겨요 */
+	.route-node.continued {
+		display: none;
 	}
 	.route-node {
 		grid-template-columns: 1.875rem 1fr;

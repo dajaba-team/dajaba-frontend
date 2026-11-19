@@ -1091,6 +1091,8 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		expect(within(route).getByText("3단계 · 대상 계좌 복귀")).toBeInTheDocument()
 		expect(within(route).getByText("대상 계좌 복귀")).toBeInTheDocument()
 		expect(within(route).getByText("4,600 Euro")).toBeInTheDocument()
+		// 화면이 찾은 길이지 룰 판정이 아니라고 적어요 (SCRUM-296)
+		expect(screen.getByText("화면에서 시간 순서로 찾은 길 · 룰 판정 아님")).toBeInTheDocument()
 		// 경로 표에 거래 ID가 단계 순서대로
 		const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1)
 		expect(rows.map((row) => within(row).getAllByRole("cell").at(-1).textContent)).toEqual([
@@ -1098,6 +1100,86 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 			"5102",
 			"5103",
 		])
+	})
+	it("4단계 이상 경로는 가로로 늘이지 않고 다음 줄로 이어 그린다 (SCRUM-296)", async () => {
+		const ts = (t) => `2022-10-31T${t}:00`
+		const graphEdge = (id, source, target, time) => ({
+			transaction_id: id,
+			source,
+			target,
+			amount: 100,
+			currency: "US Dollar",
+			amount_basis: "RECEIVED",
+			scope: "EVIDENCE",
+			ts: ts(time),
+		})
+		const refs = ["ACR-0001", "ACR-201", "ACR-202", "ACR-203", "ACR-204"]
+		server.use(
+			http.get("*/api/v1/cases/CASE-2022-001001/graph", () =>
+				HttpResponse.json({
+					nodes: refs.map((ref, i) => ({
+						account_ref: ref,
+						account_no: `0${i}0_****000${i}`,
+					})),
+					edges: refs.map((ref, i) =>
+						graphEdge(i + 1, ref, refs[(i + 1) % refs.length], `1${i}:00`),
+					),
+					returned_transaction_count: 5,
+					total_transaction_count: 5,
+					truncated: false,
+				}),
+			),
+		)
+		renderApp("/cases/CASE-2022-001001")
+		const route = await screen.findByRole("figure", { name: /^경로 1:/ })
+		const rows = within(route).getAllByRole("list")
+		expect(rows).toHaveLength(2)
+		// 첫 줄 3단계, 둘째 줄 2단계 — 단계 번호는 이어져요
+		expect(within(rows[0]).getAllByRole("listitem")).toHaveLength(3)
+		expect(within(rows[1]).getAllByRole("listitem")).toHaveLength(2)
+		expect(within(rows[1]).getByText(/04 · 경유 거래/)).toBeInTheDocument()
+		expect(within(rows[1]).getByText("대상 계좌 복귀")).toBeInTheDocument()
+	})
+	it("R04_CYCLE 이 아닌 케이스는 돌아온 길이 있어도 전체 그래프를 먼저 보여 준다 (SCRUM-296)", async () => {
+		// REVIEWING 케이스의 경보는 R02_FAN_IN_24H — 그래프에 A → B → A 길이 있어도 경로 지도를 띄우지 않아요
+		const graphEdge = (id, source, target, ts) => ({
+			transaction_id: id,
+			source,
+			target,
+			amount: 100,
+			currency: "US Dollar",
+			amount_basis: "RECEIVED",
+			scope: "EVIDENCE",
+			ts,
+		})
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}/graph`, () =>
+				HttpResponse.json({
+					nodes: [
+						{ account_ref: "ACR-0004", account_no: "011_****1021" },
+						{ account_ref: "ACR-102", account_no: "020_****2020" },
+					],
+					edges: [
+						graphEdge(1, "ACR-0004", "ACR-102", "2022-10-31T09:00:00"),
+						graphEdge(2, "ACR-102", "ACR-0004", "2022-10-31T10:00:00"),
+					],
+					returned_transaction_count: 2,
+					total_transaction_count: 2,
+					truncated: false,
+				}),
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		expect(await screen.findByRole("region", { name: "자금 흐름 그림" })).toBeInTheDocument()
+		expect(screen.queryByRole("figure")).not.toBeInTheDocument()
+		expect(screen.queryByText(/룰 판정 아님/)).not.toBeInTheDocument()
+	})
+	it("직접 거래 밖의 건수는 경유·내 계좌 이체를 묶어 '그 밖'으로 적는다 (SCRUM-296)", async () => {
+		renderApp(`/cases/${REVIEWING}`)
+		const card = await screen.findByRole("region", { name: "거래 근거" })
+		expect(await within(card).findByText(/\(경유·내 계좌 이체\)/)).toHaveTextContent(
+			"그 밖 1건(경유·내 계좌 이체)",
+		)
 	})
 	it("근거 거래가 없는 케이스는 합계·표·그래프가 비어 있다고 알린다", async () => {
 		renderApp("/cases/CASE-2022-001002")

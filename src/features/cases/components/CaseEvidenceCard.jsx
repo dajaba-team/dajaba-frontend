@@ -17,11 +17,13 @@ export default function CaseEvidenceCard({ detail }) {
 	// 그래프 탭에 있는 동안에도 마지막에 보던 거래 범위를 그대로 둬요.
 	const [scope, setScope] = useState("EVIDENCE")
 	const agg = detail.aggregates
+	// 서버는 내 계좌끼리 옮긴 거래를 유입·유출 건수에서 빼고 전체 건수에는 넣어요.
+	// 그래서 "전체 − 유입 − 유출"에는 경유와 내 계좌 이체가 같이 들어가요 — 경유만 따로 오지 않아 "그 밖"으로 적어요.
 	const counts =
 		agg && agg.transactionCount > 0
 			? (() => {
 					const direct = agg.inbound.transactionCount + agg.outbound.transactionCount
-					return { direct, via: Math.max(agg.transactionCount - direct, 0) }
+					return { direct, other: Math.max(agg.transactionCount - direct, 0) }
 				})()
 			: null
 	return (
@@ -36,7 +38,7 @@ export default function CaseEvidenceCard({ detail }) {
 				{counts && (
 					<p className="minor-pair">
 						대상 계좌 직접 거래 <b>{counts.direct}건</b>
-						<i aria-hidden="true" /> 경유 <b>{counts.via}건</b>
+						<i aria-hidden="true" /> 그 밖 <b>{counts.other}건</b>(경유·내 계좌 이체)
 					</p>
 				)}
 			</div>
@@ -60,7 +62,11 @@ export default function CaseEvidenceCard({ detail }) {
 				<CaseTransactionsPanel key={scope} caseNo={detail.caseNo} scope={scope} />
 			</div>
 			<div className="case-tab-panel" hidden={tab !== "GRAPH"}>
-				<CaseFlowGraph caseNo={detail.caseNo} accountRef={detail.accountRef} />
+				<CaseFlowGraph
+					caseNo={detail.caseNo}
+					accountRef={detail.accountRef}
+					ruleId={detail.alert?.ruleId}
+				/>
 			</div>
 			<p className="evidence-foot">
 				통화별로 따로 집계하고 환산하지 않아요. 경유·참고 거래는 입출금 합계에서 제외해요.
