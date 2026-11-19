@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
 	changedSections,
+	stateNotice,
 	currentRejection,
 	sectionError,
 	strActionsFor,
@@ -181,5 +182,27 @@ describe("STR 화면 규칙", () => {
 			).toBeNull()
 			expect(currentRejection({ lastRejection: null }, detail("DRAFTED", []))).toBeNull()
 		})
+	})
+
+	it("승인자에겐 상태 대신 권한 안내 — 결정할 수 있으면 승인·반려 안내", () => {
+		const d = { contentVisible: true, status: "ACTIVE" }
+		const pending = { status: "PENDING_APPROVAL" }
+		expect(stateNotice(d, pending, { role: "APPROVER", canDecide: true })).toMatch(
+			"승인자는 초안을 고칠 수 없어요. 본문과 검증 결과를 확인한 뒤",
+		)
+		expect(stateNotice(d, pending, { role: "APPROVER", canDecide: false })).toMatch(
+			"다른 승인자가 결정해요",
+		)
+		expect(stateNotice(d, { status: "DRAFTED" }, { role: "APPROVER" })).toMatch(
+			"담당 조사역이 작업 중이에요",
+		)
+		// 조사역은 그대로
+		expect(stateNotice(d, pending, { role: "INVESTIGATOR" })).toBe(
+			"승인 대기 중이라 본문을 수정할 수 없어요.",
+		)
+		// 잠김·대체는 역할과 상관없이 먼저
+		expect(stateNotice({ ...d, status: "LOCKED" }, pending, { role: "APPROVER" })).toMatch(
+			"잠겨",
+		)
 	})
 })

@@ -470,7 +470,9 @@ describe("케이스 조사", () => {
 		const draftBodies = recordBodies("/close-with-draft")
 		const user = renderApp("/cases/CASE-2022-001001")
 		await user.click(await screen.findByRole("button", { name: "종료" }))
-		expect(screen.getByText(/DRF-000124/)).toHaveTextContent("대체됨")
+		// 케이스 상세의 STR 링크에도 초안 번호가 있어서(SCRUM-295) 종료 폼 안에서만 찾아요.
+		const closeForm = await screen.findByRole("form", { name: "케이스 종료" })
+		expect(within(closeForm).getByText(/DRF-000124/)).toHaveTextContent("대체됨")
 		await user.click(screen.getByRole("radio", { name: "중복 경보" }))
 		await user.type(screen.getByLabelText("종료 설명"), "같은 경보가 다른 케이스로 조사 중")
 		await user.click(screen.getByRole("button", { name: "종료 실행" }))
@@ -574,10 +576,12 @@ describe("케이스 조사", () => {
 		const historySection = await screen.findByRole("region", { name: "메모 이력" })
 		expect(await within(historySection).findByText("(메모 비움)")).toBeInTheDocument()
 	})
-	it("초안이 있는 케이스에서 STR 화면으로 갈 수 있다", async () => {
+	it("초안이 있는 케이스에서 [케이스 보고서 상세보기]로 STR 화면에 간다", async () => {
 		const user = renderApp("/cases/CASE-2022-001001")
-		await user.click(await screen.findByRole("link", { name: /STR 화면으로/ }))
-		expect(screen.getByRole("heading", { name: "STR 초안" })).toBeInTheDocument()
+		const link = await screen.findByRole("link", { name: /케이스 보고서 상세보기/ })
+		expect(link).toHaveTextContent("STR 초안 DRF-000124")
+		await user.click(link)
+		expect(screen.getByRole("heading", { name: "STR 보고서 초안" })).toBeInTheDocument()
 	})
 	it("메모를 저장하면 새 버전으로 다시 불러온다", async () => {
 		const bodies = recordBodies("/notes")
