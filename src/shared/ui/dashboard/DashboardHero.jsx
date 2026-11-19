@@ -81,7 +81,7 @@ export default function DashboardHero({ description, onAction, actionLabel, repl
 				</svg>
 				<div className="hero-core">
 					<Icon name="chart" size={30} />
-					<strong>DAJAVA</strong>
+					<strong>DAJABA</strong>
 				</div>
 				<div className="hero-node hero-node-detect">
 					<strong>이상 흐름 탐지</strong>

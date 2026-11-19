@@ -17,7 +17,7 @@ export default function DemoSidebar() {
 					<span />
 				</div>
 				<div>
-					<strong>DAJAVA</strong>
+					<strong>DAJABA</strong>
 					<small>AML 인텔리전스</small>
 				</div>
 			</Link>

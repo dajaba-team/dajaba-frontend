@@ -93,7 +93,7 @@ export default function AuthPanel({ placement = "main" }) {
 		<section className="auth-panel" aria-label="로그인">
 			{me.data === null && !sessionEnded && (
 				<header className="auth-heading">
-					<h2>DAJAVA에 로그인</h2>
+					<h2>DAJABA에 로그인</h2>
 					<p>AML 조사 워크스페이스를 이용하려면 계정으로 로그인해 주세요.</p>
 				</header>
 			)}

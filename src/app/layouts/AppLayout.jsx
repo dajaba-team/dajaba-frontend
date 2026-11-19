@@ -58,7 +58,7 @@ export default function AppLayout() {
 					<Link className="app-brand" to="/overview">
 						<img className="app-brand-mark" src={brandMark} alt="" />
 						<div>
-							DAJAVA<span>AML 인텔리전스</span>
+							DAJABA<span>AML 인텔리전스</span>
 						</div>
 					</Link>
 					{session.data && (
