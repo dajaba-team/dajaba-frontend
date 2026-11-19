@@ -468,10 +468,9 @@
 	--band: var(--risk-medium-strong);
 	--band-soft: var(--risk-medium-soft);
 }
-/* LOW 는 도넛의 연하늘(--brand-light)이 글자색으로는 너무 옅어 한 톤 진하게 */
 .focus-case[data-band="LOW"] {
-	--band: #2a8fc9;
-	--band-soft: #e6f5fd;
+	--band: var(--risk-low-strong);
+	--band-soft: var(--risk-low-soft);
 }
 .focus-case:hover {
 	background: var(--color-table-head);

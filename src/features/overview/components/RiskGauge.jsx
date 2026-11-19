@@ -1,3 +1,4 @@
+import { useId } from "react"
 import CountUp from "../../../shared/ui/dashboard/CountUp"
 
 // 위험 등급 분포를 계기판(반원)으로 — 조각 길이는 등급별 건수, 바늘은 HIGH 비율을 가리켜요.
@@ -29,6 +30,8 @@ const arcPath = (from, to, r = R) => {
 }
 
 export default function RiskGauge({ counts, label, replay = 0 }) {
+	// 한 화면에 계기판이 여럿이어도 SVG 그라데이션·마스크 id 가 겹치지 않게
+	const uid = useId().replace(/:/g, "")
 	const total = counts.reduce((sum, n) => sum + n, 0)
 	const high = counts[0]
 	const share = total ? high / total : 0
@@ -57,7 +60,7 @@ export default function RiskGauge({ counts, label, replay = 0 }) {
 						return (
 							<linearGradient
 								key={index}
-								id={`risk-gauge-${index}`}
+								id={`${uid}-band-${index}`}
 								gradientUnits="userSpaceOnUse"
 								x1={x1}
 								y1={y1}
@@ -76,7 +79,7 @@ export default function RiskGauge({ counts, label, replay = 0 }) {
 						)
 					})}
 					<mask
-						id="risk-gauge-sweep"
+						id={`${uid}-sweep`}
 						maskUnits="userSpaceOnUse"
 						x="0"
 						y="0"
@@ -95,13 +98,13 @@ export default function RiskGauge({ counts, label, replay = 0 }) {
 					</mask>
 				</defs>
 				<path className="risk-gauge-track" d={arcPath(CAP, 1 - CAP)} strokeWidth={W} />
-				<g mask="url(#risk-gauge-sweep)">
+				<g mask={`url(#${uid}-sweep)`}>
 					{segments.map(({ index, from, to }) => (
 						<path
 							key={index}
 							className={index === 0 ? "risk-gauge-hot" : undefined}
 							d={arcPath(from, to)}
-							stroke={`url(#risk-gauge-${index})`}
+							stroke={`url(#${uid}-band-${index})`}
 							strokeWidth={W}
 							strokeLinecap="round"
 							fill="none"
@@ -138,7 +141,7 @@ export default function RiskGauge({ counts, label, replay = 0 }) {
 					<small>건</small>
 				</strong>
 				<span className="risk-gauge-note">
-					전체 {total}건 중 <b>{Math.round(share * 100)}%</b>
+					조회한 {total}건 중 <b>{Math.round(share * 100)}%</b>
 				</span>
 			</div>
 		</div>
