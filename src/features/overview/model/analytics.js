@@ -1,5 +1,5 @@
 export const riskNames = ["높음 · HIGH", "중간 · MEDIUM", "낮음 · LOW", "미산출·등급 없음"]
-export const riskColors = ["--risk-high", "--risk-medium", "--brand-light", "--chart-neutral"]
+export const riskColors = ["--risk-high", "--risk-medium", "--risk-low", "--risk-none"]
 export function riskCounts(items) {
 	return ["HIGH", "MEDIUM", "LOW", null].map(
 		(band) =>

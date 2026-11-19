@@ -361,23 +361,23 @@
 	border-top: 1px solid var(--color-border);
 	transition: background-color 0.15s ease;
 }
-/* 확인할 케이스 줄 — 아이콘·등급 배지를 위험 등급 색으로 (도넛과 같은 계열). '지금 확인' 버튼은 브랜드 파랑 고정 */
+/* 확인할 케이스 줄 — 아이콘 타일·등급 배지를 도넛과 같은 --risk-* 변수로 칠한다.
+   '지금 확인' 버튼은 브랜드 파랑 고정 */
 .focus-case {
-	--band: var(--color-muted);
-	--band-soft: var(--color-soft);
+	--band: var(--risk-none);
+	--band-on: var(--risk-none-on);
 }
 .focus-case[data-band="HIGH"] {
 	--band: var(--risk-high);
-	--band-soft: var(--risk-high-soft);
+	--band-on: var(--risk-high-on);
 }
 .focus-case[data-band="MEDIUM"] {
-	--band: var(--risk-medium-strong);
-	--band-soft: var(--risk-medium-soft);
+	--band: var(--risk-medium);
+	--band-on: var(--risk-medium-on);
 }
-/* LOW 는 도넛의 연하늘(--brand-light)이 글자색으로는 너무 옅어 한 톤 진하게 */
 .focus-case[data-band="LOW"] {
-	--band: #2a8fc9;
-	--band-soft: #e6f5fd;
+	--band: var(--risk-low);
+	--band-on: var(--risk-low-on);
 }
 .focus-case:hover {
 	background: var(--color-table-head);
@@ -388,8 +388,8 @@
 	width: 44px;
 	height: 44px;
 	flex-shrink: 0;
-	color: var(--band);
-	background: var(--band-soft);
+	color: var(--band-on);
+	background: var(--band);
 	border-radius: 13px;
 }
 .case-identity {
@@ -430,9 +430,8 @@
 }
 .band-badge {
 	padding: 3px 9px;
-	color: var(--band);
-	background: var(--band-soft);
-	border: 1px solid color-mix(in srgb, var(--band) 30%, transparent);
+	color: var(--band-on);
+	background: var(--band);
 	border-radius: 999px;
 	font-size: 11px;
 	font-style: normal;
