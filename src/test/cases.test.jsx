@@ -1091,6 +1091,45 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 			"5103",
 		])
 	})
+	it("4단계 이상 경로는 가로로 늘이지 않고 다음 줄로 이어 그린다 (SCRUM-296)", async () => {
+		const ts = (t) => `2022-10-31T${t}:00`
+		const graphEdge = (id, source, target, time) => ({
+			transaction_id: id,
+			source,
+			target,
+			amount: 100,
+			currency: "US Dollar",
+			amount_basis: "RECEIVED",
+			scope: "EVIDENCE",
+			ts: ts(time),
+		})
+		const refs = ["ACR-0001", "ACR-201", "ACR-202", "ACR-203", "ACR-204"]
+		server.use(
+			http.get("*/api/v1/cases/CASE-2022-001001/graph", () =>
+				HttpResponse.json({
+					nodes: refs.map((ref, i) => ({
+						account_ref: ref,
+						account_no: `0${i}0_****000${i}`,
+					})),
+					edges: refs.map((ref, i) =>
+						graphEdge(i + 1, ref, refs[(i + 1) % refs.length], `1${i}:00`),
+					),
+					returned_transaction_count: 5,
+					total_transaction_count: 5,
+					truncated: false,
+				}),
+			),
+		)
+		renderApp("/cases/CASE-2022-001001")
+		const route = await screen.findByRole("figure", { name: /^경로 1:/ })
+		const rows = within(route).getAllByRole("list")
+		expect(rows).toHaveLength(2)
+		// 첫 줄 3단계, 둘째 줄 2단계 — 단계 번호는 이어져요
+		expect(within(rows[0]).getAllByRole("listitem")).toHaveLength(3)
+		expect(within(rows[1]).getAllByRole("listitem")).toHaveLength(2)
+		expect(within(rows[1]).getByText(/04 · 경유 거래/)).toBeInTheDocument()
+		expect(within(rows[1]).getByText("대상 계좌 복귀")).toBeInTheDocument()
+	})
 	it("R04_CYCLE 이 아닌 케이스는 돌아온 길이 있어도 전체 그래프를 먼저 보여 준다 (SCRUM-296)", async () => {
 		// REVIEWING 케이스의 경보는 R02_FAN_IN_24H — 그래프에 A → B → A 길이 있어도 경로 지도를 띄우지 않아요
 		const graphEdge = (id, source, target, ts) => ({

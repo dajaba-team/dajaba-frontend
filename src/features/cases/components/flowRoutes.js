@@ -68,6 +68,19 @@ export function findReturnRoutes(edges, targetRef) {
 	return exhausted ? [] : routes
 }
 
+// 한 줄에 놓는 단계 수. 이보다 길면 경로가 하나여도 다음 줄로 이어 그려요(가로 스크롤 없음).
+// 다음 줄은 앞 줄 마지막 계좌를 "이어서"로 한 번 더 놓고 시작해요.
+export const STEPS_PER_ROW = 3
+
+/** 경로를 STEPS_PER_ROW 단계씩 줄로 나눠요. 줄마다 { start, hops } — start 는 첫 단계의 순번(0부터). */
+export function routeRows(route) {
+	const rows = []
+	for (let start = 0; start < route.length; start += STEPS_PER_ROW) {
+		rows.push({ start, hops: route.slice(start, start + STEPS_PER_ROW) })
+	}
+	return rows
+}
+
 /** 시각 "2022-10-31T10:14:00" → "10:14" */
 export function hopTime(ts) {
 	const match = /T(\d{2}:\d{2})/.exec(String(ts ?? ""))

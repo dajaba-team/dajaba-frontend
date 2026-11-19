@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest"
 import {
 	MAX_CHECKED,
+	STEPS_PER_ROW,
 	findReturnRoutes,
 	hopKind,
 	hopTime,
+	routeRows,
 } from "../features/cases/components/flowRoutes"
 
 const edge = (transactionId, source, target, time, scope = "EVIDENCE") => ({
@@ -147,5 +149,16 @@ describe("경로 지도 — 대상 계좌로 돌아온 길 찾기 (SCRUM-280)", 
 			edge(2, "B", "A", "10:02"),
 		]
 		expect(findReturnRoutes(fan, "A")).toEqual([])
+	})
+
+	it(`경로는 ${STEPS_PER_ROW}단계씩 줄로 나눠 그린다 — 경로가 하나여도 (SCRUM-296)`, () => {
+		const route = [1, 2, 3, 4, 5].map((id) => edge(id, "A", "B", "10:00"))
+		expect(
+			routeRows(route).map((row) => [row.start, row.hops.map((e) => e.transactionId)]),
+		).toEqual([
+			[0, [1, 2, 3]],
+			[3, [4, 5]],
+		])
+		expect(routeRows(route.slice(0, 3))).toHaveLength(1)
 	})
 })
