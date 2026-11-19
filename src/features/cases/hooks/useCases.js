@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { casesApi } from "../api/casesApi"
-import { getErrorCode } from "../../../shared/api/apiClient"
+import { getErrorCode, isNoResponse } from "../../../shared/api/apiClient"
 
 export const caseKey = (caseNo) => ["case", caseNo]
 
@@ -91,7 +91,8 @@ export function useCaseCommand(caseNo, name) {
 		},
 		onError: (error, _input, context) => {
 			if (context?.session !== client.getQueryData(["auth", "me"])) return
-			if (REFETCH_ON.includes(getErrorCode(error))) void refresh()
+			// 응답 없이 끊긴 쓰기는 서버에서 처리됐을 수 있어 최신 상태를 먼저 읽어요(계약서 2.6, 03_api.md §4).
+			if (REFETCH_ON.includes(getErrorCode(error)) || isNoResponse(error)) void refresh()
 		},
 	})
 }

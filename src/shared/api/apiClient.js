@@ -12,7 +12,7 @@ export const apiClient = axios.create({
 	xsrfHeaderName: "X-XSRF-TOKEN",
 })
 
-// AI를 기다리는 요청(초안 생성·검증)은 백엔드 한도 90초(재시도 포함) + 여유. 03_api.md §4, FE-8 〔확인 필요: 프록시 한도〕
+// AI를 기다리는 요청(요약 갱신 A7·초안 생성 S1·검증 S5)은 백엔드 한도 90초(재시도 포함) + 여유. 03_api.md §4, 계약서 2.6, FE-8 〔확인 필요: 프록시 한도〕
 export const AI_REQUEST_TIMEOUT_MS = 100_000
 
 export function isNoResponse(error) {

@@ -1,4 +1,4 @@
-import { apiClient } from "../../../shared/api/apiClient"
+import { AI_REQUEST_TIMEOUT_MS, apiClient } from "../../../shared/api/apiClient"
 
 // 케이스 API — 프론트 API 계약서 v0.2 C1~C8·A1~A7, CASES 명세 API-01~13·15.
 // 백엔드 CaseController(SCRUM-106)와 같은 경로·모양이에요. 메모(A3)·메모 이력(C8)은 SCRUM-176, 요약(A7·C7)은 SCRUM-175.
@@ -300,9 +300,16 @@ export const casesApi = {
 		}
 	},
 	/** 메모 저장(A3). 같은 내용이면 서버가 그대로 두고(version 안 오름), 빈 문자열은 비우기. */
-	/** AI 조사 요약 생성·갱신(A7) → 201 { case_no, summary, case_version }. 실패(502 등)면 기존 요약은 그대로예요. */
+	/**
+	 * AI 조사 요약 생성·갱신(A7) → 201 { case_no, summary, case_version }. 실패(502 등)면 기존 요약은 그대로예요.
+	 * 백엔드가 AI를 최대 90초 기다려서 기본 15초가 아니라 AI 전용 timeout(계약서 2.6, SCRUM-315).
+	 */
 	refreshSummary: async ({ caseNo, version }) => {
-		const { data } = await apiClient.post(`${casePath(caseNo)}/refresh-summary`, { version })
+		const { data } = await apiClient.post(
+			`${casePath(caseNo)}/refresh-summary`,
+			{ version },
+			{ timeout: AI_REQUEST_TIMEOUT_MS },
+		)
 		return {
 			caseNo: data.case_no,
 			summary: toSummary(data.summary),
