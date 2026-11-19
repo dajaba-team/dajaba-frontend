@@ -366,18 +366,43 @@
 .focus-case {
 	--band: var(--risk-none);
 	--band-on: var(--risk-none-on);
+	--band-soft: var(--risk-none-soft);
+	--band-ink: var(--risk-none-ink);
 }
 .focus-case[data-band="HIGH"] {
 	--band: var(--risk-high);
 	--band-on: var(--risk-high-on);
+	--band-soft: var(--risk-high-soft);
+	--band-ink: var(--risk-high-ink);
 }
 .focus-case[data-band="MEDIUM"] {
 	--band: var(--risk-medium);
 	--band-on: var(--risk-medium-on);
+	--band-soft: var(--risk-medium-soft);
+	--band-ink: var(--risk-medium-ink);
 }
 .focus-case[data-band="LOW"] {
 	--band: var(--risk-low);
 	--band-on: var(--risk-low-on);
+	--band-soft: var(--risk-low-soft);
+	--band-ink: var(--risk-low-ink);
+}
+/* 점수 막대 — 케이스 정보와 점수 사이 빈 공간을 채운다 */
+.case-meter {
+	flex: 1;
+	min-width: 80px;
+	max-width: 420px;
+	height: 6px;
+	margin: 0 12px 0 auto;
+	border-radius: 999px;
+	background: var(--color-soft);
+	overflow: hidden;
+}
+.case-meter i {
+	display: block;
+	height: 100%;
+	border-radius: inherit;
+	background: var(--band);
 }
 .focus-case:hover {
 	background: var(--color-table-head);
@@ -388,13 +413,13 @@
 	width: 44px;
 	height: 44px;
 	flex-shrink: 0;
-	color: var(--band-on);
-	background: var(--band);
+	color: var(--band-ink);
+	background: var(--band-soft);
 	border-radius: 13px;
 }
 .case-identity {
 	min-width: 0;
-	flex: 1;
+	flex: 0 1 260px;
 }
 .case-identity a {
 	font: 700 13px var(--mono);
@@ -419,6 +444,7 @@
 	white-space: nowrap;
 }
 .case-score-main {
+	width: 4.5rem;
 	text-align: right;
 }
 /* 배지는 점수·상태 두 줄의 세로 가운데에 */
@@ -429,7 +455,10 @@
 	justify-content: flex-end;
 }
 .band-badge {
-	padding: 3px 9px;
+	box-sizing: border-box;
+	width: 5.25rem;
+	padding: 3px 0;
+	text-align: center;
 	color: var(--band-on);
 	background: var(--band);
 	border-radius: 999px;
@@ -601,6 +630,9 @@
 	}
 	.case-identity {
 		flex-basis: calc(100% - 62px);
+	}
+	.case-meter {
+		display: none;
 	}
 	.case-score {
 		flex: 1;
