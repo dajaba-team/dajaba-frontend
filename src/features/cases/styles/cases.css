@@ -1076,19 +1076,20 @@
 	line-height: 1.5;
 	text-align: center;
 }
+/* 선은 배경 높이(1.5px)가 아니라 테두리로 — 줄 위치가 픽셀 사이에 걸려도 굵기가 줄마다 같게 그려져요 */
 .route-hop i {
 	position: relative;
 	display: block;
 	justify-self: stretch;
-	height: 1.5px;
+	height: 0;
 	margin: 0.25rem 0;
-	background: #879cbb;
+	border-top: 1.5px solid #879cbb;
 }
 .route-hop i::after {
 	content: "";
 	position: absolute;
 	inset-inline-end: 0;
-	inset-block-start: -2.5px;
+	inset-block-start: -4px;
 	width: 5px;
 	height: 5px;
 	border: solid #7187a9;
