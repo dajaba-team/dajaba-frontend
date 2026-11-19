@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { casesApi } from "../features/cases/api/casesApi"
 import { resetCases } from "../mocks/handlers"
 
@@ -38,11 +39,16 @@ function filesUnder(dir) {
 		return statSync(path).isDirectory() ? filesUnder(path) : [path]
 	})
 }
-const SOURCES = ["src/mocks", "src/test", "src/features/cases"]
+// 이 파일 기준 경로라 어느 폴더에서 테스트를 돌려도 같은 곳을 읽어요.
+const SOURCES = ["../mocks", "../test", "../features/cases"]
+	.map((dir) => fileURLToPath(new URL(dir, import.meta.url)))
 	.flatMap(filesUnder)
 	.filter((path) => /\.(js|jsx)$/.test(path))
 
 describe("목업 규칙 — 계약서 2.4·5.7", () => {
+	it("검사할 파일을 실제로 읽는다 — 경로가 틀려 빈 목록이면 아래 검사가 늘 통과해 버려요", () => {
+		expect(SOURCES.length).toBeGreaterThan(10)
+	})
 	it("룰 이름은 v2 — _24H 같은 예전 이름을 쓰지 않는다", () => {
 		const hits = SOURCES.filter((path) => /R0\d_[A-Z_]*_24H/.test(readFileSync(path, "utf8")))
 		expect(hits).toEqual([])
