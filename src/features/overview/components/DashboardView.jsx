@@ -5,7 +5,7 @@ import DashboardHero from "../../../shared/ui/dashboard/DashboardHero"
 import CountUp from "../../../shared/ui/dashboard/CountUp"
 import Icon from "../../../shared/ui/dashboard/Icon"
 import { STATUS_LABELS } from "../../cases/labels"
-import { riskCounts, riskNames, riskColors, demoTrend } from "../model/analytics"
+import { bandColor, riskCounts, riskNames, riskColors, demoTrend } from "../model/analytics"
 
 export default function DashboardView({
 	items,
@@ -18,7 +18,7 @@ export default function DashboardView({
 	dark = false,
 	hero = null,
 }) {
-	const [mode, setMode] = useState("status")
+	const [mode, setMode] = useState("score")
 	const [period, setPeriod] = useState(10)
 	const [replay, setReplay] = useState(0)
 	const counts = useMemo(() => riskCounts(items), [items])
@@ -73,8 +73,8 @@ export default function DashboardView({
 					{
 						label: "조사 우선순위 점수",
 						data: scored.map((i) => i.score),
-						backgroundColor: "--brand-primary",
-						maxBarThickness: 32,
+						backgroundColor: scored.map((i) => bandColor(i.scoreBand)),
+						maxBarThickness: 18,
 					},
 				],
 			}
@@ -115,7 +115,6 @@ export default function DashboardView({
 				/>
 			)}
 			<div className="dashboard-section-label">
-				<span>WORKSPACE AT A GLANCE</span>
 				<button onClick={() => setReplay((v) => v + 1)}>
 					<Icon name="refresh" size={13} /> 효과 다시 재생
 				</button>
@@ -160,9 +159,6 @@ export default function DashboardView({
 				<section className="analytics-panel trend-panel">
 					<div className="analytics-head">
 						<div>
-							<span className="panel-kicker">
-								{demo ? "TRANSACTION ACTIVITY" : "INVESTIGATION ACTIVITY"}
-							</span>
 							<h2>
 								{demo
 									? "거래 흐름"
@@ -183,8 +179,8 @@ export default function DashboardView({
 										[5, "최근 5일"],
 									]
 								: [
-										["status", "업무 현황"],
 										["score", "우선순위"],
+										["status", "업무 현황"],
 									]
 							).map(([v, t]) => (
 								<button
@@ -209,7 +205,7 @@ export default function DashboardView({
 							/>
 							<small>건 {demo ? "· 합성 예시" : "조회"}</small>
 						</strong>
-						<span>{demo ? `2022.09.${11 - period} — 09.10` : "CASE SNAPSHOT"}</span>
+						{demo && <span>{`2022.09.${11 - period} — 09.10`}</span>}
 					</div>
 					<div
 						className="trend-canvas chart-transition"
@@ -220,6 +216,7 @@ export default function DashboardView({
 								type={demo ? "line" : "bar"}
 								data={trend}
 								ratio={!demo && mode === "score"}
+								horizontal={!demo && mode === "score"}
 								dark={dark}
 								replay={replay}
 								label={trend.labels
@@ -234,7 +231,6 @@ export default function DashboardView({
 				<section className="analytics-panel risk-panel">
 					<div className="analytics-head">
 						<div>
-							<span className="panel-kicker">RISK DISTRIBUTION</span>
 							<h2>위험 등급 분포</h2>
 							<p>{scope}</p>
 						</div>
@@ -254,7 +250,7 @@ export default function DashboardView({
 							<strong>
 								<CountUp value={items.length} replay={replay} />
 							</strong>
-							<span>CASES IN VIEW</span>
+							<span>건</span>
 						</div>
 					</div>
 					<div className="risk-legend">
@@ -274,7 +270,6 @@ export default function DashboardView({
 			<section className="analytics-panel focus-panel">
 				<div className="analytics-head">
 					<div>
-						<span className="panel-kicker">YOUR NEXT MOVE</span>
 						<h2>조사를 이어갈 케이스</h2>
 					</div>
 					<Link className="text-link" to={listPath}>

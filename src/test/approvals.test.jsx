@@ -67,7 +67,7 @@ describe("승인함 — 목록", () => {
 		expect(within(row).getByText(/통과 · 수정본 1/)).toBeInTheDocument()
 		for (const name of ["승인", "보완 요청", "보고 안 함"])
 			expect(within(row).getByRole("button", { name })).toBeInTheDocument()
-		expect(screen.getByText(/전체 1건/)).toBeInTheDocument()
+		expect(screen.getByRole("navigation", { name: "페이지" })).toHaveTextContent("전체 1건")
 	})
 
 	it("관리자는 목록만 보고 승인·반려 버튼이 없다", async () => {

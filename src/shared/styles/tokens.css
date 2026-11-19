@@ -81,6 +81,9 @@
 	--brand-light: #8cd2f5;
 	--brand-navy: #00236e;
 	--chart-neutral: #dfe5ef;
+	/* HIGH 위험 강조색 — 브랜드 파랑(#0046ff)과 채도를 맞춘 산호빛 빨강 (SCRUM-285) */
+	--risk-high: #f04452;
+	--risk-high-soft: #ffeef0;
 	--color-surface-raised: #fff;
 	--app: var(--color-canvas);
 	--surface: var(--color-surface);
@@ -118,4 +121,6 @@
 	--color-control-border: #536681;
 	--color-primary-soft: #18376b;
 	--chart-neutral: #42536d;
+	--risk-high: #ff6b75;
+	--risk-high-soft: #3a1f2a;
 }

@@ -53,7 +53,7 @@
 .dashboard-section-label {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
+	justify-content: flex-end;
 	margin: 28px 2px 14px;
 	color: var(--color-muted);
 	font: 600 11px var(--mono);
@@ -135,8 +135,8 @@
 	background: var(--color-primary-soft);
 }
 .signal-kpi:nth-child(2) .metric-label svg {
-	color: var(--warning);
-	background: var(--warning-soft);
+	color: var(--risk-high);
+	background: var(--risk-high-soft);
 }
 .signal-kpi:nth-child(3) .metric-label svg {
 	color: var(--brand-royal);
@@ -236,12 +236,6 @@
 	margin: 4px 0 0;
 	font-size: 12px;
 	color: var(--color-muted);
-}
-.panel-kicker {
-	display: block;
-	font: 600 10px var(--mono);
-	color: var(--color-muted);
-	letter-spacing: 0.12em;
 }
 .chart-period {
 	display: flex;
@@ -398,6 +392,12 @@
 }
 .case-score {
 	margin-right: 20px;
+}
+/* 대시보드 케이스 줄 — 점수·상태를 오른쪽 정렬하고 폭을 고정해 줄마다 끝선이 맞게 (SCRUM-285) */
+.focus-case .case-score {
+	min-width: 7.5rem;
+	text-align: right;
+	white-space: nowrap;
 }
 .case-score strong {
 	font-size: 22px;

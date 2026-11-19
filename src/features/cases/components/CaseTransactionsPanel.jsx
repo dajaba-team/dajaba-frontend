@@ -5,6 +5,7 @@ import { useCaseTransactions } from "../hooks/useCases"
 import { formatAmount } from "./caseMoney"
 import EvidenceDialog from "./EvidenceDialog"
 import { DIRECTION_LABELS } from "../labels"
+import Pagination from "../../../shared/ui/Pagination"
 
 // 근거 거래 표 — 계약서 C3 `GET /cases/{case_no}/transactions`. 근거(EVIDENCE)와 참고(CONTEXT)는 탭을 나눠요.
 // 탭은 부모(CaseEvidenceCard)가 들고 scope 로 내려 줘요 — 범위가 바뀌면 key 로 새로 그려 1페이지부터.
@@ -98,21 +99,14 @@ export default function CaseTransactionsPanel({ caseNo, scope = "EVIDENCE" }) {
 					</p>
 				))}
 			{data && data.totalPages > 1 && (
-				<nav className="case-pagination" aria-label="거래 페이지">
-					<button type="button" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-						이전
-					</button>
-					<span>
-						{page} / {data.totalPages} (전체 {data.total}건)
-					</span>
-					<button
-						type="button"
-						disabled={page >= data.totalPages}
-						onClick={() => setPage(page + 1)}
-					>
-						다음
-					</button>
-				</nav>
+				<Pagination
+					label="거래 페이지"
+					page={page}
+					totalPages={data.totalPages}
+					total={data.total}
+					size={data.size}
+					onChange={setPage}
+				/>
 			)}
 			{opened != null && (
 				<EvidenceDialog

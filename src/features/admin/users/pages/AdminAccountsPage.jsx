@@ -6,6 +6,7 @@ import { AsyncState } from "../../../../shared/ui/AsyncState"
 import { useSession } from "../../../auth/hooks/useSession"
 import { adminUsersApi } from "../api/adminUsersApi"
 import { ROLE_LABELS, ROLE_SWAP } from "../accountRules"
+import Pagination from "../../../../shared/ui/Pagination"
 import {
 	ActiveToggleDialog,
 	ChangeRoleDialog,
@@ -184,25 +185,15 @@ export default function AdminAccountsPage() {
 						<p>{active ? "활성 계정이 없어요." : "비활성 계정이 없어요."}</p>
 					))}
 				{data && data.totalPages > 1 && (
-					<nav className="case-pagination" aria-label="계정 페이지">
-						<button
-							type="button"
-							disabled={page <= 1}
-							onClick={() => setPage(page - 1)}
-						>
-							이전
-						</button>
-						<span>
-							{page} / {data.totalPages} (전체 {data.total}명)
-						</span>
-						<button
-							type="button"
-							disabled={page >= data.totalPages}
-							onClick={() => setPage(page + 1)}
-						>
-							다음
-						</button>
-					</nav>
+					<Pagination
+						label="계정 페이지"
+						unit="명"
+						page={page}
+						totalPages={data.totalPages}
+						total={data.total}
+						size={data.size}
+						onChange={setPage}
+					/>
 				)}
 			</section>
 			{dialog?.type === "create" && <CreateAccountDialog onClose={close} />}
