@@ -65,6 +65,13 @@ function fieldErrorsOf(error) {
 	const details = error.response.data.error.details ?? {}
 	const errors = {}
 	for (const [key, message] of Object.entries(details)) {
+		// 쿼리 타입 오류(주소를 손으로 고쳐 없는 action·target_type 값 등)는 { parameter: "action" } 처럼
+		// 칸 이름이 값으로 와요(BE #76) — 그 칸에 붙여요.
+		if (key === "parameter") {
+			if (typeof message === "string" && message)
+				errors[DETAIL_FIELD[message] ?? message] ??= "값을 확인해 주세요."
+			continue
+		}
 		const field = DETAIL_FIELD[key] ?? key
 		errors[field] = typeof message === "string" ? message : "형식을 확인해 주세요."
 	}
@@ -103,7 +110,13 @@ function FilterForm({ tab, applied, errors = {}, onApply, onReset }) {
 					<div key={field.key} className="audit-field">
 						<label htmlFor={id}>{field.label}</label>
 						{field.options ? (
-							<select id={id} value={draft[field.key]} onChange={set(field.key)}>
+							<select
+								id={id}
+								value={draft[field.key]}
+								aria-invalid={error ? true : undefined}
+								aria-describedby={error ? `${id}-error` : undefined}
+								onChange={set(field.key)}
+							>
 								<option value="">전체</option>
 								{Object.entries(field.options).map(([value, label]) => (
 									<option key={value} value={value}>

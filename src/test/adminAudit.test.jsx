@@ -198,6 +198,27 @@ describe("접근 기록 탭", () => {
 		// 입력은 그대로 남아 고쳐서 다시 조회할 수 있다
 		expect(targetId).toHaveValue("DRF-000001")
 	})
+	it("400 details.parameter(쿼리 타입 오류)는 그 값이 가리키는 칸 아래에 '값을 확인해 주세요'", async () => {
+		server.use(
+			http.get("*/api/v1/admin/access-logs", () =>
+				HttpResponse.json(
+					{
+						error: {
+							code: "INVALID_REQUEST",
+							message: "요청 파라미터가 올바르지 않습니다",
+							details: { parameter: "action" },
+						},
+					},
+					{ status: 400 },
+				),
+			),
+		)
+		renderApp("/admin/audit?tab=access&action=NOPE")
+		const form = await screen.findByRole("form", { name: "접근 기록 필터" })
+		const action = within(form).getByLabelText("동작")
+		await waitFor(() => expect(action).toHaveAttribute("aria-invalid", "true"))
+		expect(action).toHaveAccessibleDescription("값을 확인해 주세요.")
+	})
 	it("관리자가 아니면 화면을 볼 수 없다", async () => {
 		renderApp("/admin/audit", "inv01")
 		expect(await screen.findByRole("heading", { name: "권한이 없어요" })).toBeInTheDocument()
