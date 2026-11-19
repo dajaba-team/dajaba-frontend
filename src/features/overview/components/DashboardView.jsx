@@ -248,29 +248,43 @@ export default function DashboardView({
 					</Link>
 				</div>
 				{items.length ? (
-					items.slice(0, 3).map((item) => (
-						<div className="focus-case" key={item.caseNo}>
-							<div className="case-symbol">
-								<Icon name="alert" size={22} />
+					items.slice(0, 3).map((item) => {
+						// 점수가 없으면 등급도 보이지 않게 — 미산출을 고위험처럼 칠하지 않는다.
+						const band =
+							item.score != null && ["HIGH", "MEDIUM", "LOW"].includes(item.scoreBand)
+								? item.scoreBand
+								: null
+						return (
+							<div
+								className="focus-case"
+								data-band={band ?? "NONE"}
+								key={item.caseNo}
+							>
+								<div className="case-symbol">
+									<Icon name="alert" size={22} />
+								</div>
+								<div className="case-identity">
+									<Link to={casePath(item.caseNo)}>{item.caseNo}</Link>
+									<span>
+										{item.accountNo ?? "계좌 정보 없음"} ·{" "}
+										{item.assignee?.displayName ?? "미배정"}
+									</span>
+								</div>
+								<div className="case-score">
+									<div className="case-score-main">
+										{band && <em className="band-badge">{band}</em>}
+										<strong>
+											{item.score == null ? "미산출" : item.score.toFixed(2)}
+										</strong>
+									</div>
+									<span>{STATUS_LABELS[item.status] ?? item.status}</span>
+								</div>
+								<Link className="case-open" to={casePath(item.caseNo)}>
+									지금 확인 <Icon name="arrow" size={14} />
+								</Link>
 							</div>
-							<div className="case-identity">
-								<Link to={casePath(item.caseNo)}>{item.caseNo}</Link>
-								<span>
-									{item.accountNo ?? "계좌 정보 없음"} ·{" "}
-									{item.assignee?.displayName ?? "미배정"}
-								</span>
-							</div>
-							<div className="case-score">
-								<strong>
-									{item.score == null ? "미산출" : item.score.toFixed(2)}
-								</strong>
-								<span>{STATUS_LABELS[item.status] ?? item.status}</span>
-							</div>
-							<Link className="case-open" to={casePath(item.caseNo)}>
-								지금 확인 <Icon name="arrow" size={14} />
-							</Link>
-						</div>
-					))
+						)
+					})
 				) : (
 					<p className="dashboard-empty">조회 가능한 케이스가 없습니다.</p>
 				)}

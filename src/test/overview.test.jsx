@@ -40,6 +40,13 @@ describe("일반 대시보드의 데이터 범위", () => {
 		expect(
 			screen.getByRole("heading", { name: "지금 바로 확인해야 할 케이스" }),
 		).toBeInTheDocument()
+		// 확인할 케이스 줄: 점수 있는 케이스만 등급 배지, 미산출은 배지·등급색 없음
+		const rows = document.querySelectorAll(".focus-case")
+		expect(rows[0]).toHaveAttribute("data-band", "HIGH")
+		expect(within(rows[0]).getByText("HIGH")).toBeInTheDocument()
+		expect(rows[1]).toHaveAttribute("data-band", "NONE")
+		expect(rows[1].querySelector(".band-badge")).toBeNull()
+		expect(rows[2]).toHaveAttribute("data-band", "LOW")
 		expect(screen.getByRole("link", { name: "CASE-HIGH" })).toHaveAttribute(
 			"href",
 			"/cases/CASE-HIGH",

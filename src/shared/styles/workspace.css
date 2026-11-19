@@ -361,6 +361,24 @@
 	border-top: 1px solid var(--color-border);
 	transition: background-color 0.15s ease;
 }
+/* 확인할 케이스 줄 — 아이콘·등급 배지·버튼을 위험 등급 색으로 (도넛과 같은 계열) */
+.focus-case {
+	--band: var(--color-muted);
+	--band-soft: var(--color-soft);
+}
+.focus-case[data-band="HIGH"] {
+	--band: var(--risk-high);
+	--band-soft: var(--risk-high-soft);
+}
+.focus-case[data-band="MEDIUM"] {
+	--band: var(--brand-primary);
+	--band-soft: var(--color-primary-soft);
+}
+/* LOW 는 도넛의 연하늘(--brand-light)이 글자색으로는 너무 옅어 한 톤 진하게 */
+.focus-case[data-band="LOW"] {
+	--band: #2a8fc9;
+	--band-soft: #e6f5fd;
+}
 .focus-case:hover {
 	background: var(--color-table-head);
 }
@@ -370,8 +388,8 @@
 	width: 44px;
 	height: 44px;
 	flex-shrink: 0;
-	color: var(--risk-high);
-	background: var(--risk-high-soft);
+	color: var(--band);
+	background: var(--band-soft);
 	border-radius: 13px;
 }
 .case-identity {
@@ -399,6 +417,23 @@
 	text-align: right;
 	white-space: nowrap;
 }
+.case-score-main {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	justify-content: flex-end;
+}
+.band-badge {
+	padding: 3px 9px;
+	color: var(--band);
+	background: var(--band-soft);
+	border: 1px solid color-mix(in srgb, var(--band) 30%, transparent);
+	border-radius: 999px;
+	font-size: 11px;
+	font-style: normal;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+}
 .case-score strong {
 	font-size: 22px;
 	font-weight: 600;
@@ -409,8 +444,8 @@
 	align-items: center;
 	gap: 15px;
 	padding: 9px 14px;
-	color: var(--brand-primary);
-	background: var(--color-primary-soft);
+	color: var(--band, var(--brand-primary));
+	background: var(--band-soft, var(--color-primary-soft));
 	text-decoration: none;
 	border-radius: 10px;
 	font-size: 12px;
@@ -422,7 +457,7 @@
 }
 .case-open:hover {
 	color: #fff;
-	background: var(--brand-primary);
+	background: var(--band, var(--brand-primary));
 }
 .text-link {
 	display: flex;
