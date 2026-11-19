@@ -33,7 +33,7 @@ const detailJson = (fields = {}) => ({
 	case_no: REVIEWING,
 	status: "REVIEWING",
 	account_ref: "ACR-0004",
-	account_no: "011_****1021",
+	account_no: "11_****1021",
 	assignee: { login_id: "inv01", display_name: "예시 inv01" },
 	score: null,
 	rejection_reason_code: null,
@@ -174,7 +174,7 @@ describe("케이스 조사", () => {
 		renderApp()
 		const link = await screen.findByRole("link", { name: REVIEWING })
 		const row = link.closest("tr")
-		expect(within(row).getByText("011_****1021")).toBeInTheDocument()
+		expect(within(row).getByText("11_****1021")).toBeInTheDocument()
 		expect(within(row).getByText("조사 중")).toBeInTheDocument()
 		expect(within(row).getByText("예시 inv01")).toBeInTheDocument()
 		const pager = screen.getByRole("navigation", { name: "페이지" })
@@ -436,7 +436,7 @@ describe("케이스 조사", () => {
 							case_no: REVIEWING,
 							status: "REVIEWING",
 							account_ref: "ACR-0004",
-							account_no: "011_****1021",
+							account_no: "11_****1021",
 							assignee: { login_id: "inv01", display_name: "예시 inv01" },
 							score: 0.91,
 							rejection_reason_code: null,
@@ -637,7 +637,7 @@ describe("케이스 조사", () => {
 		renderApp(`/cases/${REVIEWING}`)
 		const panel = await screen.findByRole("region", { name: "연결 경보" })
 		expect(within(panel).getByText("ALT-20221101-000104")).toBeInTheDocument()
-		expect(within(panel).getByText("R02_FAN_IN_24H")).toBeInTheDocument()
+		expect(within(panel).getByText("R02_FAN_IN")).toBeInTheDocument()
 		// 데이터 시각은 시간대를 붙이지 않고 받은 그대로(T만 공백)
 		expect(
 			within(panel).getByText("2022-10-31 00:00:00 ~ 2022-11-01 00:00:00"),
@@ -1001,7 +1001,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		)
 		const graph = await screen.findByRole("group", { name: /거래 4건/ })
 		expect(within(graph).getAllByTestId("graph-edge")).toHaveLength(4)
-		expect(within(graph).getByText("011_****1021 (대상)")).toBeInTheDocument()
+		expect(within(graph).getByText("11_****1021 (대상)")).toBeInTheDocument()
 		expect(screen.getByText("유입 2건")).toBeInTheDocument()
 
 		await user.click(screen.getByRole("button", { name: "근거 거래" }))
@@ -1025,7 +1025,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 	it("그래프의 계좌는 Tab으로 옮기고 Enter로 고정·해제할 수 있다", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
 		const graph = await screen.findByRole("group", { name: /거래 4건/ })
-		const target = within(graph).getByRole("button", { name: /011_\*{4}1021 \(조사 대상\)/ })
+		const target = within(graph).getByRole("button", { name: /11_\*{4}1021 \(조사 대상\)/ })
 		act(() => target.focus())
 		expect(screen.getByText(/이 그림에서 보낸 거래/)).toBeInTheDocument()
 		await user.keyboard("{Enter}")
@@ -1086,7 +1086,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 	it("대상 계좌로 돌아온 돈은 경로 지도와 경로 거래 표로 보여 준다 (SCRUM-280)", async () => {
 		renderApp("/cases/CASE-2022-001001")
 		const route = await screen.findByRole("figure", {
-			name: "경로 1: 010_****8842 → 021_****7F12 → 033_****A901 → 010_****8842",
+			name: "경로 1: 10_****8842 → 21_****7F12 → 33_****A901 → 10_****8842",
 		})
 		expect(within(route).getByText("3단계 · 대상 계좌 복귀")).toBeInTheDocument()
 		expect(within(route).getByText("대상 계좌 복귀")).toBeInTheDocument()
@@ -1141,7 +1141,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		expect(within(rows[1]).getByText("대상 계좌 복귀")).toBeInTheDocument()
 	})
 	it("R04_CYCLE 이 아닌 케이스는 돌아온 길이 있어도 전체 그래프를 먼저 보여 준다 (SCRUM-296)", async () => {
-		// REVIEWING 케이스의 경보는 R02_FAN_IN_24H — 그래프에 A → B → A 길이 있어도 경로 지도를 띄우지 않아요
+		// REVIEWING 케이스의 경보는 R02_FAN_IN — 그래프에 A → B → A 길이 있어도 경로 지도를 띄우지 않아요
 		const graphEdge = (id, source, target, ts) => ({
 			transaction_id: id,
 			source,
@@ -1156,8 +1156,8 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 			http.get(`*/api/v1/cases/${REVIEWING}/graph`, () =>
 				HttpResponse.json({
 					nodes: [
-						{ account_ref: "ACR-0004", account_no: "011_****1021" },
-						{ account_ref: "ACR-102", account_no: "020_****2020" },
+						{ account_ref: "ACR-0004", account_no: "11_****1021" },
+						{ account_ref: "ACR-102", account_no: "20_****2020" },
 					],
 					edges: [
 						graphEdge(1, "ACR-0004", "ACR-102", "2022-10-31T09:00:00"),
@@ -1192,8 +1192,8 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 			http.get(`*/api/v1/cases/${REVIEWING}/graph`, () =>
 				HttpResponse.json({
 					nodes: [
-						{ account_ref: "ACR-0004", account_no: "011_****1021" },
-						{ account_ref: "ACR-102", account_no: "020_****2020" },
+						{ account_ref: "ACR-0004", account_no: "11_****1021" },
+						{ account_ref: "ACR-102", account_no: "20_****2020" },
 					],
 					edges: [
 						{
@@ -1323,7 +1323,7 @@ describe("케이스 목록 필터 (SCRUM-181)", () => {
 			case_no: caseNo,
 			status: "REJECTED",
 			account_ref: "ACR-9",
-			account_no: "010_****0009",
+			account_no: "10_****0009",
 			assignee: { login_id: "inv01", display_name: "예시 inv01" },
 			score: 0.9,
 			rejection_reason_code: code,

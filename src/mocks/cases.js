@@ -14,7 +14,7 @@ const history = (action, from, to, by, minute, comment = null) => ({
 	created_at: at(minute),
 })
 const user = (loginId) => ({ login_id: loginId, display_name: `예시 ${loginId}` })
-const alertOf = (index, ruleId = "R02_FAN_IN_24H") => ({
+const alertOf = (index, ruleId = "R02_FAN_IN") => ({
 	alert_no: `ALT-20221101-00010${index + 1}`,
 	rule_id: ruleId,
 	batch_date: "2022-11-01",
@@ -73,8 +73,8 @@ const tx = (id, minute, from, to, paid, received, direction, currency = "US Doll
 	direction,
 	scope: "EVIDENCE",
 })
-const ACCOUNT_1004 = ["ACR-0004", "011_****1021"]
-const OTHER = (n) => [`ACR-10${n}`, `0${n}0_****20${n}0`]
+const ACCOUNT_1004 = ["ACR-0004", "11_****1021"]
+const OTHER = (n) => [`ACR-10${n}`, `${n}0_****20${n}0`]
 const TRANSACTIONS_1004 = [
 	tx(4721, 0, OTHER(2), ACCOUNT_1004, 600, 600, "INBOUND"),
 	tx(4722, 10, OTHER(3), ACCOUNT_1004, 400, 400, "INBOUND"),
@@ -84,9 +84,9 @@ const TRANSACTIONS_1004 = [
 
 // 순환 거래 예시(CASE-2022-001001) — 대상 계좌에서 나간 돈이 두 계좌를 거쳐 돌아와요(A → B → C → A).
 // 화면의 경로 지도(자금 흐름 탭)가 이 모양을 그려요.
-const ACCOUNT_1001 = ["ACR-0001", "010_****8842"]
-const ROUTE_B = ["ACR-201", "021_****7F12"]
-const ROUTE_C = ["ACR-202", "033_****A901"]
+const ACCOUNT_1001 = ["ACR-0001", "10_****8842"]
+const ROUTE_B = ["ACR-201", "21_****7F12"]
+const ROUTE_C = ["ACR-202", "33_****A901"]
 const routeTx = (id, time, from, to, amount, currency, direction) => ({
 	...tx(id, 0, from, to, amount, amount, direction, currency),
 	ts: `2022-10-31T${time}:00`,
@@ -103,7 +103,7 @@ export function seedCases() {
 			case_no: "CASE-2022-001001",
 			status: "DRAFTED",
 			account_ref: "ACR-0001",
-			account_no: "010_****8842",
+			account_no: "10_****8842",
 			assignee: user("inv01"),
 			investigator_notes: "거래 목적 확인 필요",
 			current_draft_no: "DRF-000124",
@@ -132,7 +132,7 @@ export function seedCases() {
 			case_no: "CASE-2022-001002",
 			status: "OPEN",
 			account_ref: "ACR-0002",
-			account_no: "020_****1109",
+			account_no: "20_****1109",
 			assignee: null,
 			investigator_notes: null,
 			current_draft_no: null,
@@ -145,7 +145,7 @@ export function seedCases() {
 			case_no: "CASE-2022-001003",
 			status: "APPROVED",
 			account_ref: "ACR-0003",
-			account_no: "010_****5521",
+			account_no: "10_****5521",
 			assignee: user("inv01"),
 			investigator_notes: null,
 			current_draft_no: "DRF-000098",
@@ -158,7 +158,7 @@ export function seedCases() {
 			case_no: "CASE-2022-001004",
 			status: "REVIEWING",
 			account_ref: "ACR-0004",
-			account_no: "011_****1021",
+			account_no: "11_****1021",
 			assignee: user("inv01"),
 			investigator_notes: "거래 목적 확인 필요",
 			current_draft_no: null,

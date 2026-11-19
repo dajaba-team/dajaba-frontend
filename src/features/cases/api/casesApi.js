@@ -8,15 +8,17 @@ const casePath = (caseNo) => `/api/v1/cases/${encodeURIComponent(caseNo)}`
 
 const toUser = (data) => (data ? { loginId: data.login_id, displayName: data.display_name } : null)
 
-// 계좌는 서버가 가린 accountNo(010_****BD30)와 구별용 accountRef만 와요. 원본 account_key는 없어요(BE 미결 19).
+// 계좌는 서버가 가린 accountNo(10_****BD30)와 구별용 accountRef만 와요. 원본 account_key는 없어요(BE 미결 19).
 const toCaseSummary = (data) => ({
 	caseNo: data.case_no,
 	status: data.status,
 	accountRef: data.account_ref ?? null,
 	accountNo: data.account_no ?? null,
 	assignee: toUser(data.assignee),
+	// score 는 케이스 생성 당시 점수, scoreBand·policyVersion 은 지금 운영 정책으로 매긴 등급(정책 없으면 둘 다 null, 계약서 C1·BE #112).
 	score: data.score ?? null,
 	scoreBand: data.score_band ?? null,
+	policyVersion: data.policy_version ?? null,
 	rejectionReasonCode: data.rejection_reason_code ?? null,
 	version: data.version,
 	createdAt: data.created_at,
@@ -263,6 +265,8 @@ export const casesApi = {
 				target: edge.target,
 				amount: edge.amount,
 				currency: edge.currency,
+				// 금액 기준(RECEIVED 등) — 보낸·받은 금액이 다를 수 있어 어느 쪽인지 같이 와요(계약서 C5).
+				amountBasis: edge.amount_basis ?? null,
 				scope: edge.scope,
 				ts: edge.ts,
 			})),

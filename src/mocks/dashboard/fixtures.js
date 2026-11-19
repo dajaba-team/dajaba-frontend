@@ -18,14 +18,14 @@ export const users = {
 // 미결 19 결정(10/30): 화면에는 가린 계좌(은행ID_****끝4자리)만 쓰고, 계좌 구별은 account_ref로 합니다.
 // 원본 account_key(은행ID_계좌번호)는 fixture에도 넣지 않습니다.
 const accounts = {
-	target: { account_ref: "ACR-0001", masked_account_no: "010_****8842" },
-	crossBorder: { account_ref: "ACR-0002", masked_account_no: "020_****1109" },
-	structuring: { account_ref: "ACR-0003", masked_account_no: "010_****5521" },
-	in1: { account_ref: "ACR-0101", masked_account_no: "011_****1021" },
-	in2: { account_ref: "ACR-0102", masked_account_no: "070_****2034" },
-	in3: { account_ref: "ACR-0103", masked_account_no: "012_****3198" },
+	target: { account_ref: "ACR-0001", masked_account_no: "10_****8842" },
+	crossBorder: { account_ref: "ACR-0002", masked_account_no: "20_****1109" },
+	structuring: { account_ref: "ACR-0003", masked_account_no: "10_****5521" },
+	in1: { account_ref: "ACR-0101", masked_account_no: "11_****1021" },
+	in2: { account_ref: "ACR-0102", masked_account_no: "70_****2034" },
+	in3: { account_ref: "ACR-0103", masked_account_no: "12_****3198" },
 	out1: { account_ref: "ACR-0201", masked_account_no: "220_****7714" },
-	out2: { account_ref: "ACR-0202", masked_account_no: "010_****0912" },
+	out2: { account_ref: "ACR-0202", masked_account_no: "10_****0912" },
 }
 export const baseAlert = {
 	alert_no: "ALT-20220902-000142",
