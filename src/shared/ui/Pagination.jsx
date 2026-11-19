@@ -13,14 +13,16 @@ export default function Pagination({
 	onChange,
 }) {
 	const last = Math.max(totalPages, 1)
-	const from = total ? (page - 1) * size + 1 : 0
+	const from = (page - 1) * size + 1
 	const to = Math.min(page * size, total)
+	// 주소의 page 가 마지막 쪽보다 크면(?page=5 인데 2쪽뿐) 범위가 뒤집혀요 — 그땐 범위를 빼요.
+	const showRange = Boolean(size) && total > 0 && page <= last
 	return (
 		<nav className="pagination" aria-label={label}>
 			<p className="pagination-summary" aria-live="polite">
 				전체 <strong>{total}</strong>
 				{unit}
-				{size && total > 0 ? ` · ${from}–${to}` : ""}
+				{showRange ? ` · ${from}–${to}` : ""}
 			</p>
 			<div className="pagination-pages">
 				<button
