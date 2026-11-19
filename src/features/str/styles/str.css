@@ -299,3 +299,108 @@
 	font-size: var(--font-small);
 	white-space: nowrap;
 }
+
+/* ---- 머리글: 돌아가기 링크·상태 칩 (디버그성 한 줄 대신) ---- */
+.str-backlinks {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-4);
+	font-size: var(--font-small);
+}
+.str-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+	margin: var(--space-2) 0 0;
+	padding: 0;
+	list-style: none;
+}
+.str-chips li {
+	padding: 2px var(--space-2);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: 999px;
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.str-chips .str-chip-status {
+	border-color: var(--color-primary);
+	background: var(--color-primary-soft);
+	color: var(--color-primary-strong);
+	font-weight: 650;
+}
+.str-dirty {
+	color: var(--color-fail);
+	font-size: var(--font-small);
+	font-weight: 650;
+}
+
+/* ---- 변경 비교 (GitHub 리뷰처럼: 지운 곳 빨강 취소선, 더한 곳 초록) ---- */
+.str-review-bases {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+	margin-block-end: var(--space-3);
+	font-size: var(--font-small);
+}
+.str-review-summary {
+	margin-block: 0 var(--space-3);
+	font-weight: 650;
+}
+.str-review-list {
+	display: grid;
+	gap: var(--space-3);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.str-review-file {
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-control);
+	overflow: hidden;
+}
+.str-review-file header {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: var(--space-2) var(--space-3);
+	border-bottom: var(--border-width) solid var(--color-border);
+	background: var(--color-soft);
+}
+.str-diff-text {
+	margin: 0;
+	padding: var(--space-3);
+	line-height: 1.8;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+.str-diff-add {
+	background: color-mix(in srgb, var(--color-pass) 18%, transparent);
+	color: inherit;
+	text-decoration: none;
+	border-radius: 2px;
+}
+.str-diff-del {
+	background: color-mix(in srgb, var(--color-fail) 14%, transparent);
+	color: var(--color-fail);
+	text-decoration: line-through;
+	border-radius: 2px;
+}
+.str-badge-changed {
+	background: var(--color-primary-soft);
+	color: var(--color-primary-strong);
+}
+.str-review-same {
+	margin: var(--space-2) 0 0;
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.str-link-button {
+	margin-block-start: var(--space-3);
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--color-primary);
+	cursor: pointer;
+	font: inherit;
+	font-size: var(--font-small);
+}

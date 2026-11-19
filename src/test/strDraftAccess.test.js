@@ -134,8 +134,11 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 		])
 		expect(JSON.stringify(list)).not.toContain(BODY_SNIPPET)
 		const second = await strApi.getRevision(DRAFT_NO, 2)
-		expect(second.narrativeBefore[0].text).toContain("9월 3일")
-		expect(second.narrativeAfter[0].text).toContain("9월 2일")
+		// 전·후 모두 전체 본문 스냅샷(BE와 같음) — METHOD 항목만 바뀌어요
+		const methodOf = (narrative) => narrative.find((item) => item.section === "METHOD").text
+		expect(second.narrativeBefore).toHaveLength(2)
+		expect(methodOf(second.narrativeBefore)).toContain("9월 3일")
+		expect(methodOf(second.narrativeAfter)).toContain("9월 2일")
 		const original = await strApi.getRevision(DRAFT_NO, 1)
 		expect(original).toMatchObject({ editedBy: "SYSTEM", narrativeBefore: [] })
 	})

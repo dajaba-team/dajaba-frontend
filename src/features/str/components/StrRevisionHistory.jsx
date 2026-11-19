@@ -4,6 +4,8 @@ import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
 import { revisionLabel } from "../../../shared/str/revisionLabel"
 import { sectionTitle } from "../../../shared/str/sectionTitles"
+import { diffNarratives } from "../../../shared/str/textDiff"
+import { StrDiffText } from "./StrChangeReview"
 
 // 수정 이력 (화면 설계 STR-03 ①, 계약서 S4). 목록엔 본문이 없고, 한 수정본을 고르면 전·후 본문을 받아 나란히 보여 줘요.
 // 본문 열람이 안 되는 사람(META_ONLY)에겐 이 컴포넌트를 그리지 않아요 — 목록도 부르지 않음.
@@ -48,39 +50,30 @@ export default function StrRevisionHistory({ draftNo, onClose }) {
 	)
 }
 
+// 한 수정본에서 바뀐 항목만 단어 단위로 보여 줘요(BE는 전·후 본문 전체를 줘요 — 변경 없는 항목은 숨김).
 function RevisionDiff({ revision }) {
-	const sections = [
-		...new Set([
-			...revision.narrativeBefore.map((item) => item.section),
-			...revision.narrativeAfter.map((item) => item.section),
-		]),
-	]
-	const find = (list, section) => list.find((item) => item.section === section)
+	const rows = diffNarratives(revision.narrativeBefore, revision.narrativeAfter).filter(
+		(row) => row.changed,
+	)
+	const label = revisionLabel(revision.revisionNo, revision.aiOriginal)
 	return (
-		<table
-			className="str-table"
-			aria-label={`${revisionLabel(revision.revisionNo, revision.aiOriginal)} 전·후 본문`}
-		>
-			<thead>
-				<tr>
-					<th scope="col">항목</th>
-					<th scope="col">고치기 전</th>
-					<th scope="col">고친 뒤</th>
-				</tr>
-			</thead>
-			<tbody>
-				{sections.map((section) => {
-					const before = find(revision.narrativeBefore, section)
-					const after = find(revision.narrativeAfter, section)
-					return (
-						<tr key={section}>
-							<th scope="row">{sectionTitle(after ?? before)}</th>
-							<td className="str-pre">{before?.text ?? "(없음 — AI 원문)"}</td>
-							<td className="str-pre">{after?.text ?? "-"}</td>
-						</tr>
-					)
-				})}
-			</tbody>
-		</table>
+		<section className="str-review" aria-label={`${label} 전·후 본문`}>
+			{!revision.narrativeBefore.length ? (
+				<p className="str-muted">AI가 처음 만든 본문이라 비교할 이전 본문이 없어요.</p>
+			) : !rows.length ? (
+				<p className="str-muted">이 수정본에서 바뀐 문장이 없어요.</p>
+			) : (
+				<ol className="str-review-list">
+					{rows.map((row) => (
+						<li key={row.section} className="str-review-file">
+							<header>
+								<strong>{sectionTitle(row.current)}</strong>
+							</header>
+							<StrDiffText segments={row.segments} />
+						</li>
+					))}
+				</ol>
+			)}
+		</section>
 	)
 }

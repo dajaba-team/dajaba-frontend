@@ -17,6 +17,9 @@ import StrFacts from "../components/StrFacts"
 import StrSuspicionPanel from "../components/StrSuspicionPanel"
 import StrRevisionHistory from "../components/StrRevisionHistory"
 import StrGenerateForm from "../components/StrGenerateForm"
+import StrChangeReview from "../components/StrChangeReview"
+import { baseOptions } from "../model/changeReview"
+import { useSession } from "../../auth/hooks/useSession"
 import ApprovalDialog from "../../approvals/components/ApprovalDialog"
 import {
 	changedSections,
@@ -42,18 +45,46 @@ export default function StrPage() {
 	const draftQuery = useStrDraft(draftNo)
 	const draft = draftQuery.data
 	const [generating, setGenerating] = useState(false)
+	const role = useSession().data?.role
+	const caseStatus = detail?.status ?? draft?.caseStatus ?? null
+	// 개발·테스트용 원시 값(초안 상태 코드·생성기 버전·생성 시각)은 화면 대신 개발 콘솔로만 남겨요.
+	useEffect(() => {
+		if (!import.meta.env.DEV || !draft) return
+		console.debug("[STR]", {
+			draftNo: draft.draftNo,
+			draftStatus: draft.status,
+			caseStatus,
+			currentRevisionNo: draft.currentRevisionNo,
+			generatorVersion: draft.generatorVersion,
+			producedAt: draft.producedAt,
+		})
+	}, [draft, caseStatus])
 	return (
 		<>
-			<Link to={`/cases/${encodeURIComponent(caseNo)}`}>← 케이스 상세</Link>
+			<nav className="str-backlinks" aria-label="돌아가기">
+				{/* 승인함에서 들어온 승인자·관리자가 목록으로 바로 돌아가게 */}
+				{(role === "APPROVER" || role === "ADMIN") && (
+					<Link to="/approvals">← 승인함으로 돌아가기</Link>
+				)}
+				<Link to={`/cases/${encodeURIComponent(caseNo)}`}>← 케이스 상세</Link>
+			</nav>
 			<div className="str-page-heading">
-				<h1>STR 초안</h1>
+				<h1>STR 보고서 초안</h1>
 				{draft && (
-					<p>
-						{draft.draftNo} · 초안 {draft.status}
-						{(detail?.status ?? draft.caseStatus) &&
-							` · 케이스 ${detail?.status ?? draft.caseStatus}`}
-						{draft.producedAt && ` · 생성 ${formatSystemTime(draft.producedAt)}`}
-					</p>
+					<ul className="str-chips" aria-label="초안 정보">
+						<li>{detail?.caseNo ?? draft.caseNo ?? caseNo}</li>
+						<li>{draft.draftNo}</li>
+						{caseStatus && (
+							<li className="str-chip-status">
+								{labelOf(STATUS_LABELS, caseStatus)}
+							</li>
+						)}
+						{draft.status !== "ACTIVE" && (
+							<li className="str-chip-muted">
+								{labelOf(DRAFT_STATUS_LABELS, draft.status)}
+							</li>
+						)}
+					</ul>
 				)}
 			</div>
 			<AsyncState query={caseQuery} />
@@ -94,9 +125,18 @@ export default function StrPage() {
 
 function StrWorkspace({ draft, detail }) {
 	const client = useQueryClient()
+	const me = useSession().data
 	const actions = strActionsFor(draft)
 	const can = (action) => actions.includes(action)
 	const editable = can("REVISE")
+	// 수정 이력은 담당 조사역만(승인자는 [변경 비교]로 고친 곳만 봐요)
+	const isAssignee =
+		me?.role === "INVESTIGATOR" &&
+		Boolean(me.loginId) &&
+		detail.assignee?.loginId === me.loginId
+	const isApprover = me?.role === "APPROVER"
+	// 화면 아래 안내 한 줄 — 마지막으로 끝난 작업만(저장 안내와 승인 요청 안내가 겹치지 않게)
+	const [doneMessage, setDoneMessage] = useState(null)
 
 	// 편집 중 값 {section: text}. 저장본과 같아지면 미저장 아님.
 	const [inputs, setInputs] = useState({})
@@ -161,24 +201,37 @@ function StrWorkspace({ draft, detail }) {
 		level,
 		narrativeUnchanged: rejection?.narrativeUnchanged === true,
 	})
-	const notice = stateNotice(draft, detail)
+	const notice = stateNotice(draft, detail, {
+		role: me?.role,
+		canDecide: can("APPROVE") || can("REJECT"),
+	})
+	// 변경 비교 기준 — 반려 당시 수정본(S2 last_rejection, 승인 대기 중에도 남아요)
+	const rejectionRevisionNo = draft.lastRejection?.revisionNo ?? null
+	const canReview =
+		(isAssignee || isApprover) &&
+		baseOptions(draft.currentRevisionNo, rejectionRevisionNo).length > 0
 
 	const doSave = () => {
 		if (!dirty || invalid || save.isPending) return
-		save.mutate({ caseVersion, sections: changes }, { onSuccess: () => setInputs({}) })
+		setDoneMessage(null)
+		save.mutate(
+			{ caseVersion, sections: changes },
+			{
+				onSuccess: (saved) => {
+					setInputs({})
+					// needs_verification=false(검증 대상 그대로)일 때만 짧게. 없으면 다시 검증 안내
+					setDoneMessage(
+						saved.needsVerification === false
+							? `${revisionLabel(saved.revisionNo)}으로 저장했어요.`
+							: `${revisionLabel(saved.revisionNo)}으로 저장했어요. 저장본을 다시 검증해 주세요.`,
+					)
+				},
+			},
+		)
 	}
 
 	return (
 		<>
-			<p className="str-subheading">
-				{detail.caseNo} · {revisionLabel(draft.currentRevisionNo)} ·{" "}
-				{labelOf(DRAFT_STATUS_LABELS, draft.status)} ·{" "}
-				{labelOf(STATUS_LABELS, detail.status)}
-				{draft.generatorVersion && ` · ${draft.generatorVersion}`}
-				{" · "}
-				<span role="status">{dirty ? "미저장 변경이 있어요" : "저장본과 같아요"}</span>
-			</p>
-
 			{(rejectionCode || notice) && (
 				<section className="str-banner" aria-label="지금 상태">
 					{rejectionCode && (
@@ -199,19 +252,47 @@ function StrWorkspace({ draft, detail }) {
 						</p>
 					)}
 					{notice && <p>{notice}</p>}
+					{isApprover && draft.lastRejection && detail.status === "PENDING_APPROVAL" && (
+						<p>
+							지난 반려({labelOf(REJECTION_LABELS, draft.lastRejection.reasonCode)})
+							뒤 다시 요청한 건이에요. [변경 비교]에서 고친 곳을 확인하세요.
+						</p>
+					)}
 				</section>
 			)}
 
-			<div className="str-toolbar">
-				<button
-					type="button"
-					aria-pressed={panel === "history"}
-					onClick={() => setPanel(panel === "history" ? null : "history")}
-				>
-					수정 이력
-				</button>
-			</div>
-			{panel === "history" && (
+			{(isAssignee || canReview) && (
+				<div className="str-toolbar">
+					{canReview && (
+						<button
+							type="button"
+							aria-pressed={panel === "review"}
+							onClick={() => setPanel(panel === "review" ? null : "review")}
+						>
+							변경 비교
+						</button>
+					)}
+					{isAssignee && (
+						<button
+							type="button"
+							aria-pressed={panel === "history"}
+							onClick={() => setPanel(panel === "history" ? null : "history")}
+						>
+							수정 이력
+						</button>
+					)}
+				</div>
+			)}
+			{panel === "review" && (
+				<StrChangeReview
+					draftNo={draft.draftNo}
+					narrative={draft.narrative}
+					currentRevisionNo={draft.currentRevisionNo}
+					rejectionRevisionNo={rejectionRevisionNo}
+					onClose={() => setPanel(null)}
+				/>
+			)}
+			{panel === "history" && isAssignee && (
 				<StrRevisionHistory draftNo={draft.draftNo} onClose={() => setPanel(null)} />
 			)}
 
@@ -263,7 +344,11 @@ function StrWorkspace({ draft, detail }) {
 						canVerify={can("VERIFY")}
 						verifying={verify.isPending}
 						verifyError={verify.isError ? getErrorMessage(verify.error) : null}
-						onVerify={() => !dirty && !verify.isPending && verify.mutate({})}
+						onVerify={() => {
+							if (dirty || verify.isPending) return
+							setDoneMessage(null)
+							verify.mutate({})
+						}}
 					/>
 					<StrSuspicionPanel
 						editable={editable}
@@ -337,6 +422,11 @@ function StrWorkspace({ draft, detail }) {
 							{REJECTION_LABELS[mode]}
 						</button>
 					))}
+				{dirty && (
+					<span role="status" className="str-dirty">
+						저장하지 않은 변경이 있어요
+					</span>
+				)}
 				{(editable || can("SUBMIT")) && blockReason && (
 					<span className="str-block-reason">{blockReason}</span>
 				)}
@@ -348,14 +438,7 @@ function StrWorkspace({ draft, detail }) {
 						" 작성 내용은 유지돼요."}
 				</p>
 			)}
-			{save.isSuccess && !dirty && (
-				<p role="status">
-					{/* needs_verification=false(검증 대상 그대로)일 때만 짧게. 없으면 다시 검증 안내 */}
-					{save.data.needsVerification === false
-						? `${revisionLabel(save.data.revisionNo)}으로 저장했어요.`
-						: `${revisionLabel(save.data.revisionNo)}으로 저장했어요. 저장본을 다시 검증해 주세요.`}
-				</p>
-			)}
+			{doneMessage && !dirty && <p role="status">{doneMessage}</p>}
 
 			{panel === "submit" && (
 				<SubmitConfirm
@@ -373,7 +456,12 @@ function StrWorkspace({ draft, detail }) {
 								suspicionTypes: types,
 								suspicionLevelBranch: level,
 							},
-							{ onSuccess: () => setPanel(null) },
+							{
+								onSuccess: () => {
+									setPanel(null)
+									setDoneMessage("승인 요청을 보냈어요. 승인자 결정을 기다려요.")
+								},
+							},
 						)
 					}
 					onCancel={() => {
@@ -382,7 +470,6 @@ function StrWorkspace({ draft, detail }) {
 					}}
 				/>
 			)}
-			{submit.isSuccess && <p role="status">승인 요청을 보냈어요. 승인자 결정을 기다려요.</p>}
 			{panel === "regenerate" && (
 				<StrGenerateForm
 					detail={detail}

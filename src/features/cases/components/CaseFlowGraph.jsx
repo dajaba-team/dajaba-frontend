@@ -347,13 +347,17 @@ function FlowGraphView({ data, accountRef }) {
 	)
 }
 
-export default function CaseFlowGraph({ caseNo, accountRef }) {
+// 경로 지도를 먼저 보여 주는 룰 — 시작 계좌로 돌아오는 룰은 R04_CYCLE 하나예요(R05는 흩었다 모으기).
+const CYCLE_RULE = "R04_CYCLE"
+
+export default function CaseFlowGraph({ caseNo, accountRef, ruleId }) {
 	const query = useCaseGraph(caseNo)
 	const data = query.data
-	// 대상 계좌로 돌아온 길이 있으면 경로 지도를 먼저 보여 주고, 전체 그래프는 펼쳐서 봐요.
+	// 순환(R04_CYCLE) 케이스에서 대상 계좌로 돌아온 길이 있으면 경로 지도를 먼저 보여 주고,
+	// 전체 그래프는 펼쳐서 봐요. 다른 룰은 지금처럼 전체 그래프가 먼저예요.
 	const routes = useMemo(
-		() => (data ? findReturnRoutes(data.edges, accountRef) : []),
-		[data, accountRef],
+		() => (data && ruleId === CYCLE_RULE ? findReturnRoutes(data.edges, accountRef) : []),
+		[data, accountRef, ruleId],
 	)
 	const accountNos = useMemo(
 		() => new Map((data?.nodes ?? []).map((node) => [node.accountRef, node.accountNo])),
