@@ -81,26 +81,13 @@
 	--brand-light: #8cd2f5;
 	--brand-navy: #00236e;
 	--chart-neutral: #dfe5ef;
-	/* 위험 등급 색 — HIGH 만 선명한 빨강, MEDIUM·LOW 는 채도를 낮춘 회색빛 장미색 (도넛·범례·확인할 케이스 줄 공통).
-	   기본(--risk-*) = 도넛·막대·배지 채움, -on = 채움 위 글자, -soft = 연한 배경, -ink = 연한 배경 위 글자·아이콘 */
-	--risk-high: #e5303f;
-	--risk-high-on: #fff;
+	/* HIGH 위험 강조색 — 브랜드 파랑(#0046ff)과 채도를 맞춘 산호빛 빨강 (SCRUM-285) */
+	--risk-high: #f04452;
 	--risk-high-soft: #ffeef0;
-	--risk-high-ink: #c81e2e;
-	--risk-medium: #c27880;
-	--risk-medium-on: #fff;
-	--risk-medium-soft: #f7eeef;
-	--risk-medium-ink: #9a4c55;
-	--risk-low: #d8c3c6;
-	--risk-low-on: #6b5054;
-	--risk-low-soft: #f6f2f3;
-	--risk-low-ink: #8a6e73;
-	--risk-none: #e3e7ee;
-	--risk-none-on: var(--color-muted);
-	--risk-none-soft: var(--color-soft);
-	--risk-none-ink: var(--color-muted);
-	/* 상태별 건수 같은 중립 차트 막대 — 브랜드 파랑의 옅은 단계 하나로 통일 */
-	--chart-bar: #8fa8ff;
+	/* MEDIUM 위험 강조색 — 빨강·파랑 사이에서 눈에 띄는 호박색. 글자는 -strong 으로 대비 확보 */
+	--risk-medium: #f5a524;
+	--risk-medium-strong: #b26a00;
+	--risk-medium-soft: #fff4dc;
 	--color-surface-raised: #fff;
 	--app: var(--color-canvas);
 	--surface: var(--color-surface);
@@ -140,5 +127,4 @@
 	--chart-neutral: #42536d;
 	--risk-high: #ff6b75;
 	--risk-high-soft: #3a1f2a;
-	--risk-none: #42536d;
 }

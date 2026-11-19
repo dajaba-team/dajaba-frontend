@@ -72,7 +72,17 @@ export default function DashboardView({
 					data: Object.keys(STATUS_LABELS).map(
 						(s) => items.filter((i) => i.status === s).length,
 					),
-					backgroundColor: "--chart-bar",
+					backgroundColor: [
+						"--brand-light",
+						"--brand-sky",
+						"--brand-royal",
+						"--brand-primary",
+						"--brand-sky",
+						"--brand-light",
+						"--brand-royal",
+						"--chart-neutral",
+						"--chart-neutral",
+					],
 					maxBarThickness: 32,
 				},
 			],
@@ -259,10 +269,6 @@ export default function DashboardView({
 										{item.accountNo ?? "계좌 정보 없음"} ·{" "}
 										{item.assignee?.displayName ?? "미배정"}
 									</span>
-								</div>
-								{/* 점수를 가는 막대로 — 줄 가운데를 채우고 점수 차이를 한눈에 */}
-								<div className="case-meter" aria-hidden="true">
-									<i style={{ width: `${(item.score ?? 0) * 100}%` }} />
 								</div>
 								<div className="case-score">
 									{band && <em className="band-badge">{band}</em>}
