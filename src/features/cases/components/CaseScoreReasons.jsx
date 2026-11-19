@@ -1,7 +1,7 @@
 import { formatDataTime } from "../../../shared/format/time"
 import { formatNumber } from "./caseMoney"
 
-// "왜 올라왔는지" — 상세 latest_score.reasons (BE SCRUM-152, AI 점수 응답 그대로) 상위 3개 (CASE-02, SCRUM-208).
+// "점수 근거" — 상세 latest_score.reasons (BE SCRUM-152, AI 점수 응답 그대로) 상위 3개 (CASE-02, SCRUM-208).
 // 이유 하나는 관측값(observation)·기준값(baseline)·모델 기여(contribution)로 나뉘어 와요(안건 3, 10/28).
 // 기여값은 모델 내부 값이라 관측값 자리에 쓰지 않고 따로 "거래 사실 아님"으로 보여 줘요. 확인 못 한 값(null)은 채우지 않아요.
 // 이름(name)·단위(unit)·방법(method)은 값 목록이 아직 미결이라 받은 그대로 보여 줘요.
@@ -71,7 +71,7 @@ export default function CaseScoreReasons({ latestScore }) {
 	const reasons = latestScore?.scoreStatus === "SCORED" ? topReasons(latestScore.reasons) : []
 	return (
 		<section className="case-panel case-summary" aria-labelledby="score-reasons-title">
-			<h2 id="score-reasons-title">왜 올라왔는지</h2>
+			<h2 id="score-reasons-title">점수 근거</h2>
 			{reasons.length ? (
 				<>
 					<p className="case-action-note">
