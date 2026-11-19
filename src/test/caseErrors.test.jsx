@@ -241,6 +241,40 @@ describe("응답 없음 — AI 요약 갱신 (SCRUM-315, 계약서 2.6)", () => 
 		expect(within(panel).queryByRole("alert")).not.toBeInTheDocument()
 		expect(within(panel).getByRole("group", { name: "현재 요약" })).toBeInTheDocument()
 	})
+	it("끊긴 뒤 상세를 다시 불러오는 동안은 실패 안내 대신 '결과 확인 중'을 보여 준다", async () => {
+		let posted = false
+		let release
+		const held = new Promise((resolve) => (release = resolve))
+		server.use(
+			http.post(`*/api/v1/cases/${DRAFTED}/refresh-summary`, () => {
+				posted = true
+				return HttpResponse.error()
+			}),
+			// POST 뒤 상세 재조회를 붙잡아 두고, 풀면 새 요약(실제로 저장된 경우)을 준다
+			http.get(`*/api/v1/cases/${DRAFTED}`, async () => {
+				if (!posted) return undefined
+				await held
+				const item = seedCases().find((entry) => entry.case_no === DRAFTED)
+				item.latest_summary = {
+					...item.latest_summary,
+					summary_lines: ["(예시) 끊긴 뒤 저장된 새 요약"],
+					produced_at: "2026-11-19T09:00:00Z",
+					is_current: true,
+				}
+				return HttpResponse.json(detailResponse(USERS.inv01, item))
+			}),
+		)
+		const user = renderApp(`/cases/${DRAFTED}`)
+		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
+		const panel = await screen.findByRole("region", { name: "AI 조사 요약" })
+		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))
+		expect(await within(panel).findByRole("status")).toHaveTextContent("결과를 확인하는 중")
+		expect(within(panel).queryByRole("alert")).not.toBeInTheDocument()
+		release()
+		expect(await within(panel).findByText("(예시) 끊긴 뒤 저장된 새 요약")).toBeInTheDocument()
+		expect(within(panel).queryByRole("status")).not.toBeInTheDocument()
+		expect(within(panel).queryByRole("alert")).not.toBeInTheDocument()
+	})
 	it("응답 없이 끊기고 요약도 그대로면 '응답을 확인하지 못했다'고 안내하고 상세를 다시 읽는다", async () => {
 		server.use(
 			http.post(`*/api/v1/cases/${DRAFTED}/refresh-summary`, () => HttpResponse.error()),
