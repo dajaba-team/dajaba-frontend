@@ -1,0 +1,203 @@
+/* 질문 답변 패널 [근거에 물어보기] — 설계 문서 8.1·8.4 (SCRUM-303).
+   넓은 화면: 오른쪽에 붙어 본문 폭을 줄여요(겹치지 않음). 좁은 화면(64rem 미만): 본문을 덮어요. */
+
+.case-ask-button {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	font-weight: 700;
+}
+
+.case-detail-shell {
+	min-width: 0;
+}
+.case-detail-shell.has-question-panel {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 24rem;
+	gap: var(--space-5);
+	align-items: start;
+}
+
+.case-question-panel {
+	position: sticky;
+	top: var(--space-4);
+	display: grid;
+	grid-template-rows: auto minmax(0, 1fr) auto;
+	max-height: calc(100vh - 2 * var(--space-4));
+	background: var(--color-surface);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-card);
+	box-shadow: var(--shadow-card);
+}
+.question-panel-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: var(--space-3);
+	padding: var(--space-4) var(--space-5);
+	border-block-end: var(--border-width) solid var(--color-border);
+}
+.question-panel-head h2 {
+	margin: 0;
+	font-size: var(--font-section);
+}
+.question-panel-head > button {
+	flex-shrink: 0;
+	white-space: nowrap;
+}
+.question-panel-head p {
+	margin: var(--space-1) 0 0;
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.question-panel-body {
+	overflow-y: auto;
+	padding: var(--space-4) var(--space-5);
+}
+
+.question-examples {
+	display: grid;
+	gap: var(--space-2);
+}
+.question-examples p {
+	margin: 0;
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.question-examples button {
+	justify-self: start;
+	border-radius: var(--radius-pill);
+}
+
+.question-cards {
+	display: grid;
+	gap: var(--space-3);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.question-card {
+	display: grid;
+	gap: var(--space-2);
+	padding: var(--space-3) var(--space-4);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface-raised);
+}
+.question-card.is-highlighted {
+	border: 2px solid var(--color-primary);
+	background: var(--color-primary-soft);
+}
+.question-card p {
+	margin: 0;
+}
+.question-card-q {
+	font-weight: 700;
+	white-space: pre-wrap;
+}
+.question-card-muted {
+	color: var(--color-muted);
+}
+.question-card-meta {
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.question-evidence-link {
+	justify-self: start;
+}
+
+.question-form {
+	display: grid;
+	gap: var(--space-2);
+	padding: var(--space-4) var(--space-5);
+	border-block-start: var(--border-width) solid var(--color-border);
+}
+.question-label {
+	font-size: var(--font-small);
+	font-weight: 600;
+	color: var(--color-muted);
+}
+.question-input-row {
+	display: flex;
+	gap: var(--space-2);
+}
+.question-input-row input {
+	flex: 1;
+	min-width: 0;
+}
+.question-input-row input[aria-invalid="true"] {
+	border-color: var(--color-fail);
+}
+.question-count,
+.question-pending,
+.question-field-error {
+	margin: 0;
+	font-size: var(--font-small);
+}
+.question-count {
+	justify-self: end;
+	color: var(--color-muted);
+}
+.question-count.is-over,
+.question-field-error {
+	color: var(--color-fail);
+}
+.question-error {
+	padding: var(--space-3);
+	border-radius: var(--radius-control);
+	background: var(--color-fail-soft);
+}
+.question-error p {
+	margin: 0 0 var(--space-2);
+}
+
+/* 근거 거래 강조 — 답 카드 테두리와 같은 색 */
+.case-row-highlight td {
+	background: var(--color-primary-soft);
+}
+.case-highlight-tag {
+	color: var(--color-primary-strong);
+	font-size: var(--font-small);
+	font-weight: 700;
+}
+.case-highlight-note {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-3);
+	margin: 0 0 var(--space-3);
+	color: var(--color-primary-strong);
+	font-weight: 600;
+}
+
+/* 패널을 열면 본문이 24rem 좁아져요 — 넓은 화면에서도 1240px 아래 배치(오른쪽 단이 본문 밑으로, 둘씩 나란히)를 써서
+   점수·연결 경보 카드가 세 줄로 눌리지 않게 해요 (cases.css 의 77.5rem 규칙을 덮어요). */
+@media (min-width: 77.5rem) {
+	.has-question-panel .case-detail-layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.has-question-panel .case-detail-aside {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.question-panel-reopen {
+	position: fixed;
+	right: var(--space-4);
+	bottom: var(--space-4);
+	z-index: 20;
+	box-shadow: var(--shadow-card);
+}
+
+@media (max-width: 63.99rem) {
+	.case-detail-shell.has-question-panel {
+		display: block;
+	}
+	.case-question-panel {
+		position: fixed;
+		inset: var(--space-4) var(--space-4) var(--space-4) auto;
+		z-index: 20;
+		width: min(24rem, calc(100vw - 2 * var(--space-4)));
+		max-height: none;
+	}
+}

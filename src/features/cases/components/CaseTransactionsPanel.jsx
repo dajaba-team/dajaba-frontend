@@ -19,14 +19,32 @@ function directionText(item, n) {
 
 const SCOPE_TITLES = { EVIDENCE: "근거 거래", CONTEXT: "참고 거래" }
 
-export default function CaseTransactionsPanel({ caseNo, scope = "EVIDENCE" }) {
+// highlightIds — 질문 답의 근거 거래(SCRUM-303). 1차는 지금 페이지만 칠하고 "지금 페이지 m건 · 전체 n건"을 알려요(설계 문서 13절 7번).
+export default function CaseTransactionsPanel({
+	caseNo,
+	scope = "EVIDENCE",
+	highlightIds = null,
+	onClearHighlight,
+}) {
 	const [page, setPage] = useState(1)
 	const [opened, setOpened] = useState(null)
 	const query = useCaseTransactions(caseNo, scope, page)
 	const data = query.data
+	const marked = highlightIds ? new Set(highlightIds.map(String)) : null
+	const markedHere = marked
+		? (data?.items ?? []).filter((item) => marked.has(String(item.transactionId))).length
+		: 0
 	return (
 		<section className="case-panel" aria-labelledby="transactions-title">
 			<h2 id="transactions-title">{SCOPE_TITLES[scope]}</h2>
+			{marked && data && (
+				<p className="case-highlight-note" role="status">
+					지금 페이지에서 {markedHere}건 강조 · 전체 {marked.size}건
+					<button type="button" onClick={onClearHighlight}>
+						강조 끄기
+					</button>
+				</p>
+			)}
 			<AsyncState query={query} />
 			{data &&
 				(data.items.length ? (
@@ -48,13 +66,20 @@ export default function CaseTransactionsPanel({ caseNo, scope = "EVIDENCE" }) {
 									<tr
 										key={item.transactionId}
 										className={
-											item.scope === "CONTEXT"
-												? "case-row-context"
-												: undefined
+											[
+												item.scope === "CONTEXT" && "case-row-context",
+												marked?.has(String(item.transactionId)) &&
+													"case-row-highlight",
+											]
+												.filter(Boolean)
+												.join(" ") || undefined
 										}
 									>
 										<td>
 											{item.transactionId}
+											{marked?.has(String(item.transactionId)) && (
+												<span className="case-highlight-tag"> 답 근거</span>
+											)}
 											{item.scope === "CONTEXT" && (
 												<span className="case-status"> 참고</span>
 											)}

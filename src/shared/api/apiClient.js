@@ -44,6 +44,8 @@ export function getErrorMessage(error) {
 	if (code === "FORBIDDEN") return "실행 권한이 없어요."
 	// AI 초안 생성이 이미 진행 중이라는 뜻이라 AI 장애(502)와 다르게 안내합니다.
 	if (code === "DRAFT_IN_PROGRESS") return "초안을 만드는 중이에요. 잠시 후 상태를 확인해 주세요."
+	// 질문하기 분당 한도(계약서 3절 429, SCRUM-303). 남은 초는 질문 패널이 details.retry_after_seconds 로 붙여요.
+	if (code === "QUESTION_RATE_LIMITED") return "잠시 뒤 다시 물어봐 주세요."
 	if (code === "SELF_APPROVAL") return "본인이 담당한 케이스는 승인할 수 없습니다."
 	if (code === "NOT_DRAFT_APPROVER") return "이 초안을 승인한 승인자만 모의 제출할 수 있어요."
 	if (code === "NARRATIVE_UNCHANGED") return "반려된 본문을 보완한 후 다시 요청해 주세요."
@@ -76,6 +78,7 @@ export function getErrorMessage(error) {
 		return "대상을 찾을 수 없습니다. 목록에서 다시 확인해 주세요."
 	if (error.response?.status === 409)
 		return "현재 업무 상태에서 처리할 수 없습니다. 최신 상태를 확인해 주세요."
+	if (error.response?.status === 429) return "요청이 너무 잦아요. 잠시 뒤 다시 시도해 주세요."
 	if (error.response?.status === 502)
 		return "AI 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."
 	if (!error.response && ["ECONNABORTED", "ETIMEDOUT", "ERR_NETWORK"].includes(error.code)) {

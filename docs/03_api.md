@@ -136,3 +136,22 @@ S1(SCRUM-183, `case_version` #89)·S2(SCRUM-205 #84)·S3·S4(SCRUM-184 #91)는 B
 | 초안 보기      | `GET /api/v1/str-drafts/{draft_no}`                         | 명세 1번 모양 또는 상태·날짜만의 제한 응답(`access: "META_ONLY"`, 본문 필드 `null`), 없으면 404 `DRAFT_NOT_FOUND` | `strApi.getDraft`     |
 | 수정 이력 목록 | `GET /api/v1/str-drafts/{draft_no}/revisions`               | `{ draft_no, current_revision_no, items }` (본문 없음, 행마다 `ai_original`). 열람 권한 없으면 403 `NOT_ASSIGNEE` | `strApi.getRevisions` |
 | 수정본 한 행   | `GET /api/v1/str-drafts/{draft_no}/revisions?revision_no=n` | 평평한 모양 `narrative_before`·`narrative_after`(1번은 before `[]`), 없는 번호 404 `REVISION_NOT_FOUND`           | `strApi.getRevision`  |
+
+## 6. 질문 답변 — A8·C9 [계약서 5.3 A8·C9 · 2.6 · 3절 429 (11/19), 설계 문서 8절, SCRUM-303]
+
+케이스 상세의 [근거에 물어보기] 패널이 쓰는 API예요. API 모듈은 `features/cases/api/questionsApi.js` 하나예요(`casesApi.js`와 따로 — 응답 모양·timeout이 달라요).
+
+| 동작      | API                                                   | 화면                                                                                                              |
+| --------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| 질문하기  | `POST /api/v1/cases/{case_no}/questions` `{question}` | 201 질문 한 줄. **timeout 35초**(`ASK_REQUEST_TIMEOUT_MS` — 백엔드 전체 30초 + 여유, 다른 AI 요청의 100초가 아님) |
+| 지난 질문 | `GET /api/v1/cases/{case_no}/questions?page&size`     | 공통 목록, 최신 먼저. 패널을 열면 최근 5개(`size=5`), 더 보기는 페이지로                                          |
+
+- **질문 한 줄** `{question_no, case_no, question, status, out_of_scope_reason, answer, evidence_transaction_ids, asked_by, created_at}` → camelCase로 한 번 바꿔요. 네 상태(`ANSWERED`·`NO_DATA`·`UNVERIFIED`·`OUT_OF_SCOPE`) 모두 201이라 에러가 아니에요. 안내 문구는 화면이 정해요(AI가 만들지 않음).
+- **질문 보내기** — 앞뒤 공백을 자르지 않고 그대로 보내요. 글자 수는 `text.normalize("NFC").length`(서버·STR 편집과 같은 세기). 300자를 넘거나 비었거나 공백만이면 [묻기]를 막아요(서버도 400 `details.question`).
+- **기다리는 동안** "근거를 확인하는 중이에요" + [묻기] 막기. 자동 재시도·폴링 없음.
+- **응답 없이 끊기면** 실패로 단정하지 않고 C9를 다시 불러요. 맨 위 질문이 보낸 질문이고 누르기 전 맨 위와 다르면 저장된 것으로 보고 입력을 비워요. 아니면 "서버 응답을 확인하지 못했습니다…" 안내.
+- **429 `QUESTION_RATE_LIMITED`** — 계약서에 처음 생긴 상태 코드예요. 입력 칸 아래 "잠시 뒤 다시 물어봐 주세요(N초)"(`details.retry_after_seconds`), 입력 유지. 공통 `getErrorMessage`에도 같은 문구가 있어요(초 없이).
+- **502** — 질문 패널 안에만 실패 안내 + [다시 시도](같은 질문 다시 보내기), 입력 유지. 502는 질문 기록이 남지 않아요.
+- **403** `NOT_ASSIGNEE`·`FORBIDDEN` — 버튼을 `ASK_QUESTION`으로만 켜서 보통 안 보여요. 오면 패널 안 실패 안내.
+- **꺼짐** — 서버 `aml.ai.ask-enabled=false`(기본)면 상세에 `ASK_QUESTION`이 없고 A8·C9는 404 `NOT_FOUND`예요(BE SCRUM-302). 화면은 버튼을 그리지 않아요.
+- MSW(`src/mocks/caseQuestions.js`)는 질문 낱말로 상태를 골라요: "고쳐·수정" → `EDIT_REQUEST`, "다른 고객·다른 케이스" → `OUTSIDE_CASE`, "세탁·보고해야" → `JUDGMENT`, "주소·전화" → `NO_DATA`, "검증" → `UNVERIFIED`, "AI오류" → 502, 그 밖 `ANSWERED`(근거 거래 = 이 케이스 근거 거래 앞 2건, "유로·EUR"이면 Euro 거래만). 한 사람 60초 5번 넘으면 429.

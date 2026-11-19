@@ -1,3 +1,4 @@
+import { useRef, useState } from "react"
 import { Link, useLocation, useParams } from "react-router"
 import "../styles/cases.css"
 import { useCaseDetail } from "../hooks/useCases"
@@ -6,6 +7,7 @@ import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
 import CaseActions from "../components/CaseActions"
 import CaseEvidenceCard from "../components/CaseEvidenceCard"
 import CaseNotesCard from "../components/CaseNotesCard"
+import CaseQuestionPanel from "../components/CaseQuestionPanel"
 import CaseScoreReasons from "../components/CaseScoreReasons"
 import {
 	CLOSE_REASON_LABELS,
@@ -84,6 +86,29 @@ export default function CaseDetailPage() {
 	const listSearch = typeof fromList === "string" && fromList.startsWith("?") ? fromList : ""
 	const query = useCaseDetail(caseNo)
 	const detail = query.data
+	// 질문 답변 패널 (SCRUM-303) — ASK_QUESTION 이 있을 때만. 닫기는 [닫기]로만, 닫으면 근거 강조도 풀려요.
+	const [askOpen, setAskOpen] = useState(false)
+	const [askCollapsed, setAskCollapsed] = useState(false)
+	// 근거 강조 — seq 는 같은 답을 다시 눌러도 거래 탭으로 옮기려고 매번 올려요
+	const [highlight, setHighlight] = useState(null)
+	const evidenceRef = useRef(null)
+	const canAsk = Boolean(detail?.availableActions.includes("ASK_QUESTION"))
+	const panelOpen = canAsk && askOpen
+	const closePanel = () => {
+		setAskOpen(false)
+		setAskCollapsed(false)
+		setHighlight(null)
+	}
+	const showEvidence = (item) => {
+		setHighlight((prev) => ({
+			questionNo: item.questionNo,
+			ids: item.evidenceTransactionIds,
+			seq: (prev?.seq ?? 0) + 1,
+		}))
+		// 좁은 화면에선 패널이 본문을 덮어서, 근거를 보러 가면 접어요 (설계 문서 8.4)
+		if (window.matchMedia?.("(max-width: 63.99rem)")?.matches) setAskCollapsed(true)
+		evidenceRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" })
+	}
 	return (
 		<div className="case-detail">
 			<Link className="case-back-link" to={`/cases${listSearch}`}>
@@ -115,65 +140,123 @@ export default function CaseDetailPage() {
 								담당자 {detail.assignee?.displayName || "미배정"} · 버전{" "}
 								{detail.version}
 							</span>
+							{canAsk && (
+								<button
+									type="button"
+									className="case-ask-button"
+									aria-expanded={panelOpen && !askCollapsed}
+									onClick={() => {
+										setAskOpen(true)
+										setAskCollapsed(false)
+									}}
+								>
+									<svg
+										viewBox="0 0 24 24"
+										width="16"
+										height="16"
+										aria-hidden="true"
+									>
+										<path
+											d="M4 5h16v11H8l-4 4z"
+											fill="none"
+											stroke="currentColor"
+											strokeWidth="2"
+											strokeLinejoin="round"
+										/>
+									</svg>
+									근거에 물어보기
+								</button>
+							)}
 						</p>
 					</header>
-					<div className="case-detail-layout">
-						<div className="case-detail-main">
-							<div className="case-detail-top">
-								<section
-									className="case-panel case-summary"
-									aria-label="케이스 정보"
-								>
-									<ScoreBlock detail={detail} />
-									<dl>
-										<dt>계좌</dt>
-										<dd>{detail.accountNo}</dd>
-										<dt>생성</dt>
-										<dd>{formatSystemTime(detail.createdAt)}</dd>
-										{detail.rejectionReasonCode && (
-											<>
-												<dt>반려</dt>
-												<dd>
-													{labelOf(
-														REJECTION_LABELS,
-														detail.rejectionReasonCode,
-													)}
-												</dd>
-											</>
-										)}
-										{detail.closeReason && (
-											<>
-												<dt>종료 사유</dt>
-												<dd>
-													{labelOf(
-														CLOSE_REASON_LABELS,
-														detail.closeReason,
-													)}
-												</dd>
-											</>
-										)}
-									</dl>
-								</section>
-								<AlertPanel alert={detail.alert} />
+					<div
+						className={
+							panelOpen && !askCollapsed
+								? "case-detail-shell has-question-panel"
+								: "case-detail-shell"
+						}
+					>
+						<div className="case-detail-layout">
+							<div className="case-detail-main">
+								<div className="case-detail-top">
+									<section
+										className="case-panel case-summary"
+										aria-label="케이스 정보"
+									>
+										<ScoreBlock detail={detail} />
+										<dl>
+											<dt>계좌</dt>
+											<dd>{detail.accountNo}</dd>
+											<dt>생성</dt>
+											<dd>{formatSystemTime(detail.createdAt)}</dd>
+											{detail.rejectionReasonCode && (
+												<>
+													<dt>반려</dt>
+													<dd>
+														{labelOf(
+															REJECTION_LABELS,
+															detail.rejectionReasonCode,
+														)}
+													</dd>
+												</>
+											)}
+											{detail.closeReason && (
+												<>
+													<dt>종료 사유</dt>
+													<dd>
+														{labelOf(
+															CLOSE_REASON_LABELS,
+															detail.closeReason,
+														)}
+													</dd>
+												</>
+											)}
+										</dl>
+									</section>
+									<AlertPanel alert={detail.alert} />
+								</div>
+								<CaseScoreReasons latestScore={detail.latestScore} />
 							</div>
-							<CaseScoreReasons latestScore={detail.latestScore} />
+							<aside className="case-detail-aside" aria-label="메모와 다음 작업">
+								<CaseNotesCard detail={detail} onRefresh={() => query.refetch()} />
+								<CaseActions detail={detail} />
+								{detail.currentDraftNo && (
+									<Link
+										className="case-str-link"
+										to={`/cases/${encodeURIComponent(detail.caseNo)}/str`}
+									>
+										<span>케이스 보고서 상세보기</span>
+										<small>
+											STR 초안 {detail.currentDraftNo} · 본문·검증·승인
+										</small>
+									</Link>
+								)}
+							</aside>
+							<div className="case-evidence" ref={evidenceRef}>
+								<CaseEvidenceCard
+									detail={detail}
+									highlight={panelOpen ? highlight : null}
+									onClearHighlight={() => setHighlight(null)}
+								/>
+							</div>
 						</div>
-						<aside className="case-detail-aside" aria-label="메모와 다음 작업">
-							<CaseNotesCard detail={detail} onRefresh={() => query.refetch()} />
-							<CaseActions detail={detail} />
-							{detail.currentDraftNo && (
-								<Link
-									className="case-str-link"
-									to={`/cases/${encodeURIComponent(detail.caseNo)}/str`}
-								>
-									<span>케이스 보고서 상세보기</span>
-									<small>STR 초안 {detail.currentDraftNo} · 본문·검증·승인</small>
-								</Link>
-							)}
-						</aside>
-						<div className="case-evidence">
-							<CaseEvidenceCard detail={detail} />
-						</div>
+						{panelOpen && !askCollapsed && (
+							<CaseQuestionPanel
+								caseNo={detail.caseNo}
+								highlightedNo={highlight?.questionNo ?? null}
+								onShowEvidence={showEvidence}
+								onClose={closePanel}
+							/>
+						)}
+						{panelOpen && askCollapsed && (
+							<button
+								type="button"
+								className="question-panel-reopen"
+								onClick={() => setAskCollapsed(false)}
+							>
+								질문 패널 펼치기
+							</button>
+						)}
 					</div>
 				</>
 			)}

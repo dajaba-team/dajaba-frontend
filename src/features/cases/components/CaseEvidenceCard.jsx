@@ -12,10 +12,17 @@ const TABS = [
 	["CONTEXT", "참고 거래"],
 ]
 
-export default function CaseEvidenceCard({ detail }) {
+export default function CaseEvidenceCard({ detail, highlight = null, onClearHighlight }) {
 	const [tab, setTab] = useState("GRAPH")
 	// 그래프 탭에 있는 동안에도 마지막에 보던 거래 범위를 그대로 둬요.
 	const [scope, setScope] = useState("EVIDENCE")
+	// 질문 답의 "근거 거래 n건 보기"(SCRUM-303) — 누를 때마다(seq) 근거 거래 탭으로 옮겨요. 렌더 중 상태 맞추기(React 문서 방식).
+	const [seenSeq, setSeenSeq] = useState(null)
+	if (highlight && highlight.seq !== seenSeq) {
+		setSeenSeq(highlight.seq)
+		setTab("EVIDENCE")
+		setScope("EVIDENCE")
+	}
 	const agg = detail.aggregates
 	// 서버는 내 계좌끼리 옮긴 거래를 유입·유출 건수에서 빼고 전체 건수에는 넣어요.
 	// 그래서 "전체 − 유입 − 유출"에는 경유와 내 계좌 이체가 같이 들어가요 — 경유만 따로 오지 않아 "그 밖"으로 적어요.
@@ -59,7 +66,13 @@ export default function CaseEvidenceCard({ detail }) {
 				))}
 			</div>
 			<div className="case-tab-panel" hidden={tab === "GRAPH"}>
-				<CaseTransactionsPanel key={scope} caseNo={detail.caseNo} scope={scope} />
+				<CaseTransactionsPanel
+					key={scope}
+					caseNo={detail.caseNo}
+					scope={scope}
+					highlightIds={scope === "EVIDENCE" ? (highlight?.ids ?? null) : null}
+					onClearHighlight={onClearHighlight}
+				/>
 			</div>
 			<div className="case-tab-panel" hidden={tab !== "GRAPH"}>
 				<CaseFlowGraph

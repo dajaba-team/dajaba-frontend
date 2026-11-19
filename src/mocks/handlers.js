@@ -22,6 +22,7 @@ import {
 	seedCases,
 	transactionsResponse,
 } from "./cases"
+import { askQuestion, listQuestions, resetQuestions } from "./caseQuestions"
 import { http, HttpResponse } from "msw"
 
 let cases = seedCases()
@@ -95,6 +96,7 @@ const accountFail = (status, code, message, details = {}) =>
 export function resetCases(user = null, { pendingApproval = false, formerAssignee = null } = {}) {
 	cases = seedCases()
 	drafts = seedStrDrafts()
+	resetQuestions()
 	if (pendingApproval) seedPendingApproval(cases, drafts)
 	if (formerAssignee) {
 		const item = cases.find((entry) => entry.case_no === "CASE-2022-001001")
@@ -677,6 +679,30 @@ export const handlers = [
 				: HttpResponse.json(result.body, { status: result.status })
 		}),
 	),
+	// 질문 답변 — 계약서 5.3 A8(201 질문 한 줄)·C9(최신 먼저). 권한·400·429·502 는 caseQuestions.js (SCRUM-303)
+	http.post(`${base}/api/v1/cases/:caseNo/questions`, async ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		if (!item)
+			return HttpResponse.json(
+				{ error: { code: "CASE_NOT_FOUND", message: "케이스가 없습니다", details: {} } },
+				{ status: 404 },
+			)
+		const body = await request.json().catch(() => null)
+		const result = askQuestion(currentUser, item, body)
+		return HttpResponse.json(result.body, { status: result.status })
+	}),
+	http.get(`${base}/api/v1/cases/:caseNo/questions`, ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		if (!item)
+			return HttpResponse.json(
+				{ error: { code: "CASE_NOT_FOUND", message: "케이스가 없습니다", details: {} } },
+				{ status: 404 },
+			)
+		const result = listQuestions(currentUser, item, new URL(request.url))
+		return HttpResponse.json(result.body, { status: result.status })
+	}),
 	// AI 조사 요약 — 계약서 A7(201 { case_no, summary, case_version })·C7(조회 3역할, 없으면 summary: null)
 	http.post(`${base}/api/v1/cases/:caseNo/refresh-summary`, async ({ params, request }) => {
 		if (!currentUser) return unauthenticated()
