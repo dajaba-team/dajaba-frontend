@@ -84,6 +84,10 @@
 	/* HIGH 위험 강조색 — 브랜드 파랑(#0046ff)과 채도를 맞춘 산호빛 빨강 (SCRUM-285) */
 	--risk-high: #f04452;
 	--risk-high-soft: #ffeef0;
+	/* MEDIUM 위험 강조색 — 빨강·파랑 사이에서 눈에 띄는 호박색. 글자는 -strong 으로 대비 확보 */
+	--risk-medium: #f5a524;
+	--risk-medium-strong: #b26a00;
+	--risk-medium-soft: #fff4dc;
 	--color-surface-raised: #fff;
 	--app: var(--color-canvas);
 	--surface: var(--color-surface);

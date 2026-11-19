@@ -271,13 +271,13 @@ export default function DashboardView({
 									</span>
 								</div>
 								<div className="case-score">
+									{band && <em className="band-badge">{band}</em>}
 									<div className="case-score-main">
-										{band && <em className="band-badge">{band}</em>}
 										<strong>
 											{item.score == null ? "미산출" : item.score.toFixed(2)}
 										</strong>
+										<span>{STATUS_LABELS[item.status] ?? item.status}</span>
 									</div>
-									<span>{STATUS_LABELS[item.status] ?? item.status}</span>
 								</div>
 								<Link className="case-open" to={casePath(item.caseNo)}>
 									지금 확인 <Icon name="arrow" size={14} />

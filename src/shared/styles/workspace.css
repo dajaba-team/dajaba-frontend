@@ -361,7 +361,7 @@
 	border-top: 1px solid var(--color-border);
 	transition: background-color 0.15s ease;
 }
-/* 확인할 케이스 줄 — 아이콘·등급 배지·버튼을 위험 등급 색으로 (도넛과 같은 계열) */
+/* 확인할 케이스 줄 — 아이콘·등급 배지를 위험 등급 색으로 (도넛과 같은 계열). '지금 확인' 버튼은 브랜드 파랑 고정 */
 .focus-case {
 	--band: var(--color-muted);
 	--band-soft: var(--color-soft);
@@ -371,8 +371,8 @@
 	--band-soft: var(--risk-high-soft);
 }
 .focus-case[data-band="MEDIUM"] {
-	--band: var(--brand-primary);
-	--band-soft: var(--color-primary-soft);
+	--band: var(--risk-medium-strong);
+	--band-soft: var(--risk-medium-soft);
 }
 /* LOW 는 도넛의 연하늘(--brand-light)이 글자색으로는 너무 옅어 한 톤 진하게 */
 .focus-case[data-band="LOW"] {
@@ -402,7 +402,8 @@
 	text-decoration: none;
 }
 .case-identity > span,
-.case-score > span {
+.case-score > span,
+.case-score-main > span {
 	display: block;
 	margin-top: 4px;
 	font-size: 12px;
@@ -418,8 +419,12 @@
 	white-space: nowrap;
 }
 .case-score-main {
+	text-align: right;
+}
+/* 배지는 점수·상태 두 줄의 세로 가운데에 */
+.focus-case .case-score {
 	display: flex;
-	gap: 10px;
+	gap: 12px;
 	align-items: center;
 	justify-content: flex-end;
 }
@@ -444,8 +449,8 @@
 	align-items: center;
 	gap: 15px;
 	padding: 9px 14px;
-	color: var(--band, var(--brand-primary));
-	background: var(--band-soft, var(--color-primary-soft));
+	color: var(--brand-primary);
+	background: var(--color-primary-soft);
 	text-decoration: none;
 	border-radius: 10px;
 	font-size: 12px;
@@ -457,7 +462,7 @@
 }
 .case-open:hover {
 	color: #fff;
-	background: var(--band, var(--brand-primary));
+	background: var(--brand-primary);
 }
 .text-link {
 	display: flex;
