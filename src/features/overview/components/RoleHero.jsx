@@ -1,9 +1,10 @@
-import { useState } from "react"
+import { useId, useState } from "react"
 import { Link } from "react-router"
 
 // 업무 대시보드 머리말 + 역할별 시작 타일(SCRUM-280, SCRUM-286 시안 B).
 // 문구 아래에 폭을 꽉 채운 이동 카드를 두고, 전신 곰이 카드 안에서 살짝 올라와 버튼을 안내해요.
 // 안내 문장은 처음 한 번 보여 주고 [안내 접기]로 숨겨요. 숨김은 이 브라우저에만 기억해요.
+// 안내를 접으면 이동 카드도 낮아져서 아래 KPI·차트가 첫 화면에 더 보여요.
 const ROLE_COPY = {
 	INVESTIGATOR: {
 		title: "조사역 대시보드",
@@ -50,6 +51,7 @@ function readHidden(loginId) {
 export default function RoleHero({ role, loginId }) {
 	const copy = ROLE_COPY[role] ?? ROLE_COPY.INVESTIGATOR
 	const [hintHidden, setHintHidden] = useState(() => readHidden(loginId))
+	const subId = useId()
 	function hideHint() {
 		setHintHidden(true)
 		try {
@@ -67,7 +69,10 @@ export default function RoleHero({ role, loginId }) {
 				<h1>{copy.title}</h1>
 				<p>{copy.description}</p>
 			</header>
-			<section className="role-band" aria-labelledby="role-band-title">
+			<section
+				className={`role-band${hintHidden ? " is-compact" : ""}`}
+				aria-labelledby="role-band-title"
+			>
 				<div className="role-band-copy">
 					<p className="ux-eyebrow">
 						{copy.eyebrow} {loginId} · 업무 시작
@@ -87,9 +92,15 @@ export default function RoleHero({ role, loginId }) {
 						</div>
 					)}
 				</div>
-				<Link className="role-band-cta" to={copy.to}>
+				{/* 링크 이름은 버튼 문구만, 작은 안내 문구는 설명으로 읽혀요(PR #62 리뷰). */}
+				<Link
+					className="role-band-cta"
+					to={copy.to}
+					aria-label={copy.cta}
+					aria-describedby={subId}
+				>
 					<span className="bear-full" aria-hidden="true" />
-					<small>{copy.sub}</small>
+					<small id={subId}>{copy.sub}</small>
 					<strong>
 						{copy.cta}
 						<span className="cta-arrow" aria-hidden="true">

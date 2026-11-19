@@ -733,6 +733,19 @@
 .role-band-cta:hover .bear-full {
 	transform: translateY(-4px);
 }
+/* 안내를 접으면 카드를 낮춰 KPI·차트를 첫 화면에 더 보여 줘요. */
+.role-band.is-compact {
+	gap: 1rem;
+	padding-block: 1.25rem;
+}
+.role-band.is-compact .role-band-cta {
+	min-height: 10.5rem;
+	padding-block: 1.5rem;
+}
+.role-band.is-compact .bear-full {
+	top: 0.5rem;
+	width: clamp(8rem, 14vw, 10rem);
+}
 @media (prefers-reduced-motion: no-preference) {
 	.bear-full {
 		animation: bear-peek 0.6s ease-out 0.15s both;
@@ -777,8 +790,12 @@
 		width: 2.5rem;
 		height: 2.5rem;
 	}
-	.bear-full {
+	.bear-full,
+	.role-band.is-compact .bear-full {
 		right: 0.5rem;
 		width: 9.5rem;
+	}
+	.role-band.is-compact .role-band-cta {
+		min-height: 10rem;
 	}
 }
