@@ -3,6 +3,7 @@ import { formatAmount } from "./caseMoney"
 import { hopKind, hopTime } from "./flowRoutes"
 
 // 경로 지도 — 대상 계좌(A)에서 나간 돈이 경로 계좌(B, C …)를 거쳐 A로 돌아온 길을 한 줄로 그려요(SCRUM-280 시안).
+// 화면이 시간 순서로 찾은 길이라 룰이 찾은 rule_facts.paths 와 다를 수 있어요 — 머리에 "룰 판정 아님"을 적어요.
 // 계좌 글자는 처음 나온 순서대로 붙이고, 대상 계좌는 늘 A예요. 아래 [경로 거래 전체 표]에 거래 ID를 함께 적어요.
 function letters(routes, targetRef) {
 	const map = new Map([[targetRef, "A"]])
@@ -19,6 +20,7 @@ export default function CaseRouteMap({ routes, targetRef, accountNos }) {
 	const no = (ref) => accountNos.get(ref) ?? ref
 	return (
 		<>
+			<p className="route-note">화면에서 시간 순서로 찾은 길 · 룰 판정 아님</p>
 			{routes.map((route, index) => {
 				const nodes = [route[0].source, ...route.map((edge) => edge.target)]
 				return (

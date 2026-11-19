@@ -14,9 +14,9 @@ const history = (action, from, to, by, minute, comment = null) => ({
 	created_at: at(minute),
 })
 const user = (loginId) => ({ login_id: loginId, display_name: `예시 ${loginId}` })
-const alertOf = (index) => ({
+const alertOf = (index, ruleId = "R02_FAN_IN_24H") => ({
 	alert_no: `ALT-20221101-00010${index + 1}`,
-	rule_id: "R02_FAN_IN_24H",
+	rule_id: ruleId,
 	batch_date: "2022-11-01",
 	window_start: "2022-10-31T00:00:00",
 	window_end: "2022-11-01T00:00:00",
@@ -174,7 +174,8 @@ export function seedCases() {
 	].map((item, index) => ({
 		latest_score: index === 1 ? PENDING_SCORE : scored([0.94, null, 0.92, 0.91][index]),
 		...item,
-		alert: alertOf(index),
+		// 순환 예시(001001)만 R04_CYCLE — 경로 지도는 이 룰에서만 먼저 보여요.
+		alert: alertOf(index, item.case_no === "CASE-2022-001001" ? "R04_CYCLE" : undefined),
 		created_at: at(index),
 		updated_at: at(index + 10),
 	}))
