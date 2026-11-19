@@ -52,6 +52,21 @@ const PARAMETER_LABELS = {
 	role: "역할",
 	is_active: "활성 여부",
 	revision_no: "수정본 번호",
+	// 감사 기록 필터(AI 호출 기록·접근 기록, 계약서 5.9·5.10) — 화면 칸 이름과 같게
+	login_id: "사용자 아이디",
+	action: "동작",
+	target_type: "대상 종류",
+	target_id: "대상 번호",
+	endpoint: "엔드포인트",
+	outcome: "결과",
+	request_id: "요청 ID",
+	error_code: "실패 코드",
+	failure_code: "실패 코드",
+}
+
+/** 쿼리·경로 파라미터 이름의 화면 이름. 모르는 이름은 "검색 조건". */
+export function getParameterLabel(parameter) {
+	return PARAMETER_LABELS[parameter] ?? "검색 조건"
 }
 
 /** 400 INVALID_REQUEST 의 details.parameter(틀린 쿼리·경로 파라미터 이름). 없으면 null. */
@@ -98,7 +113,7 @@ export function getErrorMessage(error) {
 	if (code === "INVALID_REQUEST") {
 		const parameter = getInvalidParameter(error)
 		if (parameter)
-			return `${PARAMETER_LABELS[parameter] ?? "검색 조건"} 값이 올바르지 않아요. 조건을 확인해 주세요.`
+			return `${getParameterLabel(parameter)} 값이 올바르지 않아요. 조건을 확인해 주세요.`
 		return "입력 값이 올바른지 확인해 주세요."
 	}
 	// NOT_FOUND는 주소 자체가 없다는 뜻(아직 서버에 없는 API)이에요. CASE_NOT_FOUND처럼 대상이 없는 것과 달라요.
@@ -108,7 +123,13 @@ export function getErrorMessage(error) {
 	if (code === "METHOD_NOT_ALLOWED")
 		return "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."
 	// 관리자 본인·SYSTEM 계정 변경(BE #92). 버튼을 숨겨서 보통 안 보여야 정상이에요.
-	if (code === "ACCOUNT_CHANGE_NOT_ALLOWED") return "이 계정은 바꿀 수 없어요."
+	// details.reason 이 오면 이유를 나눠 알려요. 모르는 값이면 공통 문구.
+	if (code === "ACCOUNT_CHANGE_NOT_ALLOWED") {
+		const reason = error.response?.data?.error?.details?.reason
+		if (reason === "SELF") return "본인 계정은 바꿀 수 없어요."
+		if (reason === "SYSTEM") return "시스템 계정은 바꿀 수 없어요."
+		return "이 계정은 바꿀 수 없어요."
+	}
 	// AI 요약은 만들었지만 숫자·날짜·건수·계좌 검사를 통과하지 못해 저장하지 않았어요(BE RefreshCaseSummary).
 	if (code === "SUMMARY_CODE_CHECK_FAILED")
 		return "AI 요약이 원본 데이터 검사를 통과하지 못해 저장하지 않았어요. 다시 생성해 주세요."

@@ -188,7 +188,7 @@ describe("비활성화·재활성화·비밀번호 초기화", () => {
 		)
 		expect(await screen.findByText("예시 inv01 계정을 다시 활성화했어요.")).toBeInTheDocument()
 	})
-	it("409 ACCOUNT_CHANGE_NOT_ALLOWED 면 '이 계정은 바꿀 수 없어요' + 계정 목록을 다시 불러온다 (SCRUM-318)", async () => {
+	it("409 ACCOUNT_CHANGE_NOT_ALLOWED(SYSTEM) 면 '시스템 계정은 바꿀 수 없어요' + 계정 목록을 다시 불러온다 (SCRUM-318)", async () => {
 		server.use(
 			http.post("*/api/v1/admin/users/:id/deactivate", () =>
 				HttpResponse.json(
@@ -213,7 +213,7 @@ describe("비활성화·재활성화·비밀번호 초기화", () => {
 		const before = lists
 		const dialog = await screen.findByRole("dialog", { name: "계정 비활성화" })
 		await user.click(within(dialog).getByRole("button", { name: "비활성화" }))
-		expect(await within(dialog).findByText("이 계정은 바꿀 수 없어요.")).toBeInTheDocument()
+		expect(await within(dialog).findByText("시스템 계정은 바꿀 수 없어요.")).toBeInTheDocument()
 		await waitFor(() => expect(lists).toBeGreaterThan(before))
 		server.events.removeAllListeners()
 	})

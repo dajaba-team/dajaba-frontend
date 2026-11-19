@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
 	getErrorMessage,
 	getInvalidParameter,
+	getParameterLabel,
 	isAiFailure,
 	isVersionConflict,
 } from "../shared/api/apiClient"
@@ -48,15 +49,23 @@ describe("서버 실패 안내", () => {
 	it("응답 유실 시 저장 실패를 단정하거나 자동 재시도를 유도하지 않는다", () => {
 		expect(getErrorMessage({ code: "ETIMEDOUT" })).toContain("최신 내용을 확인")
 	})
-	it("계정 관리의 본인·SYSTEM 계정 변경은 '이 계정은 바꿀 수 없어요' (SCRUM-318)", () => {
-		expect(
-			getErrorMessage(
-				failure(409, "ACCOUNT_CHANGE_NOT_ALLOWED", "바꿀 수 없는 계정입니다", {
-					reason: "SELF",
-				}),
-			),
-		).toBe("이 계정은 바꿀 수 없어요.")
-	})
+	it.each([
+		["SELF", "본인 계정은 바꿀 수 없어요."],
+		["SYSTEM", "시스템 계정은 바꿀 수 없어요."],
+		[undefined, "이 계정은 바꿀 수 없어요."],
+		["OTHER", "이 계정은 바꿀 수 없어요."],
+	])(
+		"계정 관리 409 ACCOUNT_CHANGE_NOT_ALLOWED — reason %s 이면 '%s' (SCRUM-318)",
+		(reason, message) => {
+			expect(
+				getErrorMessage(
+					failure(409, "ACCOUNT_CHANGE_NOT_ALLOWED", "바꿀 수 없는 계정입니다", {
+						reason,
+					}),
+				),
+			).toBe(message)
+		},
+	)
 	it("405 METHOD_NOT_ALLOWED 는 일반 실패 안내", () => {
 		expect(getErrorMessage(failure(405, "METHOD_NOT_ALLOWED", "Method Not Allowed"))).toBe(
 			"요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.",
@@ -105,6 +114,18 @@ describe("400 쿼리·경로 파라미터 오류 details.parameter (BE #76, SCRU
 		})
 		expect(getInvalidParameter(error)).toBe("from")
 		expect(getErrorMessage(error)).toBe("시작일 값이 올바르지 않아요. 조건을 확인해 주세요.")
+	})
+	it.each([
+		["action", "동작"],
+		["target_type", "대상 종류"],
+		["login_id", "사용자 아이디"],
+		["endpoint", "엔드포인트"],
+		["failure_code", "실패 코드"],
+	])("감사 기록 필터 %s 는 '%s' 로 안내", (parameter, label) => {
+		expect(getParameterLabel(parameter)).toBe(label)
+		expect(getErrorMessage(failure(400, "INVALID_REQUEST", "x", { parameter }))).toBe(
+			`${label} 값이 올바르지 않아요. 조건을 확인해 주세요.`,
+		)
 	})
 	it("모르는 이름은 '검색 조건', parameter 가 없으면 기존 입력 안내", () => {
 		expect(getErrorMessage(failure(400, "INVALID_REQUEST", "x", { parameter: "weird" }))).toBe(
