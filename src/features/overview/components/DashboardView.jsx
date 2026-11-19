@@ -5,7 +5,7 @@ import DashboardHero from "../../../shared/ui/dashboard/DashboardHero"
 import CountUp from "../../../shared/ui/dashboard/CountUp"
 import Icon from "../../../shared/ui/dashboard/Icon"
 import { STATUS_LABELS } from "../../cases/labels"
-import { bandColor, riskCounts, riskNames, riskColors, demoTrend } from "../model/analytics"
+import { rankColors, riskCounts, riskNames, riskColors, demoTrend } from "../model/analytics"
 
 export default function DashboardView({
 	items,
@@ -73,8 +73,7 @@ export default function DashboardView({
 					{
 						label: "조사 우선순위 점수",
 						data: scored.map((i) => i.score),
-						backgroundColor: scored.map((i) => bandColor(i.scoreBand)),
-						gradientTo: "--chart-fade",
+						backgroundColor: rankColors(scored.length),
 						maxBarThickness: 18,
 					},
 				],

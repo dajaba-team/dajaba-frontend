@@ -49,30 +49,13 @@ export default function AnalyticsChart({
 			type,
 			data: {
 				...data,
-				datasets: data.datasets.map(({ gradientTo, ...d }) => {
-					const fill = Array.isArray(d.backgroundColor)
+				datasets: data.datasets.map((d) => ({
+					...d,
+					borderColor: resolve(d.borderColor),
+					backgroundColor: Array.isArray(d.backgroundColor)
 						? d.backgroundColor.map(resolve)
-						: resolve(d.backgroundColor)
-					const colorAt = (i) => (Array.isArray(fill) ? fill[i] : fill)
-					const end = resolve(gradientTo)
-					return {
-						...d,
-						borderColor: resolve(d.borderColor),
-						// gradientTo 가 있으면 값 축 방향으로 원래 색 → gradientTo 색 그라데이션.
-						backgroundColor: end
-							? (ctx) => {
-									const { ctx: c, chartArea: area } = ctx.chart
-									if (!area) return colorAt(ctx.dataIndex)
-									const g = horizontal
-										? c.createLinearGradient(area.left, 0, area.right, 0)
-										: c.createLinearGradient(0, area.bottom, 0, area.top)
-									g.addColorStop(0, colorAt(ctx.dataIndex))
-									g.addColorStop(1, end)
-									return g
-								}
-							: fill,
-					}
-				}),
+						: resolve(d.backgroundColor),
+				})),
 			},
 			options: {
 				responsive: true,
