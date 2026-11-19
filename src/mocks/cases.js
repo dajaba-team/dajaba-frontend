@@ -2,6 +2,7 @@
 // A6 close-with-draft(str 컨트롤러)는 백엔드가 아직 없어 CloseCase와 같은 순서로 만들었어요 〔초안〕.
 // 버튼(available_actions)·오류 순서는 백엔드 CaseAction·유스케이스와 맞췄어요: 404 → version 409 → 담당 403 → 상태 409.
 // 계좌는 가린 값과 account_ref만 둬요. 원본 account_key는 예시 데이터에도 넣지 않아요(01_code_rules §6-3).
+import { canAsk } from "./caseQuestions"
 
 const at = (minute) => `2026-11-02T01:${String(minute).padStart(2, "0")}:00Z`
 const history = (action, from, to, by, minute, comment = null) => ({
@@ -270,7 +271,11 @@ export function detailResponse(viewer, item) {
 		current_draft: null,
 		prior_alerts: [],
 		history: item.history.slice(0, 20),
-		available_actions: availableActions(viewer, item),
+		// ASK_QUESTION은 상세에만 — 상태가 아니라 역할·담당 기준이라 availableActions와 따로 붙여요(설계 문서 7.2).
+		available_actions: [
+			...availableActions(viewer, item),
+			...(canAsk(viewer, item) ? ["ASK_QUESTION"] : []),
+		],
 	}
 }
 

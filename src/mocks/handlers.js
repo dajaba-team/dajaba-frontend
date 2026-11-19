@@ -22,10 +22,13 @@ import {
 	seedCases,
 	transactionsResponse,
 } from "./cases"
+import { askQuestion, listQuestions, seedQuestions, setAskEnabled } from "./caseQuestions"
 import { http, HttpResponse } from "msw"
 
 let cases = seedCases()
 let drafts = seedStrDrafts()
+// 질문 답변(A8·C9) — { next, items }
+let questions = seedQuestions()
 let currentUser = null
 // 배치 실행 (B1~B5) — 적재·케이스 생성은 접수하면 RUNNING, 첫 상태 조회에서 끝나요. 룰 스캔·점수는 바로 끝나요.
 // 같은 유형·날짜가 성공했으면 409 BATCH_ALREADY_DONE(적재는 날짜와 상관없이 한 번).
@@ -92,9 +95,15 @@ const accountFail = (status, code, message, details = {}) =>
 
 // pendingApproval: 케이스 1001을 승인 대기로 둔 시드(승인함 테스트 — mocks/approvals.js seedPendingApproval)
 // formerAssignee: 승인 대기 케이스 1001을 예전에 담당했던 사람(login_id) — 이력에 REASSIGN 행을 남겨요(자기 승인 막기 시험).
-export function resetCases(user = null, { pendingApproval = false, formerAssignee = null } = {}) {
+// askEnabled: 백엔드 aml.ai.ask-enabled — false면 상세 available_actions에 ASK_QUESTION이 안 나가요(MSW 기본은 켬).
+export function resetCases(
+	user = null,
+	{ pendingApproval = false, formerAssignee = null, askEnabled = true } = {},
+) {
 	cases = seedCases()
 	drafts = seedStrDrafts()
+	questions = seedQuestions()
+	setAskEnabled(askEnabled)
 	if (pendingApproval) seedPendingApproval(cases, drafts)
 	if (formerAssignee) {
 		const item = cases.find((entry) => entry.case_no === "CASE-2022-001001")
@@ -703,6 +712,20 @@ export const handlers = [
 				{ status: 404 },
 			)
 		return HttpResponse.json({ case_no: item.case_no, summary: item.latest_summary ?? null })
+	}),
+	// 질문 답변 — 계약서 5.3 A8(201 질문 한 줄)·C9(지난 질문, 최신순). 규칙·가짜 AI는 mocks/caseQuestions.js
+	http.post(`${base}/api/v1/cases/:caseNo/questions`, async ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		const body = await request.json().catch(() => null)
+		const result = askQuestion(currentUser, item, body, questions)
+		return HttpResponse.json(result.body, { status: result.status })
+	}),
+	http.get(`${base}/api/v1/cases/:caseNo/questions`, ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		const result = listQuestions(currentUser, item, new URL(request.url), questions)
+		return HttpResponse.json(result.body, { status: result.status })
 	}),
 	// S1 초안 생성 — BE develop에 있어요(SCRUM-183). MSW는 같은 계약으로 답해요. 새 초안 본문은 7항목 예시를 복사.
 	http.post(`${base}/api/v1/cases/:caseNo/str-drafts`, async ({ params, request }) => {
