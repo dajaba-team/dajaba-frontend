@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router"
 import { QueryClientProvider } from "@tanstack/react-query"
+import { http, HttpResponse } from "msw"
 import App from "../app/App"
 import { createQueryClient } from "../app/queryClient"
 import { resetCases } from "../mocks/handlers"
@@ -186,6 +187,35 @@ describe("비활성화·재활성화·비밀번호 초기화", () => {
 			),
 		)
 		expect(await screen.findByText("예시 inv01 계정을 다시 활성화했어요.")).toBeInTheDocument()
+	})
+	it("409 ACCOUNT_CHANGE_NOT_ALLOWED(SYSTEM) 면 '시스템 계정은 바꿀 수 없어요' + 계정 목록을 다시 불러온다 (SCRUM-318)", async () => {
+		server.use(
+			http.post("*/api/v1/admin/users/:id/deactivate", () =>
+				HttpResponse.json(
+					{
+						error: {
+							code: "ACCOUNT_CHANGE_NOT_ALLOWED",
+							message: "바꿀 수 없는 계정입니다",
+							details: { reason: "SYSTEM" },
+						},
+					},
+					{ status: 409 },
+				),
+			),
+		)
+		let lists = 0
+		server.events.on("request:start", ({ request }) => {
+			const url = new URL(request.url)
+			if (request.method === "GET" && url.pathname === "/api/v1/admin/users") lists += 1
+		})
+		const user = renderApp()
+		await user.click(within(await rowOf("inv01")).getByRole("button", { name: "비활성화" }))
+		const before = lists
+		const dialog = await screen.findByRole("dialog", { name: "계정 비활성화" })
+		await user.click(within(dialog).getByRole("button", { name: "비활성화" }))
+		expect(await within(dialog).findByText("시스템 계정은 바꿀 수 없어요.")).toBeInTheDocument()
+		await waitFor(() => expect(lists).toBeGreaterThan(before))
+		server.events.removeAllListeners()
 	})
 	it("비밀번호 초기화는 8~128자를 먼저 검사하고, 보낸 뒤 입력을 비운다", async () => {
 		const bodies = recordBodies("/reset-password")
