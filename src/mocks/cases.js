@@ -36,10 +36,10 @@ const SCORE_REASONS = [
 	reason("amount_out_sum_24h", 152000.5, "USD", 0.31),
 	reason("fan_out_degree_24h", null, "count", -0.18),
 ]
-const scored = (score) => ({
+const scored = (score, band = "HIGH") => ({
 	score_status: "SCORED",
 	score,
-	score_band: "HIGH", // 예시 정책 경계 0.9 이상
+	score_band: band, // 예시 정책 경계 HIGH 0.9 이상
 	failure_code: null,
 	model_version: "xgb-2022.11",
 	feature_version: "f1",
@@ -172,7 +172,12 @@ export function seedCases() {
 			],
 		},
 	].map((item, index) => ({
-		latest_score: index === 1 ? PENDING_SCORE : scored([0.94, null, 0.92, 0.91][index]),
+		latest_score:
+			index === 1
+				? PENDING_SCORE
+				: index === 2
+					? scored(0.72, "MEDIUM")
+					: scored([0.94, null, null, 0.91][index]),
 		...item,
 		// 순환 예시(001001)만 R04_CYCLE — 경로 지도는 이 룰에서만 먼저 보여요.
 		alert: alertOf(index, item.case_no === "CASE-2022-001001" ? "R04_CYCLE" : undefined),
@@ -215,9 +220,10 @@ const summaryOf = (item) => ({
 	account_no: item.account_no,
 	entity_id: null,
 	assignee: item.assignee,
-	score: null,
-	score_band: null,
-	policy_version: null,
+	// 목록 줄 점수도 상세처럼 latest_score 값 (대시보드 위험 등급 분포가 로컬 mock 에서도 보이게)
+	score: item.latest_score?.score ?? null,
+	score_band: item.latest_score?.score_band ?? null,
+	policy_version: item.latest_score?.score_band ? "mock-policy" : null,
 	rejection_reason_code: item.rejection_reason_code,
 	version: item.version,
 	created_at: item.created_at,

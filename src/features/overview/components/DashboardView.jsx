@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react"
 import { Link } from "react-router"
 import AnalyticsChart from "../../../shared/ui/charts/AnalyticsChart"
+import RiskGauge from "./RiskGauge"
 import DashboardHero from "../../../shared/ui/dashboard/DashboardHero"
 import CountUp from "../../../shared/ui/dashboard/CountUp"
 import Icon from "../../../shared/ui/dashboard/Icon"
 import { STATUS_LABELS } from "../../cases/labels"
-import { bandColor, riskCounts, riskNames, riskColors, demoTrend } from "../model/analytics"
+import { riskCounts, riskNames, riskColors, demoTrend } from "../model/analytics"
 
 export default function DashboardView({
 	items,
@@ -18,17 +19,9 @@ export default function DashboardView({
 	dark = false,
 	hero = null,
 }) {
-	const [mode, setMode] = useState("score")
 	const [period, setPeriod] = useState(10)
 	const [replay, setReplay] = useState(0)
 	const counts = useMemo(() => riskCounts(items), [items])
-	const risk = useMemo(
-		() => ({
-			labels: riskNames,
-			datasets: [{ data: counts, backgroundColor: riskColors, hoverOffset: 6 }],
-		}),
-		[counts],
-	)
 	const scope = demo
 		? `현재 시연 케이스 ${items.length}건 기준`
 		: `점수순 상위 ${items.length}건 기준`
@@ -65,20 +58,6 @@ export default function DashboardView({
 					},
 				],
 			}
-		if (mode === "score") {
-			const scored = items.filter((i) => i.score != null).slice(0, 8)
-			return {
-				labels: scored.map((i) => i.caseNo),
-				datasets: [
-					{
-						label: "조사 우선순위 점수",
-						data: scored.map((i) => i.score),
-						backgroundColor: scored.map((i) => bandColor(i.scoreBand)),
-						maxBarThickness: 18,
-					},
-				],
-			}
-		}
 		return {
 			labels: Object.values(STATUS_LABELS),
 			datasets: [
@@ -102,7 +81,7 @@ export default function DashboardView({
 				},
 			],
 		}
-	}, [demo, items, mode, period])
+	}, [demo, items, period])
 	return (
 		<section className="intelligence-page" aria-label="업무 대시보드">
 			{/* 업무 화면은 역할별 머리말(hero)을, 시연 화면은 기존 큰 배너를 써요. */}
@@ -159,39 +138,29 @@ export default function DashboardView({
 				<section className="analytics-panel trend-panel">
 					<div className="analytics-head">
 						<div>
-							<h2>
-								{demo
-									? "거래 흐름"
-									: mode === "status"
-										? "조사 흐름 한눈에 보기"
-										: "케이스 우선순위 비교"}
-							</h2>
+							<h2>{demo ? "거래 흐름" : "조사 흐름 한눈에 보기"}</h2>
 							<p>
 								{demo
 									? "일별 거래 건수 · 시각화용 합성 예시"
-									: `${scope} · ${mode === "status" ? "현재 상태별 건수" : "점수 있는 상위 8건 · 범죄 확률 아님"}`}
+									: `${scope} · 현재 상태별 건수`}
 							</p>
 						</div>
-						<div className="chart-period" aria-label="차트 표시 선택">
-							{(demo
-								? [
-										[10, "전체 10일"],
-										[5, "최근 5일"],
-									]
-								: [
-										["score", "우선순위"],
-										["status", "업무 현황"],
-									]
-							).map(([v, t]) => (
-								<button
-									key={v}
-									aria-pressed={(demo ? period : mode) === v}
-									onClick={() => (demo ? setPeriod(v) : setMode(v))}
-								>
-									{t}
-								</button>
-							))}
-						</div>
+						{demo && (
+							<div className="chart-period" aria-label="차트 표시 선택">
+								{[
+									[10, "전체 10일"],
+									[5, "최근 5일"],
+								].map(([v, t]) => (
+									<button
+										key={v}
+										aria-pressed={period === v}
+										onClick={() => setPeriod(v)}
+									>
+										{t}
+									</button>
+								))}
+							</div>
+						)}
 					</div>
 					<div className="trend-summary">
 						<strong>
@@ -207,16 +176,11 @@ export default function DashboardView({
 						</strong>
 						{demo && <span>{`2022.09.${11 - period} — 09.10`}</span>}
 					</div>
-					<div
-						className="trend-canvas chart-transition"
-						key={`${mode}-${period}-${replay}`}
-					>
+					<div className="trend-canvas chart-transition" key={`${period}-${replay}`}>
 						{trend.labels.length ? (
 							<AnalyticsChart
 								type={demo ? "line" : "bar"}
 								data={trend}
-								ratio={!demo && mode === "score"}
-								horizontal={!demo && mode === "score"}
 								dark={dark}
 								replay={replay}
 								label={trend.labels
@@ -224,7 +188,7 @@ export default function DashboardView({
 									.join(", ")}
 							/>
 						) : (
-							<p className="dashboard-empty">아직 산출된 점수가 없습니다.</p>
+							<p className="dashboard-empty">표시할 데이터가 없습니다.</p>
 						)}
 					</div>
 				</section>
@@ -236,23 +200,11 @@ export default function DashboardView({
 						</div>
 						<i className="soft-dot" />
 					</div>
-					<div className="risk-visual">
-						{items.length > 0 && (
-							<AnalyticsChart
-								type="doughnut"
-								data={risk}
-								dark={dark}
-								replay={replay}
-								label={riskNames.map((n, i) => `${n} ${counts[i]}건`).join(", ")}
-							/>
-						)}
-						<div className="donut-center">
-							<strong>
-								<CountUp value={items.length} replay={replay} />
-							</strong>
-							<span>건</span>
-						</div>
-					</div>
+					<RiskGauge
+						counts={counts}
+						replay={replay}
+						label={riskNames.map((n, i) => `${n} ${counts[i]}건`).join(", ")}
+					/>
 					<div className="risk-legend">
 						{riskNames.map((n, i) => (
 							<div key={n}>
@@ -270,36 +222,51 @@ export default function DashboardView({
 			<section className="analytics-panel focus-panel">
 				<div className="analytics-head">
 					<div>
-						<h2>조사를 이어갈 케이스</h2>
+						<h2>지금 바로 확인해야 할 케이스</h2>
+						<p>위험 점수가 가장 높은 케이스예요. 지금 바로 열어 확인해 주세요.</p>
 					</div>
 					<Link className="text-link" to={listPath}>
 						전체 케이스 <Icon name="arrow" size={14} />
 					</Link>
 				</div>
 				{items.length ? (
-					items.slice(0, 3).map((item) => (
-						<div className="focus-case" key={item.caseNo}>
-							<div className="case-symbol">
-								<Icon name="case" size={22} />
+					items.slice(0, 3).map((item) => {
+						// 점수가 없으면 등급도 보이지 않게 — 미산출을 고위험처럼 칠하지 않는다.
+						const band =
+							item.score != null && ["HIGH", "MEDIUM", "LOW"].includes(item.scoreBand)
+								? item.scoreBand
+								: null
+						return (
+							<div
+								className="focus-case"
+								data-band={band ?? "NONE"}
+								key={item.caseNo}
+							>
+								<div className="case-symbol">
+									<Icon name="alert" size={22} />
+								</div>
+								<div className="case-identity">
+									<Link to={casePath(item.caseNo)}>{item.caseNo}</Link>
+									<span>
+										{item.accountNo ?? "계좌 정보 없음"} ·{" "}
+										{item.assignee?.displayName ?? "미배정"}
+									</span>
+								</div>
+								<div className="case-score">
+									{band && <em className="band-badge">{band}</em>}
+									<div className="case-score-main">
+										<strong>
+											{item.score == null ? "미산출" : item.score.toFixed(2)}
+										</strong>
+										<span>{STATUS_LABELS[item.status] ?? item.status}</span>
+									</div>
+								</div>
+								<Link className="case-open" to={casePath(item.caseNo)}>
+									지금 확인 <Icon name="arrow" size={14} />
+								</Link>
 							</div>
-							<div className="case-identity">
-								<Link to={casePath(item.caseNo)}>{item.caseNo}</Link>
-								<span>
-									{item.accountNo ?? "계좌 정보 없음"} ·{" "}
-									{item.assignee?.displayName ?? "미배정"}
-								</span>
-							</div>
-							<div className="case-score">
-								<strong>
-									{item.score == null ? "미산출" : item.score.toFixed(2)}
-								</strong>
-								<span>{STATUS_LABELS[item.status] ?? item.status}</span>
-							</div>
-							<Link className="case-open" to={casePath(item.caseNo)}>
-								케이스 열기 <Icon name="arrow" size={14} />
-							</Link>
-						</div>
-					))
+						)
+					})
 				) : (
 					<p className="dashboard-empty">조회 가능한 케이스가 없습니다.</p>
 				)}

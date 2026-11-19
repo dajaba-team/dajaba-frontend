@@ -84,6 +84,18 @@
 	/* HIGH 위험 강조색 — 브랜드 파랑(#0046ff)과 채도를 맞춘 산호빛 빨강 (SCRUM-285) */
 	--risk-high: #f04452;
 	--risk-high-soft: #ffeef0;
+	/* MEDIUM 위험 강조색 — 빨강·파랑 사이에서 눈에 띄는 호박색. 글자는 -strong 으로 대비 확보 */
+	--risk-medium: #f5a524;
+	--risk-medium-strong: #b26a00;
+	--risk-medium-soft: #fff4dc;
+	/* LOW 는 계기판·범례와 같은 연하늘. 글자로 쓰기엔 옅어 -strong 은 한 톤 진하게 */
+	--risk-low: var(--brand-light);
+	--risk-low-strong: #2a8fc9;
+	--risk-low-soft: #e6f5fd;
+	/* 계기판 조각은 -light → 기본색으로 그라데이션 */
+	--risk-high-light: #f57983;
+	--risk-medium-light: #f8c46a;
+	--risk-low-light: #b5e2f9;
 	--color-surface-raised: #fff;
 	--app: var(--color-canvas);
 	--surface: var(--color-surface);
@@ -123,4 +135,9 @@
 	--chart-neutral: #42536d;
 	--risk-high: #ff6b75;
 	--risk-high-soft: #3a1f2a;
+	/* 어두운 배경에서는 배지·아이콘 글자를 밝게, 연한 배경을 어둡게 */
+	--risk-medium-strong: #ffc561;
+	--risk-medium-soft: #3a2e17;
+	--risk-low-strong: #8cd2f5;
+	--risk-low-soft: #16324a;
 }
