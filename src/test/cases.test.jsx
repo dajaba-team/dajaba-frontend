@@ -633,24 +633,24 @@ describe("케이스 조사", () => {
 		expect(bodies).toEqual([{ investigator_notes: "내가 작성 중인 메모", version: 2 }])
 		server.events.removeAllListeners()
 	})
-	it("상세에 연결 경보와 최근 모델 점수를 보여 준다", async () => {
+	it("상세에 경보 정보와 최근 모델 점수를 보여 준다", async () => {
 		renderApp(`/cases/${REVIEWING}`)
-		const panel = await screen.findByRole("region", { name: "연결 경보" })
+		const panel = await screen.findByRole("region", { name: "경보 정보" })
 		expect(within(panel).getByText("ALT-20221101-000104")).toBeInTheDocument()
 		expect(within(panel).getByText("R02_FAN_IN")).toBeInTheDocument()
-		// 데이터 시각은 시간대를 붙이지 않고 받은 그대로(T만 공백)
+		// 탐지 기간은 상단 설명 줄에만 있어요. 데이터 시각은 시간대를 붙이지 않고 받은 그대로(T만 공백)
 		expect(
-			within(panel).getByText("2022-10-31 00:00:00 ~ 2022-11-01 00:00:00"),
+			screen.getByText(/탐지 기간 2022-10-31 00:00:00 ~ 2022-11-01 00:00:00/),
 		).toBeInTheDocument()
 		expect(within(panel).getByText("15건")).toBeInTheDocument()
-		const info = screen.getByRole("region", { name: "케이스 정보" })
+		const info = screen.getByRole("region", { name: "케이스 개요" })
 		expect(within(info).getByText("0.91")).toBeInTheDocument()
 		expect(within(info).getByText("등급 HIGH")).toBeInTheDocument()
 		expect(within(info).getByText("범죄 확률 아님 · 모델 xgb-2022.11")).toBeInTheDocument()
 	})
-	it("왜 올라왔는지: 기여 크기 순 상위 3개를 관측값·기준값·모델 기여로 나눠 보여 준다 (SCRUM-208)", async () => {
+	it("점수 근거: 기여 크기 순 상위 3개를 관측값·기준값·모델 기여로 나눠 보여 준다 (SCRUM-208)", async () => {
 		renderApp(`/cases/${REVIEWING}`)
-		const panel = await screen.findByRole("region", { name: "왜 올라왔는지" })
+		const panel = await screen.findByRole("region", { name: "점수 근거" })
 		const items = within(panel).getAllByRole("listitem")
 		// 목업 reasons 4개(기여 0.05·0.42·0.31·-0.18) → 절댓값 순 0.42·0.31·-0.18, 0.05는 빠짐
 		expect(items.map((item) => within(item).getByRole("code").textContent)).toEqual([
@@ -674,33 +674,30 @@ describe("케이스 조사", () => {
 		["FAILED", [], "점수 산출에 실패해서 이유가 없어요. 위험이 낮다는 뜻이 아니에요."],
 		["PENDING", [], "점수 산출 전이라 이유가 아직 없어요."],
 		["SCORED", [], "모델이 이유를 보내지 않았어요."],
-	])(
-		"왜 올라왔는지: %s · 이유 없음은 목록 대신 안내만 보여 준다",
-		async (status, reasons, text) => {
-			server.use(
-				http.get(`*/api/v1/cases/${REVIEWING}`, () =>
-					HttpResponse.json(
-						detailJson({
-							latest_score: {
-								score_status: status,
-								score: status === "SCORED" ? 0.91 : null,
-								score_band: null,
-								failure_code: status === "FAILED" ? "AI_TIMEOUT" : null,
-								model_version: null,
-								feature_version: null,
-								data_quality_status: null,
-								reasons,
-							},
-						}),
-					),
+	])("점수 근거: %s · 이유 없음은 목록 대신 안내만 보여 준다", async (status, reasons, text) => {
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}`, () =>
+				HttpResponse.json(
+					detailJson({
+						latest_score: {
+							score_status: status,
+							score: status === "SCORED" ? 0.91 : null,
+							score_band: null,
+							failure_code: status === "FAILED" ? "AI_TIMEOUT" : null,
+							model_version: null,
+							feature_version: null,
+							data_quality_status: null,
+							reasons,
+						},
+					}),
 				),
-			)
-			renderApp(`/cases/${REVIEWING}`)
-			const panel = await screen.findByRole("region", { name: "왜 올라왔는지" })
-			expect(within(panel).getByText(text)).toBeInTheDocument()
-			expect(within(panel).queryByRole("listitem")).not.toBeInTheDocument()
-		},
-	)
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		const panel = await screen.findByRole("region", { name: "점수 근거" })
+		expect(within(panel).getByText(text)).toBeInTheDocument()
+		expect(within(panel).queryByRole("listitem")).not.toBeInTheDocument()
+	})
 	it("점수 전·산출 실패면 점수 대신 상태를 보여 준다", async () => {
 		const latest = { score: null, model_version: null, reasons: [] }
 		server.use(
@@ -725,7 +722,7 @@ describe("케이스 조사", () => {
 		const bodies = recordBodies("/refresh-summary")
 		const user = renderApp(`/cases/${REVIEWING}`)
 		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
-		const panel = await screen.findByRole("region", { name: "AI 조사 요약" })
+		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		expect(within(panel).getByText("아직 만든 요약이 없습니다.")).toBeInTheDocument()
 		expect(
 			within(panel).getByText("요약 실패가 거래 열람·메모·상태 변경을 막지 않습니다."),
@@ -741,7 +738,7 @@ describe("케이스 조사", () => {
 	it("입력이 바뀐 요약은 '입력 변경됨'으로 보여 준다", async () => {
 		const user = renderApp("/cases/CASE-2022-001001")
 		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
-		const panel = await screen.findByRole("region", { name: "AI 조사 요약" })
+		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		expect(await within(panel).findByText("입력 변경됨")).toBeInTheDocument()
 		expect(within(panel).getByRole("button", { name: "요약 갱신" })).toBeInTheDocument()
 	})
@@ -776,7 +773,7 @@ describe("케이스 조사", () => {
 		)
 		const user = renderApp(`/cases/${REVIEWING}`)
 		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
-		const panel = await screen.findByRole("region", { name: "AI 조사 요약" })
+		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))
 		expect(await within(panel).findByRole("alert")).toHaveTextContent(
 			"AI 요약이 원본 데이터 검사를 통과하지 못해 저장하지 않았어요.",
@@ -786,13 +783,13 @@ describe("케이스 조사", () => {
 		)
 		// 다른 작업 버튼·메모 칸은 그대로
 		expect(screen.getByRole("button", { name: "에스컬레이션" })).toBeEnabled()
-		await user.click(screen.getByRole("button", { name: "메모" }))
+		await user.click(screen.getByRole("button", { name: "조사 메모" }))
 		expect(screen.getByRole("textbox", { name: "메모 내용" })).toBeEnabled()
 	})
 	it("요약 버튼은 REFRESH_SUMMARY가 있을 때만 보여 준다", async () => {
 		const user = renderApp("/cases/CASE-2022-001003")
 		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
-		const panel = await screen.findByRole("region", { name: "AI 조사 요약" })
+		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		expect(within(panel).queryByRole("button")).not.toBeInTheDocument()
 	})
 	it("없는 케이스는 404 안내를, 조회 오류는 다시 불러오기를 보여 준다", async () => {
@@ -1176,7 +1173,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 	})
 	it("직접 거래 밖의 건수는 경유·내 계좌 이체를 묶어 '그 밖'으로 적는다 (SCRUM-296)", async () => {
 		renderApp(`/cases/${REVIEWING}`)
-		const card = await screen.findByRole("region", { name: "거래 근거" })
+		const card = await screen.findByRole("region", { name: "거래 분석" })
 		expect(await within(card).findByText(/\(경유·내 계좌 이체\)/)).toHaveTextContent(
 			"그 밖 1건(경유·내 계좌 이체)",
 		)
@@ -1230,17 +1227,17 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 	})
 	it("[이력 전체 보기]는 C6 상태 이력을 따로 불러오고 메모 이력과 섞지 않는다", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
-		await user.click(await screen.findByRole("button", { name: "상태 이력" }))
+		await user.click(await screen.findByRole("button", { name: "처리 이력" }))
 		await user.click(await screen.findByRole("button", { name: "이력 전체 보기" }))
-		const history = await screen.findByRole("region", { name: "상태 이력 전체" })
+		const history = await screen.findByRole("region", { name: "처리 이력 전체" })
 		expect(await within(history).findByText("담당 배정")).toBeInTheDocument()
 		expect(within(history).getByText("케이스 생성")).toBeInTheDocument()
 		expect(within(history).queryByText("메모 저장")).not.toBeInTheDocument()
-		await user.click(screen.getByRole("button", { name: "메모" }))
+		await user.click(screen.getByRole("button", { name: "조사 메모" }))
 		expect(screen.getByRole("region", { name: "메모 이력" })).toBeInTheDocument()
-		await user.click(screen.getByRole("button", { name: "상태 이력" }))
+		await user.click(screen.getByRole("button", { name: "처리 이력" }))
 		await user.click(within(history).getByRole("button", { name: "최근 이력만 보기" }))
-		expect(await screen.findByRole("region", { name: "최근 이력" })).toBeInTheDocument()
+		expect(await screen.findByRole("region", { name: "처리 이력" })).toBeInTheDocument()
 	})
 })
 
