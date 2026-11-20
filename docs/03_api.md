@@ -73,7 +73,7 @@
 | 500         | `INTERNAL_ERROR` | 일반 실패 안내                                                              | 처리      |
 | (응답 없음) | timeout·네트워크 | "성공했는지 모름" — **쓰기였다면 최신 상태를 먼저 조회**하고 다시 할지 판단 | 처리      |
 
-- 429 `QUESTION_RATE_LIMITED`(질문하기 A8, `details.retry_after_seconds`)는 계약서에 처음 생기는 상태 코드예요. 질문 패널과 같이 SCRUM-303에서 넣어요.
+- 429 `QUESTION_RATE_LIMITED`(질문하기 A8, `details.retry_after_seconds`)는 계약서에 처음 생기는 상태 코드예요. `getErrorMessage`는 "잠시 뒤 다시 물어봐 주세요."를, `getRetryAfterSeconds`는 남은 초를 줘요. 질문 패널은 입력 칸 아래에 남은 초를 세어 보여 주고 입력을 남겨요(SCRUM-303).
 
 - 코드 목록 전체와 확정 여부는 BE 03 §2 표. 새 코드를 처리하면 `getErrorMessage`와 이 표에 같이 추가해요.
 - 옛 MSW 이름 `INVALID_TRANSITION`·`CASE_VERSION_CONFLICT`와 최상위 `code` 호환은 실제 cases API로 바꾸면서 지웠어요(FE-1, SCRUM-103).
@@ -87,7 +87,7 @@
 - 요청 중엔 진행 안내 + **같은 버튼 다시 누르기 막기**. 자동 재시도·폴링 없음.
 - 화면을 떠나도 서버 작업은 계속될 수 있어요. "취소됐다"고 표시하지 않아요.
 - 응답이 없거나 timeout이면 **최신 초안·검증·상태를 먼저 조회**하고 나서 다시 할지 정해요(같은 초안이 두 번 생길 수 있음 — BE 미결 21). 케이스 작업(`useCaseCommand`)은 응답이 없으면 상세·목록을 다시 불러요. 요약 갱신은 다시 불러온 요약의 `produced_at`이 누르기 전과 다르면 저장된 것으로 보고 실패 안내를 띄우지 않아요.
-- 질문하기(A8)만 한도가 30초라 timeout 35초예요 — SCRUM-303에서 붙여요(계약서 2.6).
+- 질문하기(A8)만 한도가 30초라 timeout `ASK_REQUEST_TIMEOUT_MS`(35초)예요(계약서 2.6, SCRUM-303). 응답 없이 끊기면 지난 질문(C9)을 다시 불러 저장됐는지 먼저 봐요.
 - 생성과 검증은 버튼이 따로예요. 생성 직후 자동 검증하지 않아요(안건 17).
 - 적재·**케이스 생성**은 `202 + batch_run_id` 비동기 → `GET /admin/batches/{batch_run_id}` 상태 조회(계약서 B4·B5, 11/4 Q8). 케이스 생성 카드(`OpenCasesCard`, SCRUM-180)는 202 뒤 바로 한 번, `RUNNING`이면 2초마다 다시 불러 끝나면 멈춰요. 자동 조회는 최대 10분(계약서 5.6) — 넘으면 멈추고 [상태 다시 확인]으로 직접 불러요. 적재 카드(`LoadDatasetCard`, SCRUM-220)도 같은 방식이고 상태 확인은 `useBatchRun` 훅이에요. 이미 적재된 DB의 409 `BATCH_ALREADY_DONE`은 실패가 아니라 "이미 적재돼 있음"으로 보여 줘요. 케이스 생성은 성공한 날짜도 다시 실행할 수 있어요(BE V014, SCRUM-238) — 이미 케이스가 된 경보는 건너뛰고 새로 HIGH가 된 경보만 만들어요. 같은 날짜가 돌고 있으면 409 `BATCH_RUNNING`.
 - 룰 스캔(`RuleScanCard`, SCRUM-220)은 동기 200 + `alerts_by_rule`(룰별 경보 수). 9/1(111만 건)도 기다리게 이 요청만 timeout 120초. 룰 스캔·점수는 동기라 폴링을 가정하지 않아요.

@@ -12,10 +12,22 @@ const TABS = [
 	["CONTEXT", "참고 거래"],
 ]
 
-export default function CaseEvidenceCard({ detail }) {
+export default function CaseEvidenceCard({
+	detail,
+	highlight = null,
+	onClearHighlight,
+	onReopenAsk,
+}) {
 	const [tab, setTab] = useState("GRAPH")
 	// 그래프 탭에 있는 동안에도 마지막에 보던 거래 범위를 그대로 둬요.
 	const [scope, setScope] = useState("EVIDENCE")
+	// 질문 패널에서 [근거 거래 n건 보기]를 누를 때마다 근거 거래 탭으로 옮겨요(SCRUM-303). 탭 구조(SCRUM-247)는 그대로.
+	const [seenHighlight, setSeenHighlight] = useState(highlight?.seq ?? null)
+	if (highlight && highlight.seq !== seenHighlight) {
+		setSeenHighlight(highlight.seq)
+		setTab("EVIDENCE")
+		setScope("EVIDENCE")
+	}
 	const agg = detail.aggregates
 	// 서버는 내 계좌끼리 옮긴 거래를 유입·유출 건수에서 빼고 전체 건수에는 넣어요.
 	// 그래서 "전체 − 유입 − 유출"에는 경유와 내 계좌 이체가 같이 들어가요 — 경유만 따로 오지 않아 "그 밖"으로 적어요.
@@ -27,7 +39,11 @@ export default function CaseEvidenceCard({ detail }) {
 				})()
 			: null
 	return (
-		<section className="case-panel case-card" aria-labelledby="evidence-card-title">
+		<section
+			className="case-panel case-card"
+			aria-labelledby="evidence-card-title"
+			id="case-evidence-card"
+		>
 			<div className="case-card-head evidence-head">
 				<div>
 					<p className="kicker">
@@ -59,7 +75,14 @@ export default function CaseEvidenceCard({ detail }) {
 				))}
 			</div>
 			<div className="case-tab-panel" hidden={tab === "GRAPH"}>
-				<CaseTransactionsPanel key={scope} caseNo={detail.caseNo} scope={scope} />
+				<CaseTransactionsPanel
+					key={scope}
+					caseNo={detail.caseNo}
+					scope={scope}
+					highlight={highlight}
+					onClearHighlight={onClearHighlight}
+					onReopenAsk={onReopenAsk}
+				/>
 			</div>
 			<div className="case-tab-panel" hidden={tab !== "GRAPH"}>
 				<CaseFlowGraph

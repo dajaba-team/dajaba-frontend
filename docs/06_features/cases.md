@@ -18,6 +18,19 @@
 - `evidence`와 `context`는 섞지 않아요. 참고 거래 상대방을 혐의자처럼 보이게 하지 않아요(안건 7).
 - 화면 집계 숫자(유입·유출)와 STR facts 숫자는 포함 범위가 달라 다를 수 있어요 — 라벨에 무엇을 셌는지 적어요 〔확인 필요: BE 미결 22〕.
 
+### 1.1 근거에 물어보기 — 질문 패널 [SCRUM-303, 노션 「조사역 질문 답변 설계 문서」 8절, 계약서 A8·C9]
+
+- 여는 곳: 상세 머리글 오른쪽 **[근거에 물어보기]**(아이콘 + 글자). `available_actions`에 `ASK_QUESTION`이 있을 때만 그려요 — 담당 조사역·승인자(BE SCRUM-302). 역할·상태를 화면에서 계산하지 않아요. 백엔드 `aml.ai.ask-enabled=false`면 서버가 안 넣어서 흔적 없이 사라져요.
+- 모양(`CaseAskPanel`): 64rem 이상이면 오른쪽에 붙어 본문 폭을 줄이고(겹치지 않음, 화면을 내려도 옆에 남음), 그보다 좁으면 본문을 덮어요. 제목 "이 케이스 근거에 물어보기", 부제 "AI 답변 · 조회만 해요. 본문에는 반영되지 않아요."
+- 질문·답 카드가 최신순으로 쌓여요. 질문 하나에 답 하나라 이어 묻기를 기대하게 하지 않으려고, 입력 칸 위에 "이전 질문과 별개로, 한 번에 하나씩 물어보세요."를 둬요. AI 답에는 곰 얼굴·"근거 도우미 AI"를 붙여 사람 질문과 구분해요.
+- 처음(지난 질문 0개)엔 안내 + 예시 질문 3개 — 누르면 입력만 채우고 보내지 않아요.
+- 입력: `n / 300`(NFC 뒤 UTF-16 길이, 서버와 같은 셈), 넘으면 빨간색 + [묻기] 비활성. 공백만이어도 비활성. 질문은 앞뒤 공백도 자르지 않고 그대로 보내요.
+- 기다리는 동안 내 질문 + "근거를 확인하는 중이에요" 카드, 입력 읽기 전용, [묻기] 막힘. "답변에 최대 30초 걸릴 수 있어요."
+- 상태별 표시(문구는 `askRules.js` 한 곳): `ANSWERED` 답 + "근거 거래 n건 보기" · `NO_DATA` "이 케이스 근거에는 그 값이 없어요." · `UNVERIFIED` "근거로 확인되지 않아 답을 보여 드리지 않아요." · `OUT_OF_SCOPE` `EDIT_REQUEST`/`OUTSIDE_CASE`/`JUDGMENT` 각각. 답 속 계좌는 받은 그대로(`10_BD30` 꼴).
+- 오류: 429 → 입력 칸 아래 "잠시 뒤 다시 물어봐 주세요 (N초)"(`details.retry_after_seconds`를 셈), 입력 유지 / 502 → 패널 안에만 실패 안내 + [다시 시도], 입력 유지, 나머지 화면은 그대로 / 400 → 입력 칸 아래 / 응답 없음 → C9 첫 페이지를 다시 불러 같은 질문이 저장돼 있으면 "답이 저장돼 있었어요", 없으면 [지난 질문 다시 불러오기].
+- 탭 이동·거래 클릭에도 안 닫히고 [닫기]로만 닫혀요. 닫으면 강조도 풀려요.
+- **근거 거래 강조**(1차 지금 페이지만): [근거 거래 n건 보기] → 거래 근거 카드가 [근거 거래] 탭으로 바뀌고 `evidence_transaction_ids` 행에 배경색, 그 답 카드에 같은 색 테두리, 표 위 "이 페이지 m건 · 전체 n건"(0건이면 "다른 페이지에 근거 거래가 있어요."), [강조 끄기]로 해제. 좁은 화면에선 패널을 접고 표 위에 [질문 패널 다시 열기]. 탭 구조(SCRUM-247)는 그대로.
+
 ## 2. 상태별 버튼 [BE flows 06, BE 04 §4]
 
 | 상태                          | 담당 조사역                                      | 다른 조사역 | 승인자   | 관리자      |
@@ -52,12 +65,16 @@
 | 11    | `GET /cases/{case_no}/histories`                            | 이력                                                                                                                                                                                       | 상세 `history`(최근 20건) + [이력 전체 보기] `casesApi.histories` — `CaseHistoryPanel`. 메모 이력은 따로 `CaseNoteHistory` (SCRUM-179)                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 12·13 | `POST …/refresh-summary`, `GET …/summary`                   | AI 요약                                                                                                                                                                                    | 없음                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 15    | `GET /cases/{case_no}/note-histories`                       | 메모 이력                                                                                                                                                                                  | `casesApi.noteHistories` — `CaseNoteHistory` (SCRUM-176)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| A8    | `POST /cases/{case_no}/questions` `{question}`              | 질문하기 → 201 질문 한 줄                                                                                                                                                                  | `casesApi.ask` — timeout 35초, `version` 없음, 자동 재시도 없음. 성공·응답 없음이면 C9만 다시 불러요(상세는 안 부름) (SCRUM-303, BE SCRUM-302 — 지금 MSW)                                                                                                                                                                                                                                                                                                                                                                                               |
+| C9    | `GET /cases/{case_no}/questions?page&size`                  | 지난 질문, 최신 먼저                                                                                                                                                                       | `casesApi.questions` — 패널을 열 때 `size=5`, 더 있으면 [지난 질문 더 보기] (SCRUM-303)                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 목업 규칙(계약서 2.4·5.7, SCRUM-317): 룰 이름은 룰 명세 v2의 6개(`R02_FAN_IN`·`R04_CYCLE` 등 — `_24H` 같은 예전 이름 안 씀), 가린 계좌는 은행 번호 앞 0 없이 `10_****8842`(BE 08_decisions 11/2 — `account_key`의 은행 ID를 정규화).
 
 초안 있는 종료 `POST /cases/{case_no}/close-with-draft` `{close_reason, comment, version}`는 str 컨트롤러예요(→ `str.md`). 프론트는 `casesApi.closeWithDraft`(MSW만 — BE 아직 없음). 모든 변경 요청에 `version`.
 
-Query key 〔제안〕: `["cases", filters]`, `["case", caseNo]`, `["case", caseNo, "transactions", scope, page]`·`["case", caseNo, "graph"]`·`["case", caseNo, "evidence", id]`, `["case", caseNo, "summary"]`, `["case", caseNo, "histories"]`.
+Query key 〔제안〕: `["cases", filters]`, `["case", caseNo]`, `["case", caseNo, "transactions", scope, page]`·`["case", caseNo, "graph"]`·`["case", caseNo, "evidence", id]`, `["case", caseNo, "summary"]`, `["case", caseNo, "histories"]`, `["case", caseNo, "questions", page]`.
+
+질문 MSW 규칙(`mocks/cases.js` `askQuestion`, 화면 확인용): "수정·바꿔·고쳐" → `EDIT_REQUEST`, "다른 고객·다른 케이스·전체 계좌번호" → `OUTSIDE_CASE`, "자금세탁·보고해야" → `JUDGMENT`, "확인 안 됨" → `UNVERIFIED`, "AI 오류" → 502, 예시 질문 3개 → `ANSWERED`(근거 거래 있는 케이스만), 나머지 → `NO_DATA`. 사람마다 1분 5번이 넘으면 429.
 
 ## 4. 조회·저장 흐름 [예전 「백엔드 기반 설계 보완」 §4, BE flows 02]
 
@@ -78,6 +95,8 @@ Query key 〔제안〕: `["cases", filters]`, `["case", caseNo]`, `["case", case
 - 저장 응답이 늦게 왔는데 그사이 계정이 바뀌었으면 캐시에 반영하지 않아요(`context.session` 비교).
 
 ## 6. 테스트에 있어야 하는 것
+
+질문 패널(`src/test/caseAsk.test.jsx`, SCRUM-303): `ASK_QUESTION` 없으면 버튼 없음(비담당·관리자), 예시 칩은 입력만, 300자·공백, 상태 6가지, 429·502·응답 없음, 강조 켜기·끄기·닫으면 해제, C9 5개씩.
 
 있음: 목록 → 상세 → 메모 저장 → STR 이동, 충돌 시 입력 보존·비교·재저장, 읽기 전용, 빈 필터 결과, 조회 실패 후 재시도, CSRF 오류 분리, 필드 오류, 새로고침 확인 (`src/test/cases.test.jsx`).
 실제 API로 바꿀 때 추가: 1페이지 ↔ `page=0`, 비담당자 버튼 숨김 + 직접 호출 403 `NOT_ASSIGNEE`, 종료·에스컬레이션 사유 필수, 요약만 실패해도 상세는 정상.

@@ -62,6 +62,35 @@ export function useCaseHistories(caseNo, page, enabled = true) {
 	})
 }
 
+export const caseQuestionsKey = (caseNo) => [...caseKey(caseNo), "questions"]
+
+/** 지난 질문(C9) — 질문 패널이 열려 있을 때만 불러요. 한 페이지 5개, 최신 먼저. */
+export function useCaseQuestions(caseNo, page, enabled = true) {
+	return useQuery({
+		queryKey: [...caseQuestionsKey(caseNo), page],
+		queryFn: ({ signal }) => casesApi.questions({ caseNo, page, size: 5 }, signal),
+		enabled: Boolean(caseNo) && enabled,
+	})
+}
+
+/**
+ * 질문하기(A8). 케이스를 바꾸지 않아서 상세는 다시 부르지 않고 지난 질문(C9)만 다시 불러요.
+ * 자동 재시도 없음. 응답 없이 끊겨도 서버엔 저장됐을 수 있어 C9 를 먼저 다시 불러요(계약서 2.6).
+ */
+export function useAskQuestion(caseNo) {
+	const client = useQueryClient()
+	const refresh = () => client.invalidateQueries({ queryKey: caseQuestionsKey(caseNo) })
+	return useMutation({
+		mutationFn: ({ question }) => casesApi.ask({ caseNo, question }),
+		onMutate: () => ({ session: client.getQueryData(["auth", "me"]) }),
+		onSettled: async (_data, error, _input, context) => {
+			if (context?.session !== client.getQueryData(["auth", "me"])) return
+			// 502·429·400 은 기록이 안 생겨요. 성공과 응답 없음만 목록이 바뀌었을 수 있어요.
+			if (!error || isNoResponse(error)) await refresh()
+		},
+	})
+}
+
 // 서버 상태가 화면과 달라서 생기는 오류 — 상세를 다시 불러 최신 버튼을 보여 줘요(계약서 3절).
 const REFETCH_ON = [
 	"CONCURRENT_UPDATE",
