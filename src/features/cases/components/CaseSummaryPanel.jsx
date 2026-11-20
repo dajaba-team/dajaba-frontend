@@ -26,7 +26,7 @@ export default function CaseSummaryPanel({ detail }) {
 	const failed = command.isError && !savedAnyway && !checking
 	return (
 		<section className="case-panel case-ai-summary" aria-labelledby="ai-summary-title">
-			<h2 id="ai-summary-title">AI 조사 요약</h2>
+			<h2 id="ai-summary-title">AI 요약</h2>
 			<p className="case-ai-summary-note">
 				요약 실패가 거래 열람·메모·상태 변경을 막지 않습니다.
 			</p>

@@ -4,12 +4,12 @@ import CaseNoteHistory from "./CaseNoteHistory"
 import CaseSummaryPanel from "./CaseSummaryPanel"
 import CaseHistoryPanel from "./CaseHistoryPanel"
 
-// 메모 · AI 요약 · 상태 이력 카드 (화면 설계 CASE-02 오른쪽 단).
-// 탭을 바꿔도 쓰던 메모·요약 요청 상태가 사라지지 않게, 안 보이는 탭은 지우지 않고 숨기기만 해요.
+// 조사 메모 · AI 요약 · 처리 이력 카드 (화면 설계 CASE-02 오른쪽 단).
+// 탭 이름과 탭 안의 제목은 같은 문구예요. 탭을 바꿔도 쓰던 메모·요약 요청 상태가 사라지지 않게, 안 보이는 탭은 지우지 않고 숨기기만 해요.
 const TABS = [
-	["memo", "메모"],
+	["memo", "조사 메모"],
 	["summary", "AI 요약"],
-	["history", "상태 이력"],
+	["history", "처리 이력"],
 ]
 
 // 메모를 고칠 수 있는 상태인데 버튼(UPDATE_NOTES)이 없으면 담당자가 아니라서예요 — 안내 문구만 고르고,
@@ -24,8 +24,8 @@ function memoEditableStatus(detail) {
 export default function CaseNotesCard({ detail, onRefresh }) {
 	const [tab, setTab] = useState("memo")
 	return (
-		<section className="case-panel case-card" aria-label="메모·요약·이력">
-			<div className="case-tabs" role="group" aria-label="메모·요약·이력 보기">
+		<section className="case-panel case-card" aria-label="조사 메모·AI 요약·처리 이력">
+			<div className="case-tabs" role="group" aria-label="조사 메모·AI 요약·처리 이력 보기">
 				{TABS.map(([value, label]) => (
 					<button
 						key={value}

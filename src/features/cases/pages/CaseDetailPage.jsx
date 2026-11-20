@@ -16,7 +16,8 @@ import {
 } from "../labels"
 
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
-// 배치는 시연 화면(/demo/cases)과 같은 2단: 왼쪽은 점수·연결 경보 → 점수 이유 상위 3개(SCRUM-208),
+// 카드 제목은 명사형으로 맞춰요: 케이스 개요 · 경보 정보 · 점수 근거 · 조사 메모/AI 요약/처리 이력 · 처리 작업 · 거래 분석.
+// 배치는 시연 화면(/demo/cases)과 같은 2단: 왼쪽은 케이스 개요·경보 정보 → 점수 이유 상위 3개(SCRUM-208),
 // 오른쪽은 메모·AI 요약·상태 이력 탭 + 다음 작업. 거래 근거(합계 + 자금 흐름·근거·참고 탭)는 그 아래 전체 폭 —
 // 그래프 글자가 줄어들지 않고 표가 가로로 잘리지 않게. 좁은 화면에선 한 줄로 쌓여요.
 
@@ -54,7 +55,7 @@ function ScoreBlock({ detail }) {
 function AlertPanel({ alert }) {
 	return (
 		<section className="case-panel case-summary" aria-labelledby="alert-title">
-			<h2 id="alert-title">연결 경보</h2>
+			<h2 id="alert-title">경보 정보</h2>
 			{alert ? (
 				<dl>
 					<dt>경보 번호</dt>
@@ -63,10 +64,6 @@ function AlertPanel({ alert }) {
 					<dd>{alert.ruleId}</dd>
 					<dt>배치 기준일</dt>
 					<dd>{alert.batchDate}</dd>
-					<dt>거래 시간 창</dt>
-					<dd>
-						{formatDataTime(alert.windowStart)} ~ {formatDataTime(alert.windowEnd)}
-					</dd>
 					<dt>묶인 거래</dt>
 					<dd>{alert.transactionCount}건</dd>
 				</dl>
@@ -94,14 +91,14 @@ export default function CaseDetailPage() {
 				<>
 					<header className="case-page-heading">
 						<div>
-							<p className="case-eyebrow">CASE v{detail.version}</p>
+							<p className="case-eyebrow">케이스 상세</p>
 							<h1>{detail.caseNo}</h1>
 							<p className="case-page-desc">
 								{[
 									detail.accountNo,
-									detail.alert && `연결 경보 ${detail.alert.alertNo}`,
+									detail.alert && `경보 ${detail.alert.alertNo}`,
 									detail.alert &&
-										`거래 시간 창 ${formatDataTime(detail.alert.windowStart)} ~ ${formatDataTime(detail.alert.windowEnd)}`,
+										`탐지 기간 ${formatDataTime(detail.alert.windowStart)} ~ ${formatDataTime(detail.alert.windowEnd)}`,
 								]
 									.filter(Boolean)
 									.join(" · ")}
@@ -122,8 +119,9 @@ export default function CaseDetailPage() {
 							<div className="case-detail-top">
 								<section
 									className="case-panel case-summary"
-									aria-label="케이스 정보"
+									aria-labelledby="case-overview-title"
 								>
+									<h2 id="case-overview-title">케이스 개요</h2>
 									<ScoreBlock detail={detail} />
 									<dl>
 										<dt>계좌</dt>
