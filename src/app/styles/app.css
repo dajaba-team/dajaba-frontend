@@ -15,8 +15,17 @@
 	color: var(--color-sidebar-text);
 	border-block-end: var(--border-width) solid var(--color-border);
 }
+/* 로고 줄: 로고 + 사이드바 닫기 버튼(SCRUM-327) */
+.app-brand-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2);
+}
 .app-brand {
 	display: flex;
+	flex: 1;
+	min-width: 0;
 	align-items: center;
 	gap: var(--space-3);
 	padding-inline: var(--space-2);
@@ -52,7 +61,7 @@
 	padding-block-start: var(--space-4);
 	border-block-start: var(--border-width) solid var(--color-border);
 }
-.app-brand + .sidebar-group.is-dev {
+.app-brand-row + .sidebar-group.is-dev {
 	padding-block-start: 0;
 	border: 0;
 }
@@ -124,6 +133,33 @@
 	margin-block-end: var(--space-1);
 	color: var(--color-text);
 	font-size: 0.8125rem;
+}
+
+/* ── 사이드바 접기·펼치기(SCRUM-327, 시안 A 떠 있는 카드형) ──
+   넓은 화면에서만 써요. 좁은 화면은 사이드바가 위에 쌓이므로 버튼·알약을 숨겨요. */
+.sidebar-toggle {
+	display: none;
+	flex-shrink: 0;
+	place-items: center;
+	width: 2rem;
+	height: 2rem;
+	min-height: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0.5rem;
+	background: var(--color-soft);
+	color: var(--color-muted);
+	cursor: pointer;
+	transition:
+		background-color 0.15s ease,
+		color 0.15s ease;
+}
+.sidebar-toggle:hover {
+	background: var(--color-primary-soft);
+	color: var(--color-primary);
+}
+.sidebar-pill {
+	display: none;
 }
 
 /* ── 위 띠 ───────────────────────────── */
@@ -395,30 +431,86 @@
 	}
 }
 @media (min-width: 48rem) {
+	/* 시안 A: 회색 캔버스 위에 사이드바가 둥근 카드로 떠 있어요(SCRUM-327). */
 	.app-shell {
 		display: grid;
-		grid-template-columns: 16rem minmax(0, 1fr);
+		grid-template-columns: 17.5rem minmax(0, 1fr);
 	}
 	.app-sidebar {
 		position: sticky;
-		inset-block-start: 0;
-		height: 100dvh;
+		inset-block-start: var(--space-3);
+		height: calc(100dvh - 2 * var(--space-3));
+		margin: var(--space-3) 0 var(--space-3) var(--space-3);
 		overflow-y: auto;
-		border-block-end: 0;
-		border-inline-end: var(--border-width) solid var(--color-border);
+		border: var(--border-width) solid var(--color-border);
+		border-radius: 1.125rem;
+		box-shadow: var(--shadow-card);
+		transition:
+			opacity 0.18s ease,
+			transform 0.18s ease;
 	}
+	.app-header {
+		background: color-mix(in srgb, var(--color-canvas) 88%, transparent);
+		border-bottom: 0;
+	}
+	.sidebar-toggle {
+		display: grid;
+	}
+	/* 접은 상태: 카드를 숨기고 본문이 전체 너비를 써요. 왼쪽 위 알약만 남겨요. */
+	.app-shell.is-sidebar-collapsed {
+		grid-template-columns: 0 minmax(0, 1fr);
+	}
+	.is-sidebar-collapsed .app-sidebar {
+		visibility: hidden;
+		opacity: 0;
+		transform: translateX(-1rem);
+		transition:
+			opacity 0.18s ease,
+			transform 0.18s ease,
+			visibility 0s linear 0.18s;
+	}
+	.is-sidebar-collapsed .app-header {
+		padding-inline-start: 11.5rem;
+	}
+	.sidebar-pill {
+		position: fixed;
+		inset-block-start: 0.875rem;
+		inset-inline-start: var(--space-3);
+		z-index: 25;
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: 0.25rem 0.25rem 0.25rem 0.375rem;
+		border: var(--border-width) solid var(--color-border);
+		border-radius: 999px;
+		background: var(--color-surface);
+		box-shadow: var(--shadow-card);
+	}
+	.sidebar-pill-brand {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding-inline-end: var(--space-1);
+		border-radius: 999px;
+		color: var(--color-text);
+		font-size: 0.875rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-decoration: none;
+	}
+	.sidebar-pill-brand img {
+		width: 1.75rem;
+		height: 1.75rem;
+		border-radius: 50%;
+		object-fit: contain;
+	}
+	.sidebar-pill .sidebar-toggle {
+		border-radius: 999px;
+	}
+
 	.app-navigation {
 		flex-direction: column;
 		overflow: visible;
-	}
-	.navigation-link.is-active::before {
-		content: "";
-		position: absolute;
-		inset-block: 0.5rem;
-		inset-inline-start: calc(-1 * var(--space-4));
-		width: 0.25rem;
-		border-radius: 0 0.25rem 0.25rem 0;
-		background: var(--color-sidebar-active);
 	}
 	.sidebar-note {
 		display: block;
@@ -432,6 +524,13 @@
 	}
 	.app-main {
 		padding: var(--space-6);
+	}
+}
+@media (min-width: 48rem) and (prefers-reduced-motion: reduce) {
+	.app-sidebar,
+	.is-sidebar-collapsed .app-sidebar {
+		transform: none;
+		transition: none;
 	}
 }
 .login-form [role="alert"],

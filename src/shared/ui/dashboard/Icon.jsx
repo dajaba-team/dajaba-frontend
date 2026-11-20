@@ -119,6 +119,9 @@ const iconPaths = {
 	),
 	chevron: <path d="m6 9 6 6 6-6" />,
 	minus: <path d="M5 12h14" />,
+	// 사이드바 접기·펼치기(SCRUM-327)
+	chevronsLeft: <path d="m12 6-6 6 6 6m6-12-6 6 6 6" />,
+	chevronsRight: <path d="m6 6 6 6-6 6m6-12 6 6-6 6" />,
 }
 export default function Icon({ name, size = 18 }) {
 	return (

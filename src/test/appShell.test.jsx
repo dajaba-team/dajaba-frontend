@@ -191,6 +191,50 @@ describe("앱 셸 — 사용자 흐름", () => {
 	})
 })
 
+describe("사이드바 접기·펼치기(SCRUM-327)", () => {
+	afterEach(() => localStorage.clear())
+
+	it("닫기 버튼으로 접으면 알약이 나타나고, 열기 버튼으로 다시 펼친다", async () => {
+		const user = renderApp("/cases", "inv01")
+		const close = await screen.findByRole("button", { name: "사이드바 닫기" })
+		expect(close).toHaveAttribute("aria-expanded", "true")
+		expect(close).toHaveAttribute("aria-controls", "app-sidebar")
+
+		await user.click(close)
+		const open = screen.getByRole("button", { name: "사이드바 열기" })
+		expect(open).toHaveAttribute("aria-expanded", "false")
+		expect(open).toHaveFocus()
+		expect(screen.getByRole("link", { name: "DAJABA 업무 대시보드" })).toHaveAttribute(
+			"href",
+			"/overview",
+		)
+		expect(document.querySelector(".app-shell")).toHaveClass("is-sidebar-collapsed")
+		expect(localStorage.getItem("dajaba.sidebar.v1")).toBe("collapsed")
+
+		await user.click(open)
+		expect(screen.queryByRole("button", { name: "사이드바 열기" })).toBeNull()
+		expect(screen.getByRole("button", { name: "사이드바 닫기" })).toHaveFocus()
+		expect(document.querySelector(".app-shell")).not.toHaveClass("is-sidebar-collapsed")
+		expect(localStorage.getItem("dajaba.sidebar.v1")).toBeNull()
+	})
+
+	it("Ctrl+B로 열고 닫는다", async () => {
+		const user = renderApp("/cases", "inv01")
+		await screen.findByRole("button", { name: "사이드바 닫기" })
+		await user.keyboard("{Control>}b{/Control}")
+		expect(screen.getByRole("button", { name: "사이드바 열기" })).toBeInTheDocument()
+		await user.keyboard("{Control>}b{/Control}")
+		expect(screen.queryByRole("button", { name: "사이드바 열기" })).toBeNull()
+	})
+
+	it("접은 상태는 다시 열어도 유지된다", async () => {
+		localStorage.setItem("dajaba.sidebar.v1", "collapsed")
+		renderApp("/cases", "inv01")
+		expect(await screen.findByRole("button", { name: "사이드바 열기" })).toBeInTheDocument()
+		expect(document.querySelector(".app-shell")).toHaveClass("is-sidebar-collapsed")
+	})
+})
+
 describe("안내 띠(GuideBar)", () => {
 	it("조사역 로그인 뒤 역할 기본 문구〔초안〕가 보인다", async () => {
 		renderApp("/cases", "inv01")

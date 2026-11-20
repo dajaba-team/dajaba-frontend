@@ -8,6 +8,7 @@ import { useToast } from "../../shared/ui/toast/useToast"
 import Icon from "../../shared/ui/dashboard/Icon"
 import { visibleMenus } from "../navigation/appNavigation"
 import brandMark from "../../assets/brand-mark.png"
+import { useSidebarCollapsed } from "./useSidebarCollapsed"
 
 // 위 띠 왼쪽에 지금 열린 메뉴 이름을 보여 줘요. 상세 화면(/cases/:caseNo)은 가장 긴 경로가 같은 메뉴로.
 function currentMenu(menus, pathname) {
@@ -28,6 +29,21 @@ export default function AppLayout() {
 	useEffect(() => {
 		dismiss()
 	}, [loginId, dismiss])
+	// 사이드바 접기·펼치기(SCRUM-327). 넓은 화면에서만 접혀요 — 좁은 화면은 기존처럼 위에 쌓여요.
+	// 버튼을 누르면 사라지는 쪽 대신 새로 나타난 버튼으로 초점을 옮겨요.
+	const [sidebarCollapsed, toggleSidebar] = useSidebarCollapsed()
+	const closeSidebarButton = useRef(null)
+	const openSidebarButton = useRef(null)
+	const sidebarToggled = useRef(false)
+	useEffect(() => {
+		if (!sidebarToggled.current) return
+		sidebarToggled.current = false
+		;(sidebarCollapsed ? openSidebarButton : closeSidebarButton).current?.focus()
+	}, [sidebarCollapsed])
+	const onToggleSidebar = () => {
+		sidebarToggled.current = true
+		toggleSidebar()
+	}
 	// 위 띠의 역할 칩·시연 도구 메뉴는 한 번에 하나만 — 바깥을 누르거나 Esc, 화면을 옮기면 닫아요.
 	const headUtils = useRef(null)
 	useEffect(() => {
@@ -53,14 +69,53 @@ export default function AppLayout() {
 			<a className="skip-link" href="#main-content">
 				본문으로 건너뛰기
 			</a>
-			<div className="app-shell">
-				<aside className="app-sidebar" aria-label="업무 공간">
-					<Link className="app-brand" to="/overview">
-						<img className="app-brand-mark" src={brandMark} alt="" />
-						<div>
-							DAJABA<span>AML 인텔리전스</span>
-						</div>
-					</Link>
+			<div className={`app-shell${sidebarCollapsed ? " is-sidebar-collapsed" : ""}`}>
+				{sidebarCollapsed && (
+					// 접은 상태: 왼쪽 위 작은 알약 — 로고는 대시보드로, » 는 사이드바를 다시 펼쳐요.
+					<div className="sidebar-pill">
+						<Link
+							className="sidebar-pill-brand"
+							to="/overview"
+							aria-label="DAJABA 업무 대시보드"
+						>
+							<img src={brandMark} alt="" />
+							<span aria-hidden="true">DAJABA</span>
+						</Link>
+						<button
+							ref={openSidebarButton}
+							type="button"
+							className="sidebar-toggle"
+							onClick={onToggleSidebar}
+							aria-label="사이드바 열기"
+							aria-expanded="false"
+							aria-controls="app-sidebar"
+							title="사이드바 열기 (Ctrl+B)"
+						>
+							<Icon name="chevronsRight" size={16} />
+						</button>
+					</div>
+				)}
+				<aside id="app-sidebar" className="app-sidebar" aria-label="업무 공간">
+					<div className="app-brand-row">
+						<Link className="app-brand" to="/overview">
+							<img className="app-brand-mark" src={brandMark} alt="" />
+							<div>
+								DAJABA<span>AML 인텔리전스</span>
+							</div>
+						</Link>
+						<button
+							ref={closeSidebarButton}
+							type="button"
+							className="sidebar-toggle"
+							onClick={onToggleSidebar}
+							aria-label="사이드바 닫기"
+							aria-expanded={!sidebarCollapsed}
+							aria-controls="app-sidebar"
+							title="사이드바 닫기 (Ctrl+B)"
+						>
+							<Icon name="chevronsLeft" size={16} />
+						</button>
+					</div>
 					{session.data && (
 						<div className="sidebar-group">
 							<p className="sidebar-label">업무 공간</p>

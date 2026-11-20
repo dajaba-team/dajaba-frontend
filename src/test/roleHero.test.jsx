@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router"
 import RoleHero from "../features/overview/components/RoleHero"
@@ -48,5 +48,25 @@ describe("역할별 Hero 이동 카드", () => {
 		expect(screen.getByRole("region", { name: "오늘의 배치와 배정 현황" })).toHaveClass(
 			"is-compact",
 		)
+	})
+})
+
+describe("관리자 대시보드 바로가기(SCRUM-327)", () => {
+	it("관리자는 사이드바의 모든 켜진 메뉴로 바로 갈 수 있다", () => {
+		show("ADMIN", "admin")
+		const nav = screen.getByRole("navigation", { name: "바로가기" })
+		const links = within(nav).getAllByRole("link")
+		expect(links.map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
+			["데이터·배치 운영", "/admin/batches"],
+			["조사 케이스", "/cases"],
+			["승인함", "/approvals"],
+			["감사 기록", "/admin/audit"],
+			["계정 관리", "/admin/accounts"],
+		])
+	})
+
+	it.each(["INVESTIGATOR", "APPROVER"])("%s 대시보드에는 바로가기 줄이 없다", (role) => {
+		show(role)
+		expect(screen.queryByRole("navigation", { name: "바로가기" })).toBeNull()
 	})
 })
