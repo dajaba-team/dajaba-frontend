@@ -26,17 +26,17 @@ function AskHighlightBar({ highlight, items, onClear, onReopen }) {
 	return (
 		<div className="ask-evidence-bar" role="status" tabIndex={-1} id="ask-evidence-bar">
 			<p>
-				<b>질문 답 근거</b> 이 페이지 {here}건 · 전체 {highlight.ids.length}건
-				{here === 0 && <small>다른 페이지에 근거 거래가 있어요.</small>}
+				<b>질의 근거</b> 현재 페이지 {here}건 / 전체 {highlight.ids.length}건
+				{here === 0 && <small>나머지 근거 거래는 다른 페이지에 있습니다.</small>}
 			</p>
 			<div>
 				{onReopen && (
 					<button type="button" onClick={onReopen}>
-						질문 창 다시 열기
+						질의 창 열기
 					</button>
 				)}
 				<button type="button" onClick={onClear}>
-					강조 끄기
+					강조 해제
 				</button>
 			</div>
 		</div>

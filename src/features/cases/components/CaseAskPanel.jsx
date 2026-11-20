@@ -39,7 +39,7 @@ function AskReply({ children }) {
 			<Bear />
 			<div>
 				<p className="ask-name">
-					근거 도우미 <span className="ask-ai">AI</span>
+					근거 분석 <span className="ask-ai">AI</span>
 				</p>
 				<div className="ask-bubble">{children}</div>
 			</div>
@@ -70,7 +70,7 @@ function AskCard({ record, selected, onShowEvidence }) {
 						aria-pressed={selected}
 						onClick={() => onShowEvidence(record)}
 					>
-						근거 거래 {count}건 보기
+						근거 거래 {count}건
 					</button>
 				)}
 			</AskReply>
@@ -134,9 +134,9 @@ export default function CaseAskPanel({
 	const pending = ask.isPending
 	const ready = length > 0 && !over && value.trim() !== "" && !pending && waitSeconds === 0
 	const inlineMessage = over
-		? "질문을 300자 이내로 줄여 주세요."
+		? "300자 이내로 입력하세요."
 		: waitSeconds > 0
-			? `잠시 뒤 다시 물어봐 주세요 (${waitSeconds}초).`
+			? `요청 한도를 초과했습니다. ${waitSeconds}초 후 다시 시도하세요.`
 			: issue?.field
 				? issue.message
 				: ""
@@ -232,9 +232,9 @@ export default function CaseAskPanel({
 				</span>
 				<div className="ask-head-text">
 					<h2 id="ask-panel-title" ref={titleRef} tabIndex={-1}>
-						이 케이스 근거에 물어보기
+						케이스 근거 질의
 					</h2>
-					<p>AI 답변 · 조회만 해요. 본문에는 반영되지 않아요.</p>
+					<p>AI 응답 · 조회 전용, 본문에 반영되지 않습니다.</p>
 				</div>
 				<div className="ask-head-tools">
 					{onMinimize && (
@@ -266,11 +266,11 @@ export default function CaseAskPanel({
 			<div
 				className="ask-history"
 				ref={historyRef}
-				aria-label="질문과 답변 최신순"
+				aria-label="질의 이력 최신순"
 				tabIndex={0}
 			>
 				{questions.isPending && (
-					<p className="ask-loading">지난 질문을 불러오는 중이에요.</p>
+					<p className="ask-loading">질의 이력을 불러오는 중입니다.</p>
 				)}
 				{questions.isError && (
 					<div className="ask-problem" role="alert">
@@ -285,13 +285,13 @@ export default function CaseAskPanel({
 						<div className="ask-welcome">
 							<AskReply>
 								<p>
-									이 케이스에서 궁금한 점을 물어보세요. 답을 뒷받침하는 거래가
-									있으면 함께 보여드려요.
+									케이스 근거 데이터에 대해 질의하세요. 답변의 근거가 된 거래를
+									함께 제시합니다.
 								</p>
 							</AskReply>
 						</div>
 						<div className="ask-idle">
-							<h3>이런 질문을 할 수 있어요</h3>
+							<h3>질의 예시</h3>
 							<div className="ask-examples">
 								{ASK_EXAMPLES.map((text) => (
 									<button
@@ -306,13 +306,13 @@ export default function CaseAskPanel({
 						</div>
 					</>
 				)}
-				{(items.length > 0 || pending) && <p className="ask-kicker">질문 이력 · 최신순</p>}
+				{(items.length > 0 || pending) && <p className="ask-kicker">질의 이력</p>}
 				{pending && page === 1 && (
 					<article className="ask-card ask-wait">
 						<AskQuestion who={viewerName} text={ask.variables?.question ?? ""} />
 						<AskReply>
 							<p role="status">
-								근거를 확인하는 중이에요
+								근거 확인 중
 								<span className="ask-dots" aria-hidden="true">
 									<i />
 									<i />
@@ -331,13 +331,13 @@ export default function CaseAskPanel({
 					/>
 				))}
 				{data && data.totalPages > 1 && (
-					<nav className="ask-pages" aria-label="지난 질문 페이지">
+					<nav className="ask-pages" aria-label="질의 이력 페이지">
 						<button
 							type="button"
 							disabled={page <= 1}
 							onClick={() => setPage(page - 1)}
 						>
-							최신 쪽
+							최신
 						</button>
 						<span>
 							{page} / {data.totalPages}
@@ -347,7 +347,7 @@ export default function CaseAskPanel({
 							disabled={page >= data.totalPages}
 							onClick={() => setPage(page + 1)}
 						>
-							지난 질문 더 보기
+							이전 질의
 						</button>
 					</nav>
 				)}
@@ -359,7 +359,7 @@ export default function CaseAskPanel({
 						ref={inputRef}
 						type="text"
 						autoComplete="off"
-						placeholder="이 케이스에서 무엇을 확인할까요?"
+						placeholder="질의 내용을 입력하세요"
 						value={value}
 						readOnly={pending}
 						aria-invalid={over || undefined}
@@ -372,8 +372,8 @@ export default function CaseAskPanel({
 					<button
 						type="submit"
 						className="ask-send"
-						aria-label="묻기"
-						title="묻기"
+						aria-label="전송"
+						title="전송 (Enter)"
 						disabled={!ready}
 					>
 						<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
@@ -382,9 +382,7 @@ export default function CaseAskPanel({
 					</button>
 				</div>
 				<div className="ask-meta">
-					<label htmlFor="ask-question">
-						이전 질문과 별개로, 한 번에 하나씩 물어보세요.
-					</label>
+					<label htmlFor="ask-question">각 질의는 이전 대화와 무관하게 처리됩니다.</label>
 					<span id="ask-counter" className={`ask-counter${over ? " is-over" : ""}`}>
 						{length} / {QUESTION_MAX}
 					</span>
@@ -394,28 +392,28 @@ export default function CaseAskPanel({
 				</p>
 				{pending && (
 					<p className="ask-progress" role="status">
-						답변에 최대 30초 걸릴 수 있어요.
+						최대 30초 소요될 수 있습니다.
 					</p>
 				)}
 				{issue?.kind === "FAIL" && (
 					<div className="ask-problem" role="alert">
-						<p>AI 서버 응답이 없어요. 잠시 후 다시 시도해 주세요.</p>
+						<p>AI 서버가 응답하지 않습니다. 잠시 후 다시 시도하세요.</p>
 						<button type="button" disabled={!ready} onClick={submit}>
-							다시 시도
+							재시도
 						</button>
 					</div>
 				)}
 				{issue?.kind === "UNKNOWN" && (
 					<div className="ask-problem" role="alert">
-						<p>응답이 끊겼어요. 지난 질문에서 처리 결과를 확인해 주세요.</p>
+						<p>응답이 중단되었습니다. 질의 이력에서 처리 결과를 확인하세요.</p>
 						<button type="button" onClick={recheck}>
-							지난 질문 다시 불러오기
+							이력 새로고침
 						</button>
 					</div>
 				)}
 				{issue?.kind === "RESOLVED" && (
 					<p className="ask-problem is-ok" role="status">
-						응답은 끊겼지만 답이 저장돼 있었어요. 위 지난 질문에서 확인해 주세요.
+						응답은 중단되었으나 답변이 저장되었습니다. 질의 이력에서 확인하세요.
 					</p>
 				)}
 				{issue?.kind === "MESSAGE" && !issue.field && (

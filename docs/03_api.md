@@ -73,7 +73,7 @@
 | 500         | `INTERNAL_ERROR` | 일반 실패 안내                                                              | 처리      |
 | (응답 없음) | timeout·네트워크 | "성공했는지 모름" — **쓰기였다면 최신 상태를 먼저 조회**하고 다시 할지 판단 | 처리      |
 
-- 429 `QUESTION_RATE_LIMITED`(질문하기 A8, `details.retry_after_seconds`)는 계약서에 처음 생기는 상태 코드예요. `getErrorMessage`는 "잠시 뒤 다시 물어봐 주세요."를, `getRetryAfterSeconds`는 남은 초를 줘요. 질문 패널은 입력 칸 아래에 남은 초를 세어 보여 주고 입력을 남겨요(SCRUM-303).
+- 429 `QUESTION_RATE_LIMITED`(질문하기 A8, `details.retry_after_seconds`)는 계약서에 처음 생기는 상태 코드예요. `getErrorMessage`는 "요청 한도를 초과했습니다. 잠시 후 다시 시도하세요."를, `getRetryAfterSeconds`는 남은 초를 줘요. 질문 패널은 입력 칸 아래에 남은 초를 세어 보여 주고 입력을 남겨요(SCRUM-303).
 
 - 코드 목록 전체와 확정 여부는 BE 03 §2 표. 새 코드를 처리하면 `getErrorMessage`와 이 표에 같이 추가해요.
 - 옛 MSW 이름 `INVALID_TRANSITION`·`CASE_VERSION_CONFLICT`와 최상위 `code` 호환은 실제 cases API로 바꾸면서 지웠어요(FE-1, SCRUM-103).

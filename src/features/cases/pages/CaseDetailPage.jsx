@@ -83,7 +83,7 @@ function AlertPanel({ alert }) {
 
 // 질문 채팅창 상태 — 열림·접힘(근거 보기)·근거 강조. 케이스가 바뀌면 key 로 새로 시작해요(SCRUM-303).
 // 채팅창은 본문 위 오른쪽 아래에 떠 있어서 본문 배치를 바꾸지 않아요. 근거 거래를 보면 표를 가리지 않게 접어 두고,
-// 오른쪽 아래 [질문 창 다시 열기]로 다시 펼쳐요 — 쓰던 입력·지난 질문은 그대로예요.
+// 오른쪽 아래 [질의 창 열기]로 다시 펼쳐요 — 쓰던 입력·지난 질문은 그대로예요.
 function useAskPanel() {
 	const [open, setOpen] = useState(false)
 	const [collapsed, setCollapsed] = useState(false)
@@ -136,7 +136,7 @@ function AskButton({ ask }) {
 				<path d="M4 4.5h12a1.5 1.5 0 0 1 1.5 1.5v6.5A1.5 1.5 0 0 1 16 14h-6.2L6 17v-3H4a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 4 4.5Z" />
 				<path d="M7 9.25h6M7 11.25h3.5" />
 			</svg>
-			{ask.open && ask.collapsed ? "질문 창 다시 열기" : "근거에 물어보기"}
+			{ask.open && ask.collapsed ? "질의 창 열기" : "근거 질의"}
 		</button>
 	)
 }
@@ -269,7 +269,7 @@ function CaseDetail({ caseNo }) {
 					{ask.collapsed && (
 						<button type="button" className="ask-float-reopen" onClick={ask.openPanel}>
 							<img src={bearFace} alt="" aria-hidden="true" />
-							질문 창 다시 열기
+							질의 창 열기
 						</button>
 					)}
 					<CaseAskPanel

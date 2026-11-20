@@ -89,7 +89,7 @@ export function getErrorMessage(error) {
 	const code = getErrorCode(error)
 	// 질문 횟수 한도(계약서 3절 429, SCRUM-303). 남은 초는 질문 패널이 따로 세어 보여 줘요.
 	if (code === "QUESTION_RATE_LIMITED" || error?.response?.status === 429)
-		return "잠시 뒤 다시 물어봐 주세요."
+		return "요청 한도를 초과했습니다. 잠시 후 다시 시도하세요."
 	// 로그인 실패는 없는 ID인지 비밀번호가 틀렸는지 알려 주지 않으므로 문구도 하나입니다.
 	if (code === "LOGIN_FAILED") return "아이디 또는 비밀번호가 맞지 않아요."
 	if (error.response?.status === 401) return "로그인이 필요합니다."

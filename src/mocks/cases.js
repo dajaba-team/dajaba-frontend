@@ -539,11 +539,11 @@ export function applyCommand(viewer, item, command, body, users) {
 //   "자금세탁·보고해야" → JUDGMENT · "확인 안 됨" → UNVERIFIED · "AI 오류" → 502 · 나머지 중 아래 예시가 아니면 NO_DATA
 export const ASK_PER_MINUTE = 5
 const ASK_EXAMPLES = [
-	[/입금 상대|몇 곳/, "입금 상대 계좌는 2개예요.", (ids) => ids.slice(0, 2)],
-	[/룰|걸렸/, "24시간 안에 여러 계좌에서 입금이 몰린 뒤 바로 출금됐어요.", (ids) => ids],
+	[/입금 상대|몇 곳/, "입금 상대 계좌는 2개입니다.", (ids) => ids.slice(0, 2)],
+	[/룰|걸렸/, "24시간 내 여러 계좌에서 입금이 집중된 뒤 곧바로 출금되었습니다.", (ids) => ids],
 	[
 		/모델|점수/,
-		"모델이 주목한 점: 24시간 안에 서로 다른 송금 계좌가 평소보다 많았어요.",
+		"모델이 주목한 점: 24시간 내 서로 다른 송금 계좌 수가 평소보다 많았습니다.",
 		(ids) => ids.slice(0, 1),
 	],
 ]
@@ -573,7 +573,7 @@ export function askQuestion(viewer, item, body, recent, now = Date.now()) {
 	)
 	if (mine.length >= ASK_PER_MINUTE) {
 		const retry = Math.max(1, Math.ceil((mine[0].at + 60_000 - now) / 1000))
-		return fail(429, "QUESTION_RATE_LIMITED", "잠시 뒤 다시 물어봐 주세요", {
+		return fail(429, "QUESTION_RATE_LIMITED", "요청 한도를 초과했습니다", {
 			retry_after_seconds: retry,
 		})
 	}
