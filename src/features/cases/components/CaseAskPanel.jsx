@@ -88,7 +88,7 @@ const savedAfter = (items, question, sentAt) =>
  * @param highlightedNo 근거 강조 중인 질문 번호
  * @param onShowEvidence 답 카드의 [근거 거래 n건 보기]
  * @param onClose [닫기]
- * @param hidden 좁은 화면에서 근거를 보려고 접었을 때 — 입력은 그대로 남아요
+ * @param hidden 근거 거래를 보려고 접었을 때 — 입력은 그대로 남아요
  */
 export default function CaseAskPanel({
 	caseNo,
@@ -213,11 +213,16 @@ export default function CaseAskPanel({
 	const empty = data && data.total === 0 && !pending
 
 	return (
-		<aside
+		<section
 			className="ask-panel"
+			role="dialog"
+			aria-modal="false"
 			aria-labelledby="ask-panel-title"
 			hidden={hidden}
-			data-testid="ask-panel"
+			onKeyDown={(event) => {
+				// 모달처럼 Esc 로 닫아요. 화면 뒤는 막지 않아서(aria-modal=false) 표·탭은 그대로 쓸 수 있어요.
+				if (event.key === "Escape") onClose()
+			}}
 		>
 			<header className="ask-head">
 				<div>
@@ -379,6 +384,6 @@ export default function CaseAskPanel({
 					</p>
 				)}
 			</form>
-		</aside>
+		</section>
 	)
 }

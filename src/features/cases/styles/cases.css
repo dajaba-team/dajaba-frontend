@@ -1292,39 +1292,64 @@
 .case-ask-main {
 	min-width: 0;
 }
-.case-ask-side {
-	min-width: 0;
+/* 채팅창 — 본문 위 오른쪽 아래에 떠 있어요. 본문 배치는 그대로고, 뒤 화면은 막지 않아요. */
+.ask-float {
+	position: fixed;
+	z-index: 40;
+	inset-block-end: var(--space-5);
+	inset-inline-end: var(--space-5);
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
 }
-@media (min-width: 64rem) {
-	.case-ask-layout.is-asking {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) clamp(20rem, 30%, 25rem);
-		gap: var(--space-5);
-		align-items: start;
-	}
-	/* 패널이 열리면 본문이 좁아지니 오른쪽 단을 본문 밑으로 내려요. */
-	.case-ask-layout.is-asking .case-detail-layout {
-		grid-template-columns: minmax(0, 1fr);
-	}
-	.case-ask-layout.is-asking .case-detail-aside {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-	/* 칸 자체를 붙여야 스크롤해도 패널이 옆에 남아요(패널만 붙이면 칸 높이가 같아 같이 올라가요). */
-	.case-ask-side {
-		position: sticky;
-		inset-block-start: 5.25rem;
-	}
-	.case-ask-side .ask-panel {
-		height: calc(100dvh - 6.5rem);
+.ask-float .ask-panel {
+	width: min(25rem, calc(100vw - 2 * var(--space-5)));
+	height: min(42rem, calc(100dvh - 7rem));
+	box-shadow:
+		0 24px 60px -12px rgb(15 35 80 / 32%),
+		0 4px 14px rgb(15 35 80 / 10%);
+	animation: ask-rise 160ms ease-out;
+}
+@keyframes ask-rise {
+	from {
+		opacity: 0;
+		transform: translateY(12px) scale(0.98);
 	}
 }
-@media (max-width: 63.99rem) {
-	.case-ask-side .ask-panel {
-		position: fixed;
-		z-index: 30;
+@media (prefers-reduced-motion: reduce) {
+	.ask-float .ask-panel {
+		animation: none;
+	}
+}
+.ask-float-reopen {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	min-height: 3rem;
+	padding: 0 var(--space-4) 0 var(--space-1);
+	border: 0;
+	border-radius: var(--radius-pill);
+	background: #164ad5;
+	color: var(--color-on-dark);
+	font-weight: 700;
+	box-shadow: 0 10px 28px -8px rgb(22 74 213 / 55%);
+}
+.ask-float-reopen:hover:enabled {
+	background: #0f3cb3;
+}
+.ask-float-reopen img {
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 50%;
+	background: #e2eeff;
+}
+@media (max-width: 36rem) {
+	.ask-float {
 		inset: auto var(--space-2) var(--space-2);
-		height: min(82dvh, calc(100dvh - 5.5rem));
-		box-shadow: 0 8px 30px rgb(21 32 41 / 22%);
+	}
+	.ask-float .ask-panel {
+		width: 100%;
+		height: min(85dvh, calc(100dvh - 5rem));
 	}
 }
 .ask-panel {

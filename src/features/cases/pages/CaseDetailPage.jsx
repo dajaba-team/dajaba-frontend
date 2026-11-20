@@ -7,6 +7,7 @@ import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
 import { useSession } from "../../auth/hooks/useSession"
 import CaseActions from "../components/CaseActions"
 import CaseAskPanel from "../components/CaseAskPanel"
+import bearFace from "../../../shared/assets/bear-face.png"
 import CaseEvidenceCard from "../components/CaseEvidenceCard"
 import CaseNotesCard from "../components/CaseNotesCard"
 import CaseScoreReasons from "../components/CaseScoreReasons"
@@ -80,12 +81,9 @@ function AlertPanel({ alert }) {
 	)
 }
 
-// 패널을 열어 두면 표가 너무 좁아지는 폭 — 이 아래에선 패널이 본문을 덮고, 근거를 보면 접어요(SCRUM-303).
-const ASK_OVERLAY_QUERY = "(max-width: 63.99rem)"
-const isOverlayWidth = () =>
-	typeof window !== "undefined" && Boolean(window.matchMedia?.(ASK_OVERLAY_QUERY).matches)
-
-// 질문 패널 상태 — 열림·접힘(좁은 화면에서 근거 보기)·근거 강조. 케이스가 바뀌면 key 로 새로 시작해요.
+// 질문 채팅창 상태 — 열림·접힘(근거 보기)·근거 강조. 케이스가 바뀌면 key 로 새로 시작해요(SCRUM-303).
+// 채팅창은 본문 위 오른쪽 아래에 떠 있어서 본문 배치를 바꾸지 않아요. 근거 거래를 보면 표를 가리지 않게 접어 두고,
+// 오른쪽 아래 [질문 창 다시 열기]로 다시 펼쳐요 — 쓰던 입력·지난 질문은 그대로예요.
 function useAskPanel() {
 	const [open, setOpen] = useState(false)
 	const [collapsed, setCollapsed] = useState(false)
@@ -116,7 +114,7 @@ function useAskPanel() {
 				ids: record.evidenceTransactionIds,
 				seq: (prev?.seq ?? 0) + 1,
 			}))
-			if (isOverlayWidth()) setCollapsed(true)
+			setCollapsed(true)
 		},
 		clearHighlight: () => setHighlight(null),
 	}
@@ -137,7 +135,7 @@ function AskButton({ ask }) {
 				<path d="M4 4.5h12a1.5 1.5 0 0 1 1.5 1.5v6.5A1.5 1.5 0 0 1 16 14h-6.2L6 17v-3H4a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 4 4.5Z" />
 				<path d="M7 9.25h6M7 11.25h3.5" />
 			</svg>
-			{ask.open && ask.collapsed ? "질문 패널 다시 열기" : "근거에 물어보기"}
+			{ask.open && ask.collapsed ? "질문 창 다시 열기" : "근거에 물어보기"}
 		</button>
 	)
 }
@@ -158,9 +156,8 @@ function CaseDetail({ caseNo }) {
 	// 버튼·패널은 서버가 준 ASK_QUESTION 으로만 그려요. 역할·상태를 화면에서 계산하지 않아요.
 	const canAsk = Boolean(detail?.availableActions?.includes("ASK_QUESTION"))
 	const panelOpen = canAsk && ask.open
-	const sideBySide = panelOpen && !ask.collapsed
 	return (
-		<div className={`case-detail case-ask-layout${sideBySide ? " is-asking" : ""}`}>
+		<div className="case-detail">
 			<div className="case-ask-main">
 				<Link className="case-back-link" to={`/cases${listSearch}`}>
 					← 케이스 목록
@@ -267,7 +264,13 @@ function CaseDetail({ caseNo }) {
 				)}
 			</div>
 			{panelOpen && (
-				<div className="case-ask-side" id="ask-panel">
+				<div className="ask-float" id="ask-panel">
+					{ask.collapsed && (
+						<button type="button" className="ask-float-reopen" onClick={ask.openPanel}>
+							<img src={bearFace} alt="" aria-hidden="true" />
+							질문 창 다시 열기
+						</button>
+					)}
 					<CaseAskPanel
 						caseNo={detail.caseNo}
 						viewerName={viewer?.displayName ?? "나"}

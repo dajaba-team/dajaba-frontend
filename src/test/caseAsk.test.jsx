@@ -37,7 +37,7 @@ function renderApp(path, who = "inv01") {
 async function openPanel(who = "inv01") {
 	const user = renderApp(`/cases/${REVIEWING}`, who)
 	await user.click(await screen.findByRole("button", { name: "근거에 물어보기" }))
-	const panel = await screen.findByRole("complementary", { name: "이 케이스 근거에 물어보기" })
+	const panel = await screen.findByRole("dialog", { name: "이 케이스 근거에 물어보기" })
 	await within(panel).findByText("이런 질문을 할 수 있어요")
 	return { user, panel }
 }
@@ -103,7 +103,7 @@ describe("패널 열기·입력", () => {
 		expect(panel).toBeInTheDocument()
 		await user.click(within(panel).getByRole("button", { name: "닫기" }))
 		expect(
-			screen.queryByRole("complementary", { name: "이 케이스 근거에 물어보기" }),
+			screen.queryByRole("dialog", { name: "이 케이스 근거에 물어보기" }),
 		).not.toBeInTheDocument()
 	})
 })
@@ -235,14 +235,36 @@ describe("근거 거래 강조", () => {
 		expect(document.querySelectorAll(".is-ask-hit")).toHaveLength(0)
 		expect(link).toHaveAttribute("aria-pressed", "false")
 	})
-	it("패널을 닫으면 강조도 풀린다", async () => {
+	it("근거를 보면 채팅창이 접히고, [질문 창 다시 열기]로 쓰던 입력 그대로 다시 펼친다", async () => {
 		const { user, panel } = await openPanel()
 		await ask(user, panel, "입금 상대가 몇 곳이야?")
 		await user.click(await within(panel).findByRole("button", { name: "근거 거래 2건 보기" }))
 		await screen.findByText(/이 페이지 2건/)
+		expect(panel).not.toBeVisible()
+		const reopen = screen.getAllByRole("button", { name: "질문 창 다시 열기" })
+		expect(reopen.length).toBeGreaterThan(0)
+		await user.click(reopen[0])
+		expect(panel).toBeVisible()
+		// 강조는 그대로 — 답 카드 테두리와 표가 같이 보여요.
+		expect(screen.getByText(/이 페이지 2건/)).toBeInTheDocument()
+	})
+	it("채팅창을 닫으면 강조도 풀린다", async () => {
+		const { user, panel } = await openPanel()
+		await ask(user, panel, "입금 상대가 몇 곳이야?")
+		await user.click(await within(panel).findByRole("button", { name: "근거 거래 2건 보기" }))
+		await screen.findByText(/이 페이지 2건/)
+		await user.click(screen.getAllByRole("button", { name: "질문 창 다시 열기" })[0])
 		await user.click(within(panel).getByRole("button", { name: "닫기" }))
 		expect(screen.queryByText(/이 페이지 2건/)).not.toBeInTheDocument()
 		expect(document.querySelectorAll(".is-ask-hit")).toHaveLength(0)
+	})
+	it("Esc 로 닫힌다", async () => {
+		const { user, panel } = await openPanel()
+		within(panel).getByLabelText(INPUT).focus()
+		await user.keyboard("{Escape}")
+		expect(
+			screen.queryByRole("dialog", { name: "이 케이스 근거에 물어보기" }),
+		).not.toBeInTheDocument()
 	})
 })
 
@@ -271,7 +293,7 @@ describe("지난 질문(C9)", () => {
 		)
 		const user = renderApp(`/cases/${REVIEWING}`)
 		await user.click(await screen.findByRole("button", { name: "근거에 물어보기" }))
-		const panel = await screen.findByRole("complementary", {
+		const panel = await screen.findByRole("dialog", {
 			name: "이 케이스 근거에 물어보기",
 		})
 		expect(

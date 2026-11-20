@@ -32,7 +32,7 @@ function AskHighlightBar({ highlight, items, onClear, onReopen }) {
 			<div>
 				{onReopen && (
 					<button type="button" onClick={onReopen}>
-						질문 패널 다시 열기
+						질문 창 다시 열기
 					</button>
 				)}
 				<button type="button" onClick={onClear}>
