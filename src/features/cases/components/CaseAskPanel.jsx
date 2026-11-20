@@ -88,6 +88,7 @@ const savedAfter = (items, question, sentAt) =>
  * @param highlightedNo 근거 강조 중인 질문 번호
  * @param onShowEvidence 답 카드의 [근거 거래 n건 보기]
  * @param onClose [닫기]
+ * @param onMinimize [접기] — 창을 오른쪽 아래 버튼으로 접어요(입력·지난 질문은 그대로)
  * @param hidden 근거 거래를 보려고 접었을 때 — 입력은 그대로 남아요
  */
 export default function CaseAskPanel({
@@ -96,6 +97,7 @@ export default function CaseAskPanel({
 	highlightedNo,
 	onShowEvidence,
 	onClose,
+	onMinimize,
 	hidden = false,
 }) {
 	const client = useQueryClient()
@@ -225,15 +227,41 @@ export default function CaseAskPanel({
 			}}
 		>
 			<header className="ask-head">
-				<div>
+				<span className="ask-head-avatar" aria-hidden="true">
+					<img src={bearFace} alt="" />
+				</span>
+				<div className="ask-head-text">
 					<h2 id="ask-panel-title" ref={titleRef} tabIndex={-1}>
 						이 케이스 근거에 물어보기
 					</h2>
 					<p>AI 답변 · 조회만 해요. 본문에는 반영되지 않아요.</p>
 				</div>
-				<button type="button" className="ask-close" onClick={onClose}>
-					닫기
-				</button>
+				<div className="ask-head-tools">
+					{onMinimize && (
+						<button
+							type="button"
+							className="ask-icon-button"
+							aria-label="접기"
+							title="접기"
+							onClick={onMinimize}
+						>
+							<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+								<path d="M5 10h10" />
+							</svg>
+						</button>
+					)}
+					<button
+						type="button"
+						className="ask-icon-button"
+						aria-label="닫기"
+						title="닫기 (Esc)"
+						onClick={onClose}
+					>
+						<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+							<path d="M6 6l8 8M14 6l-8 8" />
+						</svg>
+					</button>
+				</div>
 			</header>
 			<div
 				className="ask-history"
@@ -325,8 +353,7 @@ export default function CaseAskPanel({
 				)}
 			</div>
 			<form className="ask-composer" onSubmit={submit} noValidate>
-				<label htmlFor="ask-question">이전 질문과 별개로, 한 번에 하나씩 물어보세요.</label>
-				<div className="ask-row">
+				<div className={`ask-field${over ? " is-over" : ""}`}>
 					<input
 						id="ask-question"
 						ref={inputRef}
@@ -342,13 +369,26 @@ export default function CaseAskPanel({
 							if (issue?.field) setIssue(null)
 						}}
 					/>
-					<button type="submit" disabled={!ready}>
-						묻기
+					<button
+						type="submit"
+						className="ask-send"
+						aria-label="묻기"
+						title="묻기"
+						disabled={!ready}
+					>
+						<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+							<path d="M10 15.5v-11M5.5 9 10 4.5 14.5 9" />
+						</svg>
 					</button>
 				</div>
-				<p id="ask-counter" className={`ask-counter${over ? " is-over" : ""}`}>
-					{length} / {QUESTION_MAX}
-				</p>
+				<div className="ask-meta">
+					<label htmlFor="ask-question">
+						이전 질문과 별개로, 한 번에 하나씩 물어보세요.
+					</label>
+					<span id="ask-counter" className={`ask-counter${over ? " is-over" : ""}`}>
+						{length} / {QUESTION_MAX}
+					</span>
+				</div>
 				<p id="ask-inline" className="ask-inline" role="status">
 					{inlineMessage}
 				</p>

@@ -117,6 +117,7 @@ function useAskPanel() {
 			setCollapsed(true)
 		},
 		clearHighlight: () => setHighlight(null),
+		minimize: () => setCollapsed(true),
 	}
 }
 
@@ -277,6 +278,7 @@ function CaseDetail({ caseNo }) {
 						highlightedNo={ask.highlight?.questionNo ?? null}
 						onShowEvidence={ask.showEvidence}
 						onClose={ask.close}
+						onMinimize={ask.minimize}
 						hidden={ask.collapsed}
 					/>
 				</div>
