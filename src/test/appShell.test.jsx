@@ -227,6 +227,24 @@ describe("사이드바 접기·펼치기(SCRUM-327)", () => {
 		expect(screen.queryByRole("button", { name: "사이드바 열기" })).toBeNull()
 	})
 
+	it("글을 쓰는 칸이나 확인창이 열려 있을 때 Ctrl+B는 사이드바를 건드리지 않는다", async () => {
+		const user = renderApp("/cases", "inv01")
+		await screen.findByRole("button", { name: "사이드바 닫기" })
+		const memo = document.createElement("textarea")
+		document.body.appendChild(memo)
+		memo.focus()
+		await user.keyboard("{Control>}b{/Control}")
+		expect(screen.queryByRole("button", { name: "사이드바 열기" })).toBeNull()
+		memo.remove()
+
+		const dialog = document.createElement("div")
+		dialog.setAttribute("role", "dialog")
+		document.body.appendChild(dialog)
+		await user.keyboard("{Control>}b{/Control}")
+		expect(screen.queryByRole("button", { name: "사이드바 열기" })).toBeNull()
+		dialog.remove()
+	})
+
 	it("접은 상태는 다시 열어도 유지된다", async () => {
 		localStorage.setItem("dajaba.sidebar.v1", "collapsed")
 		renderApp("/cases", "inv01")

@@ -21,6 +21,14 @@ function writeCollapsed(collapsed) {
 	}
 }
 
+function isTyping(target) {
+	return Boolean(
+		target?.closest?.(
+			'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
+		),
+	)
+}
+
 export function useSidebarCollapsed() {
 	const [collapsed, setCollapsed] = useState(readCollapsed)
 
@@ -32,10 +40,12 @@ export function useSidebarCollapsed() {
 	}, [])
 
 	// Ctrl+B(맥은 Cmd+B)로도 열고 닫아요. 브라우저 기본 동작(북마크 창 등)은 막아요.
+	// 글을 쓰는 중(입력칸·본문 편집)이거나 확인창이 열려 있으면 건드리지 않아요 — 굵게 습관 키로 화면이 바뀌지 않게.
 	useEffect(() => {
 		const onKey = (event) => {
 			if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return
 			if (event.key !== "b" && event.key !== "B") return
+			if (isTyping(event.target) || document.querySelector('[role="dialog"]')) return
 			event.preventDefault()
 			toggle()
 		}
