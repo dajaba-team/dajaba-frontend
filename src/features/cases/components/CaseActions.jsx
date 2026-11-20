@@ -35,7 +35,7 @@ export default function CaseActions({ detail }) {
 	const isAdmin = session.data?.role === "ADMIN"
 	return (
 		<section className="case-panel case-card case-actions" aria-labelledby="case-actions-title">
-			<h2 id="case-actions-title">다음 작업</h2>
+			<h2 id="case-actions-title">처리 작업</h2>
 			<div className="case-action-buttons">
 				{has("ASSIGN") && !isAdmin && <SelfAssign detail={detail} />}
 				{has("ASSIGN") && isAdmin && (
