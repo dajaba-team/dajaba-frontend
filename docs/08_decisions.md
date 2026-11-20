@@ -1,6 +1,6 @@
 # 08. 결정 기록 · 문서끼리 다른 곳 · 미결
 
-> v0.1 · 2026-10-31 · 11/3 갱신 · 초안(팀 확인 중) · 정리 지윤
+> v0.1 · 2026-10-31 · 11/3 갱신 · 11/20 SCRUM-280 결정 추가 · 초안(팀 확인 중) · 정리 지윤
 
 ## 1. 프론트 결정
 
@@ -29,6 +29,7 @@
 | 11/7  | 공통 틀(앱 셸): 메뉴는 숨김(회색 아님), 화면 없는 메뉴는 `ready: false`로 자리만(라우트도 없음), Toast는 React Context 하나(쌓지 않음·5초), GuideBar 역할 기본 문구〔초안〕 + 화면 `useGuide`로 덮어씀, [전체 흐름] 모달(흐름 데모 그대로·시연 전용 문구 제거), `ConfirmDialog` 얇게 + 사유 입력은 `Modal` 직접, `ActionBar` 레이아웃·비활성 이유 칸만, COM-01 역할별 홈(매핑이 `ready:false`면 그 역할 첫 ready 메뉴). `/demo` 안 건드림                                                                                                                                                          | 월요일부터 팀원 3명이 자기 화면을 붙일 때 메뉴·안내·알림·확인창을 각자 만들지 않게. docs/04 §4 메뉴 규칙과 같음                                                                                                      | SCRUM-159 ②, UI/UX v1.4 COM-01 |
 | 11/10 | 공통 틀 확인창·알림 고치기: 모달 기본 스타일은 `shared/ui/dashboard/modal.css`(Modal이 직접 import — 실제 화면에서도 배경 막음·가운데 고정). 처음 포커스는 부른 쪽 `autoFocus` 가 있으면 그대로, 아니면 본문(.modal-body) 첫 입력칸(`input`·`select`·`textarea`) → 없으면 [확인](.primary 켜졌을 때) → 그것도 아니면 footer 첫 조작 요소. 원래 조작 버튼은 Modal이 렌더 단계에서 잡아 두고 닫을 때 복귀. 세션이 바뀌면(`AppLayout`에서 `loginId` 변동) 남은 알림을 비움. 알림은 모달 위(`.toast-area` z-index 60, 모달 50)                                                                         | 팀원 세 명이 이번 주에 붙이는 확인창(`ConfirmDialog`)이 실제 화면에서도 확인창처럼 작동하고, 로그아웃·계정 전환·401 뒤에 이전 사람의 알림이 남지 않게                                                                | SCRUM-203                      |
 | 11/10 | **`/demo`(시연 묶음)는 없앤다.** 새 화면과 남은 화면 이슈(SCRUM-111·113·114·116·117·118·121 등)는 **실제 화면**(실제 API + 계약서, BE가 아직이면 같은 모양 MSW)으로 만들고 `Demo*Page`는 고치지 않음. 화면 기준은 실제 화면 + UI/UX v1.4·계약서. 실제 화면이 그 기능을 대신하면 `Demo*Page`·`app/routes/DashboardDemoRouter.jsx`·`app/navigation/demoNavigation.js`·`app/providers/` 시연 Provider·`shared/demo/`·`mocks/dashboard/`·`dashboardDemo.test.jsx`를 지움(실제 화면이 쓰는 `shared/str/sectionTitles.js` 같은 공용 파일은 남김). 시연에서 좋았던 모양은 지우기 전에 `shared/ui/`로 옮김 | 시연과 실제 화면이 따로 있으면 같은 이슈를 두 번 고치게 되고, 시연의 합성 동작을 실제 구현으로 오해함. 실제 케이스·계정·배치 화면이 이미 붙어 시연이 기준 노릇을 할 이유가 줄었음. 11/3 "화면 기준은 `/demo`"를 바꿈 | 지윤 11/10                     |
+| 11/18 | 화면 스타일 고도화는 DashStack(Free Admin Dashboard UI Kit) 배치·밀도만 참고: 회색 바탕 + 흰 카드·옅은 그림자, 흰 사이드바(메뉴 묶음·선택 표시 막대), 위 띠 역할 칩, 지표 카드 아이콘 타일. **포인트 컬러 토큰(`--color-primary` `#0046ff` 계열·`--brand-*`) 값은 바꾸지 않음**. 기능·API·라우팅은 그대로                                                                                                                                                                                                                                                                                          | 화면 밀도와 카드 구분을 높이되 신한 CI 색과 지금까지 맞춘 대비(05_ui 4절)는 지키려고. 버린 안: 시안 색까지 가져오기(브랜드 색과 충돌)                                                                                | SCRUM-280                      |
 
 ## 2. 문서끼리 다른 곳 — 이 docs에서 고친 것
 
