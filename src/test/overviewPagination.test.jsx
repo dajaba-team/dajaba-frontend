@@ -40,7 +40,7 @@ function serve(rows, { failSecond = () => false, totalForPage = () => rows.lengt
 			const size = Number(params.get("size"))
 			pages.push(page)
 			expect(size).toBeLessThanOrEqual(100)
-			expect(params.get("sort")).toBe("score,desc")
+			expect(params.get("sort")).toBe("created_at,asc")
 			if (page === 1 && failSecond()) return new HttpResponse(null, { status: 500 })
 			return HttpResponse.json({
 				items: rows.slice(page * size, (page + 1) * size),
