@@ -111,6 +111,8 @@ export function resetCases(user = null, { pendingApproval = false, formerAssigne
 			comment: null,
 			created_by: formerAssignee,
 			created_at: "2026-11-01T00:00:00Z",
+			from_assignee: { login_id: formerAssignee, display_name: `예시 ${formerAssignee}` },
+			to_assignee: item.assignee ?? null,
 		})
 	}
 	currentUser = user

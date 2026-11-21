@@ -4,7 +4,9 @@
 // 계좌는 가린 값과 account_ref만 둬요. 원본 account_key는 예시 데이터에도 넣지 않아요(01_code_rules §6-3).
 
 const at = (minute) => `2026-11-02T01:${String(minute).padStart(2, "0")}:00Z`
-const history = (action, from, to, by, minute, comment = null) => ({
+const user = (loginId) => ({ login_id: loginId, display_name: `예시 ${loginId}` })
+// from_assignee·to_assignee — BE SCRUM-348. ASSIGN은 받은 사람만, REASSIGN은 둘 다, 그 밖 null
+const history = (action, from, to, by, minute, comment = null, assignees = {}) => ({
 	action,
 	from_status: from,
 	to_status: to,
@@ -12,8 +14,9 @@ const history = (action, from, to, by, minute, comment = null) => ({
 	comment,
 	created_by: by,
 	created_at: at(minute),
+	from_assignee: assignees.from ?? null,
+	to_assignee: assignees.to ?? null,
 })
-const user = (loginId) => ({ login_id: loginId, display_name: `예시 ${loginId}` })
 const alertOf = (index, ruleId = "R02_FAN_IN") => ({
 	alert_no: `ALT-20221101-00010${index + 1}`,
 	rule_id: ruleId,
@@ -124,7 +127,7 @@ export function seedCases() {
 			history: [
 				history("ATTACH_DRAFT", "ESCALATED", "DRAFTED", "inv01", 30),
 				history("ESCALATE", "REVIEWING", "ESCALATED", "inv01", 20, "STR 검토 필요"),
-				history("ASSIGN", "OPEN", "REVIEWING", "inv01", 10),
+				history("ASSIGN", "OPEN", "REVIEWING", "inv01", 10, null, { to: user("inv01") }),
 				history("OPEN", null, "OPEN", "system", 0),
 			],
 		},
@@ -167,7 +170,7 @@ export function seedCases() {
 			version: 1,
 			transactions: TRANSACTIONS_1004,
 			history: [
-				history("ASSIGN", "OPEN", "REVIEWING", "inv01", 12),
+				history("ASSIGN", "OPEN", "REVIEWING", "inv01", 12, null, { to: user("inv01") }),
 				history("OPEN", null, "OPEN", "system", 2),
 			],
 		},
@@ -425,9 +428,9 @@ export function applyCommand(viewer, item, command, body, users) {
 	if (body.version !== item.version)
 		return fail(409, "CONCURRENT_UPDATE", "다른 사용자가 먼저 수정했습니다. 새로 고침하세요")
 	const now = new Date(Date.UTC(2026, 10, 2, 2, item.version)).toISOString().replace(".000", "")
-	const move = (action, to, comment = null) => {
+	const move = (action, to, comment = null, assignees = {}) => {
 		item.history = [
-			history(action, item.status, to, viewer.login_id, 0, comment),
+			history(action, item.status, to, viewer.login_id, 0, comment, assignees),
 			...item.history,
 		]
 		item.history[0].created_at = now
@@ -443,8 +446,9 @@ export function applyCommand(viewer, item, command, body, users) {
 		if (!REASSIGNABLE.includes(item.status))
 			return fail(409, "INVALID_CASE_TRANSITION", "지금 상태에서 담당자를 바꿀 수 없습니다")
 		if (item.assignee?.login_id === body.assignee) return { item }
+		const before = item.assignee
 		item.assignee = user(body.assignee)
-		move("REASSIGN", item.status, body.comment ?? null)
+		move("REASSIGN", item.status, body.comment ?? null, { from: before, to: item.assignee })
 	} else if (command === "assign") {
 		const target = viewer.role === "ADMIN" ? body.assignee : (body.assignee ?? viewer.login_id)
 		if (viewer.role !== "ADMIN" && target !== viewer.login_id)
@@ -456,7 +460,7 @@ export function applyCommand(viewer, item, command, body, users) {
 		if (item.status !== "OPEN")
 			return fail(409, "INVALID_CASE_TRANSITION", "지금 상태에서 배정할 수 없습니다")
 		item.assignee = user(target)
-		move("ASSIGN", "REVIEWING")
+		move("ASSIGN", "REVIEWING", null, { to: item.assignee })
 	} else {
 		if (item.assignee?.login_id !== viewer.login_id)
 			return fail(403, "NOT_ASSIGNEE", "담당 조사역만 할 수 있습니다")
