@@ -273,6 +273,7 @@ function CaseDetail({ caseNo }) {
 					<CaseAskPanel
 						caseNo={detail.caseNo}
 						viewerName={viewer?.displayName ?? "나"}
+						viewerLoginId={viewer?.loginId ?? null}
 						highlightedNo={ask.highlight?.questionNo ?? null}
 						onShowEvidence={ask.showEvidence}
 						onClose={ask.close}

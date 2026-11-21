@@ -2,6 +2,10 @@
 
 export const QUESTION_MAX = 300
 
+// 응답 없이 끊긴 질문이 저장됐는지 볼 때, 보낸 시각보다 이만큼 앞선 기록까지 같은 질문으로 봐요.
+// 서버 시각(created_at)과 브라우저 시각이 어긋나도 맞게 — 백엔드 AI 응답 한도(30초)만큼 여유를 둬요.
+export const SAVED_QUESTION_WINDOW_MS = 30_000
+
 // 예시 질문 — 누르면 입력 칸만 채우고 바로 보내지 않아요(8.1).
 export const ASK_EXAMPLES = [
 	"입금 상대 계좌는 몇 개입니까?",

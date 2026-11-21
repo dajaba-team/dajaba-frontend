@@ -11,7 +11,13 @@ import {
 import { formatSystemTime } from "../../../shared/format/time"
 import { casesApi } from "../api/casesApi"
 import { caseQuestionsKey, useAskQuestion, useCaseQuestions } from "../hooks/useCases"
-import { ASK_EXAMPLES, QUESTION_MAX, askOutcomeText, questionLength } from "../askRules"
+import {
+	ASK_EXAMPLES,
+	QUESTION_MAX,
+	SAVED_QUESTION_WINDOW_MS,
+	askOutcomeText,
+	questionLength,
+} from "../askRules"
 
 // 케이스 근거에 물어보기 — 계약서 A8(질문하기)·C9(지난 질문), 노션 「조사역 질문 답변 설계 문서」 8절, SCRUM-303.
 // 질문 하나에 답 하나예요(이전 질문을 기억하지 않음). 그래서 이어지는 대화가 아니라 질문·답 카드가 최신순으로 쌓여요.
@@ -78,13 +84,21 @@ function AskCard({ record, selected, onShowEvidence }) {
 	)
 }
 
-// 응답 없이 끊긴 질문이 서버에 저장됐는지 — 같은 질문이 보낸 시각 이후로 지난 질문 첫 페이지에 있으면 저장된 것으로 봐요.
-const savedAfter = (items, question, sentAt) =>
-	items.some((item) => item.question === question && Date.parse(item.createdAt) >= sentAt - 5_000)
+// 응답 없이 끊긴 질문이 서버에 저장됐는지 — 지금 사용자가 같은 질문을 보낸 시각 무렵(시계 차이 여유) 이후로
+// 지난 질문 첫 페이지에 있으면 저장된 것으로 봐요. 같은 케이스의 다른 사람(승인자·조사역)이 같은 예시 질문을 눌러도
+// 남의 기록을 내 것으로 보지 않게 login_id 도 같이 봐요.
+const savedAfter = (items, question, sentAt, loginId) =>
+	items.some(
+		(item) =>
+			item.question === question &&
+			item.askedBy?.loginId === loginId &&
+			Date.parse(item.createdAt) >= sentAt - SAVED_QUESTION_WINDOW_MS,
+	)
 
 /**
  * @param caseNo 케이스 번호
  * @param viewerName 지금 사용자 이름(기다리는 동안 질문 카드에 써요)
+ * @param viewerLoginId 지금 사용자 login_id(응답 없이 끊긴 질문이 내 것인지 볼 때 써요)
  * @param highlightedNo 근거 강조 중인 질문 번호
  * @param onShowEvidence 답 카드의 [근거 거래 n건 보기]
  * @param onClose [닫기]
@@ -94,6 +108,7 @@ const savedAfter = (items, question, sentAt) =>
 export default function CaseAskPanel({
 	caseNo,
 	viewerName,
+	viewerLoginId,
 	highlightedNo,
 	onShowEvidence,
 	onClose,
@@ -174,7 +189,7 @@ export default function CaseAskPanel({
 							casesApi.questions({ caseNo, page: 1, size: 5 }, signal),
 						staleTime: 0,
 					})
-					if (savedAfter(fresh.items, question, sentAt)) {
+					if (savedAfter(fresh.items, question, sentAt, viewerLoginId)) {
 						setValue("")
 						setIssue({ kind: "RESOLVED" })
 						return
@@ -198,7 +213,11 @@ export default function CaseAskPanel({
 		const target = issue
 		const fresh = await questions.refetch()
 		setPage(1)
-		if (fresh.data && target && savedAfter(fresh.data.items, target.question, target.sentAt)) {
+		if (
+			fresh.data &&
+			target &&
+			savedAfter(fresh.data.items, target.question, target.sentAt, viewerLoginId)
+		) {
 			if (value === target.question) setValue("")
 			setIssue({ kind: "RESOLVED" })
 		}
@@ -223,7 +242,8 @@ export default function CaseAskPanel({
 			hidden={hidden}
 			onKeyDown={(event) => {
 				// 모달처럼 Esc 로 닫아요. 화면 뒤는 막지 않아서(aria-modal=false) 표·탭은 그대로 쓸 수 있어요.
-				if (event.key === "Escape") onClose()
+				// 보내는 중엔 닫지 않아요 — 닫으면 "근거 확인 중" 카드가 사라져 질문이 날아간 것처럼 보여요. 접기는 돼요.
+				if (event.key === "Escape" && !pending) onClose()
 			}}
 		>
 			<header className="ask-head">
@@ -254,7 +274,8 @@ export default function CaseAskPanel({
 						type="button"
 						className="ask-icon-button"
 						aria-label="닫기"
-						title="닫기 (Esc)"
+						title={pending ? "답변을 받는 중에는 닫을 수 없습니다." : "닫기 (Esc)"}
+						disabled={pending}
 						onClick={onClose}
 					>
 						<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">

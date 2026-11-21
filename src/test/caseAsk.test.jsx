@@ -101,6 +101,23 @@ describe("패널 열기·입력", () => {
 		expect(submit).toBeDisabled()
 		expect(within(panel).getByText("300자 이내로 입력하세요.")).toBeInTheDocument()
 	})
+	it("경계 — 정확히 300자는 보낼 수 있고, 조합형 한글은 NFC 로 합친 뒤 센다", async () => {
+		const { user, panel } = await openPanel()
+		const input = within(panel).getByLabelText(INPUT)
+		const submit = within(panel).getByRole("button", { name: "전송" })
+		await user.click(input)
+		await user.paste("가".repeat(300))
+		expect(within(panel).getByText("300 / 300")).not.toHaveClass("is-over")
+		expect(submit).toBeEnabled()
+		// 조합형(ᄀ+ᅡ) 300자 — 코드 단위로는 600이지만 NFC 로 합치면 300자
+		await user.clear(input)
+		await user.paste("\u1100\u1161".repeat(300))
+		expect(within(panel).getByText("300 / 300")).toBeInTheDocument()
+		expect(submit).toBeEnabled()
+		await user.paste("\u1100\u1161")
+		expect(within(panel).getByText("301 / 300")).toHaveClass("is-over")
+		expect(submit).toBeDisabled()
+	})
 	it("[닫기]로만 닫힌다 — 탭을 옮겨도 그대로", async () => {
 		const { user, panel } = await openPanel()
 		await user.click(screen.getByRole("button", { name: "근거 거래" }))
@@ -268,6 +285,35 @@ describe("근거 거래 강조", () => {
 	})
 })
 
+describe("보내는 중", () => {
+	it("답을 기다리는 동안 [닫기]·Esc 로 닫히지 않고, 답이 오면 다시 닫을 수 있다", async () => {
+		let release
+		const gate = new Promise((resolve) => {
+			release = resolve
+		})
+		server.use(
+			http.post(`*/api/v1/cases/${REVIEWING}/questions`, async () => {
+				await gate
+				return fail(502, "AI_SERVICE_UNAVAILABLE", "AI 서버 오류")
+			}),
+		)
+		const { user, panel } = await openPanel()
+		await ask(user, panel, "기다리는 질문")
+		await within(panel).findByText(/근거 확인 중/)
+		const close = within(panel).getByRole("button", { name: "닫기" })
+		expect(close).toBeDisabled()
+		within(panel).getByLabelText(INPUT).focus()
+		await user.keyboard("{Escape}")
+		expect(screen.getByRole("dialog", { name: "케이스 근거 질의" })).toBeInTheDocument()
+		expect(within(panel).getByText(/근거 확인 중/)).toBeInTheDocument()
+		release()
+		await within(panel).findByText(/AI 서버가 응답하지 않습니다/)
+		expect(close).toBeEnabled()
+		await user.keyboard("{Escape}")
+		expect(screen.queryByRole("dialog", { name: "케이스 근거 질의" })).not.toBeInTheDocument()
+	})
+})
+
 describe("지난 질문(C9)", () => {
 	it("열 때 C9 를 size=5 로 부르고, 더 있으면 [지난 질문 더 보기]", async () => {
 		const asked = []
@@ -342,5 +388,54 @@ describe("지난 질문(C9)", () => {
 		expect(await within(panel).findByText(/답변이 저장되었습니다/)).toBeInTheDocument()
 		expect(within(panel).getByRole("heading", { name: "끊긴 질문" })).toBeInTheDocument()
 		expect(within(panel).getByLabelText(INPUT)).toHaveValue("")
+	})
+	it.each([
+		["다른 사람이 같은 질문을 남겼으면 내 것으로 보지 않는다", "apr01", 0, false],
+		["서버 시각이 20초 늦게 찍혀도 내 질문이면 저장된 것으로 본다", "inv01", -20_000, true],
+	])("응답 없음 — %s", async (_title, askedBy, skewMs, resolved) => {
+		let saved = false
+		server.use(
+			http.post(`*/api/v1/cases/${REVIEWING}/questions`, () => {
+				saved = true
+				return HttpResponse.error()
+			}),
+			http.get(`*/api/v1/cases/${REVIEWING}/questions`, () =>
+				HttpResponse.json({
+					items: saved
+						? [
+								{
+									question_no: "QST-000051",
+									case_no: REVIEWING,
+									question: "입금 상대 계좌는 몇 개입니까?",
+									status: "NO_DATA",
+									out_of_scope_reason: null,
+									answer: null,
+									evidence_transaction_ids: [],
+									asked_by: {
+										login_id: askedBy,
+										display_name: `예시 ${askedBy}`,
+									},
+									created_at: new Date(Date.now() + skewMs)
+										.toISOString()
+										.replace(/\.\d{3}Z$/, "Z"),
+								},
+							]
+						: [],
+					page: 0,
+					size: 5,
+					total: saved ? 1 : 0,
+				}),
+			),
+		)
+		const { user, panel } = await openPanel()
+		await ask(user, panel, "입금 상대 계좌는 몇 개입니까?")
+		if (resolved) {
+			expect(await within(panel).findByText(/답변이 저장되었습니다/)).toBeInTheDocument()
+			expect(within(panel).getByLabelText(INPUT)).toHaveValue("")
+		} else {
+			expect(await within(panel).findByText(/응답이 중단되었습니다/)).toBeInTheDocument()
+			expect(within(panel).queryByText(/답변이 저장되었습니다/)).not.toBeInTheDocument()
+			expect(within(panel).getByLabelText(INPUT)).toHaveValue("입금 상대 계좌는 몇 개입니까?")
+		}
 	})
 })
