@@ -245,6 +245,25 @@ describe("사이드바 접기·펼치기(SCRUM-327)", () => {
 		dialog.remove()
 	})
 
+	it("좁은 화면에서는 Ctrl+B가 접힘 상태를 바꾸거나 저장하지 않는다", async () => {
+		const original = window.matchMedia
+		window.matchMedia = (query) => ({
+			matches: false,
+			media: query,
+			addEventListener() {},
+			removeEventListener() {},
+		})
+		try {
+			const user = renderApp("/cases", "inv01")
+			await screen.findByRole("button", { name: "사이드바 닫기" })
+			await user.keyboard("{Control>}b{/Control}")
+			expect(screen.queryByRole("button", { name: "사이드바 열기" })).toBeNull()
+			expect(localStorage.getItem("dajaba.sidebar.v1")).toBeNull()
+		} finally {
+			window.matchMedia = original
+		}
+	})
+
 	it("접은 상태는 다시 열어도 유지된다", async () => {
 		localStorage.setItem("dajaba.sidebar.v1", "collapsed")
 		renderApp("/cases", "inv01")
