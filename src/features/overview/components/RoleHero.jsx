@@ -1,5 +1,7 @@
 import { useId, useState } from "react"
 import { Link } from "react-router"
+import Icon from "../../../shared/ui/dashboard/Icon"
+import { visibleMenus } from "../../../app/navigation/appNavigation"
 
 // 업무 대시보드 머리말 + 역할별 시작 타일(SCRUM-280, SCRUM-286 시안 B).
 // 문구 아래에 폭을 꽉 채운 이동 카드를 두고, 전신 곰이 카드 안에서 살짝 올라와 버튼을 안내해요.
@@ -48,8 +50,16 @@ function readHidden(loginId) {
 	}
 }
 
+// 관리자는 메뉴가 많아 대시보드에서 바로 갈 길을 한 줄로 모아요(SCRUM-327).
+// 사이드바를 접어도 여기서 모든 메뉴로 갈 수 있어요. 메뉴 표에서 켜진(ready) 것만 나와요.
+function shortcutsFor(role) {
+	if (role !== "ADMIN") return []
+	return visibleMenus(role).filter((m) => m.id !== "overview")
+}
+
 export default function RoleHero({ role, loginId }) {
 	const copy = ROLE_COPY[role] ?? ROLE_COPY.INVESTIGATOR
+	const shortcuts = shortcutsFor(role)
 	const [hintHidden, setHintHidden] = useState(() => readHidden(loginId))
 	const subId = useId()
 	function hideHint() {
@@ -109,6 +119,23 @@ export default function RoleHero({ role, loginId }) {
 					</strong>
 				</Link>
 			</section>
+			{shortcuts.length > 0 && (
+				<nav className="role-shortcuts" aria-label="바로가기">
+					<span className="role-shortcuts-label" aria-hidden="true">
+						바로가기
+					</span>
+					<ul>
+						{shortcuts.map((m) => (
+							<li key={m.id}>
+								<Link to={m.path}>
+									<Icon name={m.icon ?? "case"} size={16} />
+									{m.label}
+								</Link>
+							</li>
+						))}
+					</ul>
+				</nav>
+			)}
 		</>
 	)
 }
