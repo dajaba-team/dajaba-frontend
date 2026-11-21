@@ -24,7 +24,7 @@ export default function DashboardView({
 	const counts = useMemo(() => riskCounts(items), [items])
 	const scope = demo
 		? `현재 시연 케이스 ${items.length}건 기준`
-		: `점수순 상위 ${items.length}건 기준`
+		: `조회 가능한 전체 ${items.length}건 기준`
 	const cards = [
 		[
 			demo ? "시연 케이스" : "전체 조회 케이스",
@@ -274,7 +274,7 @@ export default function DashboardView({
 			<p className="analytics-footnote">
 				{demo
 					? "시연용 합성 데이터 · 실제 운영 실적이 아닙니다."
-					: "전체 건수와 현재 조회된 케이스의 집계 범위를 구분합니다. 점수는 조사 우선순위이며 범죄 확률이 아닙니다."}
+					: "카드와 차트는 현재 계정이 조회 가능한 전체 케이스 기준입니다. 점수는 조사 우선순위이며 범죄 확률이 아닙니다."}
 			</p>
 		</section>
 	)
