@@ -11,6 +11,7 @@ import bearFace from "../../../shared/assets/bear-face.png"
 import CaseEvidenceCard from "../components/CaseEvidenceCard"
 import CaseNotesCard from "../components/CaseNotesCard"
 import CaseScoreReasons from "../components/CaseScoreReasons"
+import { formatScore } from "../../../shared/format/score"
 import {
 	CLOSE_REASON_LABELS,
 	REJECTION_LABELS,
@@ -41,7 +42,7 @@ function ScoreBlock({ detail }) {
 			<p className="case-score-label">조사 우선순위 점수</p>
 			{score != null ? (
 				<p className="case-score-value">
-					<strong>{score}</strong>
+					<strong>{formatScore(score)}</strong>
 					{band && <span className="case-status">등급 {band}</span>}
 				</p>
 			) : (

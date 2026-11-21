@@ -7,6 +7,7 @@ import CountUp from "../../../shared/ui/dashboard/CountUp"
 import Icon from "../../../shared/ui/dashboard/Icon"
 import { STATUS_LABELS } from "../../cases/labels"
 import { riskCounts, riskNames, riskColors, demoTrend } from "../model/analytics"
+import { formatScore } from "../../../shared/format/score"
 
 export default function DashboardView({
 	items,
@@ -255,9 +256,7 @@ export default function DashboardView({
 								<div className="case-score">
 									{band && <em className="band-badge">{band}</em>}
 									<div className="case-score-main">
-										<strong>
-											{item.score == null ? "미산출" : item.score.toFixed(2)}
-										</strong>
+										<strong>{formatScore(item.score) ?? "미산출"}</strong>
 										<span>{STATUS_LABELS[item.status] ?? item.status}</span>
 									</div>
 								</div>
