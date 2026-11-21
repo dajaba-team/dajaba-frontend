@@ -5,8 +5,8 @@ import { clearBusinessData, sessionEndedKey } from "../../../app/queryClient"
 import { authApi } from "../api/authApi"
 import { getErrorMessage } from "../../../shared/api/apiClient"
 import Icon from "../../../shared/ui/dashboard/Icon"
+import brandMark from "../../../assets/brand-mark.png"
 
-const usingMocks = import.meta.env.VITE_USE_MOCKS === "true"
 const ROLE_LABELS = { INVESTIGATOR: "조사역", APPROVER: "승인자", ADMIN: "운영 관리자" }
 
 // 로그인 뒤에는 위 띠(placement="header")에 프로필 칩으로, 로그인 전에는 본문 가운데 로그인 카드로 보여요.
@@ -14,6 +14,8 @@ const ROLE_LABELS = { INVESTIGATOR: "조사역", APPROVER: "승인자", ADMIN: "
 export default function AuthPanel({ placement = "main" }) {
 	const [loginId, setLoginId] = useState("")
 	const [password, setPassword] = useState("")
+	// 비밀번호 보기 — 비밀번호가 지워지면(로그인 성공·실패) 다시 숨겨요(SCRUM-345)
+	const [showPassword, setShowPassword] = useState(false)
 	const queryClient = useQueryClient()
 	const me = useSession()
 	// 캐시에만 두는 표시라 queryFn 없이 읽습니다. 로그인에 성공하면 지웁니다.
@@ -34,6 +36,7 @@ export default function AuthPanel({ placement = "main" }) {
 		},
 		onSuccess: async () => {
 			setPassword("")
+			setShowPassword(false)
 			queryClient.setQueryData(sessionEndedKey, false)
 			// 로그인 응답만 신뢰하지 않고 me로 사용자와 바뀐 CSRF 쿠키를 다시 확인합니다.
 			await queryClient.fetchQuery({
@@ -42,7 +45,10 @@ export default function AuthPanel({ placement = "main" }) {
 				staleTime: 0,
 			})
 		},
-		onError: () => setPassword(""),
+		onError: () => {
+			setPassword("")
+			setShowPassword(false)
+		},
 		onSettled: () => setSwitching(false),
 	})
 	const logout = useMutation({
@@ -93,8 +99,9 @@ export default function AuthPanel({ placement = "main" }) {
 		<section className="auth-panel" aria-label="로그인">
 			{me.data === null && !sessionEnded && (
 				<header className="auth-heading">
-					<h2>DAJABA에 로그인</h2>
-					<p>AML 조사 워크스페이스를 이용하려면 계정으로 로그인해 주세요.</p>
+					<img className="auth-brand-mark" src={brandMark} alt="" />
+					<h2>DAJABA</h2>
+					<p>AI 기반 자금세탁방지 업무 시스템</p>
 				</header>
 			)}
 			<p role="status" className="auth-identity">
@@ -139,28 +146,32 @@ export default function AuthPanel({ placement = "main" }) {
 						onChange={(event) => setLoginId(event.target.value)}
 					/>
 					<label htmlFor="login-password">비밀번호</label>
-					<input
-						id="login-password"
-						name="password"
-						type="password"
-						autoComplete="current-password"
-						required
-						maxLength={128}
-						value={password}
-						disabled={busy}
-						onChange={(event) => setPassword(event.target.value)}
-					/>
+					<div className="password-field">
+						<input
+							id="login-password"
+							name="password"
+							type={showPassword ? "text" : "password"}
+							autoComplete="current-password"
+							required
+							maxLength={128}
+							value={password}
+							disabled={busy}
+							onChange={(event) => setPassword(event.target.value)}
+						/>
+						<button
+							type="button"
+							className="password-toggle"
+							aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+							aria-pressed={showPassword}
+							disabled={busy}
+							onClick={() => setShowPassword((shown) => !shown)}
+						>
+							<Icon name={showPassword ? "eyeOff" : "eye"} size={18} />
+						</button>
+					</div>
 					<button type="submit" disabled={busy || me.isFetching}>
 						{login.isPending ? "로그인 중…" : "로그인"}
 					</button>
-					{import.meta.env.DEV && (
-						<small>
-							로컬 계정 inv01 · inv02 · apr01 · admin —{" "}
-							{usingMocks
-								? "MSW 비밀번호는 mock-password"
-								: "비밀번호는 백엔드 .env의 DEV_USER_PASSWORD"}
-						</small>
-					)}
 				</form>
 			)}
 			{logout.isError && <p role="alert">{getErrorMessage(logout.error)}</p>}
