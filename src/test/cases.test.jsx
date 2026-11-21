@@ -360,6 +360,24 @@ describe("케이스 조사", () => {
 		expect(response.status).toBe(403)
 		expect((await response.json()).error.code).toBe("FORBIDDEN")
 	})
+	it("조사역 배정 요청은 틀린 version·없는 케이스여도 409·404보다 403 FORBIDDEN이 먼저다 (BE #160)", async () => {
+		renderApp("/cases/CASE-2022-001002")
+		await screen.findByText("현재 케이스는 읽기 전용입니다.")
+		const post = (caseNo, command, version) =>
+			fetch(`/api/v1/cases/${caseNo}/${command}`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ version, assignee: "inv02" }),
+			})
+		for (const response of [
+			await post("CASE-2022-001002", "assign", 999),
+			await post("CASE-NOPE", "assign", 0),
+			await post(REVIEWING, "reassign", 999),
+		]) {
+			expect(response.status).toBe(403)
+			expect((await response.json()).error.code).toBe("FORBIDDEN")
+		}
+	})
 	it("관리자가 배정하면 조사역은 로그인해서 그 케이스에 메모를 쓸 수 있다 (SCRUM-339)", async () => {
 		const user = renderApp("/cases/CASE-2022-001002", true, "admin")
 		await user.click(await screen.findByRole("button", { name: "담당자 배정" }))
