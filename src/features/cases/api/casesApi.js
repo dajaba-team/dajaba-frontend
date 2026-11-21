@@ -1,4 +1,8 @@
-import { AI_REQUEST_TIMEOUT_MS, apiClient } from "../../../shared/api/apiClient"
+import {
+	AI_REQUEST_TIMEOUT_MS,
+	ASK_REQUEST_TIMEOUT_MS,
+	apiClient,
+} from "../../../shared/api/apiClient"
 
 // 케이스 API — 프론트 API 계약서 v0.2 C1~C8·A1~A7, CASES 명세 API-01~13·15.
 // 백엔드 CaseController(SCRUM-106)와 같은 경로·모양이에요. 메모(A3)·메모 이력(C8)은 SCRUM-176, 요약(A7·C7)은 SCRUM-175.
@@ -148,6 +152,20 @@ const toChange = (data) => ({
 	currentDraftNo: data.current_draft_no ?? null,
 	version: data.version,
 	updatedAt: data.updated_at,
+})
+
+// 질문 한 줄 (A8 응답·C9 목록 한 줄, 계약서 5.3). 답 속 계좌는 AI가 준 그대로(10_BD30 꼴) — 화면이 고치지 않아요.
+// status: ANSWERED·NO_DATA·UNVERIFIED·OUT_OF_SCOPE. 답은 ANSWERED 일 때만, 사유는 OUT_OF_SCOPE 일 때만 와요.
+const toQuestion = (data) => ({
+	questionNo: data.question_no,
+	caseNo: data.case_no,
+	question: data.question,
+	status: data.status,
+	outOfScopeReason: data.out_of_scope_reason ?? null,
+	answer: data.answer ?? null,
+	evidenceTransactionIds: data.evidence_transaction_ids ?? [],
+	askedBy: toUser(data.asked_by),
+	createdAt: data.created_at,
 })
 
 export const casesApi = {
@@ -324,6 +342,34 @@ export const casesApi = {
 	summary: async (caseNo, signal) => {
 		const { data } = await apiClient.get(`${casePath(caseNo)}/summary`, { signal })
 		return { caseNo: data.case_no, summary: toSummary(data.summary) }
+	},
+	/**
+	 * 질문하기(A8) → 201 질문 한 줄. version 은 안 보내요(케이스를 바꾸지 않음).
+	 * 질문은 앞뒤 공백도 자르지 않고 받은 그대로 보내요(BE·AI 같은 규칙, SCRUM-302). 백엔드 한도 30초라 timeout 35초.
+	 */
+	ask: async ({ caseNo, question }) =>
+		toQuestion(
+			(
+				await apiClient.post(
+					`${casePath(caseNo)}/questions`,
+					{ question },
+					{ timeout: ASK_REQUEST_TIMEOUT_MS },
+				)
+			).data,
+		),
+	/** 지난 질문(C9), 최신 먼저. 화면 page는 1부터, API page는 0부터. */
+	questions: async ({ caseNo, page = 1, size = 5 }, signal) => {
+		const { data } = await apiClient.get(`${casePath(caseNo)}/questions`, {
+			params: { page: page - 1, size },
+			signal,
+		})
+		return {
+			items: data.items.map(toQuestion),
+			page: data.page + 1,
+			size: data.size,
+			total: data.total,
+			totalPages: Math.ceil(data.total / data.size),
+		}
 	},
 	saveNotes: async ({ caseNo, version, investigatorNotes }) =>
 		toChange(

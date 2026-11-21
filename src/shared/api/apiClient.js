@@ -14,6 +14,8 @@ export const apiClient = axios.create({
 
 // AI를 기다리는 요청(요약 갱신 A7·초안 생성 S1·검증 S5)은 백엔드 한도 90초(재시도 포함) + 여유. 03_api.md §4, 계약서 2.6, FE-8 〔확인 필요: 프록시 한도〕
 export const AI_REQUEST_TIMEOUT_MS = 100_000
+// 질문하기(A8)만 백엔드 한도가 30초라 화면 timeout 은 35초예요(계약서 2.6, SCRUM-303).
+export const ASK_REQUEST_TIMEOUT_MS = 35_000
 
 export function isNoResponse(error) {
 	return !error?.response && ["ECONNABORTED", "ETIMEDOUT", "ERR_NETWORK"].includes(error?.code)
@@ -76,8 +78,18 @@ export function getInvalidParameter(error) {
 	return typeof parameter === "string" && parameter ? parameter : null
 }
 
+/** 429 QUESTION_RATE_LIMITED 의 details.retry_after_seconds. 없거나 이상한 값이면 null. */
+export function getRetryAfterSeconds(error) {
+	if (error?.response?.status !== 429) return null
+	const seconds = Number(error.response.data?.error?.details?.retry_after_seconds)
+	return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : null
+}
+
 export function getErrorMessage(error) {
 	const code = getErrorCode(error)
+	// 질문 횟수 한도(계약서 3절 429, SCRUM-303). 남은 초는 질문 패널이 따로 세어 보여 줘요.
+	if (code === "QUESTION_RATE_LIMITED" || error?.response?.status === 429)
+		return "요청 한도를 초과했습니다. 잠시 후 다시 시도하세요."
 	// 로그인 실패는 없는 ID인지 비밀번호가 틀렸는지 알려 주지 않으므로 문구도 하나입니다.
 	if (code === "LOGIN_FAILED") return "아이디 또는 비밀번호가 맞지 않아요."
 	if (error.response?.status === 401) return "로그인이 필요합니다."

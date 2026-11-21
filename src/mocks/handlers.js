@@ -12,6 +12,8 @@ import {
 } from "./approvals"
 import {
 	applyCommand,
+	askQuestion,
+	availableActions,
 	changeResponse,
 	detailResponse,
 	evidenceResponse,
@@ -19,6 +21,7 @@ import {
 	historiesResponse,
 	listResponse,
 	noteHistoriesResponse,
+	questionsResponse,
 	seedCases,
 	transactionsResponse,
 } from "./cases"
@@ -35,6 +38,8 @@ let batchRuns = []
 let scoreAttempts = {}
 // 케이스 생성(B4)을 같은 날짜로 다시 돌린 실행 번호 — 상태 조회 때 새로 만든 건수를 0으로 보여 줘요(응답 JSON 에는 안 넣어요)
 let openCasesReruns = new Set()
+// 질문하기(A8) 1분 횟수 제한용 — 사용자별 최근 질문 시각
+let askLog = []
 const batchConflict = (code, message) =>
 	HttpResponse.json({ error: { code, message, details: {} } }, { status: 409 })
 const succeeded = (type, date) =>
@@ -113,6 +118,7 @@ export function resetCases(user = null, { pendingApproval = false, formerAssigne
 	batchRuns = []
 	scoreAttempts = {}
 	openCasesReruns = new Set()
+	askLog = []
 }
 const draftNotFound = () =>
 	HttpResponse.json(
@@ -691,6 +697,37 @@ export const handlers = [
 				: HttpResponse.json(result.body, { status: result.status })
 		}),
 	),
+	// 질문 답변 — 계약서 A8(201 질문 한 줄)·C9(지난 질문, 최신 먼저). 상태 고르는 규칙은 mocks/cases.js askQuestion.
+	http.post(`${base}/api/v1/cases/:caseNo/questions`, async ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		const body = await request.json().catch(() => null)
+		const result = askQuestion(currentUser, item, body, askLog)
+		return result.question
+			? HttpResponse.json(result.question, { status: 201 })
+			: HttpResponse.json(result.body, { status: result.status })
+	}),
+	http.get(`${base}/api/v1/cases/:caseNo/questions`, ({ params, request }) => {
+		if (!currentUser) return unauthenticated()
+		const item = cases.find((entry) => entry.case_no === params.caseNo)
+		if (!item)
+			return HttpResponse.json(
+				{ error: { code: "CASE_NOT_FOUND", message: "케이스가 없습니다", details: {} } },
+				{ status: 404 },
+			)
+		if (!availableActions(currentUser, item).includes("ASK_QUESTION"))
+			return HttpResponse.json(
+				{
+					error: {
+						code: currentUser.role === "ADMIN" ? "FORBIDDEN" : "NOT_ASSIGNEE",
+						message: "권한이 없습니다",
+						details: {},
+					},
+				},
+				{ status: 403 },
+			)
+		return HttpResponse.json(questionsResponse(item, new URL(request.url)))
+	}),
 	// AI 조사 요약 — 계약서 A7(201 { case_no, summary, case_version })·C7(조회 3역할, 없으면 summary: null)
 	http.post(`${base}/api/v1/cases/:caseNo/refresh-summary`, async ({ params, request }) => {
 		if (!currentUser) return unauthenticated()

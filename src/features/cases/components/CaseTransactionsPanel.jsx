@@ -19,15 +19,54 @@ function directionText(item, n) {
 
 const SCOPE_TITLES = { EVIDENCE: "근거 거래", CONTEXT: "참고 거래" }
 
-export default function CaseTransactionsPanel({ caseNo, scope = "EVIDENCE" }) {
+// 질문 답의 근거 거래 강조(SCRUM-303) — 1차는 지금 페이지만 칠하고, 표 위에 "이 페이지 m건 · 전체 n건"을 적어요.
+function AskHighlightBar({ highlight, items, onClear, onReopen }) {
+	const ids = new Set(highlight.ids)
+	const here = items.filter((item) => ids.has(item.transactionId)).length
+	return (
+		<div className="ask-evidence-bar" role="status" tabIndex={-1} id="ask-evidence-bar">
+			<p>
+				<b>질의 근거</b> 현재 페이지 {here}건 / 전체 {highlight.ids.length}건
+				{here === 0 && <small>나머지 근거 거래는 다른 페이지에 있습니다.</small>}
+			</p>
+			<div>
+				{onReopen && (
+					<button type="button" onClick={onReopen}>
+						질의 창 열기
+					</button>
+				)}
+				<button type="button" onClick={onClear}>
+					강조 해제
+				</button>
+			</div>
+		</div>
+	)
+}
+
+export default function CaseTransactionsPanel({
+	caseNo,
+	scope = "EVIDENCE",
+	highlight = null,
+	onClearHighlight,
+	onReopenAsk,
+}) {
 	const [page, setPage] = useState(1)
 	const [opened, setOpened] = useState(null)
 	const query = useCaseTransactions(caseNo, scope, page)
 	const data = query.data
+	const hits = scope === "EVIDENCE" && highlight ? new Set(highlight.ids) : null
 	return (
 		<section className="case-panel" aria-labelledby="transactions-title">
 			<h2 id="transactions-title">{SCOPE_TITLES[scope]}</h2>
 			<AsyncState query={query} />
+			{hits && data && (
+				<AskHighlightBar
+					highlight={highlight}
+					items={data.items}
+					onClear={onClearHighlight}
+					onReopen={onReopenAsk}
+				/>
+			)}
 			{data &&
 				(data.items.length ? (
 					<div className="case-table-scroll" tabIndex={0} aria-label="거래 표">
@@ -48,10 +87,14 @@ export default function CaseTransactionsPanel({ caseNo, scope = "EVIDENCE" }) {
 									<tr
 										key={item.transactionId}
 										className={
-											item.scope === "CONTEXT"
-												? "case-row-context"
-												: undefined
+											[
+												item.scope === "CONTEXT" && "case-row-context",
+												hits?.has(item.transactionId) && "is-ask-hit",
+											]
+												.filter(Boolean)
+												.join(" ") || undefined
 										}
+										aria-current={hits?.has(item.transactionId) || undefined}
 									>
 										<td>
 											{item.transactionId}

@@ -196,7 +196,10 @@ export function availableActions(viewer, item) {
 	if (item.status === "OPEN" && ["INVESTIGATOR", "ADMIN"].includes(viewer.role))
 		actions.push("ASSIGN")
 	if (viewer.role === "ADMIN" && REASSIGNABLE.includes(item.status)) actions.push("REASSIGN")
+	// 질문하기(A8) — 담당 조사역·승인자. 케이스 상태로는 막지 않아요(SCRUM-302, aml.ai.ask-enabled 켠 상태로 봐요).
+	if (viewer.role === "APPROVER") actions.push("ASK_QUESTION")
 	if (item.assignee?.login_id !== viewer.login_id) return actions
+	if (viewer.role === "INVESTIGATOR") actions.push("ASK_QUESTION")
 	if (EDITABLE.includes(item.status) || (item.status === "REJECTED" && code === "NEED_REVISION"))
 		actions.push("UPDATE_NOTES", "REFRESH_SUMMARY")
 	if (item.status === "REVIEWING") actions.push("ESCALATE")
@@ -528,4 +531,85 @@ export function applyCommand(viewer, item, command, body, users) {
 	item.version += 1
 	item.updated_at = now
 	return { item }
+}
+
+// ── 질문 답변 (A8·C9, SCRUM-302·303) ─────────────────────────────────────
+// 실제 답은 AI(/v1/cases/ask)가 만들어요. MSW는 질문 글자로 상태를 골라 화면의 모든 경우를 띄워 볼 수 있게 해요.
+//   "수정·바꿔·고쳐" → OUT_OF_SCOPE EDIT_REQUEST · "다른 고객·다른 케이스·전체 계좌번호" → OUTSIDE_CASE
+//   "자금세탁·보고해야" → JUDGMENT · "확인 안 됨" → UNVERIFIED · "AI 오류" → 502 · 나머지 중 아래 예시가 아니면 NO_DATA
+export const ASK_PER_MINUTE = 5
+const ASK_EXAMPLES = [
+	[/입금 상대|몇 곳/, "입금 상대 계좌는 2개입니다.", (ids) => ids.slice(0, 2)],
+	[/룰|걸렸/, "24시간 내 여러 계좌에서 입금이 집중된 뒤 곧바로 출금되었습니다.", (ids) => ids],
+	[
+		/모델|점수/,
+		"모델이 주목한 점: 24시간 내 서로 다른 송금 계좌 수가 평소보다 많았습니다.",
+		(ids) => ids.slice(0, 1),
+	],
+]
+const NFC_LENGTH = (text) => text.normalize("NFC").length
+
+/** C9 한 페이지 — 최신 먼저. */
+export function questionsResponse(item, url) {
+	return page([...(item.questions ?? [])].reverse(), url)
+}
+
+/**
+ * 질문 하나를 처리해요. 성공이면 { question }, 실패면 { status, body }.
+ * 순서는 BE AskCaseQuestion 과 같아요: 404 → 400 → 권한 403 → 1분 5회 429 → AI(502) → 저장.
+ */
+export function askQuestion(viewer, item, body, recent, now = Date.now()) {
+	if (!item) return fail(404, "CASE_NOT_FOUND", "케이스가 없습니다")
+	const question = body?.question
+	if (typeof question !== "string" || !question.trim())
+		return fail(400, "INVALID_REQUEST", "질문을 입력해 주세요", { question: "필수" })
+	if (NFC_LENGTH(question) > 300)
+		return fail(400, "INVALID_REQUEST", "질문은 300자 이내예요", { question: "300자 초과" })
+	if (viewer.role === "ADMIN") return fail(403, "FORBIDDEN", "권한이 없습니다")
+	if (!availableActions(viewer, item).includes("ASK_QUESTION"))
+		return fail(403, "NOT_ASSIGNEE", "담당 조사역만 할 수 있습니다")
+	const mine = recent.filter(
+		(entry) => entry.login_id === viewer.login_id && entry.at > now - 60_000,
+	)
+	if (mine.length >= ASK_PER_MINUTE) {
+		const retry = Math.max(1, Math.ceil((mine[0].at + 60_000 - now) / 1000))
+		return fail(429, "QUESTION_RATE_LIMITED", "요청 한도를 초과했습니다", {
+			retry_after_seconds: retry,
+		})
+	}
+	if (/AI 오류/.test(question))
+		return fail(502, "AI_UNAVAILABLE", "AI 서버에 연결하지 못했습니다")
+	const ids = (item.transactions ?? []).map((t) => t.transaction_id)
+	let status = "NO_DATA"
+	let reason = null
+	let answer = null
+	let evidence = []
+	if (/수정|바꿔|고쳐/.test(question)) [status, reason] = ["OUT_OF_SCOPE", "EDIT_REQUEST"]
+	else if (/다른 고객|다른 케이스|전체 계좌번호/.test(question))
+		[status, reason] = ["OUT_OF_SCOPE", "OUTSIDE_CASE"]
+	else if (/자금세탁|보고해야/.test(question)) [status, reason] = ["OUT_OF_SCOPE", "JUDGMENT"]
+	else if (/확인 안 됨/.test(question)) status = "UNVERIFIED"
+	else {
+		const example = ASK_EXAMPLES.find(([pattern]) => pattern.test(question))
+		if (example && ids.length) {
+			status = "ANSWERED"
+			answer = example[1]
+			evidence = example[2](ids)
+		}
+	}
+	item.questions = item.questions ?? []
+	const record = {
+		question_no: `QST-${String(recent.length + 41).padStart(6, "0")}`,
+		case_no: item.case_no,
+		question,
+		status,
+		out_of_scope_reason: reason,
+		answer,
+		evidence_transaction_ids: evidence,
+		asked_by: { login_id: viewer.login_id, display_name: viewer.display_name },
+		created_at: new Date(now).toISOString().replace(/\.\d{3}Z$/, "Z"),
+	}
+	item.questions.push(record)
+	recent.push({ login_id: viewer.login_id, at: now })
+	return { question: record }
 }
