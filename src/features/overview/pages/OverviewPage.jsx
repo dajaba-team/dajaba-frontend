@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router"
-import { useCases } from "../../cases/hooks/useCases"
+import { useOverviewCases } from "../hooks/useOverviewCases"
 import { useSession } from "../../auth/hooks/useSession"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import DashboardView from "../components/DashboardView"
 import RoleHero from "../components/RoleHero"
 import { homePathFor } from "../../../app/navigation/appNavigation"
 export default function OverviewPage() {
-	const query = useCases({ page: 1, size: 20, sort: "score,desc" })
+	const query = useOverviewCases()
 	const { data: session } = useSession()
 	const navigate = useNavigate()
 	return (

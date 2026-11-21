@@ -17,19 +17,24 @@ const sample = [
 function show(items = sample) {
 	return render(
 		<MemoryRouter>
-			<DashboardView items={items} total={123} description="테스트 업무" onStart={() => {}} />
+			<DashboardView
+				items={items}
+				total={items.length}
+				description="테스트 업무"
+				onStart={() => {}}
+			/>
 		</MemoryRouter>,
 	)
 }
 describe("일반 대시보드의 데이터 범위", () => {
-	it("전체 건수와 조회 범위를 구분하며 미산출을 고위험이나 0점으로 바꾸지 않는다", () => {
+	it("전체 조회 범위를 표시하며 미산출을 고위험이나 0점으로 바꾸지 않는다", () => {
 		show()
 		const cards = within(screen.getByRole("region", { name: "업무 현황 요약" })).getAllByRole(
 			"article",
 		)
-		expect(cards[0]).toHaveTextContent("123")
+		expect(cards[0]).toHaveTextContent("3건")
 		expect(cards[1]).toHaveTextContent("1건")
-		expect(cards[1]).toHaveTextContent("상위 3건 기준")
+		expect(cards[1]).toHaveTextContent("조회 가능한 전체 3건 기준")
 		expect(
 			screen.getByRole("img", {
 				name: /높음 · HIGH 1건.*낮음 · LOW 1건.*미산출·등급 없음 1건/,
