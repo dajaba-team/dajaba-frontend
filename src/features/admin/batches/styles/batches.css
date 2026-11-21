@@ -33,8 +33,7 @@
 		grid-template-columns: minmax(0, 1fr);
 	}
 }
-.batch-step,
-.batch-steps > .case-panel {
+.batch-step {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
@@ -45,13 +44,7 @@
 	border-radius: var(--radius-card);
 	box-shadow: var(--shadow-card);
 }
-/* 케이스 생성 카드(SCRUM-180)는 자기 마크업 그대로 — 칸 안 여백만 맞춰요 */
-.batch-steps > .case-panel > p,
-.batch-steps > .case-panel > [role="alert"] {
-	margin: 0;
-}
-.batch-step h2,
-.batch-steps > .case-panel h2 {
+.batch-step h2 {
 	display: flex;
 	align-items: center;
 	gap: var(--space-2);
@@ -111,6 +104,21 @@
 }
 .batch-step ul {
 	padding-inline-start: var(--space-5);
+}
+/* 룰 목록은 "R01 분산 송금 · 149건" 한 줄씩 */
+.batch-step li {
+	white-space: nowrap;
+}
+/* 모델 이름은 길어서 한 줄로 두고 넘치면 …, 전체는 마우스를 올리면(title) — SCRUM-344 */
+.batch-step .batch-model {
+	max-inline-size: 100%;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+.batch-step label {
+	font-size: var(--font-small);
+	font-weight: 600;
 }
 .batch-results h2 {
 	margin: var(--space-4) var(--space-5);
