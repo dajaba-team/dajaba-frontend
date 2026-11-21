@@ -193,8 +193,8 @@ const REASSIGNABLE = ["REVIEWING", "ESCALATED", "DRAFTED", "REJECTED"]
 export function availableActions(viewer, item) {
 	const actions = []
 	const code = item.rejection_reason_code
-	if (item.status === "OPEN" && ["INVESTIGATOR", "ADMIN"].includes(viewer.role))
-		actions.push("ASSIGN")
+	// 배정은 관리자만(SCRUM-339, BE #160) — 조사역 자기 배정 없음.
+	if (item.status === "OPEN" && viewer.role === "ADMIN") actions.push("ASSIGN")
 	if (viewer.role === "ADMIN" && REASSIGNABLE.includes(item.status)) actions.push("REASSIGN")
 	// 질문하기(A8) — 담당 조사역·승인자. 케이스 상태로는 막지 않아요(SCRUM-302, aml.ai.ask-enabled 켠 상태로 봐요).
 	if (viewer.role === "APPROVER") actions.push("ASK_QUESTION")
@@ -446,9 +446,9 @@ export function applyCommand(viewer, item, command, body, users) {
 		item.assignee = user(body.assignee)
 		move("REASSIGN", item.status, body.comment ?? null)
 	} else if (command === "assign") {
-		const target = viewer.role === "ADMIN" ? body.assignee : (body.assignee ?? viewer.login_id)
-		if (viewer.role !== "ADMIN" && target !== viewer.login_id)
-			return fail(409, "INVALID_ASSIGNEE", "본인에게만 배정할 수 있습니다")
+		// BE AssignCase — ADMIN만(SCRUM-339, BE #160: 재배정과 같은 403 FORBIDDEN)
+		if (viewer.role !== "ADMIN") return fail(403, "FORBIDDEN", "권한이 없습니다")
+		const target = body.assignee
 		const assignee = users[target]
 		if (!assignee) return fail(404, "USER_NOT_FOUND", "사용자가 없습니다")
 		if (assignee.role !== "INVESTIGATOR")
