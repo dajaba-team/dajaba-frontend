@@ -1,19 +1,13 @@
-import { useId, useState } from "react"
+import { useId } from "react"
 import { Link } from "react-router"
-import Icon from "../../../shared/ui/dashboard/Icon"
-import { visibleMenus } from "../../../app/navigation/appNavigation"
 
-// 업무 대시보드 머리말 + 역할별 시작 타일(SCRUM-280, SCRUM-286 시안 B).
-// 문구 아래에 폭을 꽉 채운 이동 카드를 두고, 전신 곰이 카드 안에서 살짝 올라와 버튼을 안내해요.
-// 안내 문장은 처음 한 번 보여 주고 [안내 접기]로 숨겨요. 숨김은 이 브라우저에만 기억해요.
-// 안내를 접으면 이동 카드도 낮아져서 아래 KPI·차트가 첫 화면에 더 보여요.
+// 업무 대시보드 머리말 + 역할별 이동 카드(SCRUM-280, SCRUM-286 시안 B).
+// 제목·설명 아래에 폭을 꽉 채운 이동 카드를 두고, 전신 곰이 카드 안에서 살짝 올라와 버튼을 안내해요.
+// 빵부스러기·하늘색 바깥 박스·안내 문장·바로가기 줄은 뺐어요(SCRUM-345 — 메뉴와 겹치는 것 정리).
 const ROLE_COPY = {
 	INVESTIGATOR: {
 		title: "조사역 대시보드",
 		description: "내게 배정된 건과 보완할 초안을 먼저 확인하세요.",
-		eyebrow: "조사역",
-		heading: "오늘 확인할 조사 업무",
-		hint: "케이스를 열고 점수가 오른 이유와 근거 거래부터 확인해 보세요.",
 		cta: "내 담당 케이스 보기",
 		sub: "배정 케이스 · 근거 거래 확인",
 		to: "/cases?mine=1",
@@ -21,121 +15,44 @@ const ROLE_COPY = {
 	APPROVER: {
 		title: "승인자 대시보드",
 		description: "요청이 오래된 보고서부터 검토하고, 승인한 건의 모의 제출을 이어가세요.",
-		eyebrow: "승인자",
-		heading: "오늘의 검토와 제출 현황",
-		hint: "오래 기다린 요청부터 열어보세요. 재요청 건은 지난 보완 요청과 바뀐 문장을 함께 볼 수 있어요.",
 		cta: "승인함 열기",
 		sub: "검토 요청 · 모의 제출",
 		to: "/approvals",
 	},
 	ADMIN: {
 		title: "관리자 대시보드",
-		description: "배치 결과를 확인하고 미배정 케이스를 조사역에게 연결하세요.",
-		eyebrow: "운영 관리자",
-		heading: "오늘의 배치와 배정 현황",
-		hint: "배치 결과에서 실패한 작업을 확인하세요. 새로 생성된 케이스에는 담당 조사역을 배정해 주세요.",
+		description: "배치 운영, 조사 관리, 승인 등의 업무 현황을 한눈에 확인하세요.",
 		cta: "데이터·배치 운영 열기",
 		sub: "배치 결과 확인 · 담당 배정",
 		to: "/admin/batches",
 	},
 }
 
-const hintKey = (loginId) => `dajaba.intro.v1.${loginId}`
-
-function readHidden(loginId) {
-	try {
-		return localStorage.getItem(hintKey(loginId)) === "hidden"
-	} catch {
-		return false
-	}
-}
-
-// 관리자는 메뉴가 많아 대시보드에서 바로 갈 길을 한 줄로 모아요(SCRUM-327).
-// 사이드바를 접어도 여기서 모든 메뉴로 갈 수 있어요. 메뉴 표에서 켜진(ready) 것만 나와요.
-function shortcutsFor(role) {
-	if (role !== "ADMIN") return []
-	return visibleMenus(role).filter((m) => m.id !== "overview")
-}
-
-export default function RoleHero({ role, loginId }) {
+export default function RoleHero({ role }) {
 	const copy = ROLE_COPY[role] ?? ROLE_COPY.INVESTIGATOR
-	const shortcuts = shortcutsFor(role)
-	const [hintHidden, setHintHidden] = useState(() => readHidden(loginId))
 	const subId = useId()
-	function hideHint() {
-		setHintHidden(true)
-		try {
-			localStorage.setItem(hintKey(loginId), "hidden")
-		} catch {
-			// 저장소를 못 쓰면 이번 화면에서만 접어요.
-		}
-	}
 	return (
 		<>
 			<header className="role-heading">
-				<p className="crumbs">
-					업무 공간 <span aria-hidden="true">/</span> 업무 대시보드
-				</p>
 				<h1>{copy.title}</h1>
 				<p>{copy.description}</p>
 			</header>
-			<section
-				className={`role-band${hintHidden ? " is-compact" : ""}`}
-				aria-labelledby="role-band-title"
+			{/* 링크 이름은 버튼 문구만, 작은 안내 문구는 설명으로 읽혀요(PR #62 리뷰). */}
+			<Link
+				className="role-band-cta"
+				to={copy.to}
+				aria-label={copy.cta}
+				aria-describedby={subId}
 			>
-				<div className="role-band-copy">
-					<p className="ux-eyebrow">
-						{copy.eyebrow} {loginId} · 업무 시작
-					</p>
-					<h2 id="role-band-title">{copy.heading}</h2>
-					{!hintHidden && (
-						<div className="bear-hint">
-							<p>{copy.hint}</p>
-							<button
-								type="button"
-								className="hide-hint"
-								onClick={hideHint}
-								aria-label="첫 이용 안내 닫기"
-							>
-								안내 접기
-							</button>
-						</div>
-					)}
-				</div>
-				{/* 링크 이름은 버튼 문구만, 작은 안내 문구는 설명으로 읽혀요(PR #62 리뷰). */}
-				<Link
-					className="role-band-cta"
-					to={copy.to}
-					aria-label={copy.cta}
-					aria-describedby={subId}
-				>
-					<span className="bear-full" aria-hidden="true" />
-					<small id={subId}>{copy.sub}</small>
-					<strong>
-						{copy.cta}
-						<span className="cta-arrow" aria-hidden="true">
-							→
-						</span>
-					</strong>
-				</Link>
-			</section>
-			{shortcuts.length > 0 && (
-				<nav className="role-shortcuts" aria-label="바로가기">
-					<span className="role-shortcuts-label" aria-hidden="true">
-						바로가기
+				<span className="bear-full" aria-hidden="true" />
+				<small id={subId}>{copy.sub}</small>
+				<strong>
+					{copy.cta}
+					<span className="cta-arrow" aria-hidden="true">
+						→
 					</span>
-					<ul>
-						{shortcuts.map((m) => (
-							<li key={m.id}>
-								<Link to={m.path}>
-									<Icon name={m.icon ?? "case"} size={16} />
-									{m.label}
-								</Link>
-							</li>
-						))}
-					</ul>
-				</nav>
-			)}
+				</strong>
+			</Link>
 		</>
 	)
 }

@@ -97,6 +97,22 @@ describe("SCRUM-335 전체 케이스 집계", () => {
 		expect(pages).toEqual([0, 1, 0, 1])
 	})
 
+	it("[새로고침]을 누르면 케이스를 다시 불러와 바뀐 숫자를 보여 준다 (SCRUM-345)", async () => {
+		const rows = fixture(3)
+		const pages = serve(rows)
+		show()
+		expectCount((await cards())[3], 1)
+		expect(pages).toEqual([0])
+		rows[0].status = "PENDING_APPROVAL"
+		await userEvent.setup().click(screen.getByRole("button", { name: "새로고침" }))
+		await waitFor(() => expectCount(screen.getAllByRole("article")[3], 2))
+		expect(pages).toEqual([0, 0])
+		expect(screen.getByRole("button", { name: "새로고침" })).toBeEnabled()
+		expect(screen.getByText(/^마지막 갱신 \d{2}:\d{2}:\d{2}$/)).toBeInTheDocument()
+		// 조사 진행 현황에는 전체 건수 줄이 없어요(위 카드·도넛과 겹쳐서)
+		expect(document.querySelector(".trend-summary")).toBeNull()
+	})
+
 	it("뒤 페이지 실패 시 부분 통계를 숨기고 다시 불러오면 전체를 표시한다", async () => {
 		let failing = true
 		serve(fixture(128), { failSecond: () => failing })
@@ -120,6 +136,6 @@ describe("SCRUM-335 전체 케이스 집계", () => {
 		show()
 		expectCount((await cards())[3], 0)
 		expect(pages).toEqual([0])
-		expect(screen.getByText("조회 가능한 케이스가 없습니다.")).toBeInTheDocument()
+		expect(screen.getByText("현재 확인할 케이스가 없습니다.")).toBeInTheDocument()
 	})
 })

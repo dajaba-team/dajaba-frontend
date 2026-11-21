@@ -18,7 +18,10 @@ export default function OverviewPage() {
 					total={query.data.total}
 					description={`${session?.displayName ?? ""}님, 오늘의 조사 흐름을 한눈에 확인하세요.`}
 					onStart={() => navigate(homePathFor(session?.role))}
-					hero={<RoleHero role={session?.role} loginId={session?.loginId} />}
+					hero={<RoleHero role={session?.role} />}
+					onRefresh={() => query.refetch()}
+					refreshing={query.isFetching}
+					updatedAt={query.dataUpdatedAt}
 				/>
 			)}
 		</>

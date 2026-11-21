@@ -1,12 +1,44 @@
-import { useMemo, useState } from "react"
+import { useId, useMemo, useState } from "react"
 import { Link } from "react-router"
 import AnalyticsChart from "../../../shared/ui/charts/AnalyticsChart"
-import RiskGauge from "./RiskGauge"
+import RiskDonut from "./RiskDonut"
 import DashboardHero from "../../../shared/ui/dashboard/DashboardHero"
 import CountUp from "../../../shared/ui/dashboard/CountUp"
 import Icon from "../../../shared/ui/dashboard/Icon"
 import { STATUS_LABELS } from "../../cases/labels"
 import { riskCounts, riskNames, riskColors, demoTrend } from "../model/analytics"
+
+// 마지막 갱신 시각 — 브라우저 시간대의 시:분:초(SCRUM-345)
+const CLOCK = new Intl.DateTimeFormat("ko-KR", {
+	hour: "2-digit",
+	minute: "2-digit",
+	second: "2-digit",
+	hour12: false,
+})
+const clockOf = (ms) => CLOCK.format(new Date(ms))
+
+// KPI 카드 제목 옆 ⓘ — 마우스를 올리거나 키보드로 가면 카드 뜻을 한 줄로 보여 줘요(SCRUM-345).
+// 화면 읽기 프로그램에는 버튼 설명(aria-describedby)으로 읽혀요.
+function InfoTip({ label, text }) {
+	const tipId = useId()
+	return (
+		<span className="kpi-info">
+			<button
+				type="button"
+				className="kpi-info-button"
+				aria-label={`${label} 설명`}
+				aria-describedby={tipId}
+				// 키보드로 띄운 설명은 Esc 로 닫아요(포커스를 놓으면 사라짐)
+				onKeyDown={(event) => event.key === "Escape" && event.currentTarget.blur()}
+			>
+				<Icon name="info" size={14} />
+			</button>
+			<span role="tooltip" id={tipId} className="kpi-info-tip">
+				{text}
+			</span>
+		</span>
+	)
+}
 
 export default function DashboardView({
 	items,
@@ -18,26 +50,37 @@ export default function DashboardView({
 	demo = false,
 	dark = false,
 	hero = null,
+	onRefresh = null, // 업무 화면: 서버에서 다시 불러오기(Promise). 시연 화면은 없음 → 효과만 다시
+	refreshing = false,
+	updatedAt = 0, // 마지막으로 받아 온 시각(ms) — 0이면 표시 안 함
 }) {
 	const [period, setPeriod] = useState(10)
 	const [replay, setReplay] = useState(0)
+	// 새로고침 — 다시 불러온 뒤 숫자·차트 효과를 다시 재생해요(SCRUM-345)
+	async function refresh() {
+		await onRefresh?.()
+		setReplay((v) => v + 1)
+	}
 	const counts = useMemo(() => riskCounts(items), [items])
-	const scope = demo
-		? `현재 시연 케이스 ${items.length}건 기준`
-		: `조회 가능한 전체 ${items.length}건 기준`
+	// 카드에는 제목·건수·아이콘만, 뜻은 제목 옆 ⓘ 툴팁으로(SCRUM-345). 시연 화면 첫 카드만 시연 데이터라고 알려요
 	const cards = [
 		[
-			demo ? "시연 케이스" : "전체 조회 케이스",
+			demo ? "시연 케이스" : "전체 케이스",
 			total,
-			demo ? "현재 시연 데이터" : "현재 계정의 조회 가능 범위",
+			demo ? "시연용 합성 데이터의 케이스 수" : "조회 가능한 전체 케이스 수",
 			"case",
 		],
-		["우선 확인 · HIGH", counts[0], scope, "alert"],
-		["미배정 케이스", items.filter((i) => !i.assignee).length, scope, "user"],
+		["고위험 케이스", counts[0], "위험 등급이 HIGH인 케이스 수", "alert"],
+		[
+			"미배정 케이스",
+			items.filter((i) => !i.assignee).length,
+			"담당 조사역이 배정되지 않은 케이스 수",
+			"user",
+		],
 		[
 			"승인 대기",
 			items.filter((i) => i.status === "PENDING_APPROVAL").length,
-			scope,
+			"승인자 검토가 필요한 케이스 수",
 			"approval",
 		],
 	]
@@ -94,8 +137,11 @@ export default function DashboardView({
 				/>
 			)}
 			<div className="dashboard-section-label">
-				<button onClick={() => setReplay((v) => v + 1)}>
-					<Icon name="refresh" size={13} /> 효과 다시 재생
+				{updatedAt > 0 && (
+					<span className="refresh-time">마지막 갱신 {clockOf(updatedAt)}</span>
+				)}
+				<button type="button" onClick={refresh} disabled={refreshing}>
+					<Icon name="refresh" size={13} /> {refreshing ? "새로고침 중…" : "새로고침"}
 				</button>
 			</div>
 			<section className="signal-kpis" aria-label="업무 현황 요약">
@@ -105,15 +151,17 @@ export default function DashboardView({
 						key={name}
 					>
 						<div className="metric-label">
-							{name}
+							<span className="metric-title">
+								{name}
+								<InfoTip label={name} text={note} />
+							</span>
 							<Icon name={icon} size={18} />
 						</div>
 						<strong>
 							<CountUp value={value} replay={replay} />
 							<small>건</small>
 						</strong>
-						<p>{note}</p>
-						{index === 0 ? (
+						{index === 0 && (
 							<div className="metric-bars" aria-hidden="true">
 								{[
 									30, 48, 40, 66, 52, 76, 63, 83, 71, 94, 78, 87, 65, 92, 79, 100,
@@ -125,11 +173,6 @@ export default function DashboardView({
 									/>
 								))}
 							</div>
-						) : (
-							<Link className="metric-link" to={listPath}>
-								케이스에서 확인
-								<Icon name="arrow" size={14} />
-							</Link>
 						)}
 					</article>
 				))}
@@ -138,11 +181,11 @@ export default function DashboardView({
 				<section className="analytics-panel trend-panel">
 					<div className="analytics-head">
 						<div>
-							<h2>{demo ? "거래 흐름" : "조사 흐름 한눈에 보기"}</h2>
+							<h2>{demo ? "거래 흐름" : "조사 진행 현황"}</h2>
 							<p>
 								{demo
 									? "일별 거래 건수 · 시각화용 합성 예시"
-									: `${scope} · 현재 상태별 건수`}
+									: "케이스의 조사 단계별 진행 현황을 확인하세요."}
 							</p>
 						</div>
 						{demo && (
@@ -162,20 +205,19 @@ export default function DashboardView({
 							</div>
 						)}
 					</div>
-					<div className="trend-summary">
-						<strong>
-							<CountUp
-								value={
-									demo
-										? demoTrend.slice(-period).reduce((a, b) => a + b, 0)
-										: items.length
-								}
-								replay={replay}
-							/>
-							<small>건 {demo ? "· 합성 예시" : "조회"}</small>
-						</strong>
-						{demo && <span>{`2022.09.${11 - period} — 09.10`}</span>}
-					</div>
+					{/* 업무 화면은 전체 건수가 위 카드·도넛과 겹쳐서 빼요(SCRUM-345). 시연 화면만 기간 합계 */}
+					{demo && (
+						<div className="trend-summary">
+							<strong>
+								<CountUp
+									value={demoTrend.slice(-period).reduce((a, b) => a + b, 0)}
+									replay={replay}
+								/>
+								<small>건 · 합성 예시</small>
+							</strong>
+							<span>{`2022.09.${11 - period} — 09.10`}</span>
+						</div>
+					)}
 					<div className="trend-canvas chart-transition" key={`${period}-${replay}`}>
 						{trend.labels.length ? (
 							<AnalyticsChart
@@ -195,12 +237,19 @@ export default function DashboardView({
 				<section className="analytics-panel risk-panel">
 					<div className="analytics-head">
 						<div>
-							<h2>위험 등급 분포</h2>
-							<p>{scope}</p>
+							{/* ⓘ 는 제목(h2) 밖에 둬요 — 제목 이름에 설명 문구가 섞이지 않게 */}
+							<div className="panel-title">
+								<h2>위험 등급 분포</h2>
+								<InfoTip
+									label="위험 등급 분포"
+									text="위험 점수는 범죄 확률이 아닌 조사 우선순위 지표입니다."
+								/>
+							</div>
+							<p>{demo ? "현재 시연 케이스 기준" : "조회 가능한 전체 케이스 기준"}</p>
 						</div>
 						<i className="soft-dot" />
 					</div>
-					<RiskGauge
+					<RiskDonut
 						counts={counts}
 						replay={replay}
 						label={riskNames.map((n, i) => `${n} ${counts[i]}건`).join(", ")}
@@ -223,7 +272,7 @@ export default function DashboardView({
 				<div className="analytics-head">
 					<div>
 						<h2>지금 바로 확인해야 할 케이스</h2>
-						<p>위험 점수가 가장 높은 케이스예요. 지금 바로 열어 확인해 주세요.</p>
+						<p>위험도가 높은 케이스를 우선 확인하세요.</p>
 					</div>
 					<Link className="text-link" to={listPath}>
 						전체 케이스 <Icon name="arrow" size={14} />
@@ -268,14 +317,20 @@ export default function DashboardView({
 						)
 					})
 				) : (
-					<p className="dashboard-empty">조회 가능한 케이스가 없습니다.</p>
+					<div className="focus-empty" role="status">
+						<span className="focus-empty-icon" aria-hidden="true">
+							<Icon name="approval" size={22} />
+						</span>
+						<p>현재 확인할 케이스가 없습니다.</p>
+					</div>
 				)}
 			</section>
-			<p className="analytics-footnote">
-				{demo
-					? "시연용 합성 데이터 · 실제 운영 실적이 아닙니다."
-					: "카드와 차트는 현재 계정이 조회 가능한 전체 케이스 기준입니다. 점수는 조사 우선순위이며 범죄 확률이 아닙니다."}
-			</p>
+			{/* 업무 화면의 맨 아래 안내는 뺐어요 — 점수 뜻은 위험 등급 분포 ⓘ 로(SCRUM-345). 시연 화면은 합성 데이터 표시만 */}
+			{demo && (
+				<p className="analytics-footnote">
+					시연용 합성 데이터 · 실제 운영 실적이 아닙니다.
+				</p>
+			)}
 		</section>
 	)
 }

@@ -129,6 +129,13 @@ const iconPaths = {
 			<path d="M9.2 9.2a2.9 2.9 0 1 1 3.9 2.7c-.7.3-1.1.8-1.1 1.6v.4M12 16.8v.2" />
 		</>
 	),
+	// 대시보드 KPI 카드 제목 옆 안내(SCRUM-345)
+	info: (
+		<>
+			<circle cx="12" cy="12" r="9.5" />
+			<path d="M12 11v5.5M12 7.6v.2" />
+		</>
+	),
 	chevron: <path d="m6 9 6 6 6-6" />,
 	minus: <path d="M5 12h14" />,
 	// 사이드바 접기·펼치기(SCRUM-327)
