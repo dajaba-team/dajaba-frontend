@@ -55,10 +55,14 @@
 	--space-5: 1.5rem;
 	--space-6: 2rem;
 	--font-family: Pretendard, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-	--font-small: 0.8125rem;
-	--font-body: 0.875rem;
-	--font-section: 1.125rem;
-	--font-title: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+	/* 글자 크기 단계(SCRUM-294) — 화면 CSS는 이 토큰만 써요. 가장 작은 글자는 --font-2xs(12px). */
+	--font-2xs: 0.75rem;
+	--font-xs: 0.8125rem;
+	--font-small: 0.875rem;
+	--font-body: 0.9375rem;
+	--font-lead: 1rem;
+	--font-section: 1.25rem;
+	--font-title: clamp(1.625rem, 1.3rem + 1vw, 2.125rem);
 	--radius-control: 0.625rem;
 	--radius-card: 1rem;
 	--radius-pill: 999px;

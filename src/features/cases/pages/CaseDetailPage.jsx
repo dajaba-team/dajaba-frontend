@@ -21,6 +21,8 @@ import {
 	labelOf,
 } from "../labels"
 import StatusBadge from "../../../shared/ui/StatusBadge"
+import { useGuide } from "../../../shared/ui/useGuide"
+import { caseDetailWorkflowGuide } from "../../../shared/ui/workflowGuide"
 
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
 // 카드 제목은 명사형으로 맞춰요: 케이스 개요 · 경보 정보 · 점수 근거 · 조사 메모/AI 요약/처리 이력 · 처리 작업 · 거래 분석.
@@ -153,6 +155,7 @@ function CaseDetail({ caseNo }) {
 	const query = useCaseDetail(caseNo)
 	const detail = query.data
 	const viewer = useSession().data
+	useGuide(caseDetailWorkflowGuide(detail, viewer?.role))
 	const ask = useAskPanel()
 	// 버튼·패널은 서버가 준 ASK_QUESTION 으로만 그려요. 역할·상태를 화면에서 계산하지 않아요.
 	const canAsk = Boolean(detail?.availableActions?.includes("ASK_QUESTION"))

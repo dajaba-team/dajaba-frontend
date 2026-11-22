@@ -1,4 +1,4 @@
-// 서버 enum → 화면 글자. 값 자체는 서버 것 그대로 (AI 호출 기록 계약서 5.9 endpoint 여섯 개, 접근 기록 5.10).
+// 서버 enum → 화면 글자. 값 자체는 서버 것 그대로 (AI 호출 기록 계약서 5.9 endpoint + 참고 사례 찾기 SCRUM-309, 접근 기록 5.10).
 export const AI_ENDPOINTS = {
 	"/v1/scores": "점수 배치",
 	"/v1/str/drafts": "STR 초안",
@@ -6,6 +6,7 @@ export const AI_ENDPOINTS = {
 	"/v1/cases/summary": "케이스 요약",
 	"/v1/cases/ask": "질문 답변",
 	"/v1/health": "AI 상태 확인",
+	"/v1/references/search": "참고 사례 찾기",
 }
 export const AI_TARGET_TYPES = { BATCH_RUN: "배치", CASE: "케이스", DRAFT: "STR 초안" }
 export const ACCESS_ACTIONS = {

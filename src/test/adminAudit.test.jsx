@@ -91,7 +91,7 @@ describe("AI 호출 기록 탭", () => {
 		expect(within(form).getByRole("button", { name: "조회" })).toBeDisabled()
 		server.events.removeAllListeners()
 	})
-	it("엔드포인트 필터에 질문 답변(/v1/cases/ask)이 있다 — 계약서 5.9 여섯 개", async () => {
+	it("엔드포인트 필터에 질문 답변(/v1/cases/ask)·참고 사례 찾기가 있다 — 계약서 5.9 + SCRUM-309", async () => {
 		renderApp()
 		const form = await screen.findByRole("form", { name: "AI 호출 기록 필터" })
 		const options = within(within(form).getByLabelText("엔드포인트"))
@@ -105,6 +105,7 @@ describe("AI 호출 기록 탭", () => {
 			"/v1/cases/summary",
 			"/v1/cases/ask",
 			"/v1/health",
+			"/v1/references/search",
 		])
 	})
 	it("결과가 없으면 안내와 [필터 초기화]", async () => {
