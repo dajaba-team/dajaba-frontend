@@ -8,8 +8,11 @@ import { server } from "../mocks/server"
 import { resetCases } from "../mocks/handlers"
 import OverviewPage from "../features/overview/pages/OverviewPage"
 
-function show(role = "INVESTIGATOR") {
-	resetCases({ id: 1, login_id: "inv01", display_name: "테스트", role })
+function show(role = "INVESTIGATOR", options = {}) {
+	resetCases(
+		{ id: 1, login_id: role === "APPROVER" ? "apr01" : "inv01", display_name: "테스트", role },
+		options,
+	)
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
 	render(
 		<QueryClientProvider client={client}>
@@ -84,7 +87,8 @@ describe("SCRUM-335 전체 케이스 집계", () => {
 			expect(
 				screen.getByRole("img", { name: /높음 · HIGH 27건.*중간 · MEDIUM 1건/ }),
 			).toBeInTheDocument()
-			expect(document.querySelectorAll(".focus-case")).toHaveLength(3)
+			// 승인자는 우선 목록 자리에 승인 대기 보고서가 와요(SCRUM-336) — 점수 높은 케이스 줄은 관리자만
+			if (role === "ADMIN") expect(document.querySelectorAll(".focus-case")).toHaveLength(3)
 		},
 	)
 
@@ -122,7 +126,7 @@ describe("SCRUM-335 전체 케이스 집계", () => {
 
 	it("빈 목록도 정상적인 전체 0건으로 표시한다", async () => {
 		const pages = serve([])
-		show("APPROVER")
+		show("ADMIN")
 		expectCount((await cards())[3], 0)
 		expect(pages).toEqual([0])
 		expect(screen.getByText("조회 가능한 케이스가 없습니다.")).toBeInTheDocument()
@@ -167,5 +171,38 @@ describe("SCRUM-337 조사역 대시보드는 내 담당만", () => {
 		show("INVESTIGATOR")
 		await cards()
 		expect(screen.getByText("나에게 배정된 케이스가 없습니다.")).toBeInTheDocument()
+	})
+})
+
+describe("SCRUM-336 승인자 대시보드는 승인 대기 보고서 중심", () => {
+	it("우선 목록에 승인함 P1 줄을 보여 주고 초안 검토 화면으로 보낸다", async () => {
+		show("APPROVER", { pendingApproval: true })
+		const panel = await screen.findByRole("region", { name: "검토를 기다리는 보고서" })
+		const review = await within(panel).findByRole("link", { name: /초안 검토하기/ })
+		expect(review).toHaveAttribute("href", "/cases/CASE-2022-001001/str")
+		expect(within(panel).getByText(/CASE-2022-001001/)).toBeInTheDocument()
+		expect(within(panel).getByRole("link", { name: /승인함 전체 1건/ })).toHaveAttribute(
+			"href",
+			"/approvals",
+		)
+		// 점수 높은 미배정·접수 케이스 목록은 승인자 화면에 없다
+		expect(screen.queryByRole("heading", { name: "지금 바로 확인해야 할 케이스" })).toBeNull()
+	})
+
+	it("승인 대기가 없으면 빈 상태를 보여 준다", async () => {
+		show("APPROVER")
+		const panel = await screen.findByRole("region", { name: "검토를 기다리는 보고서" })
+		expect(
+			await within(panel).findByText("검토를 기다리는 보고서가 없습니다."),
+		).toBeInTheDocument()
+	})
+
+	it("조사역·관리자는 지금처럼 점수 높은 케이스 목록", async () => {
+		serve(fixture(3))
+		show("ADMIN")
+		expect(
+			await screen.findByRole("heading", { name: "지금 바로 확인해야 할 케이스" }),
+		).toBeInTheDocument()
+		expect(screen.queryByRole("region", { name: "검토를 기다리는 보고서" })).toBeNull()
 	})
 })
