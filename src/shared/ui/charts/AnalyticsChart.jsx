@@ -43,7 +43,7 @@ export default function AnalyticsChart({
 		// 눈금 글자는 --font-2xs 토큰(rem)을 px 로 — Chart.js 는 숫자 px 만 받아요(SCRUM-294).
 		const tickSize =
 			parseFloat(style.getPropertyValue("--font-2xs")) *
-			parseFloat(getComputedStyle(document.documentElement).fontSize)
+				parseFloat(getComputedStyle(document.documentElement).fontSize) || 12
 		const resolve = (value) =>
 			typeof value === "string" && value.startsWith("--")
 				? style.getPropertyValue(value).trim()
