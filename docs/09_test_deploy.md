@@ -1,6 +1,6 @@
 # 09. 테스트·CI·배포
 
-> v0.1 · 2026-10-31 · 초안(팀 확인 중) · 정리 지윤
+> v0.1 · 2026-10-31 · 11/22 §6 시연 띄우기 추가 · 초안(팀 확인 중) · 정리 지윤
 
 ## 1. 로컬과 CI [FE `package.json`, `.github/workflows/ci.yml`]
 
@@ -79,6 +79,23 @@ npm run build
 - [ ] AI 응답 유실 시 서버 상태를 먼저 보고 쓰기를 자동으로 다시 보내지 않음
 - [ ] 같은 계정 두 번째 로그인 → 첫 세션 401
 
-## 6. 참고
+## 6. 11/27 시연 띄우기 (SCRUM-352) 〔팀 확인〕
+
+**`npm run dev`로 띄워요.** 빌드본(`npm run build` → `vite preview`·Vercel)에는 `/demo` 코드가 아예 없어요 — `import.meta.env.DEV`로 막혀 있어 `/demo/overview`를 주소창에 쳐도 「페이지를 찾을 수 없습니다」가 떠요(11/22 빌드 산출물에서 확인). 그래서 빌드본으로는 「대시보드 시연」을 보여 줄 길이 없고, 열려면 10/28 결정(`/demo`는 개발 모드 전용)을 바꿔야 해요.
+
+| 순서 | 할 일                                                                                                                         | 확인                                   |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| 1    | 백엔드 local 프로파일 + AI 서버를 띄워요                                                                                      | `/dev/connection` 다섯 줄 통과(§4)     |
+| 2    | `.env.local`에 `VITE_USE_MOCKS=false`, `VITE_API_BASE_URL`은 비워 둬요(같은 출처 → Vite 프록시)                               | 화면 위에 "예시 데이터 모드"가 안 떠요 |
+| 3    | `npm run dev` → `http://localhost:5173/overview`                                                                              | 로그인 화면                            |
+| 4    | 실제 화면 시연: 시연 계정(`04_auth_session.md` §5)으로 로그인                                                                 | 역할별 대시보드                        |
+| 5    | 「대시보드 시연」이 필요하면: 위 띠 오른쪽 **[시연 도구] → [대시보드 시연]**, 또는 주소 `http://localhost:5173/demo/overview` | `/demo` 화면                           |
+
+- [시연 도구]는 사이드바가 아니라 **위 띠**에 있어요(개발 모드에서만). 사이드바에 링크를 다시 넣지 않아요 — 사이드바는 실제 화면 메뉴만(11/7).
+- 시연 순서표에는 5번 주소를 그대로 적어 둬요. 발표 중 메뉴를 찾지 않게.
+- 개발 모드라 첫 화면 열 때 조금 느려요. 시연 직전에 화면을 한 바퀴 열어 두면 나아요.
+- `[안내 접기]`는 계정마다 이 브라우저에 기억해요(`dajaba.intro.v1.<loginId>`). 시연 전에 다시 보이게 하려면 개발자 도구에서 그 키를 지우거나 시크릿 창을 써요. 화면을 오가거나 계정을 바꾸면 그 계정의 상태로 다시 그려져요 — 로그아웃·`/auth/me` 사용자 변경 때 업무 캐시를 지워 대시보드가 새로 그려지고, `AppLayout`의 `<Outlet key={loginId} />`도 같은 역할을 해요(`appShell.test.jsx` 「업무 대시보드 안내 접기 상태」).
+
+## 7. 참고
 
 [React Router 설치](https://reactrouter.com/start/declarative/installation) · [MSW 브라우저 구성](https://mswjs.io/docs/integrations/browser) · [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview) · [Vitest](https://vitest.dev/guide/)

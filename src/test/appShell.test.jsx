@@ -365,3 +365,57 @@ describe("알림(Toast)", () => {
 		expect(screen.getByRole("alert")).toHaveTextContent("두 번째")
 	})
 })
+
+// SCRUM-352: [안내 접기]는 계정마다 따로 기억해요. 화면을 오가거나 계정을 바꿀 때 RoleHero가 새로 그려져서
+// 앞 계정의 접기 상태가 남지 않아요. 계정이 바뀌면 업무 캐시를 지워(queryClient) 대시보드가 내려갔다 다시 뜨고,
+// AppLayout `<Outlet key={loginId} />`도 같은 일을 해요 — 둘 중 하나만 남아도 이 테스트는 통과해야 해요.
+describe("업무 대시보드 안내 접기 상태(SCRUM-352)", () => {
+	afterEach(() => localStorage.clear())
+
+	const hideButton = () => screen.queryByRole("button", { name: "첫 이용 안내 닫기" })
+
+	async function loginAs(user, loginId) {
+		await user.click(screen.getByRole("button", { name: "로그아웃" }))
+		await screen.findByLabelText("아이디")
+		// 로그인 폼은 앞 입력을 기억할 수 있어 비우고 넣어요.
+		await user.clear(screen.getByLabelText("아이디"))
+		await user.type(screen.getByLabelText("아이디"), loginId)
+		await user.clear(screen.getByLabelText("비밀번호"))
+		await user.type(screen.getByLabelText("비밀번호"), MOCK_PASSWORD)
+		await user.click(screen.getByRole("button", { name: "로그인" }))
+	}
+
+	it("접은 안내는 다른 화면에 다녀와도 접힌 채로 남는다", async () => {
+		const user = renderApp("/overview", "admin")
+		await user.click(await screen.findByRole("button", { name: "첫 이용 안내 닫기" }))
+		expect(hideButton()).not.toBeInTheDocument()
+		const nav = screen.getByRole("navigation", { name: "주요 메뉴" })
+		await user.click(within(nav).getByRole("link", { name: "조사 케이스" }))
+		await screen.findByRole("heading", { name: "케이스 목록" })
+		await user.click(within(nav).getByRole("link", { name: "업무 대시보드" }))
+		await screen.findByRole("heading", { name: "관리자 대시보드" })
+		expect(hideButton()).not.toBeInTheDocument()
+	})
+
+	it("계정을 바꾸면 새 계정의 접기 상태로 다시 그려진다", async () => {
+		const user = renderApp("/overview", "admin")
+		await user.click(await screen.findByRole("button", { name: "첫 이용 안내 닫기" }))
+		await loginAs(user, "inv01")
+		await screen.findByRole("heading", { name: "조사역 대시보드" })
+		// inv01은 접은 적이 없으니 안내가 다시 보여요.
+		expect(hideButton()).toBeInTheDocument()
+		await loginAs(user, "admin")
+		await screen.findByRole("heading", { name: "관리자 대시보드" })
+		expect(hideButton()).not.toBeInTheDocument()
+	})
+
+	it("로그아웃 없이 서버 세션 사용자가 바뀌어도(현재 사용자 확인) 새 계정 상태로 다시 그려진다", async () => {
+		// 다른 탭에서 다른 계정으로 로그인한 경우예요. 로그아웃 화면을 거치지 않아요.
+		const user = renderApp("/overview", "admin")
+		await user.click(await screen.findByRole("button", { name: "첫 이용 안내 닫기" }))
+		act(() => resetCases(USERS.apr01))
+		await user.click(screen.getByRole("button", { name: "현재 사용자 확인" }))
+		await screen.findByRole("heading", { name: "승인자 대시보드" })
+		expect(hideButton()).toBeInTheDocument()
+	})
+})
