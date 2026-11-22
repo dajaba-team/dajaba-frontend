@@ -28,9 +28,14 @@ function renderApp(who = "admin") {
 	return userEvent.setup()
 }
 
+// 화면에서는 위 "분석 날짜"를 같이 쓰고(SCRUM-344), 카드만 따로 띄우면 카드 안 날짜 칸을 써요
+const dateInput = (card) =>
+	within(card).queryByLabelText("경보 배치 기준일") ?? screen.getByLabelText("분석 날짜")
+
+// 페이지는 날짜가 바뀌면 카드를 새로 그려서(key) 날짜를 넣은 뒤 카드를 다시 찾아요
 async function runFor(user, date = "2022-09-02") {
-	const card = await screen.findByRole("region", { name: "케이스 생성" })
-	await user.type(within(card).getByLabelText("경보 배치 기준일"), date)
+	await user.type(dateInput(await screen.findByRole("region", { name: "케이스 생성" })), date)
+	const card = screen.getByRole("region", { name: "케이스 생성" })
 	await user.click(within(card).getByRole("button", { name: "케이스 생성" }))
 	const dialog = await screen.findByRole("dialog", { name: "케이스 생성" })
 	expect(dialog).toHaveTextContent(`${date} 경보 중 HIGH만`)
@@ -100,8 +105,11 @@ describe("케이스 생성 카드 (SCRUM-180)", () => {
 			),
 		)
 		const user = renderApp()
-		const card = await screen.findByRole("region", { name: "케이스 생성" })
-		await user.type(within(card).getByLabelText("경보 배치 기준일"), "2022-09-02")
+		await user.type(
+			dateInput(await screen.findByRole("region", { name: "케이스 생성" })),
+			"2022-09-02",
+		)
+		const card = screen.getByRole("region", { name: "케이스 생성" })
 		await user.click(within(card).getByRole("button", { name: "케이스 생성" }))
 		const dialog = await screen.findByRole("dialog", { name: "케이스 생성" })
 		await user.click(within(dialog).getByRole("button", { name: "생성" }))
@@ -161,9 +169,9 @@ describe("케이스 생성 카드 (SCRUM-180)", () => {
 				),
 			),
 		)
-		await user.clear(within(card).getByLabelText("경보 배치 기준일"))
-		await runFor(user, "2022-09-03")
-		expect(await within(card).findByRole("alert")).toHaveTextContent("실패 1")
+		await user.clear(dateInput(card))
+		const again = await runFor(user, "2022-09-03")
+		expect(await within(again).findByRole("alert")).toHaveTextContent("실패 1")
 		expect(screen.getByRole("heading", { name: "데이터·배치 운영" })).toBeInTheDocument()
 	})
 	it("시작 전 거절(409)은 확인창에 안내하고 입력을 남긴다", async () => {
@@ -188,7 +196,7 @@ describe("케이스 생성 카드 (SCRUM-180)", () => {
 			"운영 등급 기준이 설정되지 않았습니다",
 		)
 		await user.click(within(dialog).getByRole("button", { name: "취소" }))
-		expect(within(card).getByLabelText("경보 배치 기준일")).toHaveValue("2022-09-02")
+		expect(dateInput(card)).toHaveValue("2022-09-02")
 	})
 	it("관리자가 아니면 화면을 볼 수 없다", async () => {
 		renderApp("inv01")

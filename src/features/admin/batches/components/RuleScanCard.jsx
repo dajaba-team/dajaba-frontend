@@ -4,6 +4,7 @@ import ConfirmDialog from "../../../../shared/ui/ConfirmDialog"
 import { getErrorMessage } from "../../../../shared/api/apiClient"
 import { batchesApi } from "../api/batchesApi"
 import { formatCount } from "../formatCount"
+import { ruleLabel } from "../ruleLabels"
 import BatchStep from "./BatchStep"
 
 // [룰 스캔] 카드 — 계약서 B2, 백엔드 RuleScanController(SCRUM-99). 선택한 날짜의 켜진 룰을 한 번에(동기, 200).
@@ -52,9 +53,8 @@ export default function RuleScanCard({ date, onResult, primary = false }) {
 					{!result.rowsOut && <p>조건에 맞는 경보가 없어요. 정상 결과일 수 있어요.</p>}
 					<ul>
 						{result.alertsByRule.map((rule) => (
-							<li key={rule.ruleId}>
-								{rule.ruleId} (버전 {rule.ruleVersion}) —{" "}
-								{formatCount(rule.alertCount)}건
+							<li key={rule.ruleId} title={`${rule.ruleId} 버전 ${rule.ruleVersion}`}>
+								{ruleLabel(rule.ruleId)} · {formatCount(rule.alertCount)}건
 							</li>
 						))}
 					</ul>
