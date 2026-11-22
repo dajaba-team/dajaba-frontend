@@ -66,23 +66,9 @@
 	color: var(--color-muted);
 	font-size: var(--font-small);
 }
+/* 단계 상태 배지 — 색·모양은 공통 StatusBadge(status.css). 여기서는 카드 안 자리만. */
 .batch-badge {
-	padding: var(--space-1) var(--space-2);
-	border: var(--border-width) solid var(--color-border);
-	border-radius: var(--radius-control);
-	background: var(--color-soft);
-	color: var(--color-muted);
-	font-size: var(--font-small);
-}
-.batch-badge[data-state="running"] {
-	color: var(--color-primary);
-}
-.batch-badge[data-state="done"] {
-	color: var(--color-pass);
-}
-.batch-badge[data-state="partial"],
-.batch-badge[data-state="failed"] {
-	color: var(--color-fail);
+	justify-self: start;
 }
 .batch-run {
 	align-self: stretch;

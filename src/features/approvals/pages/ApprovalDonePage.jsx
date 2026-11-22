@@ -15,6 +15,7 @@ import ConfirmDialog from "../../../shared/ui/ConfirmDialog"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
 import { formatSystemTime } from "../../../shared/format/time"
+import StatusBadge from "../../../shared/ui/StatusBadge"
 
 // 이력에서 그 동작의 가장 최근 시각 — 상세 history 는 최근 20건(CASES 명세 API-02)이라 승인·제출 행은 그 안에 있어요.
 const latestAt = (history, action) =>
@@ -54,6 +55,13 @@ const REPORT_UNAVAILABLE =
  * 이 경로(/approvals/*)는 승인자·관리자만 열어요. 관리자는 PDF 권한이 없어(BE 04_auth_user 12-1·12-1a) 상태만 봐요.
  * 담당 조사역의 PDF 미리보기·확정본은 STR 화면 몫이에요.
  */
+// 보고 마감 배지 — 지남은 실패 톤, 오늘 마감은 주의 톤, 여유는 중립(SCRUM-332, docs/05_ui.md §2).
+const DEADLINE_TONES = { OVERDUE: "danger", TODAY: "warning", OPEN: "neutral" }
+function DeadlineBadge({ approvedAt }) {
+	const status = deadlineStatus(approvedAt)
+	return <StatusBadge tone={DEADLINE_TONES[status.state]}>{deadlineText(status)}</StatusBadge>
+}
+
 export default function ApprovalDonePage() {
 	const { draftNo } = useParams()
 	const draft = useStrDraft(draftNo)
@@ -144,7 +152,7 @@ export default function ApprovalDonePage() {
 						<>
 							{approvedAt && (
 								<p className="approval-badge" role="status">
-									{deadlineText(deadlineStatus(approvedAt))}
+									<DeadlineBadge approvedAt={approvedAt} />
 								</p>
 							)}
 							{isApprover ? (

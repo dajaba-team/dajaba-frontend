@@ -18,7 +18,9 @@ import {
 	SCORE_STATUS_LABELS,
 	STATUS_LABELS,
 	labelOf,
+	statusToneOf,
 } from "../labels"
+import StatusBadge from "../../../shared/ui/StatusBadge"
 
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
 // 카드 제목은 명사형으로 맞춰요: 케이스 개요 · 경보 정보 · 점수 근거 · 조사 메모/AI 요약/처리 이력 · 처리 작업 · 거래 분석.
@@ -43,7 +45,11 @@ function ScoreBlock({ detail }) {
 			{score != null ? (
 				<p className="case-score-value">
 					<strong>{formatScore(score)}</strong>
-					{band && <span className="case-status">등급 {band}</span>}
+					{band && (
+						<span className="case-band" data-band={band}>
+							등급 {band}
+						</span>
+					)}
 				</p>
 			) : (
 				<p className="case-score-status">{status}</p>
@@ -182,9 +188,12 @@ function CaseDetail({ caseNo }) {
 							<div className="case-heading-side">
 								{canAsk && <AskButton ask={ask} />}
 								<p className="case-heading-badges">
-									<span className="case-status">
+									<StatusBadge
+										className="case-status"
+										tone={statusToneOf(detail.status)}
+									>
 										{labelOf(STATUS_LABELS, detail.status)}
-									</span>
+									</StatusBadge>
 									<span className="case-badge">
 										담당자 {detail.assignee?.displayName || "미배정"} · 버전{" "}
 										{detail.version}

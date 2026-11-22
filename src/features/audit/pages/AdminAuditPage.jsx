@@ -15,6 +15,7 @@ import {
 	AI_TARGET_TYPES,
 } from "../auditLabels"
 import Pagination from "../../../shared/ui/Pagination"
+import StatusBadge from "../../../shared/ui/StatusBadge"
 
 // 감사 기록 (ADM-05, SCRUM-170) — 관리자만(라우트 RequireRole + 서버 403). 메타만 보여 줘요.
 // 탭·필터·페이지는 주소(query)에 남겨 새로고침·링크 공유에도 그대로예요. 빈 결과와 조회 실패를 다르게(COM-02).
@@ -188,6 +189,17 @@ function FieldError({ id, message }) {
 	) : null
 }
 
+// 결과 칸 — 성공·실패만 배지로 강조하고(SCRUM-332), 실패 코드는 배지 옆에 코드 글자로 둬요.
+function AiOutcome({ errorCode }) {
+	if (!errorCode) return <StatusBadge tone="success">성공</StatusBadge>
+	return (
+		<span className="audit-outcome">
+			<StatusBadge tone="danger">실패</StatusBadge>
+			<code>{errorCode}</code>
+		</span>
+	)
+}
+
 function AiCallRows({ items }) {
 	return (
 		<table className="case-table">
@@ -217,7 +229,9 @@ function AiCallRows({ items }) {
 								? `${AI_TARGET_TYPES[row.targetType] ?? row.targetType} ${row.targetId ?? ""}`
 								: "—"}
 						</td>
-						<td>{row.errorCode ? `실패 · ${row.errorCode}` : "성공"}</td>
+						<td>
+							<AiOutcome errorCode={row.errorCode} />
+						</td>
 						<td>{row.statusCode ?? "응답 없음"}</td>
 						<td>{row.attempt}</td>
 						<td>{row.durationMs.toLocaleString()}ms</td>
@@ -246,6 +260,14 @@ function AccessUser({ row }) {
 	return "—"
 }
 
+// 동작 칸 — 결과가 있는 동작(로그인 성공·실패)만 상태 배지, 나머지는 글자만(SCRUM-332).
+const ACTION_TONES = { LOGIN_OK: "success", LOGIN_FAIL: "danger" }
+function AccessAction({ action }) {
+	const label = ACCESS_ACTIONS[action] ?? action
+	const tone = ACTION_TONES[action]
+	return tone ? <StatusBadge tone={tone}>{label}</StatusBadge> : label
+}
+
 function AccessLogRows({ items }) {
 	return (
 		<table className="case-table">
@@ -264,7 +286,9 @@ function AccessLogRows({ items }) {
 						<td>
 							<AccessUser row={row} />
 						</td>
-						<td>{ACCESS_ACTIONS[row.action] ?? row.action}</td>
+						<td>
+							<AccessAction action={row.action} />
+						</td>
 						<td>
 							{row.targetType
 								? `${ACCESS_TARGET_TYPES[row.targetType] ?? row.targetType} ${row.targetId ?? ""}`

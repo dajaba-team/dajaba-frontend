@@ -139,15 +139,34 @@
 .case-table a:hover {
 	text-decoration: underline;
 }
-.case-status {
+/* 케이스 상태 배지는 공통 StatusBadge(status.css, SCRUM-332) — .case-status 는 테스트·자리 잡기용 이름이에요. */
+/* 점수 카드의 위험 등급 — 상태가 아니라 등급이라 위험 등급 색(SCRUM-285)을 따라요. */
+.case-band {
 	display: inline-flex;
 	white-space: nowrap;
 	padding: 0.125rem 0.625rem;
 	border-radius: var(--radius-pill);
-	background: var(--color-primary-soft);
-	color: var(--color-primary);
+	background: var(--color-soft);
+	color: var(--color-muted);
 	font-size: var(--font-small);
 	font-weight: 600;
+}
+.case-band[data-band="HIGH"] {
+	background: var(--risk-high-soft);
+	color: var(--color-fail);
+}
+.case-band[data-band="MEDIUM"] {
+	background: var(--risk-medium-soft);
+	color: var(--color-warn);
+}
+.case-band[data-band="LOW"] {
+	background: var(--risk-low-soft);
+	color: var(--risk-low-strong);
+}
+/* 근거 거래 표의 "참고" 꼬리표 — 일반 정보라 회색으로 약하게. */
+.case-context-tag {
+	margin-inline-start: var(--space-2);
+	padding-block: 0;
 }
 /* 케이스 목록 표 — 칸이 좁아져도 글자를 쪼개지 않고 한 줄로 두고, 넘치면 .case-table-scroll 로 가로 스크롤해요 (SCRUM-285). */
 .case-list-table th,
@@ -513,19 +532,6 @@
 .case-ai-summary-lines {
 	margin: 0;
 	padding-inline-start: var(--space-5);
-}
-.summary-badge {
-	display: inline-flex;
-	padding: var(--space-1) var(--space-2);
-	border-radius: var(--radius-control);
-	background: var(--color-soft);
-	font-size: var(--font-small);
-}
-.summary-badge.is-current {
-	color: var(--color-pass);
-}
-.summary-badge.is-stale {
-	color: var(--color-fail);
 }
 .case-score {
 	padding: var(--space-4) var(--space-4) 0;

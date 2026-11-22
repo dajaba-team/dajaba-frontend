@@ -26,6 +26,13 @@
 	--color-pass: #1d6b3a;
 	--color-fail: #b42318;
 	--color-fail-soft: #fdf0ef;
+	/* 상태 배지(SCRUM-332) — 성공·실패·주의 세 톤의 바탕·테두리. 글자는 바탕 위 4.5:1 이상. */
+	--color-pass-soft: #ebf6ee;
+	--color-pass-border: #bfe0c9;
+	--color-fail-border: #f4c7c3;
+	--color-warn: #8a5300;
+	--color-warn-soft: #fff4dc;
+	--color-warn-border: #f5d79a;
 	/* 자금 흐름 그래프 무대(밝은 면, 11/16 팀 결정) — 유입·유출·경유 세 색은 무대 위 대비 4.5:1 이상(6.4·4.9·6.7).
 	   대상 계좌만 짙은 면(node-strong) + 흰 글자(on-strong)로 강조해요. */
 	--color-graph-stage: #f8f9fb;

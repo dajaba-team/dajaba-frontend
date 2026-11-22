@@ -7,6 +7,7 @@ import { useSession } from "../../../auth/hooks/useSession"
 import { adminUsersApi } from "../api/adminUsersApi"
 import { ROLE_LABELS, ROLE_SWAP } from "../accountRules"
 import Pagination from "../../../../shared/ui/Pagination"
+import StatusBadge from "../../../../shared/ui/StatusBadge"
 import {
 	ActiveToggleDialog,
 	ChangeRoleDialog,
@@ -118,7 +119,13 @@ export default function AdminAccountsPage() {
 												<td>{user.loginId}</td>
 												<td>{user.displayName}</td>
 												<td>{ROLE_LABELS[user.role] ?? user.role}</td>
-												<td>{user.isActive ? "활성" : "비활성"}</td>
+												<td>
+													<StatusBadge
+														tone={user.isActive ? "success" : "neutral"}
+													>
+														{user.isActive ? "활성" : "비활성"}
+													</StatusBadge>
+												</td>
 												<td>
 													{user.role === "INVESTIGATOR" ? (
 														<>

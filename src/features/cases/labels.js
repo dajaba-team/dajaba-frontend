@@ -12,6 +12,21 @@ export const STATUS_LABELS = {
 	CLOSED: "종료",
 }
 
+// 케이스 상태 → 공통 상태 배지 톤(SCRUM-332, docs/05_ui.md §2). 진행 중은 info, 승인·보고는 success,
+// 반려는 다시 볼 것이라 warning, 종료는 끝난 뒤 보관이라 neutral. 모르는 값은 neutral.
+export const STATUS_TONES = {
+	OPEN: "info",
+	REVIEWING: "info",
+	ESCALATED: "info",
+	DRAFTED: "info",
+	PENDING_APPROVAL: "info",
+	APPROVED: "success",
+	REPORTED: "success",
+	REJECTED: "warning",
+	CLOSED: "neutral",
+}
+export const statusToneOf = (status) => STATUS_TONES[status] ?? "neutral"
+
 export const CLOSE_REASON_LABELS = {
 	FALSE_POSITIVE: "오탐",
 	DUPLICATE: "중복 경보",

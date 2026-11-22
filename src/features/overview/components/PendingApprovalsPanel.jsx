@@ -1,6 +1,7 @@
 import { Link } from "react-router"
 import Icon from "../../../shared/ui/dashboard/Icon"
 import { AsyncState } from "../../../shared/ui/AsyncState"
+import StatusBadge from "../../../shared/ui/StatusBadge"
 import { formatSystemTime } from "../../../shared/format/time"
 import { useApprovals } from "../../approvals/hooks/useApprovals"
 
@@ -39,7 +40,9 @@ export default function PendingApprovalsPanel() {
 								</span>
 							</div>
 							<div className="case-score">
-								{item.lastRejection && <em className="band-badge">재요청</em>}
+								{item.lastRejection && (
+									<StatusBadge tone="warning">재요청</StatusBadge>
+								)}
 								<div className="case-score-main">
 									<strong>{formatSystemTime(item.submittedAt) || "-"}</strong>
 									<span>승인 요청</span>

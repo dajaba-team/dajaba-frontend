@@ -99,7 +99,9 @@ export default function CaseTransactionsPanel({
 										<td>
 											{item.transactionId}
 											{item.scope === "CONTEXT" && (
-												<span className="case-status"> 참고</span>
+												<span className="case-badge case-context-tag">
+													참고
+												</span>
 											)}
 										</td>
 										<td>{formatDataTime(item.ts)}</td>

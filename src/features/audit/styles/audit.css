@@ -124,6 +124,13 @@
 	font-size: var(--font-small);
 }
 
+/* 결과 칸 — 실패 배지 옆에 실패 코드. 배지가 상태를, 코드는 보조 글자로. */
+.audit-outcome {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+
 /* 빈 결과 — 카드 가운데에 여유 있게. */
 .audit-empty {
 	display: grid;

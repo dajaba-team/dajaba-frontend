@@ -1,0 +1,62 @@
+/* 상태 배지 (SCRUM-332) — 성공·실패·주의·진행·중립 다섯 톤. 색은 tokens.css 의 상태 토큰만 써요.
+   행 전체나 일반 정보에는 색을 칠하지 않고, 상태는 이 배지 하나로만 강조해요. */
+.status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3125rem;
+	white-space: nowrap;
+	padding: 0.125rem 0.625rem;
+	border: var(--border-width) solid transparent;
+	border-radius: var(--radius-pill);
+	font-size: var(--font-small);
+	font-weight: 600;
+	line-height: 1.5;
+	vertical-align: middle;
+}
+/* 기호 — 색 없이도 구분되게. 읽기 대체 글자는 빈 값("/ \"\"")이라 화면 낭독기는 글자만 읽어요. */
+.status-badge::before {
+	font-size: 0.75em;
+	font-weight: 700;
+	line-height: 1;
+}
+.status-badge.is-success::before {
+	content: "✓";
+	content: "✓" / "";
+}
+.status-badge.is-danger::before {
+	content: "✕";
+	content: "✕" / "";
+}
+.status-badge.is-warning::before {
+	content: "!";
+	content: "!" / "";
+}
+.status-badge.is-info::before {
+	content: "•";
+	content: "•" / "";
+}
+.status-badge.is-success {
+	border-color: var(--color-pass-border);
+	background: var(--color-pass-soft);
+	color: var(--color-pass);
+}
+.status-badge.is-danger {
+	border-color: var(--color-fail-border);
+	background: var(--color-fail-soft);
+	color: var(--color-fail);
+}
+.status-badge.is-warning {
+	border-color: var(--color-warn-border);
+	background: var(--color-warn-soft);
+	color: var(--color-warn);
+}
+.status-badge.is-info {
+	border-color: var(--color-primary-soft);
+	background: var(--color-primary-soft);
+	color: var(--color-primary);
+}
+.status-badge.is-neutral {
+	border-color: var(--color-border);
+	background: var(--color-soft);
+	color: var(--color-muted);
+}

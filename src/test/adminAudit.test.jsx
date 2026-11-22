@@ -48,7 +48,14 @@ describe("AI 호출 기록 탭", () => {
 		)
 		const list = await rows("AI 호출 기록")
 		expect(list).toHaveLength(6)
-		expect(within(list[0]).getByText("실패 · AI_TIMEOUT")).toBeInTheDocument()
+		// 결과는 상태 배지 — 성공·실패를 색·기호·글자로 구분하고, 실패 코드는 배지 옆에 따로(SCRUM-332)
+		const failure = within(list[0]).getByText("실패", { selector: ".status-badge" })
+		expect(failure).toHaveClass("is-danger")
+		expect(within(list[0]).getByText("AI_TIMEOUT", { selector: "code" })).toBeInTheDocument()
+		const success = list.find((row) => within(row).queryByText("성공"))
+		expect(within(success).getByText("성공", { selector: ".status-badge" })).toHaveClass(
+			"is-success",
+		)
 		expect(within(list[0]).getByText("응답 없음")).toBeInTheDocument()
 		expect(within(list[0]).getByText("케이스 CASE-2022-001004")).toBeInTheDocument()
 		expect(within(list[5]).getByText(/AI 상태 확인/)).toBeInTheDocument()
@@ -136,7 +143,12 @@ describe("접근 기록 탭", () => {
 		await user.click(await screen.findByRole("tab", { name: "접근 기록" }))
 		const list = await rows("접근 기록")
 		expect(list).toHaveLength(5)
-		expect(within(list[0]).getByText("역할 변경")).toBeInTheDocument()
+		// 나머지 동작은 글자만, 로그인 성공·실패만 상태 배지(SCRUM-332)
+		expect(within(list[0]).getByText("역할 변경")).not.toHaveClass("status-badge")
+		expect(screen.getByText("로그인 실패", { selector: ".status-badge" })).toHaveClass(
+			"is-danger",
+		)
+		expect(screen.getByText("로그인", { selector: ".status-badge" })).toHaveClass("is-success")
 		expect(within(list[0]).getByText("계정 inv02")).toBeInTheDocument()
 		expect(within(list[0]).getByText("예시 admin")).toBeInTheDocument()
 		expect(within(list[2]).getByText("케이스 CASE-2022-001004")).toBeInTheDocument()

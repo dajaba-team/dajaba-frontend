@@ -259,7 +259,6 @@
 }
 .str-check-state {
 	margin-inline-start: auto;
-	font-size: var(--font-small);
 }
 .str-check-note,
 .str-check-rows {
@@ -322,11 +321,10 @@
 	color: var(--color-muted);
 	font-size: var(--font-small);
 }
+/* 케이스 상태는 공통 StatusBadge(SCRUM-332)가 그려요 — 칩 테두리는 빼요. */
 .str-chips .str-chip-status {
-	border-color: var(--color-primary);
-	background: var(--color-primary-soft);
-	color: var(--color-primary-strong);
-	font-weight: 650;
+	padding: 0;
+	border: 0;
 }
 .str-dirty {
 	color: var(--color-fail);
