@@ -22,6 +22,23 @@ export const LLM_CHECKS = [
 	["NO_INSTRUCTION_TEXT", "지시문·프롬프트 흔적 없음"],
 ]
 
+// 검증 항목 이름 옆 물음표 도움말(SCRUM-331).
+// 사용자가 "무엇을, 왜 확인하는지" 알 수 있도록 실제 검사 기준만 쉬운 말로 설명합니다.
+export const VERIFICATION_CHECK_HELP = {
+	AMOUNT_MATCH: "본문의 거래 금액이 원본 거래 근거의 금액과 같은지 확인해요.",
+	DATE_MATCH: "본문의 거래 날짜가 원본 거래 근거의 날짜와 같은지 확인해요.",
+	COUNT_MATCH: "본문에 적은 거래 건수가 원본 거래 근거의 건수와 같은지 확인해요.",
+	ACCOUNT_ID_MATCH: "본문의 계좌 정보가 원본 거래 근거의 계좌와 같은지 확인해요.",
+	EVIDENCE_IN_SCOPE: "본문의 사실과 수치가 이 케이스에서 제공된 근거 안에 있는지 확인해요.",
+	OPINION_PRESENT: "검토자가 판단 근거를 알 수 있도록 종합의견이 작성되었는지 확인해요.",
+	FIVE_W_ONE_H_COMPLETE:
+		"누가·언제·어디서·무엇을·어떻게·왜에 해당하는 핵심 정보가 빠지지 않았는지 평가해요.",
+	TYPOLOGY_CONSISTENT: "선택한 의심 유형과 STR 본문의 설명이 서로 맞는지 평가해요.",
+	NO_UNSUPPORTED_CLAIM: "원본 거래 근거로 확인할 수 없는 사실을 단정하지 않았는지 평가해요.",
+	NO_SPECULATION: "확인되지 않은 내용을 사실처럼 추측해 적지 않았는지 평가해요.",
+	NO_INSTRUCTION_TEXT: "작성 지시문이나 AI 프롬프트 문구가 보고서 본문에 남지 않았는지 평가해요.",
+}
+
 // 응답에 와도 안 보여 주는 옛 항목 — 요구사항에서 빠졌어요.
 export const HIDDEN_CHECKS = ["GROUNDING"]
 

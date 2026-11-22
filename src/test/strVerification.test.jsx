@@ -153,6 +153,27 @@ describe("검증 결과 패널 (SCRUM-116)", () => {
 		])
 	})
 
+	it("검증 항목 도움말은 쉬운 설명을 제공하고 키보드로 포커스할 수 있다", () => {
+		renderPanel({
+			revision_no: 2,
+			is_current: true,
+			passed: true,
+			status: "PASSED",
+			code_checks: ALL_CODE_PASS,
+			llm_checks: [llm("FIVE_W_ONE_H_COMPLETE", 5)],
+		})
+
+		const helpButton = screen.getByRole("button", { name: "육하원칙 빠짐 없음 도움말" })
+		const helpText = screen.getByRole("tooltip", {
+			name: /누가·언제·어디서·무엇을·어떻게·왜/,
+		})
+		expect(helpButton).toHaveAttribute("aria-describedby", helpText.id)
+		helpButton.focus()
+		expect(helpButton).toHaveFocus()
+		expect(screen.getAllByRole("button", { name: /도움말$/ })).toHaveLength(11)
+		expect(screen.getByText("FIVE_W_ONE_H_COMPLETE")).toBeInTheDocument()
+	})
+
 	it("OPINION_PRESENT(종합의견 공란) 실패 — 그 항목이 위로, 이름·사유가 보인다", () => {
 		renderPanel({
 			revision_no: 2,
