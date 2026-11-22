@@ -135,7 +135,30 @@ export function seedStrDrafts() {
 			suspicion_level_hq: null,
 			available_actions: [],
 			report: null,
-			references: null,
+			// 화면 확인용 S2 references 예시 — 실제 값은 AI 생성 응답 generation_meta.references에서 옮겨 와요.
+			references: [
+				{
+					chunk_id: "ref-001",
+					doc_id: "kofiu-2023",
+					doc_title: "STR 작성 사례집",
+					page: 12,
+					score: 0.83,
+				},
+				{
+					chunk_id: "ref-002",
+					doc_id: "kofiu-2021",
+					doc_title: "의심거래 유형",
+					page: 3,
+					score: 0.71,
+				},
+				{
+					chunk_id: "ref-003",
+					doc_id: "kofiu-2022",
+					doc_title: "자금세탁 의심거래 분석 사례",
+					page: 43,
+					score: 0.68,
+				},
+			],
 			latest_verification: {
 				verification_id: "VRF-a71f02",
 				draft_no: "DRF-000123",

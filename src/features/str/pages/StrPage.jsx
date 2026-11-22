@@ -15,6 +15,7 @@ import { CloseForm } from "../../cases/components/CaseActions"
 import StrNarrative from "../components/StrNarrative"
 import StrFacts from "../components/StrFacts"
 import StrSuspicionPanel from "../components/StrSuspicionPanel"
+import StrReferencePanel from "../components/StrReferencePanel"
 import StrRevisionHistory from "../components/StrRevisionHistory"
 import StrGenerateForm from "../components/StrGenerateForm"
 import StrChangeReview from "../components/StrChangeReview"
@@ -359,6 +360,7 @@ function StrWorkspace({ draft, detail }) {
 						onTypesChange={setTypes}
 						onLevelChange={setLevel}
 					/>
+					<StrReferencePanel references={draft.references} />
 				</div>
 			</div>
 
