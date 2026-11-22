@@ -9,6 +9,7 @@ import BatchStep from "./BatchStep"
 // 200이어도 일부 실패가 있을 수 있어요(status FAILED = 다시 보낼 실패가 남음). 실패를 0점·저위험으로 보이지 않아요.
 // 다시 보낼 실패(retryable)가 남으면 버튼 이름이 [점수 재처리] — 같은 API를 다시 부르면 남은 것만 보내요(따로 버튼 없음).
 // 확인창 없음(흐름 데모와 같음) — 다시 눌러도 성공한 점수는 그대로라 되돌릴 일이 없어요.
+// 한 번 돌린 뒤 남은 실패가 없으면 버튼 이름이 [다시 실행] — 그 뒤 새로 생긴 대상만 보내요(SCRUM-344).
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 function Result({ score }) {
@@ -39,8 +40,13 @@ function Result({ score }) {
 			<p>
 				묶음 {formatCount(score.chunks.total)}개
 				{score.chunks.failed > 0 && ` 중 호출 실패 ${formatCount(score.chunks.failed)}개`}
-				{score.modelVersions.length > 0 && ` · 모델 ${score.modelVersions.join(", ")}`}
 			</p>
+			{/* 모델 이름은 길어서 따로 한 줄 — 넘치면 …, 전체는 마우스를 올리면(SCRUM-344) */}
+			{score.modelVersions.length > 0 && (
+				<p className="batch-model" title={score.modelVersions.join(", ")}>
+					모델 {score.modelVersions.join(", ")}
+				</p>
+			)}
 		</div>
 	)
 }
@@ -87,7 +93,13 @@ export default function ScoreCard({ date, onResult, primary = false }) {
 				disabled={!DATE.test(date) || score.isPending}
 				onClick={() => score.mutate()}
 			>
-				{score.isPending ? "점수 산출 중…" : retry ? "점수 재처리" : "실행"}
+				{score.isPending
+					? "점수 산출 중…"
+					: retry
+						? "점수 재처리"
+						: last
+							? "다시 실행"
+							: "실행"}
 			</button>
 			{!DATE.test(date) && <p>위에서 분석 날짜를 먼저 골라 주세요.</p>}
 			{score.isPending && (

@@ -64,6 +64,16 @@ export const batchesApi = {
 			(await apiClient.post("/api/v1/admin/batches/open-cases", null, { params: { date } }))
 				.data,
 		),
+	/** 실행 목록 — type·status·date 로 거르고 최신 순(서버 기본 started_at,desc). 화면은 첫 줄만 써요. */
+	list: async ({ type, status, date, size = 1 } = {}, signal) =>
+		(
+			(
+				await apiClient.get("/api/v1/admin/batches", {
+					params: { type, status, date, size },
+					signal,
+				})
+			).data.items ?? []
+		).map(toRun),
 	/** 실행 상태(B5). */
 	run: async (batchRunId, signal) =>
 		toRun(

@@ -111,6 +111,8 @@ export function resetCases(user = null, { pendingApproval = false, formerAssigne
 			comment: null,
 			created_by: formerAssignee,
 			created_at: "2026-11-01T00:00:00Z",
+			from_assignee: { login_id: formerAssignee, display_name: `예시 ${formerAssignee}` },
+			to_assignee: item.assignee ?? null,
 		})
 	}
 	currentUser = user
@@ -434,6 +436,24 @@ export const handlers = [
 		if (succeeded("OPEN_CASES", date)) openCasesReruns.add(run.batch_run_id)
 		batchRuns.push(run)
 		return HttpResponse.json(run, { status: 202 })
+	}),
+	// 실행 목록 — type·status·date 로 거르고 최신 순(BE 기본 started_at,desc). 적재 카드가 열 때 성공한 적재를 찾아요(SCRUM-344)
+	http.get(`${base}/api/v1/admin/batches`, ({ request }) => {
+		if (!currentUser) return unauthenticated()
+		const denied = adminOnly()
+		if (denied) return denied
+		const url = new URL(request.url)
+		const want = {
+			batch_type: url.searchParams.get("type"),
+			status: url.searchParams.get("status"),
+			batch_date: url.searchParams.get("date"),
+		}
+		const rows = batchRuns
+			.filter((run) =>
+				Object.entries(want).every(([key, value]) => !value || run[key] === value),
+			)
+			.reverse()
+		return HttpResponse.json(pageOf(rows, url))
 	}),
 	http.get(`${base}/api/v1/admin/batches/:batchRunId`, ({ params }) => {
 		if (!currentUser) return unauthenticated()

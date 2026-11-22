@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import ConfirmDialog from "../../../../shared/ui/ConfirmDialog"
 import { getErrorCode, getErrorMessage } from "../../../../shared/api/apiClient"
 import { formatSystemTime } from "../../../../shared/format/time"
@@ -11,6 +11,7 @@ import BatchStep from "./BatchStep"
 // [원천 적재] 카드 — 계약서 B1·B5, 백엔드 DatasetLoadController(SCRUM-69). 날짜와 상관없이 전체 데이터를 한 번.
 // 확인창 → 202(RUNNING) → 상태 확인(useBatchRun). 결과는 이 카드와 페이지 실행 결과 표(onResult)에.
 // 이미 적재된 DB면 409 BATCH_ALREADY_DONE — 실패가 아니라 다음 단계(룰 스캔)로 안내해요.
+// 화면을 열 때 성공한 적재가 있으면(실행 목록 조회) 처음부터 "완료"예요(SCRUM-344). 목록을 못 읽으면 지금처럼 "대기".
 function Result({ run }) {
 	if (run.status === "RUNNING")
 		return (
@@ -29,7 +30,7 @@ function Result({ run }) {
 	return (
 		<p role="status">
 			거래 {formatCount(run.rowsOut)}건을 적재했어요. (파일 {formatCount(run.rowsIn)}행
-			{run.finishedAt && ` · ${formatSystemTime(run.finishedAt)}`})
+			{run.finishedAt && ` · 실행 ${formatSystemTime(run.finishedAt)}`})
 		</p>
 	)
 }
@@ -63,8 +64,24 @@ export default function LoadDatasetCard({ onResult, primary = false, maxPollMs =
 	useEffect(() => {
 		if (run.data) onResult?.(rowOf(run.data))
 	}, [run.data, onResult])
+	const loaded = useQuery({
+		queryKey: ["admin", "batches", "list", "LOAD_DATASET", "SUCCEEDED"],
+		queryFn: ({ signal }) =>
+			batchesApi.list({ type: "LOAD_DATASET", status: "SUCCEEDED" }, signal),
+		select: (runs) => runs[0] ?? null,
+		retry: false,
+	})
+	// 이 화면에서 새로 실행하지 않았을 때만 이전 적재를 보여 줘요
+	const previous = runId == null ? (loaded.data ?? null) : null
+	useEffect(() => {
+		if (previous)
+			onResult?.({
+				status: "SUCCEEDED",
+				summary: `이미 적재됨 · 거래 ${formatCount(previous.rowsOut)}건`,
+			})
+	}, [previous, onResult])
 	const alreadyLoaded = start.isError && getErrorCode(start.error) === "BATCH_ALREADY_DONE"
-	const done = alreadyLoaded || run.data?.status === "SUCCEEDED"
+	const done = alreadyLoaded || previous != null || run.data?.status === "SUCCEEDED"
 	const running = start.isPending || (stillRunning && !timedOut)
 	const state = done
 		? "done"
@@ -90,6 +107,13 @@ export default function LoadDatasetCard({ onResult, primary = false, maxPollMs =
 			>
 				{done ? "완료됨" : "실행"}
 			</button>
+			{previous && (
+				<p role="status">
+					이미 적재돼 있어요 — 거래 {formatCount(previous.rowsOut)}건
+					{previous.finishedAt && ` (실행 ${formatSystemTime(previous.finishedAt)})`}. 룰
+					스캔으로 넘어가 주세요.
+				</p>
+			)}
 			{alreadyLoaded && (
 				<p role="status">이미 적재된 데이터가 있어요. 룰 스캔으로 넘어가 주세요.</p>
 			)}
