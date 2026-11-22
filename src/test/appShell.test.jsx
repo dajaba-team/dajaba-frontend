@@ -273,11 +273,11 @@ describe("사이드바 접기·펼치기(SCRUM-327)", () => {
 })
 
 describe("안내 띠(GuideBar)", () => {
-	it("조사역 로그인 뒤 역할 기본 문구〔초안〕가 보인다", async () => {
+	it("조사역 케이스 목록에서 첫 단계와 다음 행동이 보인다", async () => {
 		renderApp("/cases", "inv01")
 		const bar = await screen.findByRole("status", { name: "다음 할 일 안내" })
 		await waitFor(() =>
-			expect(within(bar).getByText(/배정된 케이스부터 근거를 확인/)).toBeInTheDocument(),
+			expect(within(bar).getByText(/1\. 케이스 확인.*내 담당 케이스/)).toBeInTheDocument(),
 		)
 	})
 	it("관리자 기본 문구는 데이터·케이스·배정 톤", async () => {

@@ -34,6 +34,8 @@ import {
 import { DRAFT_STATUS_LABELS, labelOf } from "../labels"
 import "../../cases/styles/cases.css"
 import "../styles/str.css"
+import { useGuide } from "../../../shared/ui/useGuide"
+import { strWorkflowGuide } from "../../../shared/ui/workflowGuide"
 
 // STR 작성 화면 /cases/:caseNo/str (화면 설계 STR-01~04).
 // 케이스 상세(C2) → 지금 초안 번호(current_draft_no) → 초안(S2) 순서로 불러와요.
@@ -48,6 +50,7 @@ export default function StrPage() {
 	const [generating, setGenerating] = useState(false)
 	const role = useSession().data?.role
 	const caseStatus = detail?.status ?? draft?.caseStatus ?? null
+	useGuide(strWorkflowGuide({ draft, detail, role }))
 	// 개발·테스트용 원시 값(초안 상태 코드·생성기 버전·생성 시각)은 화면 대신 개발 콘솔로만 남겨요.
 	useEffect(() => {
 		if (!import.meta.env.DEV || !draft) return

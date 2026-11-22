@@ -8,6 +8,8 @@ import { VERIFICATION_STATUS_LABELS } from "../../str/verificationLabels"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
 import Pagination from "../../../shared/ui/Pagination"
+import { useGuide } from "../../../shared/ui/useGuide"
+import { approvalListWorkflowGuide } from "../../../shared/ui/workflowGuide"
 
 // 상태 글자는 서버가 준 available_actions·was_assignee 만 보고 정해요(01_code_rules §1).
 // 서버는 승인자이고 담당한 적 없을 때만 APPROVE·REJECT 를 줘요.
@@ -42,6 +44,7 @@ export default function ApprovalListPage() {
 	const query = useApprovals(page)
 	const session = useSession()
 	const isAdmin = session.data?.role === "ADMIN"
+	useGuide(approvalListWorkflowGuide(session.data?.role, query.data?.total))
 	const goTo = (next) => setParams(next > 1 ? { page: String(next) } : {})
 	return (
 		<>
