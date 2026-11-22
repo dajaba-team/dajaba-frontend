@@ -196,8 +196,8 @@ const REASSIGNABLE = ["REVIEWING", "ESCALATED", "DRAFTED", "REJECTED"]
 export function availableActions(viewer, item) {
 	const actions = []
 	const code = item.rejection_reason_code
-	if (item.status === "OPEN" && ["INVESTIGATOR", "ADMIN"].includes(viewer.role))
-		actions.push("ASSIGN")
+	// 배정은 관리자만(SCRUM-339, BE #160) — 조사역 자기 배정 없음.
+	if (item.status === "OPEN" && viewer.role === "ADMIN") actions.push("ASSIGN")
 	if (viewer.role === "ADMIN" && REASSIGNABLE.includes(item.status)) actions.push("REASSIGN")
 	// 질문하기(A8) — 담당 조사역·승인자. 케이스 상태로는 막지 않아요(SCRUM-302, aml.ai.ask-enabled 켠 상태로 봐요).
 	if (viewer.role === "APPROVER") actions.push("ASK_QUESTION")
@@ -409,6 +409,9 @@ const blank = (text) => typeof text !== "string" || !text.trim() || text.length 
  * users는 login_id → 사용자(배정 대상 확인용).
  */
 export function applyCommand(viewer, item, command, body, users) {
+	// 배정·재배정은 URL 역할 검사(BE SecurityConfig, #160)라 케이스 조회·version 검사보다 먼저 403
+	if ((command === "assign" || command === "reassign") && viewer.role !== "ADMIN")
+		return fail(403, "FORBIDDEN", "권한이 없습니다")
 	if (!item) return fail(404, "CASE_NOT_FOUND", "케이스가 없습니다")
 	if (!Number.isInteger(body?.version))
 		return fail(400, "INVALID_REQUEST", "version 이 필요합니다")
@@ -437,8 +440,7 @@ export function applyCommand(viewer, item, command, body, users) {
 		item.status = to
 	}
 	if (command === "reassign") {
-		// BE ReassignCase — ADMIN만(SecurityConfig 403 FORBIDDEN), 대상 404·409, 상태 409, 같은 담당이면 그대로
-		if (viewer.role !== "ADMIN") return fail(403, "FORBIDDEN", "권한이 없습니다")
+		// BE ReassignCase — ADMIN만(맨 위에서 403), 대상 404·409, 상태 409, 같은 담당이면 그대로
 		const assignee = users[body.assignee]
 		if (!assignee) return fail(404, "USER_NOT_FOUND", "사용자가 없습니다")
 		if (assignee.role !== "INVESTIGATOR" || assignee.is_active === false)
@@ -450,9 +452,8 @@ export function applyCommand(viewer, item, command, body, users) {
 		item.assignee = user(body.assignee)
 		move("REASSIGN", item.status, body.comment ?? null, { from: before, to: item.assignee })
 	} else if (command === "assign") {
-		const target = viewer.role === "ADMIN" ? body.assignee : (body.assignee ?? viewer.login_id)
-		if (viewer.role !== "ADMIN" && target !== viewer.login_id)
-			return fail(409, "INVALID_ASSIGNEE", "본인에게만 배정할 수 있습니다")
+		// BE AssignCase — ADMIN만(SCRUM-339, BE #160: 맨 위에서 재배정과 같은 403 FORBIDDEN)
+		const target = body.assignee
 		const assignee = users[target]
 		if (!assignee) return fail(404, "USER_NOT_FOUND", "사용자가 없습니다")
 		if (assignee.role !== "INVESTIGATOR")
