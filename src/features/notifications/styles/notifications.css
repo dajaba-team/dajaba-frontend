@@ -1,0 +1,115 @@
+/* 위 띠 종·알림 목록 (SCRUM-334) — 역할 칩·시연 도구 펼침 메뉴와 같은 모양 */
+.notification-bell {
+	position: relative;
+}
+.notification-bell > summary {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.375rem;
+	height: 2.375rem;
+	border-radius: 0.5rem;
+	color: var(--color-muted);
+	list-style: none;
+	cursor: pointer;
+}
+.notification-bell > summary::-webkit-details-marker {
+	display: none;
+}
+.notification-bell > summary:hover,
+.notification-bell[open] > summary {
+	background: var(--color-primary-soft);
+	color: var(--color-primary);
+}
+.notification-count {
+	position: absolute;
+	inset-block-start: 0.125rem;
+	inset-inline-end: 0.0625rem;
+	min-width: 1.125rem;
+	padding: 0 0.25rem;
+	border-radius: var(--radius-pill);
+	background: var(--color-fail);
+	color: var(--color-on-dark);
+	font-size: 0.6875rem;
+	font-weight: 700;
+	line-height: 1.125rem;
+	text-align: center;
+}
+.notification-panel {
+	position: absolute;
+	inset-inline-end: 0;
+	inset-block-start: calc(100% + 0.375rem);
+	z-index: 50;
+	width: min(22rem, calc(100vw - 2rem));
+	max-height: min(28rem, 70vh);
+	overflow-y: auto;
+	padding: var(--space-2);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: 0.8125rem;
+	background: var(--color-surface);
+	box-shadow: 0 10px 35px rgb(21 46 85 / 16%);
+}
+.notification-panel-head {
+	margin: 0;
+	padding: var(--space-1) 0.625rem var(--space-2);
+	color: var(--color-muted);
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+.notification-empty {
+	margin: 0;
+	padding: var(--space-3) 0.625rem;
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.notification-empty p {
+	margin: 0 0 var(--space-2);
+}
+.notification-list {
+	display: grid;
+	gap: 0.125rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.notification-list a {
+	display: grid;
+	grid-template-columns: auto auto 1fr;
+	align-items: center;
+	gap: 0.125rem var(--space-1);
+	padding: var(--space-2) 0.625rem;
+	border-radius: 0.5rem;
+	color: var(--color-text);
+	font-size: var(--font-small);
+	text-decoration: none;
+}
+.notification-list a:hover,
+.notification-list a:focus-visible {
+	background: var(--color-primary-soft);
+}
+.notification-text {
+	grid-column: 1 / -1;
+	overflow-wrap: anywhere;
+}
+.notification-list small {
+	grid-column: 1 / -1;
+	color: var(--color-muted);
+	font-size: 0.75rem;
+}
+.notification-tag,
+.notification-new {
+	justify-self: start;
+	padding: 0 0.375rem;
+	border-radius: var(--radius-pill);
+	font-size: 0.6875rem;
+	font-weight: 600;
+}
+.notification-tag {
+	background: var(--color-soft);
+	color: var(--color-muted);
+}
+.notification-new {
+	background: var(--color-primary-soft);
+	color: var(--color-primary-strong);
+}
