@@ -193,16 +193,9 @@ export const casesApi = {
 	},
 	detail: async (caseNo, signal) =>
 		toCaseDetail((await apiClient.get(casePath(caseNo), { signal })).data),
-	/** 조사역은 assignee 없이(본인), 관리자는 배정할 조사역 login_id. */
+	/** 담당자 배정(A1, ADMIN만 — SCRUM-339). assignee는 배정할 조사역 login_id. */
 	assign: async ({ caseNo, version, assignee }) =>
-		toChange(
-			(
-				await apiClient.post(`${casePath(caseNo)}/assign`, {
-					version,
-					...(assignee ? { assignee } : {}),
-				})
-			).data,
-		),
+		toChange((await apiClient.post(`${casePath(caseNo)}/assign`, { version, assignee })).data),
 	/** 담당자 변경(A2, ADMIN만). assignee는 새 담당 조사역 login_id, comment는 선택. */
 	reassign: async ({ caseNo, version, assignee, comment }) =>
 		toChange(

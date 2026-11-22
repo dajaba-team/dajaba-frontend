@@ -1,6 +1,5 @@
 import { useId, useState } from "react"
 import { useCaseCommand } from "../hooks/useCases"
-import { useSession } from "../../auth/hooks/useSession"
 import { CLOSE_REASON_LABELS } from "../labels"
 import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
 import ReassignDialog from "./ReassignDialog"
@@ -12,7 +11,6 @@ const COMMENT_MAX = 2000
 // 이 화면이 다루는 것: ASSIGN·REASSIGN·ESCALATE·CLOSE·CLOSE_WITH_DRAFT·GENERATE_DRAFT. 종료는 버튼 하나 — 초안이 있으면 서버가
 // CLOSE 대신 CLOSE_WITH_DRAFT를 줘요(SCRUM-112). 초안 생성은 초안이 없을 때만 여기서 — 재생성은 STR 화면에서(미저장 편집 확인).
 export default function CaseActions({ detail }) {
-	const session = useSession()
 	const [open, setOpen] = useState(null)
 	const [reassigning, setReassigning] = useState(false)
 	const actions = detail.availableActions
@@ -32,13 +30,12 @@ export default function CaseActions({ detail }) {
 		!canGenerate
 	)
 		return null
-	const isAdmin = session.data?.role === "ADMIN"
 	return (
 		<section className="case-panel case-card case-actions" aria-labelledby="case-actions-title">
 			<h2 id="case-actions-title">처리 작업</h2>
 			<div className="case-action-buttons">
-				{has("ASSIGN") && !isAdmin && <SelfAssign detail={detail} />}
-				{has("ASSIGN") && isAdmin && (
+				{/* 배정은 관리자만(SCRUM-339) — 서버가 ASSIGN 을 관리자에게만 줘요. */}
+				{has("ASSIGN") && (
 					<button type="button" onClick={() => setOpen("assign")} disabled={!!shown}>
 						담당자 배정
 					</button>
@@ -92,22 +89,6 @@ export default function CaseActions({ detail }) {
 				<StrGenerateForm detail={detail} onDone={() => setOpen(null)} />
 			)}
 		</section>
-	)
-}
-
-function SelfAssign({ detail }) {
-	const command = useCaseCommand(detail.caseNo, "assign")
-	return (
-		<>
-			<button
-				type="button"
-				disabled={command.isPending}
-				onClick={() => command.mutate({ version: detail.version })}
-			>
-				{command.isPending ? "배정 중…" : "담당 맡기"}
-			</button>
-			{command.isError && <p role="alert">{getErrorMessage(command.error)}</p>}
-		</>
 	)
 }
 
