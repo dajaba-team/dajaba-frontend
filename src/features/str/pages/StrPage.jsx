@@ -15,6 +15,7 @@ import { CloseForm } from "../../cases/components/CaseActions"
 import StrNarrative from "../components/StrNarrative"
 import StrFacts from "../components/StrFacts"
 import StrSuspicionPanel from "../components/StrSuspicionPanel"
+import StrReferencePanel from "../components/StrReferencePanel"
 import StrRevisionHistory from "../components/StrRevisionHistory"
 import StrGenerateForm from "../components/StrGenerateForm"
 import StrChangeReview from "../components/StrChangeReview"
@@ -358,6 +359,13 @@ function StrWorkspace({ draft, detail }) {
 						recommended={draft.suspicionTypesRecommended}
 						onTypesChange={setTypes}
 						onLevelChange={setLevel}
+					/>
+					{/* 참고 사례(SCRUM-312·333) — 찾기는 서버가 SEARCH_REFERENCES를 줄 때만, 잠긴 초안에서도 */}
+					<StrReferencePanel
+						draftNo={draft.draftNo}
+						references={draft.references}
+						facts={draft.facts}
+						canSearch={can("SEARCH_REFERENCES")}
 					/>
 				</div>
 			</div>

@@ -10,7 +10,11 @@ import { AI_REQUEST_TIMEOUT_MS, apiClient } from "../../../shared/api/apiClient"
 //   S5 POST /str-drafts/{draft_no}/verify      — BE develop 구현(SCRUM-206 #95)
 //                                                응답은 AI 원문이라 is_current 없음
 //   S6 POST /str-drafts/{draft_no}/submit      — BE develop 구현(SCRUM-185 #100)
+//   참고 사례 찾기 POST /str-drafts/{draft_no}/references/search — BE 아직 없음(SCRUM-313·354), MSW만
 // 아직 없는 API는 계약서 모양 그대로 MSW(`src/mocks/handlers.js`)가 답해요. BE가 붙으면 이 파일은 그대로 써요.
+// 참고 사례 찾기는 AI 임베딩을 기다려요 — 백엔드 8초 + 여유(설계 문서 A 5.1·7.3 "화면 timeout 10초"). 자동 재시도 없음.
+export const REFERENCE_SEARCH_TIMEOUT_MS = 10_000
+
 const draftPath = (draftNo) => `/api/v1/str-drafts/${encodeURIComponent(draftNo)}`
 const casePath = (caseNo) => `/api/v1/cases/${encodeURIComponent(caseNo)}`
 
@@ -76,7 +80,7 @@ const toLastRejection = (data) => ({
  * S2 실제 응답(BE develop)과 계약서의 차이 — 없는 키는 null로 두고 화면이 대신 판단하지 않아요.
  *   - #84: case_status·narrative[].label·latest_verification.is_current
  *   - #109: suspicion_types·_recommended([])·suspicion_level_branch·_hq·generation_id·
- *     generator_version·references([]), META_ONLY의 case_no·case_status
+ *     generator_version·references(문서명·쪽·점수, 본문 없음), META_ONLY의 case_no·case_status
  *   - #115(SCRUM-231): last_rejection — decided_by는 승인자 표시 이름(문자열)
  *   - SCRUM-232: available_actions — 조사역 REVISE·VERIFY·SUBMIT·REGENERATE·CLOSE_WITH_DRAFT,
  *     승인자 APPROVE·REJECT
@@ -113,10 +117,34 @@ export function toDraft(data) {
 		suspicionTypesRecommended: data.suspicion_types_recommended ?? [],
 		suspicionLevelBranch: data.suspicion_level_branch ?? null,
 		suspicionLevelHq: data.suspicion_level_hq ?? null,
+		// 초안을 만들 때 AI가 붙인 참고 사례 0~3건(SCRUM-312). 옛 응답·null이면 [].
+		references: Array.isArray(data.references) ? data.references.map(toReference) : [],
 		// REVISE·VERIFY·SUBMIT·REGENERATE·CLOSE_WITH_DRAFT(조사역) / APPROVE·REJECT·REPORT(승인자) / *_PDF
 		availableActions: Array.isArray(data.available_actions) ? data.available_actions : null,
 	}
 }
+
+// S2 references — BE GetStrDraft가 AI generation_meta.references에서 chunk_id·doc_id·doc_title·page·score만 옮겨 줘요
+// (본문 text는 빠짐, SCRUM-125 후속). page는 PDF 쪽 번호(1부터)라 화면은 "PDF n쪽"으로 적어요.
+const toReference = (data) => ({
+	chunkId: data.chunk_id ?? null,
+	docId: data.doc_id ?? null,
+	docTitle: data.doc_title ?? null,
+	page: data.page ?? null,
+	score: typeof data.score === "number" ? data.score : null,
+})
+
+// 참고 사례 찾기 결과 한 건(설계 문서 A 6.1). doc_id·chunk_id는 BE가 화면에 주지 않아요.
+// publisher·year는 AI manifest 값이라 없으면 null. typologies는 그 청크의 태그 전부(고른 유형 밖도 올 수 있어요).
+const toSearchItem = (data) => ({
+	docTitle: data.doc_title ?? null,
+	publisher: data.publisher ?? null,
+	year: data.year ?? null,
+	page: data.page ?? null,
+	score: typeof data.score === "number" ? data.score : null,
+	typologies: Array.isArray(data.typologies) ? data.typologies : [],
+	sourceType: data.source_type ?? null,
+})
 
 // ai_original: 서버가 정한 "AI 원문 행" 여부(S4). 없으면 null — revisionLabel이 번호로 대신 봐요.
 const toRevisionSummary = (data) => ({
@@ -227,4 +255,21 @@ export const strApi = {
 				})
 			).data,
 		),
+	/**
+	 * 참고 사례 찾기 〔임시: BE SearchReferences 아직 없음 — SCRUM-313/354, 설계 문서 A 6.1 모양 그대로 MSW〕.
+	 * 조회 전용이지만 검색어가 주소·접속 기록에 남지 않게 POST예요. top_k는 BE 설정값(5)이라 보내지 않아요.
+	 * query는 앞뒤 공백을 지우고 빈 값이면 null(BE도 같은 처리를 다시 해요).
+	 */
+	searchReferences: async ({ draftNo, typologies, query }, signal) => {
+		const trimmed = query?.trim() ?? ""
+		const { data } = await apiClient.post(
+			`${draftPath(draftNo)}/references/search`,
+			{ typologies, query: trimmed === "" ? null : trimmed },
+			{ timeout: REFERENCE_SEARCH_TIMEOUT_MS, signal },
+		)
+		return {
+			items: (data.items ?? []).map(toSearchItem),
+			degraded: data.degraded === true,
+		}
+	},
 }

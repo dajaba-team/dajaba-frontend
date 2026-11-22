@@ -1,6 +1,6 @@
 # 03. API 연동
 
-> v0.3 · 2026-11-19 · 초안(팀 확인 중) · 정리 지윤 · 11/19 계약서 v0.2(11/19본) 대조 반영(SCRUM-315~318)
+> v0.4 · 2026-11-22 · 초안(팀 확인 중) · 정리 지윤 · 11/19 계약서 v0.2(11/19본) 대조 반영(SCRUM-315~318) · 11/22 참고 사례 찾기 〔임시〕(SCRUM-333)
 
 백엔드 API를 화면에 붙일 때 보는 문서예요. 백엔드 쪽 규칙은 [BE 03 §2·§3]이 정본이고, 여기는 **프론트가 그걸 어떻게 받는지**를 적어요.
 
@@ -88,6 +88,7 @@
 - 화면을 떠나도 서버 작업은 계속될 수 있어요. "취소됐다"고 표시하지 않아요.
 - 응답이 없거나 timeout이면 **최신 초안·검증·상태를 먼저 조회**하고 나서 다시 할지 정해요(같은 초안이 두 번 생길 수 있음 — BE 미결 21). 케이스 작업(`useCaseCommand`)은 응답이 없으면 상세·목록을 다시 불러요. 요약 갱신은 다시 불러온 요약의 `produced_at`이 누르기 전과 다르면 저장된 것으로 보고 실패 안내를 띄우지 않아요.
 - 질문하기(A8)만 한도가 30초라 timeout `ASK_REQUEST_TIMEOUT_MS`(35초)예요(계약서 2.6, SCRUM-303). 응답 없이 끊기면 지난 질문(C9)을 다시 불러 저장됐는지 먼저 봐요.
+- 참고 사례 찾기만 timeout `REFERENCE_SEARCH_TIMEOUT_MS`(10초)예요(BE 8초 + 여유, 설계 문서 A 7.3). 조회라 응답 없이 끊겨도 저장 확인 없이 [다시 시도]만 보여 줘요. 자동 재시도·폴링 없음.
 - 생성과 검증은 버튼이 따로예요. 생성 직후 자동 검증하지 않아요(안건 17).
 - 적재·**케이스 생성**은 `202 + batch_run_id` 비동기 → `GET /admin/batches/{batch_run_id}` 상태 조회(계약서 B4·B5, 11/4 Q8). 케이스 생성 카드(`OpenCasesCard`, SCRUM-180)는 202 뒤 바로 한 번, `RUNNING`이면 2초마다 다시 불러 끝나면 멈춰요. 자동 조회는 최대 10분(계약서 5.6) — 넘으면 멈추고 [상태 다시 확인]으로 직접 불러요. 적재 카드(`LoadDatasetCard`, SCRUM-220)도 같은 방식이고 상태 확인은 `useBatchRun` 훅이에요. 이미 적재된 DB의 409 `BATCH_ALREADY_DONE`은 실패가 아니라 "이미 적재돼 있음"으로 보여 줘요. 케이스 생성은 성공한 날짜도 다시 실행할 수 있어요(BE V014, SCRUM-238) — 이미 케이스가 된 경보는 건너뛰고 새로 HIGH가 된 경보만 만들어요. 같은 날짜가 돌고 있으면 409 `BATCH_RUNNING`.
 - 룰 스캔(`RuleScanCard`, SCRUM-220)은 동기 200 + `alerts_by_rule`(룰별 경보 수). 9/1(111만 건)도 기다리게 이 요청만 timeout 120초. 룰 스캔·점수는 동기라 폴링을 가정하지 않아요.
@@ -140,8 +141,9 @@ S1(SCRUM-183, `case_version` #89)·S2(SCRUM-205 #84)·S3·S4(SCRUM-184 #91)는 B
 
 수정 이력(S4)은 BE develop에 있어요. MSW는 같은 모양으로 답해요. 본문 열람 제한 규칙은 `06_features/str.md` §3.
 
-| 동작           | API                                                         | 응답                                                                                                              | 프론트                |
-| -------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------- |
-| 초안 보기      | `GET /api/v1/str-drafts/{draft_no}`                         | 명세 1번 모양 또는 상태·날짜만의 제한 응답(`access: "META_ONLY"`, 본문 필드 `null`), 없으면 404 `DRAFT_NOT_FOUND` | `strApi.getDraft`     |
-| 수정 이력 목록 | `GET /api/v1/str-drafts/{draft_no}/revisions`               | `{ draft_no, current_revision_no, items }` (본문 없음, 행마다 `ai_original`). 열람 권한 없으면 403 `NOT_ASSIGNEE` | `strApi.getRevisions` |
-| 수정본 한 행   | `GET /api/v1/str-drafts/{draft_no}/revisions?revision_no=n` | 평평한 모양 `narrative_before`·`narrative_after`(1번은 before `[]`), 없는 번호 404 `REVISION_NOT_FOUND`           | `strApi.getRevision`  |
+| 동작                    | API                                                                          | 응답                                                                                                                                                                                            | 프론트                    |
+| ----------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| 초안 보기               | `GET /api/v1/str-drafts/{draft_no}`                                          | 명세 1번 모양 또는 상태·날짜만의 제한 응답(`access: "META_ONLY"`, 본문 필드 `null`), 없으면 404 `DRAFT_NOT_FOUND`                                                                               | `strApi.getDraft`         |
+| 수정 이력 목록          | `GET /api/v1/str-drafts/{draft_no}/revisions`                                | `{ draft_no, current_revision_no, items }` (본문 없음, 행마다 `ai_original`). 열람 권한 없으면 403 `NOT_ASSIGNEE`                                                                               | `strApi.getRevisions`     |
+| 수정본 한 행            | `GET /api/v1/str-drafts/{draft_no}/revisions?revision_no=n`                  | 평평한 모양 `narrative_before`·`narrative_after`(1번은 before `[]`), 없는 번호 404 `REVISION_NOT_FOUND`                                                                                         | `strApi.getRevision`      |
+| 참고 사례 찾기 〔임시〕 | `POST /api/v1/str-drafts/{draft_no}/references/search` `{typologies, query}` | `{ items[{doc_title, publisher, year, page, score, typologies, source_type}], degraded }`. 0건도 200. BE 아직 없음(SCRUM-313·354) — 설계 문서 A 6.1 모양 그대로 MSW(`mocks/referenceSearch.js`) | `strApi.searchReferences` |

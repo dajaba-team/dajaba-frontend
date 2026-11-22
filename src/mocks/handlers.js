@@ -1,5 +1,6 @@
 import { canViewStrContent, seedStrDrafts, visibleStrDraft } from "./strDrafts"
 import { createDraft, draftActions, saveRevision, submitDraft, verifyDraft } from "./strCommands"
+import { searchReferences } from "./referenceSearch"
 import {
 	approveDraft,
 	listApprovals,
@@ -806,6 +807,17 @@ export const handlers = [
 				return reply(run(currentUser, caseOf(draft), draft, body))
 			},
 		),
+	),
+	// 참고 사례 찾기 〔임시〕 — BE 아직 없음(SCRUM-313·354), 설계 문서 A 6.1 모양
+	http.post(
+		`${base}/api/v1/str-drafts/:draftNo/references/search`,
+		async ({ params, request }) => {
+			if (!currentUser) return unauthenticated()
+			const draft = drafts.find((item) => item.draft_no === params.draftNo)
+			if (!draft) return draftNotFound()
+			const body = await request.json().catch(() => null)
+			return reply(searchReferences(currentUser, draft, body))
+		},
 	),
 	// 승인함 P1~P3 (BE ApprovalController, SCRUM-217~219) — 경로 번호는 draft_no
 	http.get(`${base}/api/v1/approvals`, ({ request }) => {

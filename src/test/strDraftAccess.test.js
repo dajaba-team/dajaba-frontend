@@ -56,7 +56,17 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 				suspicionTypesRecommended: [],
 				suspicionLevelBranch: null,
 				suspicionLevelHq: null,
-				availableActions: [],
+				// 본문을 볼 수 있으면 상태와 상관없이 참고 사례 찾기(SCRUM-313, MSW는 설정 켬 가정)
+				availableActions: ["SEARCH_REFERENCES"],
+			})
+			// S2 references — 문서명·쪽·점수만, 본문 없음(SCRUM-312)
+			expect(draft.references).toHaveLength(3)
+			expect(draft.references[0]).toEqual({
+				chunkId: "chk-apg-2025-053",
+				docId: "apg-typologies-2025",
+				docTitle: "APG Yearly Typologies Report 2025",
+				page: 53,
+				score: 0.58,
 			})
 			// facts는 AI facts 그대로 — 받은 그대로 넘기는지만 봐요(Q15). 모양이 바뀌어도 이 단언은 안 흔들려요.
 			expect(draft.facts).toEqual(AI_FACTS_EXAMPLE)
