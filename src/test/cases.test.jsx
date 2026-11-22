@@ -421,6 +421,11 @@ describe("케이스 조사", () => {
 		await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
 		expect(await screen.findByText(/담당자 예시 inv02/)).toBeInTheDocument()
 		expect(bodies).toEqual([{ assignee: "inv02", comment: "업무 분담", version: 1 }])
+		// 처리 이력에 누구에게서 누구로 — 변경은 둘 다, 배정은 받은 사람만 (SCRUM-348)
+		await user.click(screen.getByRole("button", { name: "처리 이력" }))
+		const history = screen.getByRole("region", { name: "처리 이력" })
+		expect(await within(history).findByText("(예시 inv01 → 예시 inv02)")).toBeInTheDocument()
+		expect(within(history).getByText("(→ 예시 inv01)")).toBeInTheDocument()
 		server.events.removeAllListeners()
 	})
 	it("담당자 변경이 409 INVALID_ASSIGNEE면 안내하고 조사역 목록을 다시 부른다", async () => {

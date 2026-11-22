@@ -38,6 +38,9 @@ const toHistory = (data) => ({
 	comment: data.comment ?? null,
 	createdBy: data.created_by ?? null,
 	createdAt: data.created_at,
+	// 담당이 바뀐 줄만 — ASSIGN은 받은 사람, REASSIGN은 둘 다, 그 밖 null (BE SCRUM-348)
+	fromAssignee: toUser(data.from_assignee),
+	toAssignee: toUser(data.to_assignee),
 })
 
 // 연결 경보 (C2 alert). window_*·reference_ts는 데이터 시각, batch_date는 날짜 — 시간대를 붙이지 않아요.
