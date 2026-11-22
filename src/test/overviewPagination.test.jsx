@@ -152,7 +152,9 @@ describe("SCRUM-337 조사역 대시보드는 내 담당만", () => {
 		)
 		expect(screen.getByText(/나에게 배정된 케이스 기준/)).toBeInTheDocument()
 		expect(
-			screen.getByText(/보완할 초안은 보완 요청으로 반려돼 아직 다시 저장하지 않은 초안/),
+			screen.getByText(
+				/보완할 초안은 보완 요청으로 반려된 직후의 초안만 세요 — 본문을 고쳐 저장하기 시작하면 이 숫자에서 빠져요/,
+			),
 		).toBeInTheDocument()
 	})
 
