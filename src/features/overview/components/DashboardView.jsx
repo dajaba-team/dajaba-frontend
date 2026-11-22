@@ -17,24 +17,42 @@ export default function DashboardView({
 	casePath = (n) => `/cases/${encodeURIComponent(n)}`,
 	listPath = "/cases",
 	demo = false,
+	// 조사역 대시보드 — 내 담당만 받은 items. 카드·안내 문구를 그 범위로 (SCRUM-337)
+	mine = false,
 	dark = false,
 	hero = null,
+	// 우선 목록 자리를 바꿔 끼울 때(승인자 — 승인 대기 보고서, SCRUM-336). 없으면 점수 높은 케이스
+	focusPanel = null,
 }) {
 	const [period, setPeriod] = useState(10)
 	const [replay, setReplay] = useState(0)
 	const counts = useMemo(() => riskCounts(items), [items])
 	const scope = demo
 		? `현재 시연 케이스 ${items.length}건 기준`
-		: `조회 가능한 전체 ${items.length}건 기준`
+		: mine
+			? `내 담당 ${items.length}건 기준`
+			: `조회 가능한 전체 ${items.length}건 기준`
 	const cards = [
 		[
-			demo ? "시연 케이스" : "전체 조회 케이스",
+			demo ? "시연 케이스" : mine ? "내 담당 케이스" : "전체 조회 케이스",
 			total,
-			demo ? "현재 시연 데이터" : "현재 계정의 조회 가능 범위",
+			demo
+				? "현재 시연 데이터"
+				: mine
+					? "나에게 배정된 케이스"
+					: "현재 계정의 조회 가능 범위",
 			"case",
 		],
 		["우선 확인 · HIGH", counts[0], scope, "alert"],
-		["미배정 케이스", items.filter((i) => !i.assignee).length, scope, "user"],
+		// 조사역은 미배정 케이스를 스스로 맡을 수 없어서(SCRUM-339) 그 자리에 보완할 초안을 세요
+		mine
+			? [
+					"보완할 초안",
+					items.filter((i) => i.rejectionReasonCode === "NEED_REVISION").length,
+					scope,
+					"user",
+				]
+			: ["미배정 케이스", items.filter((i) => !i.assignee).length, scope, "user"],
 		[
 			"승인 대기",
 			items.filter((i) => i.status === "PENDING_APPROVAL").length,
@@ -220,60 +238,70 @@ export default function DashboardView({
 					</div>
 				</section>
 			</div>
-			<section className="analytics-panel focus-panel">
-				<div className="analytics-head">
-					<div>
-						<h2>지금 바로 확인해야 할 케이스</h2>
-						<p>위험 점수가 가장 높은 케이스예요. 지금 바로 열어 확인해 주세요.</p>
+			{focusPanel ?? (
+				<section className="analytics-panel focus-panel">
+					<div className="analytics-head">
+						<div>
+							<h2>지금 바로 확인해야 할 케이스</h2>
+							<p>위험 점수가 가장 높은 케이스예요. 지금 바로 열어 확인해 주세요.</p>
+						</div>
+						<Link className="text-link" to={mine ? `${listPath}?mine=1` : listPath}>
+							{mine ? "내 담당 케이스" : "전체 케이스"}{" "}
+							<Icon name="arrow" size={14} />
+						</Link>
 					</div>
-					<Link className="text-link" to={listPath}>
-						전체 케이스 <Icon name="arrow" size={14} />
-					</Link>
-				</div>
-				{items.length ? (
-					items.slice(0, 3).map((item) => {
-						// 점수가 없으면 등급도 보이지 않게 — 미산출을 고위험처럼 칠하지 않는다.
-						const band =
-							item.score != null && ["HIGH", "MEDIUM", "LOW"].includes(item.scoreBand)
-								? item.scoreBand
-								: null
-						return (
-							<div
-								className="focus-case"
-								data-band={band ?? "NONE"}
-								key={item.caseNo}
-							>
-								<div className="case-symbol">
-									<Icon name="alert" size={22} />
-								</div>
-								<div className="case-identity">
-									<Link to={casePath(item.caseNo)}>{item.caseNo}</Link>
-									<span>
-										{item.accountNo ?? "계좌 정보 없음"} ·{" "}
-										{item.assignee?.displayName ?? "미배정"}
-									</span>
-								</div>
-								<div className="case-score">
-									{band && <em className="band-badge">{band}</em>}
-									<div className="case-score-main">
-										<strong>{formatScore(item.score) ?? "미산출"}</strong>
-										<span>{STATUS_LABELS[item.status] ?? item.status}</span>
+					{items.length ? (
+						items.slice(0, 3).map((item) => {
+							// 점수가 없으면 등급도 보이지 않게 — 미산출을 고위험처럼 칠하지 않는다.
+							const band =
+								item.score != null &&
+								["HIGH", "MEDIUM", "LOW"].includes(item.scoreBand)
+									? item.scoreBand
+									: null
+							return (
+								<div
+									className="focus-case"
+									data-band={band ?? "NONE"}
+									key={item.caseNo}
+								>
+									<div className="case-symbol">
+										<Icon name="alert" size={22} />
 									</div>
+									<div className="case-identity">
+										<Link to={casePath(item.caseNo)}>{item.caseNo}</Link>
+										<span>
+											{item.accountNo ?? "계좌 정보 없음"} ·{" "}
+											{item.assignee?.displayName ?? "미배정"}
+										</span>
+									</div>
+									<div className="case-score">
+										{band && <em className="band-badge">{band}</em>}
+										<div className="case-score-main">
+											<strong>{formatScore(item.score) ?? "미산출"}</strong>
+											<span>{STATUS_LABELS[item.status] ?? item.status}</span>
+										</div>
+									</div>
+									<Link className="case-open" to={casePath(item.caseNo)}>
+										지금 확인 <Icon name="arrow" size={14} />
+									</Link>
 								</div>
-								<Link className="case-open" to={casePath(item.caseNo)}>
-									지금 확인 <Icon name="arrow" size={14} />
-								</Link>
-							</div>
-						)
-					})
-				) : (
-					<p className="dashboard-empty">조회 가능한 케이스가 없습니다.</p>
-				)}
-			</section>
+							)
+						})
+					) : (
+						<p className="dashboard-empty">
+							{mine
+								? "나에게 배정된 케이스가 없습니다."
+								: "조회 가능한 케이스가 없습니다."}
+						</p>
+					)}
+				</section>
+			)}
 			<p className="analytics-footnote">
 				{demo
 					? "시연용 합성 데이터 · 실제 운영 실적이 아닙니다."
-					: "카드와 차트는 현재 계정이 조회 가능한 전체 케이스 기준입니다. 점수는 조사 우선순위이며 범죄 확률이 아닙니다."}
+					: mine
+						? "카드와 차트는 나에게 배정된 케이스 기준입니다. 보완할 초안은 보완 요청으로 반려된 직후의 초안만 세요 — 본문을 고쳐 저장하기 시작하면 이 숫자에서 빠져요. 다른 담당자 케이스는 케이스 목록에서 볼 수 있어요. 점수는 조사 우선순위이며 범죄 확률이 아닙니다."
+						: "카드와 차트는 현재 계정이 조회 가능한 전체 케이스 기준입니다. 점수는 조사 우선순위이며 범죄 확률이 아닙니다."}
 			</p>
 		</section>
 	)

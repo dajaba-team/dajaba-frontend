@@ -9,14 +9,18 @@ const OVERVIEW_PAGE_SIZE = 100
 // 넘겨서, 페이지 사이에 같은 케이스가 두 번 나오거나 빠지는 경우 자체를 줄인다.
 const OVERVIEW_SORT = "created_at,asc"
 
-export async function loadOverviewCases(signal) {
+// mine이면 내 담당만(assignee=me) — 조사역 대시보드(SCRUM-337). 승인자·관리자는 조회 가능한 전체.
+export async function loadOverviewCases(signal, { mine = false } = {}) {
 	const first = await casesApi.list(
-		{ page: 1, size: OVERVIEW_PAGE_SIZE, sort: OVERVIEW_SORT },
+		{ page: 1, size: OVERVIEW_PAGE_SIZE, sort: OVERVIEW_SORT, mine },
 		signal,
 	)
 	const items = [...first.items]
 	for (let page = 2; page <= first.totalPages; page += 1) {
-		const next = await casesApi.list({ page, size: first.size, sort: OVERVIEW_SORT }, signal)
+		const next = await casesApi.list(
+			{ page, size: first.size, sort: OVERVIEW_SORT, mine },
+			signal,
+		)
 		if (next.total !== first.total) throw new Error("조회 중 케이스 수가 변경되었습니다.")
 		items.push(...next.items)
 	}
@@ -29,10 +33,11 @@ export async function loadOverviewCases(signal) {
 	return { items, total: first.total }
 }
 
-export function useOverviewCases() {
+export function useOverviewCases({ mine = false, enabled = true } = {}) {
 	return useQuery({
-		// 승인 요청·승인 등 기존 ["cases"] 무효화에 함께 갱신된다.
-		queryKey: ["cases", "overview"],
-		queryFn: ({ signal }) => loadOverviewCases(signal),
+		// 승인 요청·승인 등 기존 ["cases"] 무효화에 함께 갱신된다. 범위가 다르면 다른 캐시.
+		queryKey: ["cases", "overview", mine ? "mine" : "all"],
+		queryFn: ({ signal }) => loadOverviewCases(signal, { mine }),
+		enabled,
 	})
 }
