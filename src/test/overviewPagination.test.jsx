@@ -154,6 +154,10 @@ describe("SCRUM-337 조사역 대시보드는 내 담당만", () => {
 			"href",
 			"/cases?mine=1",
 		)
+		// KPI 카드 [케이스에서 확인]도 내 담당 목록으로 (SCRUM-337 후속)
+		const kpiLinks = screen.getAllByRole("link", { name: "케이스에서 확인" })
+		expect(kpiLinks).toHaveLength(3)
+		for (const link of kpiLinks) expect(link).toHaveAttribute("href", "/cases?mine=1")
 		expect(screen.getByText(/나에게 배정된 케이스 기준/)).toBeInTheDocument()
 		expect(
 			screen.getByText(
@@ -169,6 +173,8 @@ describe("SCRUM-337 조사역 대시보드는 내 담당만", () => {
 		expect(assignees).toEqual([null])
 		expect(summary[2]).toHaveTextContent("미배정 케이스")
 		expect(summary[0]).toHaveTextContent("전체 조회 케이스")
+		for (const link of screen.getAllByRole("link", { name: "케이스에서 확인" }))
+			expect(link).toHaveAttribute("href", "/cases")
 	})
 
 	it("조사역에게 배정된 케이스가 없으면 그렇게 안내한다", async () => {
