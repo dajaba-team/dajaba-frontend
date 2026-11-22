@@ -1,6 +1,7 @@
 import { formatSystemTime } from "../../../shared/format/time"
 import { revisionLabel } from "../../../shared/str/revisionLabel"
 import { sectionTitle } from "../../../shared/str/sectionTitles"
+import HelpTooltip from "../../../shared/ui/HelpTooltip"
 import {
 	CODE_CHECKS,
 	CODE_REASON_LABELS,
@@ -8,6 +9,7 @@ import {
 	LLM_CHECKS,
 	LLM_PASS_SCORE,
 	LLM_SKIPPED_NOTES,
+	VERIFICATION_CHECK_HELP,
 	VERIFICATION_STATUS_LABELS,
 } from "../verificationLabels"
 import { VERIFICATION_TEXT } from "../model/strRules"
@@ -70,11 +72,22 @@ const rowSection = (section) =>
 
 const valueText = (value) => (value == null || value === "" ? "-" : String(value))
 
+function CheckName({ item }) {
+	const help = VERIFICATION_CHECK_HELP[item.check]
+
+	return (
+		<span className="str-check-name">
+			<strong>{item.label}</strong>
+			{help && <HelpTooltip label={item.label}>{help}</HelpTooltip>}
+		</span>
+	)
+}
+
 function CodeCheckRow({ item }) {
 	return (
 		<li className={`str-check str-check--${item.state.toLowerCase()}`}>
 			<div className="str-check-head">
-				<strong>{item.label}</strong>
+				<CheckName item={item} />
 				{item.label !== item.check && <code>{item.check}</code>}
 				<span className="str-check-state">{CODE_STATE_TEXT[item.state]}</span>
 			</div>
@@ -105,7 +118,7 @@ function LlmCheckRow({ item, status }) {
 	return (
 		<li className={`str-check str-check--${item.state.toLowerCase()}`}>
 			<div className="str-check-head">
-				<strong>{item.label}</strong>
+				<CheckName item={item} />
 				{item.label !== item.check && <code>{item.check}</code>}
 				<span className="str-check-state">
 					{item.row?.score != null && `${item.row.score}점 · `}
