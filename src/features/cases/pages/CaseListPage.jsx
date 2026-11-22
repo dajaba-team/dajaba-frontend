@@ -8,6 +8,7 @@ import { formatSystemTime } from "../../../shared/format/time"
 import CaseOverview from "../components/CaseOverview"
 import ReassignDialog from "../components/ReassignDialog"
 import Pagination from "../../../shared/ui/Pagination"
+import { formatScore } from "../../../shared/format/score"
 
 // 목록의 [담당자 변경]도 상세처럼 서버가 준 available_actions(REASSIGN)만 보고 켜요(#23 리뷰). 누르면 서버가 다시 검사해요.
 const canReassign = (item) => item.availableActions.includes("REASSIGN")
@@ -219,7 +220,7 @@ export default function CaseListPage() {
 														{statusText(item)}
 													</span>
 												</td>
-												<td>{item.score ?? "—"}</td>
+												<td>{formatScore(item.score) ?? "—"}</td>
 												<td>{item.assignee?.displayName || "미배정"}</td>
 												<td>{formatSystemTime(item.createdAt)}</td>
 												{manageColumn && (

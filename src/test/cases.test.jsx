@@ -684,7 +684,7 @@ describe("케이스 조사", () => {
 		).toBeInTheDocument()
 		expect(within(panel).getByText("15건")).toBeInTheDocument()
 		const info = screen.getByRole("region", { name: "케이스 개요" })
-		expect(within(info).getByText("0.91")).toBeInTheDocument()
+		expect(within(info).getByText("0.9100")).toBeInTheDocument() // 넷째 자리 표기 (SCRUM-347)
 		expect(within(info).getByText("등급 HIGH")).toBeInTheDocument()
 		expect(within(info).getByText("범죄 확률 아님 · 모델 xgb-2022.11")).toBeInTheDocument()
 	})
