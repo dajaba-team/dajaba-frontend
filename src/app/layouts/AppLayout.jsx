@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router"
 import "../styles/app.css"
 import { useSession } from "../../features/auth/hooks/useSession"
 import AuthPanel from "../../features/auth/components/AuthPanel"
+import NotificationBell from "../../features/notifications/components/NotificationBell"
 import GuideBar from "../../shared/ui/GuideBar"
 import { useToast } from "../../shared/ui/toast/useToast"
 import Icon from "../../shared/ui/dashboard/Icon"
@@ -44,7 +45,7 @@ export default function AppLayout() {
 		sidebarToggled.current = true
 		toggleSidebar()
 	}
-	// 위 띠의 역할 칩·시연 도구 메뉴는 한 번에 하나만 — 바깥을 누르거나 Esc, 화면을 옮기면 닫아요.
+	// 위 띠의 알림 종·역할 칩·시연 도구 메뉴는 한 번에 하나만 — 바깥을 누르거나 Esc, 화면을 옮기면 닫아요.
 	const headUtils = useRef(null)
 	useEffect(() => {
 		const closeAll = (except) =>
@@ -148,6 +149,8 @@ export default function AppLayout() {
 							</span>
 						</div>
 						<div className="head-utils" ref={headUtils}>
+							{/* 업무 알림 종(SCRUM-334) — 계정이 바뀌면 본 시각·숫자를 처음부터 */}
+							{loginId && <NotificationBell key={loginId} loginId={loginId} />}
 							<AuthPanel placement="header" />
 							{import.meta.env.DEV && (
 								// 시안의 "시연 도구" — 개발 모드에서만. 시연 화면·연동 확인으로 가는 길을 여기 모아요.

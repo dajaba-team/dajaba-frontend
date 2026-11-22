@@ -115,7 +115,7 @@ S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), 
 - **호출**: [찾기]를 누를 때만. 누를 때마다 새 요청(Query key에 순번) — 화면은 마지막 요청 결과만 보여 줘서 늦게 온 이전 응답은 버려져요. 찾는 중엔 [찾기]를 막아요. timeout 10초, 자동 재시도·포커스 재조회 없음.
 - **MSW** 〔임시〕: `mocks/referenceSearch.js` — `SCATTER_GATHER`만 고르면 0건, 검색어에 "일부"가 있으면 `degraded`, "AI오류"면 502 `AI_UNAVAILABLE`, 입력이 틀리면 400. 시드 `DRF-000124`(케이스 1001)에 참고 사례 3건, `DRF-000098`(케이스 1003, 잠김)은 0건. MSW는 본문을 볼 수 있으면 `SEARCH_REFERENCES`를 늘 줘요(설정 켬 가정).
 - 감사 화면 엔드포인트 이름표에 `/v1/references/search` "참고 사례 찾기"를 더했어요(`auditLabels.js`).
-- 테스트 `src/test/strReferences.test.jsx`.
+- 테스트 `src/test/strReferencePanel.test.jsx`(패널만) · `src/test/strReferences.test.jsx`(패널 + 찾기).
 
 ### 본문 열람 제한 〔SCRUM-110, FR-APR-02·NFR-APR-01·권한 매트릭스 14번 — 11/3 확정, 필드 11/4 채영〕
 

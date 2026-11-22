@@ -133,6 +133,21 @@
 - 변경 응답(M)은 상세 전체가 아니라서 성공 뒤 상세·목록을 무효화해 다시 불러요(`useCaseCommand`). `CONCURRENT_UPDATE`·`INVALID_CASE_TRANSITION`·`NOT_ASSIGNEE`면 입력을 두고 상세만 다시 불러요.
 - 400 `details`의 필드 이름은 요청 JSON 이름(snake_case, 예: `investigator_notes`) 하나로 와요(BE SCRUM-167 #76).
 
+### 업무 알림 〔임시〕 [「비동기 작업 알림 설계 문서」 6.5절, 11/22 진희님 확인, FE 코드 `notificationsApi.js`·`mocks/notifications.js`, SCRUM-334·355]
+
+BE `GET /notifications`는 SCRUM-355로 리뷰 중이라 MSW가 같은 모양으로 답해요.
+
+| 동작    | API                                      | 응답                                                                                                                                        | 프론트                  |
+| ------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| 내 알림 | `GET /api/v1/notifications?since=&size=` | `{ items[{type, case_no, draft_no, reason_code, actor{login_id, display_name}, at}], total, server_time }`, 형식 오류 400 `INVALID_REQUEST` | `notificationsApi.list` |
+
+- `since`는 **Z로 끝나는 UTC만**(`+09:00`은 400). 없으면 최근 7일, 30일보다 오래되면 30일 전으로 맞춰요. 다음 조회 `since`엔 응답 `server_time`을 그대로 넣어요(화면 시계 안 씀). API 모듈은 Z가 아닌 값을 보내지 않아요.
+- `size` 1~50, 기본 20, 최신순. `total`은 `since` 뒤 전체 건수이고 **99에서 멈춰요** — 화면은 99면 "99+"(`badgeLabel`).
+- **관리자는 늘 `items: []`, `total: 0`**(관리자 알림은 작업 추적기 몫). 자기가 한 일은 안 나와요.
+- `draft_no`는 `APPROVAL_REQUESTED`·`STR_APPROVED`·`STR_REJECTED`·`STR_REPORTED`에만, 케이스 알림 3종(`CASE_ASSIGNED`·`CASE_REASSIGNED_TO_ME`·`CASE_REASSIGNED_AWAY`)은 `null`. `reason_code`는 `STR_REJECTED`일 때만.
+- 반려 코멘트·메모·계좌·금액·DB id는 없어요. 문구·이동 경로는 화면이 `type`으로 만들어요(`features/notifications/model/notificationRules.js`, 설계 7.8 예시).
+- **화면(종, `NotificationBell`)** — 위 띠 오른쪽, 모든 역할. 숫자는 `since=마지막으로 본 시각`·`size=1`로 30초마다 받은 `total`(탭이 가려지면 멈추고 보이면 바로 한 번). 열면 최근 7일 20건(`since` 없이)을 보여 주고, 받은 `server_time`을 `localStorage` `aml.notifications.seen.{login_id}`에 저장해 본 것으로 쳐요 — 목록을 못 받으면 저장하지 않아요. 숫자가 늘면 "새 알림 n건" 토스트 하나(로그인 직후 첫 조회엔 없음). 숫자 조회 실패는 조용히 직전 숫자 유지, 목록 조회 실패는 목록 자리에만 안내 + [다시 불러오기]. 목록에선 이전에 본 시각보다 새 줄에 "새 알림" 표시. 작업 알림(추적기, 준혁님)은 아직 없어 "업무" 꼬리표만 — 생기면 같은 목록에 시간순으로 섞어요. 테스트 `notifications.test.js`·`notificationBell.test.jsx`.
+
 ### STR — 단계별 연결 (11/10)
 
 S1(SCRUM-183, `case_version` #89)·S2(SCRUM-205 #84)·S3·S4(SCRUM-184 #91)는 BE develop에 있어요. S5·S6·A6은 아직 MSW예요. 표는 `06_features/str.md` "백엔드 연결 상태".
