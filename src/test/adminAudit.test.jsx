@@ -129,6 +129,35 @@ describe("AI 호출 기록 탭", () => {
 	})
 })
 
+// 상태 배지(SCRUM-332) — 성공·실패를 색(data-tone)과 글자 둘 다로 구분하고, 강조는 상태 칸 배지에만.
+const badgesIn = (row) => [...row.querySelectorAll(".status-badge")]
+describe("감사 기록 상태 배지 (SCRUM-332)", () => {
+	it("AI 호출 결과는 성공 success · 실패 danger 배지 — 글자로도 구분되고 행 전체는 칠하지 않는다", async () => {
+		renderApp()
+		const list = await rows("AI 호출 기록")
+		const failed = badgesIn(list[0])
+		expect(failed).toHaveLength(1)
+		expect(failed[0]).toHaveAttribute("data-tone", "danger")
+		expect(failed[0]).toHaveTextContent("실패 · AI_TIMEOUT")
+		const ok = list.flatMap(badgesIn).filter((b) => b.dataset.tone === "success")
+		expect(ok.length).toBeGreaterThan(0)
+		ok.forEach((b) => expect(b).toHaveTextContent("성공"))
+		list.forEach((row) => expect(row).not.toHaveAttribute("data-tone"))
+	})
+	it("접근 기록은 로그인 성공·실패만 배지, 다른 동작은 글자 그대로", async () => {
+		const user = renderApp()
+		await user.click(await screen.findByRole("tab", { name: "접근 기록" }))
+		const list = await rows("접근 기록")
+		const badges = list.flatMap(badgesIn)
+		expect(badges.map((b) => [b.dataset.tone, b.textContent])).toEqual([
+			["danger", "로그인 실패"],
+			["success", "로그인"],
+		])
+		expect(badgesIn(list[0])).toHaveLength(0)
+		expect(within(list[0]).getByText("역할 변경")).toBeInTheDocument()
+	})
+})
+
 describe("접근 기록 탭", () => {
 	it("탭을 바꾸면 접근 기록을 부르고, 동작·사용자 필터가 된다", async () => {
 		const urls = recordUrls("/api/v1/admin/access-logs")

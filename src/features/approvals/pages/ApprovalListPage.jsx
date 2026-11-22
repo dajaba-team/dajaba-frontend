@@ -8,6 +8,7 @@ import { VERIFICATION_STATUS_LABELS } from "../../str/verificationLabels"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
 import Pagination from "../../../shared/ui/Pagination"
+import StatusBadge from "../../../shared/ui/StatusBadge"
 
 // 상태 글자는 서버가 준 available_actions·was_assignee 만 보고 정해요(01_code_rules §1).
 // 서버는 승인자이고 담당한 적 없을 때만 APPROVE·REJECT 를 줘요.
@@ -21,6 +22,12 @@ function stateOf(item, isAdmin) {
 	if (can(item, "APPROVE") || can(item, "REJECT"))
 		return { tone: "todo", text: "검토 대기 · 초안에서 승인·반려" }
 	return { tone: "muted", text: "승인 대기" }
+}
+
+// 할 일이 있는 줄만 상태 배지(info, SCRUM-332). 나머지는 옅은 글자 — 강조는 할 일에만.
+function ApprovalState({ state }) {
+	if (state.tone === "todo") return <StatusBadge tone="info">{state.text}</StatusBadge>
+	return <span className="approval-state">{state.text}</span>
 }
 
 function verificationText(verification) {
@@ -96,11 +103,7 @@ export default function ApprovalListPage() {
 														: "없음"}
 												</td>
 												<td>
-													<span
-														className={`approval-state approval-state-${stateOf(item, isAdmin).tone}`}
-													>
-														{stateOf(item, isAdmin).text}
-													</span>
+													<ApprovalState state={stateOf(item, isAdmin)} />
 												</td>
 												<td>
 													{/* 결정은 본문을 보면서 초안 화면에서(APR-02) — 목록엔 버튼을 두지 않아요 */}

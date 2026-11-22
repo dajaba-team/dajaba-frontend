@@ -214,7 +214,7 @@ describe("케이스 조사", () => {
 		)
 		await user.click(screen.getByRole("button", { name: "에스컬레이션 실행" }))
 		expect(
-			await screen.findByText("에스컬레이션됨", { selector: ".case-status" }),
+			await screen.findByText("에스컬레이션됨", { selector: ".status-badge" }),
 		).toBeInTheDocument()
 		expect(screen.getByText("STR 검토 필요")).toBeInTheDocument()
 
@@ -227,7 +227,7 @@ describe("케이스 조사", () => {
 		expect(submit).toBeDisabled()
 		await user.type(screen.getByLabelText("종료 설명"), "동일 법인 내부 이체")
 		await user.click(submit)
-		expect(await screen.findByText("종료", { selector: ".case-status" })).toBeInTheDocument()
+		expect(await screen.findByText("종료", { selector: ".status-badge" })).toBeInTheDocument()
 		expect(screen.getByText("오탐")).toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "종료" })).not.toBeInTheDocument()
 		expect(screen.getByText("현재 케이스는 읽기 전용입니다.")).toBeInTheDocument()
@@ -298,7 +298,7 @@ describe("케이스 조사", () => {
 		await user.type(screen.getByLabelText("에스컬레이션 사유"), "작성 중인 사유")
 		await user.click(screen.getByRole("button", { name: "에스컬레이션 실행" }))
 		expect(
-			await screen.findByText("에스컬레이션됨", { selector: ".case-status" }),
+			await screen.findByText("에스컬레이션됨", { selector: ".status-badge" }),
 		).toBeInTheDocument()
 		expect(screen.getByRole("button", { name: "종료" })).toBeEnabled()
 		expect(screen.queryByLabelText("에스컬레이션 사유")).not.toBeInTheDocument()
@@ -338,7 +338,7 @@ describe("케이스 조사", () => {
 		await user.click(await screen.findByRole("button", { name: "에스컬레이션" }))
 		await user.type(screen.getByLabelText("에스컬레이션 사유"), "STR 검토 필요")
 		await user.click(screen.getByRole("button", { name: "에스컬레이션 실행" }))
-		await screen.findByText("에스컬레이션됨", { selector: ".case-status" })
+		await screen.findByText("에스컬레이션됨", { selector: ".status-badge" })
 		expect(screen.queryByText(/서버의 최신 메모/)).not.toBeInTheDocument()
 		const memo = screen.getByRole("textbox", { name: "메모 내용" })
 		await user.type(memo, " 추가")
@@ -516,7 +516,7 @@ describe("케이스 조사", () => {
 		await user.click(screen.getByRole("radio", { name: "중복 경보" }))
 		await user.type(screen.getByLabelText("종료 설명"), "같은 경보가 다른 케이스로 조사 중")
 		await user.click(screen.getByRole("button", { name: "종료 실행" }))
-		expect(await screen.findByText("종료", { selector: ".case-status" })).toBeInTheDocument()
+		expect(await screen.findByText("종료", { selector: ".status-badge" })).toBeInTheDocument()
 		expect(screen.getByText("중복 경보")).toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "종료" })).not.toBeInTheDocument()
 		expect(draftBodies).toEqual([
@@ -575,7 +575,7 @@ describe("케이스 조사", () => {
 		expect(screen.getByRole("radio", { name: "오탐" })).toBeChecked()
 		expect(screen.getByLabelText("종료 설명")).toHaveValue("정상 급여 이체")
 		await user.click(screen.getByRole("button", { name: "종료 실행" }))
-		expect(await screen.findByText("종료", { selector: ".case-status" })).toBeInTheDocument()
+		expect(await screen.findByText("종료", { selector: ".status-badge" })).toBeInTheDocument()
 	})
 	it("메모를 저장하면 메모 이력에 새 메모와 이전 메모가 보인다 (C8)", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)

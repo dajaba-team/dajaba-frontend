@@ -15,6 +15,7 @@ import {
 	AI_TARGET_TYPES,
 } from "../auditLabels"
 import Pagination from "../../../shared/ui/Pagination"
+import StatusBadge from "../../../shared/ui/StatusBadge"
 
 // 감사 기록 (ADM-05, SCRUM-170) — 관리자만(라우트 RequireRole + 서버 403). 메타만 보여 줘요.
 // 탭·필터·페이지는 주소(query)에 남겨 새로고침·링크 공유에도 그대로예요. 빈 결과와 조회 실패를 다르게(COM-02).
@@ -217,7 +218,9 @@ function AiCallRows({ items }) {
 								? `${AI_TARGET_TYPES[row.targetType] ?? row.targetType} ${row.targetId ?? ""}`
 								: "—"}
 						</td>
-						<td>{row.errorCode ? `실패 · ${row.errorCode}` : "성공"}</td>
+						<td>
+							<AiOutcome errorCode={row.errorCode} />
+						</td>
 						<td>{row.statusCode ?? "응답 없음"}</td>
 						<td>{row.attempt}</td>
 						<td>{row.durationMs.toLocaleString()}ms</td>
@@ -230,6 +233,20 @@ function AiCallRows({ items }) {
 			</tbody>
 		</table>
 	)
+}
+
+// 결과 칸 — 성공·실패를 배지로(SCRUM-332). 실패는 실패 코드를 배지 글자에 같이 써요.
+function AiOutcome({ errorCode }) {
+	if (!errorCode) return <StatusBadge tone="success">성공</StatusBadge>
+	return <StatusBadge tone="danger">실패 · {errorCode}</StatusBadge>
+}
+
+// 접근 기록 동작 — 성공·실패가 있는 로그인만 배지, 나머지 동작은 글자 그대로(강조는 상태에만).
+const ACCESS_ACTION_TONES = { LOGIN_OK: "success", LOGIN_FAIL: "danger" }
+function AccessAction({ action }) {
+	const label = ACCESS_ACTIONS[action] ?? action
+	const tone = ACCESS_ACTION_TONES[action]
+	return tone ? <StatusBadge tone={tone}>{label}</StatusBadge> : label
 }
 
 // 사람 칸 — 로그인 실패는 사람이 정해지지 않아 입력한 아이디만 와요(계약서 5.10).
@@ -264,7 +281,9 @@ function AccessLogRows({ items }) {
 						<td>
 							<AccessUser row={row} />
 						</td>
-						<td>{ACCESS_ACTIONS[row.action] ?? row.action}</td>
+						<td>
+							<AccessAction action={row.action} />
+						</td>
 						<td>
 							{row.targetType
 								? `${ACCESS_TARGET_TYPES[row.targetType] ?? row.targetType} ${row.targetId ?? ""}`

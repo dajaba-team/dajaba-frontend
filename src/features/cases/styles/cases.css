@@ -514,19 +514,6 @@
 	margin: 0;
 	padding-inline-start: var(--space-5);
 }
-.summary-badge {
-	display: inline-flex;
-	padding: var(--space-1) var(--space-2);
-	border-radius: var(--radius-control);
-	background: var(--color-soft);
-	font-size: var(--font-small);
-}
-.summary-badge.is-current {
-	color: var(--color-pass);
-}
-.summary-badge.is-stale {
-	color: var(--color-fail);
-}
 .case-score {
 	padding: var(--space-4) var(--space-4) 0;
 }
