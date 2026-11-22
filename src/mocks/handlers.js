@@ -808,7 +808,7 @@ export const handlers = [
 			},
 		),
 	),
-	// 참고 사례 찾기 〔임시〕 — BE 아직 없음(SCRUM-313·354), 설계 문서 A 6.1 모양
+	// 참고 사례 찾기 〔임시〕 — BE 아직 없음(SCRUM-313·354), 계약서 S9(설계 문서 A 6.1) 모양
 	http.post(
 		`${base}/api/v1/str-drafts/:draftNo/references/search`,
 		async ({ params, request }) => {

@@ -134,7 +134,7 @@ const toReference = (data) => ({
 	score: typeof data.score === "number" ? data.score : null,
 })
 
-// 참고 사례 찾기 결과 한 건(설계 문서 A 6.1). doc_id·chunk_id는 BE가 화면에 주지 않아요.
+// 참고 사례 찾기 결과 한 건(계약서 S9(설계 문서 A 6.1)). doc_id·chunk_id는 BE가 화면에 주지 않아요.
 // publisher·year는 AI manifest 값이라 없으면 null. typologies는 그 청크의 태그 전부(고른 유형 밖도 올 수 있어요).
 const toSearchItem = (data) => ({
 	docTitle: data.doc_title ?? null,
@@ -256,7 +256,7 @@ export const strApi = {
 			).data,
 		),
 	/**
-	 * 참고 사례 찾기 〔임시: BE SearchReferences 아직 없음 — SCRUM-313/354, 설계 문서 A 6.1 모양 그대로 MSW〕.
+	 * 참고 사례 찾기 〔임시: BE SearchReferences 아직 없음 — SCRUM-313/354, 계약서 S9(설계 문서 A 6.1) 모양 그대로 MSW〕.
 	 * 조회 전용이지만 검색어가 주소·접속 기록에 남지 않게 POST예요. top_k는 BE 설정값(5)이라 보내지 않아요.
 	 * query는 앞뒤 공백을 지우고 빈 값이면 null(BE도 같은 처리를 다시 해요).
 	 */
