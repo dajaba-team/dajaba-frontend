@@ -9,10 +9,11 @@ const STATUS_TONES = ["success", "danger", "warning", "info", "neutral"]
 export default function StatusBadge({ tone = "neutral", className, children, ...rest }) {
 	const safeTone = STATUS_TONES.includes(tone) ? tone : "neutral"
 	return (
+		// rest 를 먼저 펼쳐요 — 부르는 쪽이 data-tone·className 을 넘겨도 safeTone·공통 클래스를 덮지 못하게.
 		<span
+			{...rest}
 			className={className ? `status-badge ${className}` : "status-badge"}
 			data-tone={safeTone}
-			{...rest}
 		>
 			{children}
 		</span>

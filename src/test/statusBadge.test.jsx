@@ -25,6 +25,17 @@ describe("StatusBadge", () => {
 		)
 		expect(screen.getByText("실패")).toHaveClass("status-badge", "str-check-state")
 	})
+	it("부르는 쪽이 data-tone·className 을 넘겨도 덮이지 않는다", () => {
+		render(
+			<StatusBadge tone="nope" data-tone="danger" title="상태">
+				덮기 시도
+			</StatusBadge>,
+		)
+		const badge = screen.getByText("덮기 시도")
+		expect(badge).toHaveAttribute("data-tone", "neutral")
+		expect(badge).toHaveAttribute("title", "상태")
+		expect(badge).toHaveClass("status-badge")
+	})
 	it("케이스 상태는 모두 뜻이 정해져 있다 — 같은 상태는 어느 화면이든 같은 색", () => {
 		expect(Object.keys(STATUS_TONES).sort()).toEqual(Object.keys(STATUS_LABELS).sort())
 		expect(STATUS_TONES.REJECTED).toBe("danger")
