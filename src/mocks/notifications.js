@@ -146,7 +146,10 @@ export function listNotifications(viewer, url) {
 		return badRequest({ parameter: "size" })
 
 	const now = Date.now()
-	const serverTime = new Date(now).toISOString().replace(/\.\d{3}Z$/, "Z")
+	// 실서버처럼 초를 버린 현재 시각에서 5초를 빼, 조회 직후 커밋된 이력을 다음 조회에서 받게 해요.
+	const serverTime = new Date(Math.floor(now / 1000) * 1000 - 5_000)
+		.toISOString()
+		.replace(/\.\d{3}Z$/, "Z")
 	if (viewer.role === "ADMIN")
 		return { status: 200, body: { items: [], total: 0, server_time: serverTime } }
 

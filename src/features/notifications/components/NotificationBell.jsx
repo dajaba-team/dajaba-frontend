@@ -65,21 +65,26 @@ function NotificationList({ list, isNew }) {
 		)
 	if (list.data.items.length === 0) return <p className="notification-empty">새 알림이 없어요.</p>
 	return (
-		<ul className="notification-list">
-			{list.data.items.map((item, index) => (
-				<li key={`${item.type}-${item.caseNo}-${item.at}-${index}`}>
-					<Link to={notificationPath(item)}>
-						<span className="notification-tag">업무</span>
-						{isNew(item) && <span className="notification-new">새 알림</span>}
-						<span className="notification-text">{notificationText(item)}</span>
-						<small>
-							{[item.actor?.displayName, formatSystemTime(item.at)]
-								.filter(Boolean)
-								.join(" · ")}
-						</small>
-					</Link>
-				</li>
-			))}
-		</ul>
+		<>
+			<ul className="notification-list">
+				{list.data.items.map((item, index) => (
+					<li key={`${item.type}-${item.caseNo}-${item.at}-${index}`}>
+						<Link to={notificationPath(item)}>
+							<span className="notification-tag">업무</span>
+							{isNew(item) && <span className="notification-new">새 알림</span>}
+							<span className="notification-text">{notificationText(item)}</span>
+							<small>
+								{[item.actor?.displayName, formatSystemTime(item.at)]
+									.filter(Boolean)
+									.join(" · ")}
+							</small>
+						</Link>
+					</li>
+				))}
+			</ul>
+			{list.data.total > list.data.items.length && (
+				<p className="notification-more">이전 알림 더 있음</p>
+			)}
+		</>
 	)
 }

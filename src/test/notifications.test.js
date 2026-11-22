@@ -93,6 +93,18 @@ describe("업무 알림 MSW — since·size", () => {
 		const next = await notificationsApi.list({ since: first.serverTime })
 		expect(next).toMatchObject({ items: [], total: 0 })
 	})
+	it("server_time은 실서버처럼 초를 버린 현재 시각보다 5초 전이다", async () => {
+		resetCases(users.inv01)
+		const before = Date.now()
+		const { data } = await get()
+		const after = Date.now()
+		expect(Date.parse(data.server_time)).toBeGreaterThanOrEqual(
+			Math.floor(before / 1000) * 1000 - 5_000,
+		)
+		expect(Date.parse(data.server_time)).toBeLessThanOrEqual(
+			Math.floor(after / 1000) * 1000 - 5_000,
+		)
+	})
 	it("since가 7일보다 앞이면 그만큼, 30일보다 앞이면 30일 전으로 맞춘다", async () => {
 		resetCases(users.inv01)
 		expect((await get({ since: daysAgo(10) })).data.total).toBe(7)

@@ -144,7 +144,7 @@ describe("알림 종 — 갱신·실패·이동", () => {
 		const button = await summary("알림, 새 알림 6건")
 		server.use(
 			http.get("*/api/v1/notifications", ({ request }) =>
-				new URL(request.url).searchParams.get("size") === "20"
+				new URL(request.url).searchParams.get("size") === "50"
 					? HttpResponse.json({ error: { code: "INTERNAL_ERROR" } }, { status: 500 })
 					: HttpResponse.json({
 							items: [],
@@ -159,6 +159,30 @@ describe("알림 종 — 갱신·실패·이동", () => {
 		expect(within(alert).getByRole("button", { name: "다시 불러오기" })).toBeInTheDocument()
 		// 목록을 못 받았으니 본 것으로 치지 않아요
 		expect(localStorage.getItem(seenKey("inv01"))).toBeNull()
+	})
+	it("최근 7일 알림을 최대 50건 보여 주고, 더 있으면 이전 알림 안내를 보여 준다", async () => {
+		resetCases(users.inv01)
+		addNotifications(
+			Array.from({ length: 50 }, (_, index) => ({
+				recipient: "inv01",
+				type: "CASE_ASSIGNED",
+				case_no: `CASE-EXTRA-${index}`,
+				actor: { login_id: "admin", display_name: "예시 admin" },
+				minutes_ago: 60 + index,
+			})),
+		)
+		const client = createQueryClient()
+		const user = userEvent.setup()
+		render(
+			<QueryClientProvider client={client}>
+				<MemoryRouter initialEntries={["/cases"]}>
+					<App />
+				</MemoryRouter>
+			</QueryClientProvider>,
+		)
+		await user.click(await summary("알림, 새 알림 56건"))
+		expect(await within(panel()).findAllByRole("listitem")).toHaveLength(50)
+		expect(within(panel()).getByText("이전 알림 더 있음")).toBeInTheDocument()
 	})
 	it("알림을 누르면 해당 화면으로 가고 목록이 닫힌다", async () => {
 		const { user } = renderApp()

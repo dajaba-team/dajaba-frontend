@@ -9,7 +9,7 @@ import { useToast } from "../../../shared/ui/toast/useToast"
 // 목록: 종을 열 때 최근 7일(since 없이)을 받아요 — 본 것도 다시 볼 수 있게(설계 7.5 "놓친 알림을 여기서 다시 봐요").
 // 키 첫 칸이 "notifications"라 로그아웃·계정 전환 때 업무 캐시와 같이 지워져요.
 export const NOTIFICATION_POLL_MS = 30_000
-const LIST_SIZE = 20
+const LIST_SIZE = 50
 
 export const notificationsKey = (loginId) => ["notifications", loginId]
 
@@ -70,7 +70,7 @@ export function useNotificationBadge(loginId) {
 	return { total, seen, markSeen }
 }
 
-/** 종을 열었을 때의 목록 — 최근 7일, 최신순 20개. */
+/** 종을 열었을 때의 목록 — 최근 7일, 최신순 최대 50개. */
 export function useNotificationList(loginId, { enabled }) {
 	return useQuery({
 		queryKey: [...notificationsKey(loginId), "list"],
