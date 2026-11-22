@@ -27,6 +27,8 @@ export default function DashboardView({
 	const [period, setPeriod] = useState(10)
 	const [replay, setReplay] = useState(0)
 	const counts = useMemo(() => riskCounts(items), [items])
+	// 목록 링크도 집계와 같은 범위로 — 조사역은 내 담당 목록(SCRUM-337)
+	const scopedListPath = mine ? `${listPath}?mine=1` : listPath
 	const scope = demo
 		? `현재 시연 케이스 ${items.length}건 기준`
 		: mine
@@ -145,7 +147,7 @@ export default function DashboardView({
 								))}
 							</div>
 						) : (
-							<Link className="metric-link" to={listPath}>
+							<Link className="metric-link" to={scopedListPath}>
 								케이스에서 확인
 								<Icon name="arrow" size={14} />
 							</Link>
@@ -245,7 +247,7 @@ export default function DashboardView({
 							<h2>지금 바로 확인해야 할 케이스</h2>
 							<p>위험 점수가 가장 높은 케이스예요. 지금 바로 열어 확인해 주세요.</p>
 						</div>
-						<Link className="text-link" to={mine ? `${listPath}?mine=1` : listPath}>
+						<Link className="text-link" to={scopedListPath}>
 							{mine ? "내 담당 케이스" : "전체 케이스"}{" "}
 							<Icon name="arrow" size={14} />
 						</Link>
