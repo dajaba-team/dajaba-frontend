@@ -172,6 +172,9 @@ describe("검증 결과 패널 (SCRUM-116)", () => {
 		expect(helpButton).toHaveFocus()
 		expect(screen.getAllByRole("button", { name: /도움말$/ })).toHaveLength(11)
 		expect(screen.getByText("FIVE_W_ONE_H_COMPLETE")).toBeInTheDocument()
+		expect(screen.getByRole("tooltip", { name: /건수·계좌 수 같은 숫자/ })).toBeInTheDocument()
+		expect(screen.getByRole("tooltip", { name: /근거로 든 거래와 항목/ })).toBeInTheDocument()
+		expect(screen.getAllByRole("tooltip", { name: /이 케이스 거래 자료/ })).toHaveLength(4)
 	})
 
 	it("OPINION_PRESENT(종합의견 공란) 실패 — 그 항목이 위로, 이름·사유가 보인다", () => {
