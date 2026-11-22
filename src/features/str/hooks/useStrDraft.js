@@ -30,6 +30,28 @@ export function useStrRevision(draftNo, revisionNo, { enabled = true } = {}) {
 	})
 }
 
+/**
+ * 참고 사례 찾기(설계 문서 A 7.3) — [찾기]를 누를 때마다 request({typologies, query, seq})가 새로 생겨요.
+ * 화면은 지금 request의 결과만 보여 줘서 늦게 온 이전 응답은 저절로 버려져요. 조회라 자동 재시도·포커스 재조회 없음.
+ * 키 첫 칸이 "draft"라 로그아웃·계정 전환 때 같이 지워져요.
+ */
+export const referenceSearchKey = (draftNo) => [...draftKey(draftNo), "references", "search"]
+
+export function useReferenceSearch(draftNo, request) {
+	return useQuery({
+		queryKey: [...referenceSearchKey(draftNo), request],
+		queryFn: ({ signal }) =>
+			strApi.searchReferences(
+				{ draftNo, typologies: request.typologies, query: request.query },
+				signal,
+			),
+		enabled: Boolean(draftNo && request),
+		staleTime: Infinity,
+		refetchOnWindowFocus: false,
+		retry: false,
+	})
+}
+
 // 서버 상태가 화면과 달라 생기는 오류 — 케이스·초안을 다시 읽어 최신 버튼·본문을 보여 줘요. 입력은 화면이 들고 있어요.
 const REFETCH_ON = [
 	"CONCURRENT_UPDATE",

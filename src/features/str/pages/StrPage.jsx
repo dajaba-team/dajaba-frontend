@@ -360,7 +360,13 @@ function StrWorkspace({ draft, detail }) {
 						onTypesChange={setTypes}
 						onLevelChange={setLevel}
 					/>
-					<StrReferencePanel references={draft.references} />
+					{/* 참고 사례(SCRUM-312·333) — 찾기는 서버가 SEARCH_REFERENCES를 줄 때만, 잠긴 초안에서도 */}
+					<StrReferencePanel
+						draftNo={draft.draftNo}
+						references={draft.references}
+						facts={draft.facts}
+						canSearch={can("SEARCH_REFERENCES")}
+					/>
 				</div>
 			</div>
 

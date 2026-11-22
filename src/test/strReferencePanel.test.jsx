@@ -47,7 +47,7 @@ describe("STR 참고 사례 패널", () => {
 	it("참고 사례가 0건이면 빈 상태 안내를 표시한다", () => {
 		render(<StrReferencePanel references={[]} />)
 		const panel = screen.getByRole("region", { name: "참고 사례" })
-		expect(panel).toHaveTextContent("연결된 참고 사례가 없어요.")
+		expect(panel).toHaveTextContent("이 초안에 붙은 참고 사례가 없어요.")
 		expect(within(panel).queryByRole("listitem")).not.toBeInTheDocument()
 	})
 })

@@ -100,6 +100,32 @@ export const AI_FACTS_EXAMPLE = {
 	model_signals: ["account_in_counterparties_24h"],
 	unmapped_currencies: [],
 }
+// S2 references — BE GetStrDraft가 옮기는 칸만(chunk_id·doc_id·doc_title·page·score, 본문 없음). SCRUM-312
+// 문서명은 AI corpus 공개 문서를 흉내 낸 예시예요. 참고 사례 찾기 목업(referenceSearch.js)과 겹치는 문서·쪽이 있어
+// "이미 붙어 있음" 표시를 확인할 수 있어요.
+const SEED_REFERENCES = [
+	{
+		chunk_id: "chk-apg-2025-053",
+		doc_id: "apg-typologies-2025",
+		doc_title: "APG Yearly Typologies Report 2025",
+		page: 53,
+		score: 0.58,
+	},
+	{
+		chunk_id: "chk-fatf-pml-021",
+		doc_id: "fatf-pml-2018",
+		doc_title: "FATF Professional Money Laundering",
+		page: 21,
+		score: 0.51,
+	},
+	{
+		chunk_id: "chk-fatf-pml-044",
+		doc_id: "fatf-pml-2018",
+		doc_title: "FATF Professional Money Laundering",
+		page: 44,
+		score: 0.47,
+	},
+]
 const codeCheck = (check, section, draftValue, sourceValue) => ({
 	check,
 	section,
@@ -135,30 +161,7 @@ export function seedStrDrafts() {
 			suspicion_level_hq: null,
 			available_actions: [],
 			report: null,
-			// 화면 확인용 S2 references 예시 — 실제 값은 AI 생성 응답 generation_meta.references에서 옮겨 와요.
-			references: [
-				{
-					chunk_id: "ref-001",
-					doc_id: "kofiu-2023",
-					doc_title: "STR 작성 사례집",
-					page: 12,
-					score: 0.83,
-				},
-				{
-					chunk_id: "ref-002",
-					doc_id: "kofiu-2021",
-					doc_title: "의심거래 유형",
-					page: 3,
-					score: 0.71,
-				},
-				{
-					chunk_id: "ref-003",
-					doc_id: "kofiu-2022",
-					doc_title: "자금세탁 의심거래 분석 사례",
-					page: 43,
-					score: 0.68,
-				},
-			],
+			references: SEED_REFERENCES,
 			latest_verification: {
 				verification_id: "VRF-a71f02",
 				draft_no: "DRF-000123",
@@ -216,6 +219,7 @@ export function seedStrDrafts() {
 			generator_version: "str-gen-0.2.0+narrative_v2",
 			produced_at: "2026-11-05T11:30:00Z",
 			narrative: NARRATIVE_V2,
+			references: SEED_REFERENCES,
 			// 코드 검사 실패 예시(SCRUM-116) — 날짜 한 곳 못 읽음·한 곳 빠짐, 건수 검사 줄 없음(SCRUM-60 전), AI 평가 안 함(null).
 			latest_verification: {
 				verification_id: "VRF-b20c11",
@@ -375,8 +379,11 @@ export function visibleStrDraft(user, draft, item = null, actionsOf = null) {
 			: null,
 		case_status: caseStatus,
 		case_version: item ? item.version : draft.case_version,
-		available_actions:
-			item && actionsOf ? actionsOf(user, item, draft) : draft.available_actions,
+		// SEARCH_REFERENCES는 초안 상태와 상관없이 본문을 볼 수 있으면(설정 켬 가정) — 설계 문서 A 7.1, SCRUM-313
+		available_actions: [
+			...(item && actionsOf ? actionsOf(user, item, draft) : draft.available_actions),
+			"SEARCH_REFERENCES",
+		],
 		latest_verification: verification
 			? {
 					...verification,
