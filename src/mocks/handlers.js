@@ -26,6 +26,7 @@ import {
 	transactionsResponse,
 } from "./cases"
 import { http, HttpResponse } from "msw"
+import { listNotifications, resetNotifications } from "./notifications"
 
 let cases = seedCases()
 let drafts = seedStrDrafts()
@@ -121,6 +122,7 @@ export function resetCases(user = null, { pendingApproval = false, formerAssigne
 	scoreAttempts = {}
 	openCasesReruns = new Set()
 	askLog = []
+	resetNotifications()
 }
 const draftNotFound = () =>
 	HttpResponse.json(
@@ -528,6 +530,11 @@ export const handlers = [
 		}),
 	),
 	// 케이스 — 계약서 C1·C2·A1·A3·A4·A5·A6 (요약 A7·C7은 아래, 실제 백엔드 CaseController와 같은 경로, 메모 A3·초안 있는 종료 A6은 백엔드 준비 중)
+	// 업무 알림 〔임시〕 — BE 아직 없음(SCRUM-355), 설계 6.5절 모양
+	http.get(`${base}/api/v1/notifications`, ({ request }) => {
+		if (!currentUser) return unauthenticated()
+		return reply(listNotifications(currentUser, new URL(request.url)))
+	}),
 	http.get(`${base}/api/v1/cases`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
 		return HttpResponse.json(listResponse(cases, new URL(request.url), currentUser))
