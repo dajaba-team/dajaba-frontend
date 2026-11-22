@@ -40,6 +40,10 @@ export default function AnalyticsChart({
 	useEffect(() => {
 		if (!canvas.current || typeof CanvasRenderingContext2D === "undefined") return
 		const style = getComputedStyle(canvas.current)
+		// 눈금 글자는 --font-2xs 토큰(rem)을 px 로 — Chart.js 는 숫자 px 만 받아요(SCRUM-294).
+		const tickSize =
+			parseFloat(style.getPropertyValue("--font-2xs")) *
+				parseFloat(getComputedStyle(document.documentElement).fontSize) || 12
 		const resolve = (value) =>
 			typeof value === "string" && value.startsWith("--")
 				? style.getPropertyValue(value).trim()
@@ -79,8 +83,8 @@ export default function AnalyticsChart({
 									border: { display: false },
 									ticks: {
 										color: style.getPropertyValue("--color-muted"),
-										font: { size: 10 },
-										maxRotation: horizontal ? 0 : 30,
+										font: { size: tickSize },
+										maxRotation: horizontal ? 0 : 45,
 									},
 								},
 								[horizontal ? "x" : "y"]: {
@@ -92,7 +96,7 @@ export default function AnalyticsChart({
 										color: style.getPropertyValue("--color-muted"),
 										maxTicksLimit: 5,
 										precision: ratio ? 2 : 0,
-										font: { size: 10 },
+										font: { size: tickSize },
 									},
 								},
 							},

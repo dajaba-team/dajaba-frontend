@@ -8,10 +8,10 @@
 .app-shell table {
 	border-collapse: collapse;
 	width: 100%;
-	font-size: 0.8125rem;
+	font-size: var(--font-small);
 }
 .app-shell th {
-	font-size: 0.75rem;
+	font-size: var(--font-xs);
 	font-weight: 700;
 	letter-spacing: 0.02em;
 	color: var(--color-muted);
@@ -66,7 +66,7 @@
 	border: 0;
 	background: transparent;
 	color: var(--color-muted);
-	font-size: 12px;
+	font-size: var(--font-xs);
 	min-height: 32px;
 	padding: 0 6px;
 	letter-spacing: 0;
@@ -122,7 +122,7 @@
 	justify-content: space-between;
 	gap: 10px;
 	color: var(--color-muted);
-	font-size: 13px;
+	font-size: var(--font-small);
 	font-weight: 600;
 }
 /* DashStack KPI 카드처럼 아이콘을 오른쪽 위 둥근 색 타일에 담아요. */
@@ -162,7 +162,7 @@
 	font-weight: 700;
 }
 .signal-kpi > strong small {
-	font-size: 12px;
+	font-size: var(--font-xs);
 	font-weight: 400;
 	margin-left: 7px;
 	letter-spacing: 0;
@@ -174,7 +174,7 @@
 }
 .signal-kpi > p {
 	margin: 0;
-	font-size: 12px;
+	font-size: var(--font-xs);
 	color: var(--color-muted);
 }
 .signal-kpi-primary > p {
@@ -198,7 +198,7 @@
 	align-items: center;
 	justify-content: space-between;
 	color: var(--brand-primary);
-	font-size: 12px;
+	font-size: var(--font-xs);
 	font-weight: 600;
 	margin-top: 18px;
 	padding-top: 14px;
@@ -228,13 +228,14 @@
 }
 .analytics-head h2 {
 	margin: 4px 0;
-	font-size: 18px;
+	word-break: keep-all;
+	font-size: var(--font-section);
 	font-weight: 700;
 	letter-spacing: -0.02em;
 }
 .analytics-head p {
 	margin: 4px 0 0;
-	font-size: 12px;
+	font-size: var(--font-xs);
 	color: var(--color-muted);
 }
 .chart-period {
@@ -251,7 +252,7 @@
 	border-radius: 20px;
 	color: var(--color-muted);
 	background: transparent;
-	font-size: 12px;
+	font-size: var(--font-xs);
 	font-weight: 600;
 	white-space: nowrap;
 }
@@ -272,7 +273,7 @@
 }
 .trend-summary small {
 	margin-left: 8px;
-	font-size: 12px;
+	font-size: var(--font-xs);
 	font-weight: 400;
 	color: var(--color-muted);
 	letter-spacing: 0;
@@ -340,7 +341,7 @@
 	align-items: center;
 	gap: 6px;
 	color: var(--risk-high);
-	font-size: 10px;
+	font-size: var(--font-2xs);
 	font-weight: 700;
 	letter-spacing: 0.14em;
 }
@@ -365,13 +366,13 @@
 }
 .risk-gauge-readout small {
 	color: var(--color-muted);
-	font-size: 12px;
+	font-size: var(--font-xs);
 	font-weight: 500;
 	letter-spacing: 0;
 }
 .risk-gauge-note {
 	color: var(--color-muted);
-	font-size: 11px;
+	font-size: var(--font-2xs);
 }
 .risk-gauge-note b {
 	color: var(--color-text);
@@ -420,7 +421,7 @@
 	padding: 8px 10px;
 	border-radius: 10px;
 	background: var(--color-table-head);
-	font-size: 12px;
+	font-size: var(--font-xs);
 }
 .risk-legend i {
 	width: 8px;
@@ -431,9 +432,10 @@
 .risk-legend span {
 	flex: 1;
 	color: var(--color-muted);
+	word-break: keep-all;
 }
 .risk-legend small {
-	font-size: 10px;
+	font-size: var(--font-2xs);
 	margin-left: 3px;
 	font-weight: 400;
 }
@@ -499,7 +501,7 @@
 .case-score-main > span {
 	display: block;
 	margin-top: 4px;
-	font-size: 12px;
+	font-size: var(--font-xs);
 	color: var(--color-muted);
 }
 .case-score {
@@ -527,7 +529,7 @@
 	background: var(--band-soft);
 	border: 1px solid color-mix(in srgb, var(--band) 30%, transparent);
 	border-radius: 999px;
-	font-size: 11px;
+	font-size: var(--font-2xs);
 	font-style: normal;
 	font-weight: 700;
 	letter-spacing: 0.04em;
@@ -546,7 +548,7 @@
 	background: var(--color-primary-soft);
 	text-decoration: none;
 	border-radius: 10px;
-	font-size: 12px;
+	font-size: var(--font-xs);
 	font-weight: 600;
 	white-space: nowrap;
 	transition:
@@ -561,19 +563,20 @@
 	display: flex;
 	gap: 8px;
 	align-items: center;
-	font-size: 12px;
+	font-size: var(--font-xs);
 	font-weight: 600;
 	text-decoration: none;
+	white-space: nowrap;
 }
 .analytics-footnote {
 	margin: 14px 0 24px;
 	color: var(--color-muted);
-	font-size: 12px;
+	font-size: var(--font-xs);
 }
 .dashboard-empty {
 	padding: 25px;
 	color: var(--color-muted);
-	font-size: 13px;
+	font-size: var(--font-small);
 }
 /* 케이스 목록 위 현황 카드 — 제목·큰 수치 왼쪽, 아이콘 타일 오른쪽(DashStack KPI). */
 .case-overview {
@@ -595,7 +598,7 @@
 }
 .case-overview article > span {
 	color: var(--color-muted);
-	font-size: 13px;
+	font-size: var(--font-small);
 	font-weight: 600;
 }
 .case-overview-icon {
@@ -628,7 +631,7 @@
 }
 .case-overview strong small {
 	margin-left: 4px;
-	font-size: 13px;
+	font-size: var(--font-small);
 	font-weight: 500;
 	color: var(--color-muted);
 	letter-spacing: 0;
@@ -639,7 +642,7 @@
 	margin-top: 8px;
 	padding-top: 10px;
 	border-top: 1px solid var(--color-border);
-	font-size: 12px;
+	font-size: var(--font-xs);
 	color: var(--color-muted);
 }
 @media (max-width: 1100px) {
@@ -649,7 +652,8 @@
 	.analytics-head {
 		padding: 18px;
 	}
-	.trend-panel .analytics-head {
+	.trend-panel .analytics-head,
+	.focus-panel .analytics-head {
 		align-items: flex-start;
 		flex-wrap: wrap;
 	}
@@ -675,14 +679,14 @@
 		border-radius: 15px;
 	}
 	.metric-label {
-		font-size: 12px;
+		font-size: var(--font-xs);
 	}
 	.metric-label svg {
 		padding: 8px;
 		border-radius: 11px;
 	}
 	.signal-kpi > p {
-		font-size: 11px;
+		font-size: var(--font-2xs);
 	}
 	.focus-case {
 		flex-wrap: wrap;
@@ -706,7 +710,7 @@
 		font-size: 25px;
 	}
 	.dashboard-section-label {
-		font-size: 9px;
+		font-size: var(--font-2xs);
 	}
 }
 
@@ -717,7 +721,7 @@
 .role-heading .crumbs {
 	margin: 0 0 0.625rem;
 	color: var(--color-muted);
-	font-size: 0.75rem;
+	font-size: var(--font-xs);
 	font-weight: 560;
 }
 .role-heading .crumbs span {
@@ -735,7 +739,7 @@
 .role-heading > p:last-child {
 	margin: 0.4375rem 0 0;
 	color: var(--color-muted);
-	font-size: 0.875rem;
+	font-size: var(--font-body);
 }
 /* 시안 B(SCRUM-286): 문구 아래 폭을 꽉 채운 이동 카드 + 전신 곰. 움직임은 작게 유지해요. */
 .role-band {
@@ -757,7 +761,7 @@
 }
 .role-shortcuts-label {
 	color: var(--color-muted);
-	font-size: 0.8125rem;
+	font-size: var(--font-small);
 	font-weight: 700;
 }
 .role-shortcuts ul {
@@ -778,7 +782,7 @@
 	border-radius: 999px;
 	background: var(--color-surface);
 	color: var(--color-text);
-	font-size: 0.875rem;
+	font-size: var(--font-body);
 	font-weight: 600;
 	text-decoration: none;
 	transition:
@@ -803,7 +807,7 @@
 .role-band-copy .ux-eyebrow {
 	margin: 0;
 	color: #466493;
-	font-size: 0.8125rem;
+	font-size: var(--font-small);
 	font-weight: 700;
 	letter-spacing: 0.02em;
 }
@@ -824,7 +828,7 @@
 .bear-hint p {
 	margin: 0;
 	color: #425775;
-	font-size: 0.9375rem;
+	font-size: var(--font-lead);
 	line-height: 1.6;
 }
 .role-band .hide-hint {
@@ -834,7 +838,7 @@
 	border: 0;
 	background: transparent;
 	color: #526783;
-	font-size: 0.8125rem;
+	font-size: var(--font-small);
 	text-decoration: underline;
 	text-underline-offset: 3px;
 }
@@ -866,7 +870,7 @@
 	z-index: 1;
 }
 .role-band-cta small {
-	font-size: 0.9375rem;
+	font-size: var(--font-lead);
 	font-weight: 600;
 	opacity: 0.9;
 }

@@ -117,7 +117,7 @@
 	display: block;
 	margin-block-start: 0.125rem;
 	color: var(--color-muted);
-	font-size: 0.75rem;
+	font-size: var(--font-xs);
 }
 .audit-page .case-table code {
 	color: var(--color-sidebar-text);
