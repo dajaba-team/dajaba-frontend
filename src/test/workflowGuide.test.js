@@ -25,6 +25,18 @@ describe("SCRUM-330 역할별 업무 흐름 안내", () => {
 				"INVESTIGATOR",
 			),
 		).toContain("3. STR 작성")
+		expect(
+			caseDetailWorkflowGuide(
+				{ status: "PENDING_APPROVAL", availableActions: [], currentDraftNo: "DRF-1" },
+				"INVESTIGATOR",
+			),
+		).toContain("4. 승인 대기")
+		expect(
+			caseDetailWorkflowGuide(
+				{ status: "REJECTED", availableActions: [], currentDraftNo: "DRF-1" },
+				"INVESTIGATOR",
+			),
+		).toContain("읽기 전용")
 	})
 
 	it("조사역 STR은 검증·승인 요청·반려 보완·승인 대기를 구분한다", () => {
@@ -35,7 +47,7 @@ describe("SCRUM-330 역할별 업무 흐름 안내", () => {
 				detail,
 				draft: { availableActions: ["VERIFY"], verification: null },
 			}),
-		).toContain("4. 검증")
+		).toContain("3. STR 검증")
 		expect(
 			strWorkflowGuide({
 				role: "INVESTIGATOR",
@@ -59,7 +71,24 @@ describe("SCRUM-330 역할별 업무 흐름 안내", () => {
 				detail: { ...detail, status: "PENDING_APPROVAL" },
 				draft: { availableActions: [] },
 			}),
-		).toContain("5. 승인 대기")
+		).toContain("4. 승인 대기")
+		expect(
+			strWorkflowGuide({
+				role: "INVESTIGATOR",
+				detail: { ...detail, status: "REJECTED" },
+				draft: { availableActions: [] },
+			}),
+		).toContain("읽기 전용")
+		expect(
+			strWorkflowGuide({
+				role: "INVESTIGATOR",
+				detail: { ...detail, status: "APPROVED" },
+				draft: {
+					availableActions: [],
+					verification: { isCurrent: true, passed: true },
+				},
+			}),
+		).toContain("처리 완료")
 	})
 
 	it("승인자는 승인함에서 요청을 열고 초안에서 승인·반려한다", () => {
