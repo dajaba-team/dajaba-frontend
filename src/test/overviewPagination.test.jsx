@@ -31,11 +31,16 @@ function fixture(total) {
 	}))
 }
 
+// 요청마다 받은 assignee 파라미터 (SCRUM-337) — pages 배열 모양은 그대로 두려고 따로 모아요
+const assignees = []
+
 function serve(rows, { failSecond = () => false, totalForPage = () => rows.length } = {}) {
 	const pages = []
+	assignees.length = 0
 	server.use(
 		http.get("*/api/v1/cases", ({ request }) => {
 			const params = new URL(request.url).searchParams
+			assignees.push(params.get("assignee"))
 			const page = Number(params.get("page"))
 			const size = Number(params.get("size"))
 			pages.push(page)
@@ -65,7 +70,7 @@ async function cards() {
 }
 
 describe("SCRUM-335 전체 케이스 집계", () => {
-	it.each(["INVESTIGATOR", "APPROVER"])(
+	it.each(["APPROVER", "ADMIN"])(
 		"%s: 28번째 승인 대기를 카드와 차트에 포함한다",
 		async (role) => {
 			serve(fixture(28))
@@ -117,9 +122,50 @@ describe("SCRUM-335 전체 케이스 집계", () => {
 
 	it("빈 목록도 정상적인 전체 0건으로 표시한다", async () => {
 		const pages = serve([])
-		show()
+		show("APPROVER")
 		expectCount((await cards())[3], 0)
 		expect(pages).toEqual([0])
 		expect(screen.getByText("조회 가능한 케이스가 없습니다.")).toBeInTheDocument()
+	})
+})
+
+describe("SCRUM-337 조사역 대시보드는 내 담당만", () => {
+	it("조사역은 assignee=me 로 모든 페이지를 부르고, 미배정 대신 보완할 초안을 센다", async () => {
+		const rows = fixture(128)
+		rows[0].status = "REJECTED"
+		rows[0].rejection_reason_code = "NEED_REVISION"
+		rows[1].status = "REJECTED"
+		rows[1].rejection_reason_code = "NOT_REPORTABLE" // 보고 안 함 반려는 보완 대상 아님
+		const pages = serve(rows)
+		show("INVESTIGATOR")
+		const summary = await cards()
+		expect(pages).toEqual([0, 1])
+		expect(assignees).toEqual(["me", "me"])
+		expect(summary[0]).toHaveTextContent("내 담당 케이스")
+		expect(summary[2]).toHaveTextContent("보완할 초안")
+		expectCount(summary[2], 1)
+		expect(summary[1]).toHaveTextContent("내 담당 128건 기준")
+		expect(screen.queryByText("미배정 케이스")).toBeNull()
+		expect(screen.getByRole("link", { name: "내 담당 케이스", exact: true })).toHaveAttribute(
+			"href",
+			"/cases?mine=1",
+		)
+		expect(screen.getByText(/나에게 배정된 케이스 기준/)).toBeInTheDocument()
+	})
+
+	it.each(["APPROVER", "ADMIN"])("%s는 지금처럼 전체를 센다(assignee 없음)", async (role) => {
+		serve(fixture(3))
+		show(role)
+		const summary = await cards()
+		expect(assignees).toEqual([null])
+		expect(summary[2]).toHaveTextContent("미배정 케이스")
+		expect(summary[0]).toHaveTextContent("전체 조회 케이스")
+	})
+
+	it("조사역에게 배정된 케이스가 없으면 그렇게 안내한다", async () => {
+		serve([])
+		show("INVESTIGATOR")
+		await cards()
+		expect(screen.getByText("나에게 배정된 케이스가 없습니다.")).toBeInTheDocument()
 	})
 })
