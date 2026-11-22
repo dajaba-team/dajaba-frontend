@@ -10,7 +10,8 @@ import { revisionLabel } from "../../../shared/str/revisionLabel"
 import { sectionTitle } from "../../../shared/str/sectionTitles"
 import { suspicionTypeLabel } from "../../../shared/str/suspicionTypes"
 import { getErrorCode, getErrorMessage, isVersionConflict } from "../../../shared/api/apiClient"
-import { STATUS_LABELS, REJECTION_LABELS } from "../../cases/labels"
+import { STATUS_LABELS, STATUS_TONES, REJECTION_LABELS } from "../../cases/labels"
+import StatusBadge from "../../../shared/ui/StatusBadge"
 import { CloseForm } from "../../cases/components/CaseActions"
 import StrNarrative from "../components/StrNarrative"
 import StrFacts from "../components/StrFacts"
@@ -80,7 +81,9 @@ export default function StrPage() {
 						<li>{draft.draftNo}</li>
 						{caseStatus && (
 							<li className="str-chip-status">
-								{labelOf(STATUS_LABELS, caseStatus)}
+								<StatusBadge tone={STATUS_TONES[caseStatus]}>
+									{labelOf(STATUS_LABELS, caseStatus)}
+								</StatusBadge>
 							</li>
 						)}
 						{draft.status !== "ACTIVE" && (

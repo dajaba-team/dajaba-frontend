@@ -54,13 +54,9 @@
 	margin: 0;
 }
 
-.approval-badge {
+.approval-deadline {
 	align-self: flex-start;
 	margin: 0;
-	padding: var(--space-1) var(--space-3);
-	border: var(--border-width) solid var(--color-border);
-	border-radius: var(--radius-card);
-	font-weight: 600;
 }
 
 .approval-preview {
@@ -70,17 +66,11 @@
 	border-radius: var(--radius-card);
 }
 
-/* 목록 상태 글자 — 할 일이 있는 줄만 강조 */
+/* 목록 상태 글자 — 할 일이 있는 줄만 상태 배지(info), 나머지는 옅은 글자 */
 .approval-state {
+	color: var(--color-muted);
 	font-size: var(--font-small);
 	white-space: nowrap;
-}
-.approval-state-todo {
-	color: var(--color-primary-strong);
-	font-weight: 650;
-}
-.approval-state-muted {
-	color: var(--color-muted);
 }
 .approval-review-link {
 	display: inline-block;

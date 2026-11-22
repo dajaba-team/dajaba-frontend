@@ -26,6 +26,11 @@
 	--color-pass: #1d6b3a;
 	--color-fail: #b42318;
 	--color-fail-soft: #fdf0ef;
+	/* 상태 배지(SCRUM-332) — 초록·빨강·호박 세 뜻. 옅은 면 위 글자 대비 5.9·5.9·5.8.
+	   호박·초록 면의 정본은 여기예요. 아래 --warning·--warning-soft·--success-soft 는 이 값을 이어 써요. */
+	--color-pass-soft: #e8f7f1;
+	--color-warn: #8a5300;
+	--color-warn-soft: #fff4dc;
 	/* 자금 흐름 그래프 무대(밝은 면, 11/16 팀 결정) — 유입·유출·경유 세 색은 무대 위 대비 4.5:1 이상(6.4·4.9·6.7).
 	   대상 계좌만 짙은 면(node-strong) + 흰 글자(on-strong)로 강조해요. */
 	--color-graph-stage: #f8f9fb;
@@ -121,10 +126,10 @@
 	--mono: "SFMono-Regular", Consolas, monospace;
 	--danger: var(--color-fail);
 	--danger-soft: #fff0f2;
-	--warning: #98630b;
-	--warning-soft: #fff7e8;
+	--warning: var(--color-warn);
+	--warning-soft: var(--color-warn-soft);
 	--success: var(--color-pass);
-	--success-soft: #e8f7f1;
+	--success-soft: var(--color-pass-soft);
 }
 .dashboard-demo.dark {
 	--color-canvas: #101a2e;

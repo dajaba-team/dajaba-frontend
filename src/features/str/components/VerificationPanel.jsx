@@ -13,6 +13,7 @@ import {
 	VERIFICATION_STATUS_LABELS,
 } from "../verificationLabels"
 import { VERIFICATION_TEXT } from "../model/strRules"
+import StatusBadge from "../../../shared/ui/StatusBadge"
 
 // 검증 결과 패널 (SCRUM-116). 표의 코드 검사 6개·AI 평가 5개를 늘 다 보여 주고, 실패한 항목을 위로 올려요.
 // 표에 없는 검사 이름이 응답에 오면 이름 그대로 표 뒤에 보여 줘요(옛 GROUNDING만 뺌).
@@ -64,6 +65,12 @@ const failedFirst = (items) => [
 ]
 
 const CODE_STATE_TEXT = { PASS: "통과", FAIL: "실패", NONE: "검사 없음" }
+// 줄 상태·전체 결과 → 상태 배지 뜻(SCRUM-332). 강조는 배지에만 — 줄 테두리는 칠하지 않아요.
+const CHECK_STATE_TONES = { PASS: "success", FAIL: "danger", NONE: "neutral", SKIPPED: "neutral" }
+const verificationTone = (verification) => {
+	if (verification.passed) return "success"
+	return verification.status === "VERIFY_UNAVAILABLE" ? "warning" : "danger"
+}
 const LLM_STATE_TEXT = { PASS: "통과", FAIL: "미달", NONE: "결과 없음", SKIPPED: "평가 안 함" }
 
 // 줄의 section이 null이면 초안 전체를 본 검사예요(건수·근거 범위 등).
@@ -89,7 +96,9 @@ function CodeCheckRow({ item }) {
 			<div className="str-check-head">
 				<CheckName item={item} />
 				{item.label !== item.check && <code>{item.check}</code>}
-				<span className="str-check-state">{CODE_STATE_TEXT[item.state]}</span>
+				<StatusBadge className="str-check-state" tone={CHECK_STATE_TONES[item.state]}>
+					{CODE_STATE_TEXT[item.state]}
+				</StatusBadge>
 			</div>
 			{item.state === "NONE" && (
 				<p className="str-check-note">이번 검증에서 검사한 값이 없어요.</p>
@@ -120,10 +129,10 @@ function LlmCheckRow({ item, status }) {
 			<div className="str-check-head">
 				<CheckName item={item} />
 				{item.label !== item.check && <code>{item.check}</code>}
-				<span className="str-check-state">
+				<StatusBadge className="str-check-state" tone={CHECK_STATE_TONES[item.state]}>
 					{item.row?.score != null && `${item.row.score}점 · `}
 					{LLM_STATE_TEXT[item.state]}
-				</span>
+				</StatusBadge>
 			</div>
 			{item.state === "SKIPPED" && (
 				<p className="str-check-note">
@@ -205,11 +214,12 @@ export default function VerificationPanel({
 			<div className="str-panel-head">
 				<h2 id="str-verify-heading">검증 결과</h2>
 				<p>
-					<strong
-						className={`str-verify-status ${verification.passed ? "is-passed" : "is-failed"}`}
+					<StatusBadge
+						className="str-verify-status"
+						tone={verificationTone(verification)}
 					>
 						{statusText}
-					</strong>{" "}
+					</StatusBadge>{" "}
 					· {revisionLabel(verification.revisionNo)} 검증
 					{verification.producedAt && ` · ${formatSystemTime(verification.producedAt)}`}
 				</p>

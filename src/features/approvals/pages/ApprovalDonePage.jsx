@@ -15,6 +15,10 @@ import ConfirmDialog from "../../../shared/ui/ConfirmDialog"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
 import { formatSystemTime } from "../../../shared/format/time"
+import StatusBadge from "../../../shared/ui/StatusBadge"
+
+// 보고 마감 → 상태 배지 뜻(SCRUM-332). 지남 danger, 오늘 warning, 남음 neutral.
+const DEADLINE_TONES = { OVERDUE: "danger", TODAY: "warning", OPEN: "neutral" }
 
 // 이력에서 그 동작의 가장 최근 시각 — 상세 history 는 최근 20건(CASES 명세 API-02)이라 승인·제출 행은 그 안에 있어요.
 const latestAt = (history, action) =>
@@ -143,8 +147,8 @@ export default function ApprovalDonePage() {
 					{status === "APPROVED" && (
 						<>
 							{approvedAt && (
-								<p className="approval-badge" role="status">
-									{deadlineText(deadlineStatus(approvedAt))}
+								<p className="approval-deadline" role="status">
+									<DeadlineBadge approvedAt={approvedAt} />
 								</p>
 							)}
 							{isApprover ? (
@@ -258,4 +262,9 @@ export default function ApprovalDonePage() {
 			)}
 		</>
 	)
+}
+
+function DeadlineBadge({ approvedAt }) {
+	const status = deadlineStatus(approvedAt)
+	return <StatusBadge tone={DEADLINE_TONES[status.state]}>{deadlineText(status)}</StatusBadge>
 }

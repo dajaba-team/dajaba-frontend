@@ -2,7 +2,8 @@ import { useState } from "react"
 import { Link, useLocation, useSearchParams } from "react-router"
 import "../styles/cases.css"
 import { useCases } from "../hooks/useCases"
-import { REJECTION_LABELS, STATUS_LABELS, labelOf } from "../labels"
+import { REJECTION_LABELS, STATUS_LABELS, STATUS_TONES, labelOf } from "../labels"
+import StatusBadge from "../../../shared/ui/StatusBadge"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
 import CaseOverview from "../components/CaseOverview"
@@ -221,9 +222,9 @@ export default function CaseListPage() {
 												</td>
 												<td>{item.accountNo}</td>
 												<td>
-													<span className="case-status">
+													<StatusBadge tone={STATUS_TONES[item.status]}>
 														{statusText(item)}
-													</span>
+													</StatusBadge>
 												</td>
 												<td>{formatScore(item.score) ?? "—"}</td>
 												<td>{item.assignee?.displayName || "미배정"}</td>

@@ -17,8 +17,10 @@ import {
 	REJECTION_LABELS,
 	SCORE_STATUS_LABELS,
 	STATUS_LABELS,
+	STATUS_TONES,
 	labelOf,
 } from "../labels"
+import StatusBadge from "../../../shared/ui/StatusBadge"
 import { useGuide } from "../../../shared/ui/useGuide"
 import { caseDetailWorkflowGuide } from "../../../shared/ui/workflowGuide"
 
@@ -185,9 +187,9 @@ function CaseDetail({ caseNo }) {
 							<div className="case-heading-side">
 								{canAsk && <AskButton ask={ask} />}
 								<p className="case-heading-badges">
-									<span className="case-status">
+									<StatusBadge tone={STATUS_TONES[detail.status]}>
 										{labelOf(STATUS_LABELS, detail.status)}
-									</span>
+									</StatusBadge>
 									<span className="case-badge">
 										담당자 {detail.assignee?.displayName || "미배정"} · 버전{" "}
 										{detail.version}

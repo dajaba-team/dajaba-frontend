@@ -12,6 +12,19 @@ export const STATUS_LABELS = {
 	CLOSED: "종료",
 }
 
+// 케이스 상태 → 상태 배지 뜻(SCRUM-332, 05_ui.md 4절). 진행·할 일 info, 주의 warning, 반려 danger, 승인·보고 success, 종료 neutral.
+export const STATUS_TONES = {
+	OPEN: "info",
+	REVIEWING: "info",
+	ESCALATED: "warning",
+	DRAFTED: "info",
+	PENDING_APPROVAL: "info",
+	APPROVED: "success",
+	REPORTED: "success",
+	REJECTED: "danger",
+	CLOSED: "neutral",
+}
+
 export const CLOSE_REASON_LABELS = {
 	FALSE_POSITIVE: "오탐",
 	DUPLICATE: "중복 경보",
