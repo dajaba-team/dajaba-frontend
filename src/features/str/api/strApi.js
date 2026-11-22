@@ -61,6 +61,16 @@ export const toVerification = (data, currentRevisionNo = null) => ({
 
 // 초안 기준 최신 반려(BE GetStrDraft, ApprovalRepository.findLatestRejection).
 // narrative_unchanged: 반려 당시 본문 해시 == 지금 본문 해시. true면 S6이 409 NARRATIVE_UNCHANGED.
+// S2 references: 백엔드 GetStrDraft가 doc_title·page·score 등 다섯 필드만 반환해요.
+// text는 응답에서 제외되므로 프론트에서도 참조하거나 표시하지 않습니다.
+const toReference = (data) => ({
+	chunkId: data.chunk_id ?? null,
+	docId: data.doc_id ?? null,
+	docTitle: data.doc_title ?? null,
+	page: data.page ?? null,
+	score: data.score ?? null,
+})
+
 const toLastRejection = (data) => ({
 	reasonCode: data.reason_code,
 	comment: data.comment,
@@ -113,6 +123,7 @@ export function toDraft(data) {
 		suspicionTypesRecommended: data.suspicion_types_recommended ?? [],
 		suspicionLevelBranch: data.suspicion_level_branch ?? null,
 		suspicionLevelHq: data.suspicion_level_hq ?? null,
+		references: Array.isArray(data.references) ? data.references.map(toReference) : [],
 		// REVISE·VERIFY·SUBMIT·REGENERATE·CLOSE_WITH_DRAFT(조사역) / APPROVE·REJECT·REPORT(승인자) / *_PDF
 		availableActions: Array.isArray(data.available_actions) ? data.available_actions : null,
 	}
