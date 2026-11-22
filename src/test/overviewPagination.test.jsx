@@ -155,6 +155,9 @@ describe("SCRUM-337 조사역 대시보드는 내 담당만", () => {
 			"/cases?mine=1",
 		)
 		expect(screen.getByText(/나에게 배정된 케이스 기준/)).toBeInTheDocument()
+		expect(
+			screen.getByText(/보완할 초안은 보완 요청으로 반려돼 아직 다시 저장하지 않은 초안/),
+		).toBeInTheDocument()
 	})
 
 	it.each(["APPROVER", "ADMIN"])("%s는 지금처럼 전체를 센다(assignee 없음)", async (role) => {
