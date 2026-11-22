@@ -7,6 +7,18 @@ export function badgeLabel(total) {
 	return total >= NOTIFICATION_TOTAL_CAP ? `${NOTIFICATION_TOTAL_CAP}+` : String(total)
 }
 
+/**
+ * 목록 아래 "이전 알림 n건 더 있음"(BE cases.md 「업무 알림 조회」). total이 받은 줄 수보다 클 때만.
+ * total이 99에서 멈췄으면 실제로는 더 많을 수 있어 "n건 이상". 커서가 없어 더 불러오진 않아요.
+ */
+export function moreLabel(total, shown) {
+	const rest = (total ?? 0) - (shown ?? 0)
+	if (rest < 1) return null
+	return total >= NOTIFICATION_TOTAL_CAP
+		? `이전 알림 ${rest}건 이상 더 있음`
+		: `이전 알림 ${rest}건 더 있음`
+}
+
 const REJECTION_WORDS = { NEED_REVISION: "보완 요청", NOT_REPORTABLE: "보고 안 함" }
 
 /** 목록 한 줄 문구 (설계 7.8 예시). 모르는 type은 케이스 번호 + "새 알림". */

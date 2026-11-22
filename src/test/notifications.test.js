@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { notificationsApi } from "../features/notifications/api/notificationsApi"
 import {
 	badgeLabel,
+	moreLabel,
 	notificationPath,
 	notificationText,
 } from "../features/notifications/model/notificationRules"
@@ -154,6 +155,14 @@ describe("업무 알림 MSW — since·size", () => {
 })
 
 describe("업무 알림 화면 규칙", () => {
+	it('이전 알림 n건 — total이 받은 줄보다 클 때만, 99에서 멈췄으면 "이상"', () => {
+		expect(moreLabel(20, 20)).toBeNull()
+		expect(moreLabel(0, 0)).toBeNull()
+		expect(moreLabel(null, 0)).toBeNull()
+		expect(moreLabel(56, 50)).toBe("이전 알림 6건 더 있음")
+		expect(moreLabel(98, 50)).toBe("이전 알림 48건 더 있음")
+		expect(moreLabel(99, 50)).toBe("이전 알림 49건 이상 더 있음")
+	})
 	it("API 모듈이 camelCase로 옮긴다", async () => {
 		resetCases(users.inv01)
 		const { items, serverTime } = await notificationsApi.list({ size: 1 })

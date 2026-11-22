@@ -3,7 +3,12 @@ import { Link } from "react-router"
 import Icon from "../../../shared/ui/dashboard/Icon"
 import { formatSystemTime } from "../../../shared/format/time"
 import { useNotificationBadge, useNotificationList } from "../hooks/useNotifications"
-import { badgeLabel, notificationPath, notificationText } from "../model/notificationRules"
+import {
+	badgeLabel,
+	moreLabel,
+	notificationPath,
+	notificationText,
+} from "../model/notificationRules"
 import "../styles/notifications.css"
 
 // 위 띠 오른쪽 종 (「비동기 작업 알림 설계 문서」 7.5·7.8절, SCRUM-334). 모든 역할에 보여요.
@@ -64,6 +69,7 @@ function NotificationList({ list, isNew }) {
 			</div>
 		)
 	if (list.data.items.length === 0) return <p className="notification-empty">새 알림이 없어요.</p>
+	const more = moreLabel(list.data.total, list.data.items.length)
 	return (
 		<>
 			<ul className="notification-list">
@@ -82,9 +88,7 @@ function NotificationList({ list, isNew }) {
 					</li>
 				))}
 			</ul>
-			{list.data.total > list.data.items.length && (
-				<p className="notification-more">이전 알림 더 있음</p>
-			)}
+			{more && <p className="notification-more">{more}</p>}
 		</>
 	)
 }

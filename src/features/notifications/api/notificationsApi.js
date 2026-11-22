@@ -1,7 +1,7 @@
 import { apiClient } from "../../../shared/api/apiClient"
 
 // 업무 알림 조회 (「비동기 작업 알림 설계 문서」 6.5절, SCRUM-334·355).
-// 〔임시: BE 아직 없음 — SCRUM-355 리뷰 중〕 MSW(`src/mocks/notifications.js`)가 같은 모양으로 답해요.
+// BE develop(SCRUM-355 #169). MSW(`src/mocks/notifications.js`)도 같은 모양으로 답해요.
 // 응답 { items[{type, case_no, draft_no, reason_code, actor{login_id, display_name}, at}], total, server_time }.
 // 반려 코멘트·메모·계좌·금액·DB id는 응답에 없어요. 문구는 화면이 type으로 만들어요(model/notificationRules.js).
 

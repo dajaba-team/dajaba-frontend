@@ -182,7 +182,7 @@ describe("알림 종 — 갱신·실패·이동", () => {
 		)
 		await user.click(await summary("알림, 새 알림 56건"))
 		expect(await within(panel()).findAllByRole("listitem")).toHaveLength(50)
-		expect(within(panel()).getByText("이전 알림 더 있음")).toBeInTheDocument()
+		expect(within(panel()).getByText("이전 알림 6건 더 있음")).toBeInTheDocument()
 	})
 	it("알림을 누르면 해당 화면으로 가고 목록이 닫힌다", async () => {
 		const { user } = renderApp()
