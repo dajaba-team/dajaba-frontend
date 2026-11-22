@@ -20,6 +20,8 @@ export default function DashboardView({
 	mine = false,
 	dark = false,
 	hero = null,
+	// 우선 목록 자리를 바꿔 끼울 때(승인자 — 승인 대기 보고서, SCRUM-336). 없으면 점수 높은 케이스
+	focusPanel = null,
 }) {
 	const [period, setPeriod] = useState(10)
 	const [replay, setReplay] = useState(0)
@@ -235,62 +237,68 @@ export default function DashboardView({
 					</div>
 				</section>
 			</div>
-			<section className="analytics-panel focus-panel">
-				<div className="analytics-head">
-					<div>
-						<h2>지금 바로 확인해야 할 케이스</h2>
-						<p>위험 점수가 가장 높은 케이스예요. 지금 바로 열어 확인해 주세요.</p>
+			{focusPanel ?? (
+				<section className="analytics-panel focus-panel">
+					<div className="analytics-head">
+						<div>
+							<h2>지금 바로 확인해야 할 케이스</h2>
+							<p>위험 점수가 가장 높은 케이스예요. 지금 바로 열어 확인해 주세요.</p>
+						</div>
+						<Link className="text-link" to={mine ? `${listPath}?mine=1` : listPath}>
+							{mine ? "내 담당 케이스" : "전체 케이스"}{" "}
+							<Icon name="arrow" size={14} />
+						</Link>
 					</div>
-					<Link className="text-link" to={mine ? `${listPath}?mine=1` : listPath}>
-						{mine ? "내 담당 케이스" : "전체 케이스"} <Icon name="arrow" size={14} />
-					</Link>
-				</div>
-				{items.length ? (
-					items.slice(0, 3).map((item) => {
-						// 점수가 없으면 등급도 보이지 않게 — 미산출을 고위험처럼 칠하지 않는다.
-						const band =
-							item.score != null && ["HIGH", "MEDIUM", "LOW"].includes(item.scoreBand)
-								? item.scoreBand
-								: null
-						return (
-							<div
-								className="focus-case"
-								data-band={band ?? "NONE"}
-								key={item.caseNo}
-							>
-								<div className="case-symbol">
-									<Icon name="alert" size={22} />
-								</div>
-								<div className="case-identity">
-									<Link to={casePath(item.caseNo)}>{item.caseNo}</Link>
-									<span>
-										{item.accountNo ?? "계좌 정보 없음"} ·{" "}
-										{item.assignee?.displayName ?? "미배정"}
-									</span>
-								</div>
-								<div className="case-score">
-									{band && <em className="band-badge">{band}</em>}
-									<div className="case-score-main">
-										<strong>
-											{item.score == null ? "미산출" : item.score.toFixed(2)}
-										</strong>
-										<span>{STATUS_LABELS[item.status] ?? item.status}</span>
+					{items.length ? (
+						items.slice(0, 3).map((item) => {
+							// 점수가 없으면 등급도 보이지 않게 — 미산출을 고위험처럼 칠하지 않는다.
+							const band =
+								item.score != null &&
+								["HIGH", "MEDIUM", "LOW"].includes(item.scoreBand)
+									? item.scoreBand
+									: null
+							return (
+								<div
+									className="focus-case"
+									data-band={band ?? "NONE"}
+									key={item.caseNo}
+								>
+									<div className="case-symbol">
+										<Icon name="alert" size={22} />
 									</div>
+									<div className="case-identity">
+										<Link to={casePath(item.caseNo)}>{item.caseNo}</Link>
+										<span>
+											{item.accountNo ?? "계좌 정보 없음"} ·{" "}
+											{item.assignee?.displayName ?? "미배정"}
+										</span>
+									</div>
+									<div className="case-score">
+										{band && <em className="band-badge">{band}</em>}
+										<div className="case-score-main">
+											<strong>
+												{item.score == null
+													? "미산출"
+													: item.score.toFixed(2)}
+											</strong>
+											<span>{STATUS_LABELS[item.status] ?? item.status}</span>
+										</div>
+									</div>
+									<Link className="case-open" to={casePath(item.caseNo)}>
+										지금 확인 <Icon name="arrow" size={14} />
+									</Link>
 								</div>
-								<Link className="case-open" to={casePath(item.caseNo)}>
-									지금 확인 <Icon name="arrow" size={14} />
-								</Link>
-							</div>
-						)
-					})
-				) : (
-					<p className="dashboard-empty">
-						{mine
-							? "나에게 배정된 케이스가 없습니다."
-							: "조회 가능한 케이스가 없습니다."}
-					</p>
-				)}
-			</section>
+							)
+						})
+					) : (
+						<p className="dashboard-empty">
+							{mine
+								? "나에게 배정된 케이스가 없습니다."
+								: "조회 가능한 케이스가 없습니다."}
+						</p>
+					)}
+				</section>
+			)}
 			<p className="analytics-footnote">
 				{demo
 					? "시연용 합성 데이터 · 실제 운영 실적이 아닙니다."
