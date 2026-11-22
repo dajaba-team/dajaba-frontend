@@ -95,8 +95,12 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 			},
 		])
 		expect(JSON.stringify(draft.references)).not.toContain("원문 조각")
-		expect(toDraft({ draft_no: DRAFT_NO, access: "FULL", references: [] }).references).toEqual([])
-		expect(toDraft({ draft_no: DRAFT_NO, access: "FULL", references: null }).references).toEqual([])
+		expect(toDraft({ draft_no: DRAFT_NO, access: "FULL", references: [] }).references).toEqual(
+			[],
+		)
+		expect(
+			toDraft({ draft_no: DRAFT_NO, access: "FULL", references: null }).references,
+		).toEqual([])
 	})
 
 	it("검증 결과는 계약서 S5 모양(코드 검사 5종·AI 평가 5종)으로 옮긴다", async () => {

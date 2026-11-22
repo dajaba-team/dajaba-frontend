@@ -23,7 +23,9 @@ export default function StrReferencePanel({ references = [] }) {
 							</p>
 							<p className="str-reference-meta">
 								<span>
-									{reference.page != null ? `PDF ${reference.page}쪽` : "PDF 쪽 정보 없음"}
+									{reference.page != null
+										? `PDF ${reference.page}쪽`
+										: "PDF 쪽 정보 없음"}
 								</span>
 								<span>
 									유사도{" "}

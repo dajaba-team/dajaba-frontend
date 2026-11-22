@@ -7,9 +7,27 @@ describe("STR 참고 사례 패널", () => {
 		render(
 			<StrReferencePanel
 				references={[
-					{ chunkId: "c-1", docId: "d-1", docTitle: "STR 작성 사례집", page: 12, score: 0.83 },
-					{ chunkId: "c-2", docId: "d-2", docTitle: "의심거래 유형", page: 3, score: 0.71 },
-					{ chunkId: "c-3", docId: "d-3", docTitle: "자금세탁 의심거래 분석 사례", page: 43, score: 0.68 },
+					{
+						chunkId: "c-1",
+						docId: "d-1",
+						docTitle: "STR 작성 사례집",
+						page: 12,
+						score: 0.83,
+					},
+					{
+						chunkId: "c-2",
+						docId: "d-2",
+						docTitle: "의심거래 유형",
+						page: 3,
+						score: 0.71,
+					},
+					{
+						chunkId: "c-3",
+						docId: "d-3",
+						docTitle: "자금세탁 의심거래 분석 사례",
+						page: 43,
+						score: 0.68,
+					},
 				]}
 			/>,
 		)
