@@ -88,7 +88,8 @@ describe("데이터·배치 운영 — 점수 산출 (SCRUM-221)", () => {
 
 		await user.click(within(scoreCard()).getByRole("button", { name: "점수 재처리" }))
 		expect(await within(scoreCard()).findByText("점수 1건을 산출했어요.")).toBeInTheDocument()
-		expect(within(scoreCard()).getByRole("button", { name: "실행" })).toBeEnabled()
+		// 남은 실패가 없으면 [다시 실행] — 그 뒤 새로 생긴 대상만 보내요(SCRUM-344)
+		expect(within(scoreCard()).getByRole("button", { name: "다시 실행" })).toBeEnabled()
 		expect(within(scoreCard()).getByText("완료")).toBeInTheDocument()
 		expect(results).toHaveTextContent("점수 산출완료2022-09-02 성공 1 / 실패 0케이스 생성")
 	})
@@ -113,15 +114,14 @@ describe("데이터·배치 운영 — 점수 산출 (SCRUM-221)", () => {
 			chunks: { total: 2, failed: 1 },
 			model_versions: ["model-v2"],
 		})
-		await user.click(within(scoreCard()).getByRole("button", { name: "실행" }))
+		await user.click(within(scoreCard()).getByRole("button", { name: "다시 실행" }))
 		expect(await within(scoreCard()).findByText(/598건 성공, 2건 실패/)).toBeInTheDocument()
 		expect(within(scoreCard()).getByText(/다시 보낼 실패 1건/)).toBeInTheDocument()
 		expect(
 			within(scoreCard()).getByText(/다시 보내도 결과가 바뀌지 않는 실패 1건/),
 		).toBeInTheDocument()
-		expect(
-			within(scoreCard()).getByText("묶음 2개 중 호출 실패 1개 · 모델 model-v2"),
-		).toBeInTheDocument()
+		expect(within(scoreCard()).getByText("묶음 2개 중 호출 실패 1개")).toBeInTheDocument()
+		expect(within(scoreCard()).getByText("모델 model-v2")).toHaveAttribute("title", "model-v2")
 		expect(within(scoreCard()).getByText("일부 실패")).toBeInTheDocument()
 
 		// AI 가 꺼져 하나도 성공 못 하면(테스트 11-2) 배지는 "일부 실패"가 아니라 "실패", 다음 행동은 재처리
