@@ -122,6 +122,20 @@ const toSummary = (data) =>
 			}
 		: null
 
+// 이전 경보 한 줄 (C2 prior_alerts, BE SCRUM-239). 같은 법인의 앞선 경보, 최근 것부터 최대 20건.
+// reference_ts 는 데이터 시각, 계좌는 가린 값만. 점수 전·실패면 score null, 그 경보로 만든 케이스가 없으면 case_no null.
+const toPriorAlert = (data) => ({
+	alertNo: data.alert_no,
+	ruleId: data.rule_id,
+	batchDate: data.batch_date,
+	referenceTs: data.reference_ts,
+	accountRef: data.account_ref ?? null,
+	accountNo: data.account_no ?? null,
+	scoreStatus: data.score_status ?? null,
+	score: data.score ?? null,
+	caseNo: data.case_no ?? null,
+})
+
 // 아직 서버가 null로 주는 칸(current_draft 등)은 화면을 만들 때 옮겨요.
 const toCaseDetail = (data) => ({
 	...toCaseSummary(data),
@@ -133,6 +147,7 @@ const toCaseDetail = (data) => ({
 	investigatorNotes: data.investigator_notes ?? null,
 	aggregates: toAggregates(data.aggregates),
 	currentDraftNo: data.current_draft_no ?? null,
+	priorAlerts: (data.prior_alerts ?? []).map(toPriorAlert),
 	history: (data.history ?? []).map(toHistory),
 	availableActions: data.available_actions ?? [],
 })

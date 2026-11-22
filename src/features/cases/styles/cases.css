@@ -1869,3 +1869,17 @@
 	box-shadow: inset 3px 0 0 #547edc;
 	font-weight: 700;
 }
+/* 이전 경보 표(SCRUM-239) — 경보 번호·시각·케이스 번호가 칸 안에서 쪼개지지 않게, 좁으면 가로 스크롤.
+   왼쪽 열 폭에 들어가게 글자는 한 단계 작게, 탐지 규칙은 경보 번호 아래 줄로. */
+.prior-alerts-table {
+	font-size: var(--font-small);
+}
+.prior-alert-rule {
+	display: block;
+	color: var(--color-muted);
+}
+.prior-alerts-table th,
+.prior-alerts-table td {
+	padding-inline: var(--space-4);
+	white-space: nowrap;
+}

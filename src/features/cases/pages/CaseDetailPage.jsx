@@ -10,6 +10,7 @@ import CaseAskPanel from "../components/CaseAskPanel"
 import bearFace from "../../../shared/assets/bear-face.png"
 import CaseEvidenceCard from "../components/CaseEvidenceCard"
 import CaseNotesCard from "../components/CaseNotesCard"
+import CasePriorAlerts from "../components/CasePriorAlerts"
 import CaseScoreReasons from "../components/CaseScoreReasons"
 import { formatScore } from "../../../shared/format/score"
 import {
@@ -238,6 +239,7 @@ function CaseDetail({ caseNo }) {
 									<AlertPanel alert={detail.alert} />
 								</div>
 								<CaseScoreReasons latestScore={detail.latestScore} />
+								<CasePriorAlerts priorAlerts={detail.priorAlerts} />
 							</div>
 							<aside className="case-detail-aside" aria-label="메모와 다음 작업">
 								<CaseNotesCard detail={detail} onRefresh={() => query.refetch()} />

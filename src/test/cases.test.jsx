@@ -1130,8 +1130,9 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		expect(within(route).getByText("4,600 Euro")).toBeInTheDocument()
 		// 화면이 찾은 길이지 룰 판정이 아니라고 적어요 (SCRUM-296)
 		expect(screen.getByText("화면에서 시간 순서로 찾은 길 · 룰 판정 아님")).toBeInTheDocument()
-		// 경로 표에 거래 ID가 단계 순서대로
-		const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1)
+		// 경로 표에 거래 ID가 단계 순서대로 (상세에는 이전 경보 표도 있어서 경로 표 안에서만 찾아요)
+		const ledger = screen.getByText("경로 거래 전체 표").closest("details")
+		const rows = within(within(ledger).getByRole("table")).getAllByRole("row").slice(1)
 		expect(rows.map((row) => within(row).getAllByRole("cell").at(-1).textContent)).toEqual([
 			"5101",
 			"5102",
@@ -1383,5 +1384,34 @@ describe("케이스 목록 필터 (SCRUM-181)", () => {
 		renderApp("/cases")
 		expect(await screen.findByText("반려 · 보완 요청")).toBeInTheDocument()
 		expect(screen.getByText("반려 · 보고 안 함")).toBeInTheDocument()
+	})
+})
+
+describe("이전 경보 (SCRUM-239)", () => {
+	it("같은 법인의 이전 경보를 「최근 20건」 제목으로 보여 주고, 케이스가 된 경보는 링크로", async () => {
+		renderApp("/cases/CASE-2022-001001")
+		const card = await screen.findByRole("region", { name: "이전 경보 · 최근 20건" })
+		expect(within(card).getByText("최근 20건까지만", { exact: false })).toBeInTheDocument()
+		const rows = within(within(card).getByRole("table")).getAllByRole("row").slice(1)
+		expect(rows).toHaveLength(2)
+		expect(within(rows[0]).getByRole("link", { name: "CASE-2022-001003" })).toHaveAttribute(
+			"href",
+			"/cases/CASE-2022-001003",
+		)
+		expect(within(rows[0]).getByText("0.7272")).toBeInTheDocument()
+		// 점수 전이면 점수 대신 상태, 케이스가 없으면 「없음」
+		expect(within(rows[1]).getByText("산출 전")).toBeInTheDocument()
+		expect(within(rows[1]).getByText("없음")).toBeInTheDocument()
+	})
+	it("법인을 모르거나 이전 경보가 없으면 빈 안내만 — 서버가 준 [] 그대로", async () => {
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}`, () =>
+				HttpResponse.json(detailJson({ prior_alerts: [] })),
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		const card = await screen.findByRole("region", { name: "이전 경보 · 최근 20건" })
+		expect(within(card).getByText("같은 법인의 이전 경보가 없습니다.")).toBeInTheDocument()
+		expect(within(card).queryByRole("table")).not.toBeInTheDocument()
 	})
 })

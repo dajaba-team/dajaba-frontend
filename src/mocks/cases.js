@@ -110,6 +110,31 @@ export function seedCases() {
 			assignee: user("inv01"),
 			investigator_notes: "거래 목적 확인 필요",
 			current_draft_no: "DRF-000124",
+			// 같은 법인의 앞선 경보 (C2 prior_alerts) — 케이스가 된 것 하나, 점수 전이라 케이스 없는 것 하나
+			prior_alerts: [
+				{
+					alert_no: "ALT-20221025-000042",
+					rule_id: "R02_FAN_IN",
+					batch_date: "2022-10-25",
+					reference_ts: "2022-10-25T00:00:00",
+					account_ref: "ACR-0001",
+					account_no: "10_****8842",
+					score_status: "SCORED",
+					score: 0.7272,
+					case_no: "CASE-2022-001003",
+				},
+				{
+					alert_no: "ALT-20221018-000017",
+					rule_id: "R01_STRUCTURING",
+					batch_date: "2022-10-18",
+					reference_ts: "2022-10-18T00:00:00",
+					account_ref: "ACR-0001",
+					account_no: "10_****8842",
+					score_status: "PENDING",
+					score: null,
+					case_no: null,
+				},
+			],
 			transactions: TRANSACTIONS_1001,
 			rejection_reason_code: null,
 			close_reason: null,
@@ -281,7 +306,8 @@ export function detailResponse(viewer, item) {
 		latest_summary: item.latest_summary ?? null,
 		current_draft_no: item.current_draft_no,
 		current_draft: null,
-		prior_alerts: [],
+		// 같은 법인의 앞선 경보 최근 20건 (BE SCRUM-239). 예시 데이터가 있는 케이스만, 나머지는 [].
+		prior_alerts: (item.prior_alerts ?? []).slice(0, 20),
 		history: item.history.slice(0, 20),
 		available_actions: availableActions(viewer, item),
 	}

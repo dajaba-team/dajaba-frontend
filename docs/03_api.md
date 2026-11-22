@@ -1,6 +1,6 @@
 # 03. API 연동
 
-> v0.4 · 2026-11-22 · 초안(팀 확인 중) · 정리 지윤 · 11/19 계약서 v0.2(11/19본) 대조 반영(SCRUM-315~318) · 11/22 참고 사례 찾기 〔임시〕(SCRUM-333)
+> v0.4 · 2026-11-22 · 초안(팀 확인 중) · 정리 지윤 · 11/19 계약서 v0.2(11/19본) 대조 반영(SCRUM-315~318) · 11/22 참고 사례 찾기 〔임시〕(SCRUM-333) · 11/22 상세 `prior_alerts`(SCRUM-239)
 
 백엔드 API를 화면에 붙일 때 보는 문서예요. 백엔드 쪽 규칙은 [BE 03 §2·§3]이 정본이고, 여기는 **프론트가 그걸 어떻게 받는지**를 적어요.
 
@@ -109,7 +109,7 @@
 | 동작           | API                                                                                           | 응답                                                                                                                                                                                                                   | 프론트                                 |
 | -------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
 | 목록           | `GET /api/v1/cases?status=A,B&assignee=me\|login_id&from=&to=&sort=&page=(0부터)&size=`       | `{ items, page, size, total }` — 화면에는 page 1부터. 줄마다 `available_actions`(목록 버튼도 이것만). 필터·정렬·페이지는 주소 query에 두고 상세 링크 state로 돌아와요(SCRUM-181). 시작일 > 종료일이면 부르지 않고 안내 | `casesApi.list`                        |
-| 상세           | `GET /api/v1/cases/{case_no}`                                                                 | C2 모양 + `available_actions`, 없으면 404 `CASE_NOT_FOUND`                                                                                                                                                             | `casesApi.detail`                      |
+| 상세           | `GET /api/v1/cases/{case_no}`                                                                 | C2 모양 + `available_actions`, 없으면 404 `CASE_NOT_FOUND`. `prior_alerts`는 같은 법인의 앞선 경보 최근 20건(BE SCRUM-239) — 법인 모르면 `[]`                                                                          | `casesApi.detail`                      |
 | 배정           | `POST …/assign` `{version}` · 관리자 `{assignee, version}`                                    | 공통 변경 응답 M → 상세·목록 다시 조회                                                                                                                                                                                 | `casesApi.assign`                      |
 | 담당자 변경    | `POST …/reassign` `{assignee, comment?, version}` (ADMIN만, BE SCRUM-177)                     | M. 같은 담당자면 그대로, 비활성·조사역 아님 409 `INVALID_ASSIGNEE` → 확인창이 조사역 목록(`GET /admin/users?role=INVESTIGATOR&is_active=true`)을 다시 불러요                                                           | `casesApi.reassign` · `ReassignDialog` |
 | 에스컬레이션   | `POST …/escalate` `{comment, version}`                                                        | M                                                                                                                                                                                                                      | `casesApi.escalate`                    |
