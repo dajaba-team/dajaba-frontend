@@ -60,7 +60,10 @@ describe("데이터·배치 운영 — 원천 적재·룰 스캔 (SCRUM-220)", (
 		expect(
 			await within(scanCard).findByText(/2022-09-02 경보 3건을 만들었어요/),
 		).toBeInTheDocument()
-		expect(within(scanCard).getByText("R02_FAN_IN (버전 1) — 3건")).toBeInTheDocument()
+		expect(within(scanCard).getByText("R02 집중 입금 · 3건")).toHaveAttribute(
+			"title",
+			"R02_FAN_IN 버전 1",
+		)
 
 		const table = within(screen.getByRole("region", { name: "실행 결과" })).getByRole("table")
 		expect(within(table).getAllByRole("row")).toHaveLength(3) // 머리 + 적재 + 룰 스캔
@@ -120,6 +123,74 @@ describe("데이터·배치 운영 — 원천 적재·룰 스캔 (SCRUM-220)", (
 		expect(await within(dialog).findByRole("alert")).toHaveTextContent("이미 성공한 배치입니다")
 		await user.click(within(dialog).getByRole("button", { name: "취소" }))
 		expect(screen.getByLabelText("분석 날짜")).toHaveValue("2022-09-02")
+	})
+
+	it("이미 적재된 DB면 화면을 열 때부터 원천 적재가 완료이고 룰 스캔 버튼이 진하다 (SCRUM-344)", async () => {
+		server.use(
+			http.get("*/api/v1/admin/batches", ({ request }) => {
+				const url = new URL(request.url)
+				expect(url.searchParams.get("type")).toBe("LOAD_DATASET")
+				expect(url.searchParams.get("status")).toBe("SUCCEEDED")
+				return HttpResponse.json({
+					items: [
+						{
+							batch_run_id: 1,
+							batch_type: "LOAD_DATASET",
+							batch_date: "2026-11-12",
+							status: "SUCCEEDED",
+							rows_in: 5078345,
+							rows_out: 5078345,
+							started_at: "2026-11-12T03:00:00Z",
+							finished_at: "2026-11-12T03:05:00Z",
+						},
+					],
+					page: 0,
+					size: 1,
+					total: 1,
+				})
+			}),
+		)
+		const user = renderPage()
+		const loadCard = await screen.findByRole("region", { name: "원천 적재" })
+		expect(
+			await within(loadCard).findByText(/이미 적재돼 있어요 — 거래 5,078,345건 \(실행 /),
+		).toBeInTheDocument()
+		expect(within(loadCard).getByRole("button", { name: "완료됨" })).toBeDisabled()
+		expect(within(loadCard).getByText("완료")).toBeInTheDocument() // 상태 배지
+		expect(screen.getByRole("region", { name: "실행 결과" })).toHaveTextContent(
+			"원천 적재완료이미 적재됨 · 거래 5,078,345건룰 스캔",
+		)
+
+		await user.type(screen.getByLabelText("분석 날짜"), "2022-09-02")
+		expect(
+			within(screen.getByRole("region", { name: "룰 스캔" })).getByRole("button", {
+				name: "실행",
+			}),
+		).toHaveAttribute("data-primary", "true")
+	})
+
+	it("케이스 생성은 위 분석 날짜를 쓰는 4번 카드이고, 결과가 실행 결과 표에 줄로 남는다 (SCRUM-344)", async () => {
+		const user = renderPage()
+		await load(user)
+		await scan(user)
+		await screen.findByText(/경보 3건을 만들었어요/)
+		const card = screen.getByRole("region", { name: "케이스 생성" })
+		expect(within(card).queryByLabelText("경보 배치 기준일")).not.toBeInTheDocument()
+		expect(within(card).getByText("대기")).toBeInTheDocument()
+		await user.click(within(card).getByRole("button", { name: "케이스 생성" }))
+		const dialog = await screen.findByRole("dialog", { name: "케이스 생성" })
+		expect(dialog).toHaveTextContent("2022-09-02 경보 중 HIGH만")
+		await user.click(within(dialog).getByRole("button", { name: "생성" }))
+		expect(
+			await within(card).findByText(/조사 케이스 1건을 생성했어요. .*\(실행 /),
+		).toBeInTheDocument()
+		expect(within(card).getByText("완료")).toBeInTheDocument()
+
+		const table = within(screen.getByRole("region", { name: "실행 결과" })).getByRole("table")
+		expect(within(table).getAllByRole("row")).toHaveLength(4) // 머리 + 적재 + 룰 스캔 + 케이스 생성
+		expect(table).toHaveTextContent(
+			"케이스 생성완료2022-09-02 케이스 1건조사 케이스에서 담당자 배정",
+		)
 	})
 
 	it("적재 상태 자동 조회는 상한을 넘으면 멈추고 [상태 다시 확인]으로 직접 부른다", async () => {

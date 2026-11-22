@@ -347,13 +347,48 @@ describe("케이스 조사", () => {
 		expect(bodies).toEqual([{ investigator_notes: "거래 목적 확인 필요 추가", version: 2 }])
 		server.events.removeAllListeners()
 	})
-	it("미배정 케이스는 조사역이 직접 맡고, 맡으면 메모를 쓸 수 있다", async () => {
-		const user = renderApp("/cases/CASE-2022-001002")
+	it("미배정 케이스는 조사역에게 배정 버튼이 없고, 직접 부르면 403 FORBIDDEN이다 (SCRUM-339)", async () => {
+		renderApp("/cases/CASE-2022-001002")
 		expect(await screen.findByText("현재 케이스는 읽기 전용입니다.")).toBeInTheDocument()
-		await user.click(screen.getByRole("button", { name: "담당 맡기" }))
-		expect(await screen.findByRole("textbox", { name: "메모 내용" })).toBeInTheDocument()
-		expect(screen.getByText(/담당자 예시 inv01/)).toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "담당 맡기" })).not.toBeInTheDocument()
+		expect(screen.queryByRole("button", { name: "담당자 배정" })).not.toBeInTheDocument()
+		const response = await fetch("/api/v1/cases/CASE-2022-001002/assign", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ version: 0, assignee: "inv01" }),
+		})
+		expect(response.status).toBe(403)
+		expect((await response.json()).error.code).toBe("FORBIDDEN")
+	})
+	it("조사역 배정 요청은 틀린 version·없는 케이스여도 409·404보다 403 FORBIDDEN이 먼저다 (BE #160)", async () => {
+		renderApp("/cases/CASE-2022-001002")
+		await screen.findByText("현재 케이스는 읽기 전용입니다.")
+		const post = (caseNo, command, version) =>
+			fetch(`/api/v1/cases/${caseNo}/${command}`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ version, assignee: "inv02" }),
+			})
+		for (const response of [
+			await post("CASE-2022-001002", "assign", 999),
+			await post("CASE-NOPE", "assign", 0),
+			await post(REVIEWING, "reassign", 999),
+		]) {
+			expect(response.status).toBe(403)
+			expect((await response.json()).error.code).toBe("FORBIDDEN")
+		}
+	})
+	it("관리자가 배정하면 조사역은 로그인해서 그 케이스에 메모를 쓸 수 있다 (SCRUM-339)", async () => {
+		const user = renderApp("/cases/CASE-2022-001002", true, "admin")
+		await user.click(await screen.findByRole("button", { name: "담당자 배정" }))
+		await user.type(screen.getByLabelText("배정할 조사역 아이디"), "inv01")
+		await user.click(screen.getByRole("button", { name: "배정" }))
+		expect(await screen.findByText(/담당자 예시 inv01/)).toBeInTheDocument()
+		await user.click(screen.getByRole("button", { name: "로그아웃" }))
+		await screen.findByText("로그인이 필요합니다.")
+		await login(user, "inv01")
+		expect(await screen.findByRole("textbox", { name: "메모 내용" })).toBeInTheDocument()
+		expect(screen.queryByRole("button", { name: "담당자 배정" })).not.toBeInTheDocument()
 	})
 	it("관리자 배정은 조사역이 아니면 거절되고 입력을 남겨 다시 고칠 수 있다", async () => {
 		const user = renderApp("/cases/CASE-2022-001002", true, "admin")
@@ -386,6 +421,11 @@ describe("케이스 조사", () => {
 		await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
 		expect(await screen.findByText(/담당자 예시 inv02/)).toBeInTheDocument()
 		expect(bodies).toEqual([{ assignee: "inv02", comment: "업무 분담", version: 1 }])
+		// 처리 이력에 누구에게서 누구로 — 변경은 둘 다, 배정은 받은 사람만 (SCRUM-348)
+		await user.click(screen.getByRole("button", { name: "처리 이력" }))
+		const history = screen.getByRole("region", { name: "처리 이력" })
+		expect(await within(history).findByText("(예시 inv01 → 예시 inv02)")).toBeInTheDocument()
+		expect(within(history).getByText("(→ 예시 inv01)")).toBeInTheDocument()
 		server.events.removeAllListeners()
 	})
 	it("담당자 변경이 409 INVALID_ASSIGNEE면 안내하고 조사역 목록을 다시 부른다", async () => {
