@@ -286,6 +286,56 @@ describe("근거 거래 강조", () => {
 })
 
 describe("보내는 중", () => {
+	it("기존 질문 아래에 대기 중 카드를 놓고, 완료된 새 답도 맨 아래에 표시한다", async () => {
+		let release
+		const gate = new Promise((resolve) => {
+			release = resolve
+		})
+		const row = (n) => ({
+			question_no: `QST-00000${n}`,
+			case_no: REVIEWING,
+			question: `질문 ${n}`,
+			status: "NO_DATA",
+			out_of_scope_reason: null,
+			answer: null,
+			evidence_transaction_ids: [],
+			asked_by: { login_id: "inv01", display_name: "예시 inv01" },
+			created_at: "2026-11-20T01:00:00Z",
+		})
+		const saved = [row(2), row(1)] // C9 최신순
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}/questions`, () =>
+				HttpResponse.json({ items: saved, page: 0, size: 5, total: saved.length }),
+			),
+			http.post(`*/api/v1/cases/${REVIEWING}/questions`, async () => {
+				await gate
+				const latest = row(3)
+				saved.unshift(latest)
+				return HttpResponse.json(latest, { status: 201 })
+			}),
+		)
+		const user = renderApp(`/cases/${REVIEWING}`)
+		await user.click(await screen.findByRole("button", { name: "근거 질의" }))
+		const panel = await screen.findByRole("dialog", { name: "케이스 근거 질의" })
+		await within(panel).findByRole("heading", { name: "질문 2" })
+		await ask(user, panel, "질문 3")
+		await within(panel).findByText(/근거 확인 중/)
+		expect(
+			within(panel)
+				.getAllByRole("heading", { name: /질문 [123]/ })
+				.map((heading) => heading.textContent),
+		).toEqual(["질문 1", "질문 2", "질문 3"])
+		release()
+		await waitFor(() => {
+			expect(within(panel).queryByText(/근거 확인 중/)).not.toBeInTheDocument()
+			expect(
+				within(panel)
+					.getAllByRole("heading", { name: /질문 [123]/ })
+					.map((heading) => heading.textContent),
+			).toEqual(["질문 1", "질문 2", "질문 3"])
+		})
+	})
+
 	it("답을 기다리는 동안 [닫기]·Esc 로 닫히지 않고, 답이 오면 다시 닫을 수 있다", async () => {
 		let release
 		const gate = new Promise((resolve) => {
@@ -347,11 +397,27 @@ describe("지난 질문(C9)", () => {
 		).toBeInTheDocument()
 		expect(within(panel).queryByText("질의 예시")).not.toBeInTheDocument()
 		expect(asked[0]).toBe("0/5")
+		expect(
+			within(panel)
+				.getAllByRole("heading", { name: /지난 질문/ })
+				.map((heading) => heading.textContent),
+		).toEqual(["지난 질문 3", "지난 질문 4", "지난 질문 5", "지난 질문 6", "지난 질문 7"])
+		// 오래된 질문이 위에 있으니 [이전 질의]도 목록 위에 있어요.
+		const pages = within(panel).getByRole("navigation", { name: "질의 이력 페이지" })
+		const oldest = within(panel).getByRole("heading", { name: "지난 질문 3" })
+		expect(
+			pages.compareDocumentPosition(oldest) & Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy()
 		await user.click(within(panel).getByRole("button", { name: "이전 질의" }))
 		expect(
 			await within(panel).findByRole("heading", { name: "지난 질문 1" }),
 		).toBeInTheDocument()
 		expect(asked).toContain("1/5")
+		expect(
+			within(panel)
+				.getAllByRole("heading", { name: /지난 질문/ })
+				.map((heading) => heading.textContent),
+		).toEqual(["지난 질문 1", "지난 질문 2"])
 	})
 	it("응답 없이 끊기면 실패로 단정하지 않고 C9 를 다시 불러 확인한다", async () => {
 		let saved = false
