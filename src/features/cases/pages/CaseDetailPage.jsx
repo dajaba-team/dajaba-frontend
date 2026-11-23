@@ -19,7 +19,7 @@ import { caseDetailWorkflowGuide } from "../../../shared/ui/workflowGuide"
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
 // 위계(SCRUM-369 B안): 맨 위 판단 요약(등급·점수·상태·다음 처리) → 점수 근거 → 거래 분석 → 조사 메모 → 처리 작업 → 케이스·경보 정보.
 // 넓은 화면(77.5rem~)은 2단: 왼쪽 점수 근거, 오른쪽 메모·처리 작업·정보, 거래 분석은 그 아래 전체 폭 —
-// 그래프 글자가 줄어들지 않고 표가 가로로 잘리지 않게. 좁은 화면에선 한 줄로, 거래 분석이 메모보다 먼저 와요(CSS order).
+// 그래프 글자가 줄어들지 않고 표가 가로로 잘리지 않게. 좁은 화면에선 마크업 순서대로 한 줄 — 거래 분석이 메모보다 먼저(Tab 순서도 같게, SCRUM-373).
 // 채움 파랑 버튼은 판단 요약의 [다음 처리] 하나예요.
 
 // 질문 채팅창 상태 — 열림·접힘(근거 보기)·근거 강조. 케이스가 바뀌면 key 로 새로 시작해요(SCRUM-303).
@@ -120,15 +120,6 @@ function CaseDetail({ caseNo }) {
 							<div className="case-detail-main">
 								<CaseScoreReasons latestScore={detail.latestScore} />
 							</div>
-							<aside className="case-detail-aside" aria-label="메모와 처리 작업">
-								<CaseNotesCard detail={detail} onRefresh={() => query.refetch()} />
-								<CaseActions
-									detail={detail}
-									request={actionRequest}
-									primaryKey={nextActionOf(detail)?.key ?? null}
-								/>
-								<CaseInfoCard detail={detail} />
-							</aside>
 							<div className="case-evidence">
 								<CaseEvidenceCard
 									detail={detail}
@@ -139,6 +130,15 @@ function CaseDetail({ caseNo }) {
 									}
 								/>
 							</div>
+							<aside className="case-detail-aside" aria-label="메모와 처리 작업">
+								<CaseNotesCard detail={detail} onRefresh={() => query.refetch()} />
+								<CaseActions
+									detail={detail}
+									request={actionRequest}
+									primaryKey={nextActionOf(detail)?.key ?? null}
+								/>
+								<CaseInfoCard detail={detail} />
+							</aside>
 						</div>
 					</>
 				)}
