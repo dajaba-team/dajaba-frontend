@@ -321,13 +321,17 @@ describe("보내는 중", () => {
 		await ask(user, panel, "질문 3")
 		await within(panel).findByText(/근거 확인 중/)
 		expect(
-			within(panel).getAllByRole("heading", { name: /질문 [123]/ }).map((heading) => heading.textContent),
+			within(panel)
+				.getAllByRole("heading", { name: /질문 [123]/ })
+				.map((heading) => heading.textContent),
 		).toEqual(["질문 1", "질문 2", "질문 3"])
 		release()
 		await waitFor(() => {
 			expect(within(panel).queryByText(/근거 확인 중/)).not.toBeInTheDocument()
 			expect(
-				within(panel).getAllByRole("heading", { name: /질문 [123]/ }).map((heading) => heading.textContent),
+				within(panel)
+					.getAllByRole("heading", { name: /질문 [123]/ })
+					.map((heading) => heading.textContent),
 			).toEqual(["질문 1", "질문 2", "질문 3"])
 		})
 	})
@@ -394,7 +398,9 @@ describe("지난 질문(C9)", () => {
 		expect(within(panel).queryByText("질의 예시")).not.toBeInTheDocument()
 		expect(asked[0]).toBe("0/5")
 		expect(
-			within(panel).getAllByRole("heading", { name: /지난 질문/ }).map((heading) => heading.textContent),
+			within(panel)
+				.getAllByRole("heading", { name: /지난 질문/ })
+				.map((heading) => heading.textContent),
 		).toEqual(["지난 질문 3", "지난 질문 4", "지난 질문 5", "지난 질문 6", "지난 질문 7"])
 		await user.click(within(panel).getByRole("button", { name: "이전 질의" }))
 		expect(
@@ -402,7 +408,9 @@ describe("지난 질문(C9)", () => {
 		).toBeInTheDocument()
 		expect(asked).toContain("1/5")
 		expect(
-			within(panel).getAllByRole("heading", { name: /지난 질문/ }).map((heading) => heading.textContent),
+			within(panel)
+				.getAllByRole("heading", { name: /지난 질문/ })
+				.map((heading) => heading.textContent),
 		).toEqual(["지난 질문 1", "지난 질문 2"])
 	})
 	it("응답 없이 끊기면 실패로 단정하지 않고 C9 를 다시 불러 확인한다", async () => {
