@@ -492,7 +492,7 @@
 	--band-soft: var(--color-soft);
 }
 .focus-case[data-band="HIGH"] {
-	--band: var(--risk-high);
+	--band: var(--risk-high-strong);
 	--band-soft: var(--risk-high-soft);
 }
 .focus-case[data-band="MEDIUM"] {

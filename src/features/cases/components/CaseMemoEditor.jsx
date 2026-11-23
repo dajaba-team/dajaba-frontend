@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useCaseCommand } from "../hooks/useCases"
 import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
+import Button from "../../../shared/ui/Button"
 import ConfirmDialog from "../../../shared/ui/ConfirmDialog"
 import { useUnsavedLinkGuard } from "../../../shared/ui/useUnsavedLinkGuard"
 
@@ -107,9 +108,14 @@ export default function CaseMemoEditor({ detail, onRefresh }) {
 						</label>
 					</aside>
 				)}
-				<button type="submit" disabled={mutation.isPending || (changed && !confirmed)}>
+				{/* 채움 파랑은 판단 요약의 [다음 처리] 하나라 메모 저장은 보조 모양(SCRUM-369). */}
+				<Button
+					type="submit"
+					variant="secondary"
+					disabled={mutation.isPending || (changed && !confirmed)}
+				>
 					{mutation.isPending ? "저장 중…" : "메모 저장"}
-				</button>
+				</Button>
 				{mutation.isSuccess && <p role="status">메모가 저장되었습니다.</p>}
 			</form>
 		</section>

@@ -1,74 +1,93 @@
-import { useId, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import { useCaseCommand } from "../hooks/useCases"
 import { CLOSE_REASON_LABELS } from "../labels"
 import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
 import ReassignDialog from "./ReassignDialog"
 import StrGenerateForm from "../../str/components/StrGenerateForm"
+import Button from "../../../shared/ui/Button"
 
 const COMMENT_MAX = 2000
 
 // 버튼은 서버가 준 availableActions만 보고 켜요. 누르면 서버가 다시 검사해요(계약서 §4).
 // 이 화면이 다루는 것: ASSIGN·REASSIGN·ESCALATE·CLOSE·CLOSE_WITH_DRAFT·GENERATE_DRAFT. 종료는 버튼 하나 — 초안이 있으면 서버가
 // CLOSE 대신 CLOSE_WITH_DRAFT를 줘요(SCRUM-112). 초안 생성은 초안이 없을 때만 여기서 — 재생성은 STR 화면에서(미저장 편집 확인).
-export default function CaseActions({ detail }) {
+// request: 판단 요약의 [다음 처리] 주 버튼이 보낸 요청 { key, seq } — 같은 폼을 여기서 열고 이 카드로 옮겨 가요(SCRUM-372).
+// primaryKey: 판단 요약에 이미 주 버튼으로 나온 동작 — 여기선 같은 버튼을 또 그리지 않아요(폼·확인창은 여기서 열려요).
+export default function CaseActions({ detail, request = null, primaryKey = null }) {
 	const [open, setOpen] = useState(null)
 	const [reassigning, setReassigning] = useState(false)
+	const sectionRef = useRef(null)
+	const [seenRequest, setSeenRequest] = useState(request?.seq ?? null)
+	if (request && request.seq !== seenRequest) {
+		setSeenRequest(request.seq)
+		if (request.key === "reassign") setReassigning(true)
+		else setOpen(request.key)
+	}
+	useEffect(() => {
+		if (request?.seq == null || request.key === "reassign") return
+		const section = sectionRef.current
+		section?.scrollIntoView?.({ block: "start", behavior: "smooth" })
+		section?.querySelector(".case-action-form")?.focus?.({ preventScroll: true })
+	}, [request?.seq, request?.key])
 	const actions = detail.availableActions
 	const has = (action) => actions.includes(action)
+	const showButton = (key) => key !== primaryKey
 	const canGenerate = has("GENERATE_DRAFT") && !detail.currentDraftNo
 	// 409 뒤 상세를 다시 불러 그 동작이 빠졌으면(예: 다른 사람이 먼저 종료) 열린 폼도 닫아요.
 	// open도 같이 비워서, 나중에 그 동작이 다시 생겨도 예전 폼이 저절로 열리지 않게 해요(#12 리뷰).
 	// 초안 생성 폼은 성공 뒤 current_draft_no가 생겨도 결과 안내를 보여 주려고 열어 둬요.
 	const shown = open === "generate_draft" || (open && has(open.toUpperCase())) ? open : null
 	if (open && !shown) setOpen(null)
-	if (
-		!has("ASSIGN") &&
-		!has("REASSIGN") &&
-		!has("ESCALATE") &&
-		!has("CLOSE") &&
-		!has("CLOSE_WITH_DRAFT") &&
-		!canGenerate
-	)
-		return null
+	const buttons = {
+		assign: has("ASSIGN") && showButton("assign"),
+		reassign: has("REASSIGN") && showButton("reassign"),
+		escalate: has("ESCALATE") && showButton("escalate"),
+		generate: canGenerate && showButton("generate_draft"),
+		close: has("CLOSE") || has("CLOSE_WITH_DRAFT"),
+	}
+	const anyButton = Object.values(buttons).some(Boolean)
+	if (!anyButton && !shown && !reassigning) return null
 	return (
-		<section className="case-panel case-card case-actions" aria-labelledby="case-actions-title">
+		<section
+			ref={sectionRef}
+			className="case-panel case-card case-actions"
+			aria-labelledby="case-actions-title"
+		>
 			<h2 id="case-actions-title">처리 작업</h2>
-			<div className="case-action-buttons">
-				{/* 배정은 관리자만(SCRUM-339) — 서버가 ASSIGN 을 관리자에게만 줘요. */}
-				{has("ASSIGN") && (
-					<button type="button" onClick={() => setOpen("assign")} disabled={!!shown}>
-						담당자 배정
-					</button>
-				)}
-				{has("REASSIGN") && (
-					<button type="button" onClick={() => setReassigning(true)} disabled={!!shown}>
-						담당자 변경
-					</button>
-				)}
-				{has("ESCALATE") && (
-					<button type="button" onClick={() => setOpen("escalate")} disabled={!!shown}>
-						에스컬레이션
-					</button>
-				)}
-				{canGenerate && (
-					<button
-						type="button"
-						onClick={() => setOpen("generate_draft")}
-						disabled={!!shown}
-					>
-						STR 초안 생성
-					</button>
-				)}
-				{(has("CLOSE") || has("CLOSE_WITH_DRAFT")) && (
-					<button
-						type="button"
-						onClick={() => setOpen(has("CLOSE") ? "close" : "close_with_draft")}
-						disabled={!!shown}
-					>
-						종료
-					</button>
-				)}
-			</div>
+			{anyButton && (
+				<div className="case-action-buttons">
+					{/* 배정은 관리자만(SCRUM-339) — 서버가 ASSIGN 을 관리자에게만 줘요. */}
+					{buttons.assign && (
+						<Button onClick={() => setOpen("assign")} disabled={!!shown}>
+							담당자 배정
+						</Button>
+					)}
+					{buttons.reassign && (
+						<Button onClick={() => setReassigning(true)} disabled={!!shown}>
+							담당자 변경
+						</Button>
+					)}
+					{buttons.escalate && (
+						<Button onClick={() => setOpen("escalate")} disabled={!!shown}>
+							에스컬레이션
+						</Button>
+					)}
+					{buttons.generate && (
+						<Button onClick={() => setOpen("generate_draft")} disabled={!!shown}>
+							STR 초안 생성
+						</Button>
+					)}
+					{buttons.close && (
+						<Button
+							variant="danger"
+							onClick={() => setOpen(has("CLOSE") ? "close" : "close_with_draft")}
+							disabled={!!shown}
+						>
+							종료
+						</Button>
+					)}
+				</div>
+			)}
 			{reassigning && has("REASSIGN") && (
 				<ReassignDialog
 					caseNo={detail.caseNo}
@@ -112,6 +131,7 @@ function ActionForm({
 		<form
 			className="case-action-form"
 			aria-labelledby={titleId}
+			tabIndex={-1}
 			onSubmit={(event) => {
 				event.preventDefault()
 				if (command.isPending || !canSubmit) return
