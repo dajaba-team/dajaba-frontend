@@ -20,7 +20,7 @@ import {
 } from "../askRules"
 
 // 케이스 근거에 물어보기 — 계약서 A8(질문하기)·C9(지난 질문), 노션 「조사역 질문 답변 설계 문서」 8절, SCRUM-303.
-// 질문 하나에 답 하나예요(이전 질문을 기억하지 않음). 그래서 이어지는 대화가 아니라 질문·답 카드가 최신순으로 쌓여요.
+// 질문 하나에 답 하나예요(이전 질문을 기억하지 않음). 질문·답 카드는 오래된 것부터 위에 쌓여요.
 // 본문·상태·점수는 바꾸지 않는 조회 기능이라 상세를 다시 부르지 않아요.
 
 function Bear() {
@@ -156,10 +156,6 @@ export default function CaseAskPanel({
 				? issue.message
 				: ""
 
-	const scrollTop = () => {
-		if (historyRef.current) historyRef.current.scrollTop = 0
-	}
-
 	const submit = async (event) => {
 		event?.preventDefault()
 		if (!ready) return
@@ -167,11 +163,9 @@ export default function CaseAskPanel({
 		const sentAt = Date.now()
 		setIssue(null)
 		setPage(1)
-		scrollTop()
 		try {
 			await ask.mutateAsync({ question })
 			setValue("")
-			scrollTop()
 		} catch (error) {
 			const seconds = getRetryAfterSeconds(error)
 			if (error?.response?.status === 429) {
@@ -231,7 +225,13 @@ export default function CaseAskPanel({
 
 	const data = questions.data
 	const items = data?.items ?? []
+	const displayItems = [...items].reverse() // C9는 최신순, 패널은 오래된 질문부터 표시
 	const empty = data && data.total === 0 && !pending
+
+	useEffect(() => {
+		if (hidden || !historyRef.current) return
+		historyRef.current.scrollTop = page === 1 ? historyRef.current.scrollHeight : 0
+	}, [hidden, page, pending, data])
 
 	return (
 		<section
@@ -287,7 +287,7 @@ export default function CaseAskPanel({
 			<div
 				className="ask-history"
 				ref={historyRef}
-				aria-label="질의 이력 최신순"
+				aria-label="질의 이력 오래된 순"
 				tabIndex={0}
 			>
 				{questions.isPending && (
@@ -328,6 +328,14 @@ export default function CaseAskPanel({
 					</>
 				)}
 				{(items.length > 0 || pending) && <p className="ask-kicker">질의 이력</p>}
+				{displayItems.map((record) => (
+					<AskCard
+						key={record.questionNo}
+						record={record}
+						selected={highlightedNo === record.questionNo}
+						onShowEvidence={onShowEvidence}
+					/>
+				))}
 				{pending && page === 1 && (
 					<article className="ask-card ask-wait">
 						<AskQuestion who={viewerName} text={ask.variables?.question ?? ""} />
@@ -343,14 +351,6 @@ export default function CaseAskPanel({
 						</AskReply>
 					</article>
 				)}
-				{items.map((record) => (
-					<AskCard
-						key={record.questionNo}
-						record={record}
-						selected={highlightedNo === record.questionNo}
-						onShowEvidence={onShowEvidence}
-					/>
-				))}
 				{data && data.totalPages > 1 && (
 					<nav className="ask-pages" aria-label="질의 이력 페이지">
 						<button
