@@ -56,7 +56,17 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 				suspicionTypesRecommended: [],
 				suspicionLevelBranch: null,
 				suspicionLevelHq: null,
-				availableActions: [],
+				// 본문을 볼 수 있으면 상태와 상관없이 참고 사례 찾기(SCRUM-313, MSW는 설정 켬 가정)
+				availableActions: ["SEARCH_REFERENCES"],
+			})
+			// S2 references — 문서명·쪽·점수만, 본문 없음(SCRUM-312)
+			expect(draft.references).toHaveLength(3)
+			expect(draft.references[0]).toEqual({
+				chunkId: "chk-apg-2025-053",
+				docId: "apg-typologies-2025",
+				docTitle: "APG Yearly Typologies Report 2025",
+				page: 53,
+				score: 0.58,
 			})
 			// facts는 AI facts 그대로 — 받은 그대로 넘기는지만 봐요(Q15). 모양이 바뀌어도 이 단언은 안 흔들려요.
 			expect(draft.facts).toEqual(AI_FACTS_EXAMPLE)
@@ -69,6 +79,39 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 			})
 		},
 	)
+
+	it("S2 references의 다섯 필드를 화면 모델로 옮기고 원문 text는 사용하지 않는다", () => {
+		const draft = toDraft({
+			draft_no: DRAFT_NO,
+			access: "FULL",
+			references: [
+				{
+					chunk_id: "c-1",
+					doc_id: "kofiu-2023",
+					doc_title: "STR 작성 사례집",
+					page: 12,
+					score: 0.83,
+					text: "화면에 노출하면 안 되는 원문 조각",
+				},
+			],
+		})
+		expect(draft.references).toEqual([
+			{
+				chunkId: "c-1",
+				docId: "kofiu-2023",
+				docTitle: "STR 작성 사례집",
+				page: 12,
+				score: 0.83,
+			},
+		])
+		expect(JSON.stringify(draft.references)).not.toContain("원문 조각")
+		expect(toDraft({ draft_no: DRAFT_NO, access: "FULL", references: [] }).references).toEqual(
+			[],
+		)
+		expect(
+			toDraft({ draft_no: DRAFT_NO, access: "FULL", references: null }).references,
+		).toEqual([])
+	})
 
 	it("검증 결과는 계약서 S5 모양(코드 검사 5종·AI 평가 5종)으로 옮긴다", async () => {
 		resetCases(users.inv01)
@@ -271,6 +314,7 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 		})
 		expect(draft).not.toHaveProperty("narrative")
 		expect(draft).not.toHaveProperty("facts")
+		expect(draft).not.toHaveProperty("references")
 		// access가 없거나 모르는 값이어도 본문을 열지 않아요.
 		expect(toDraft({ draft_no: DRAFT_NO, narrative: [] }).contentVisible).toBe(false)
 	})

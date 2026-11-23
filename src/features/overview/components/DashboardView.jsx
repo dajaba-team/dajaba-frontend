@@ -7,14 +7,8 @@ import CountUp from "../../../shared/ui/dashboard/CountUp"
 import Icon from "../../../shared/ui/dashboard/Icon"
 import InfoTip from "../../../shared/ui/InfoTip"
 import { STATUS_LABELS } from "../../cases/labels"
-import {
-	riskCounts,
-	riskNames,
-	riskColors,
-	ASSIGNED_ACTIVE,
-	IN_PROGRESS,
-	demoTrend,
-} from "../model/analytics"
+import { riskCounts, riskNames, riskColors, INVESTIGATING, demoTrend } from "../model/analytics"
+import { formatScore } from "../../../shared/format/score"
 
 // 마지막 갱신 시각 — 브라우저 시간대의 시:분:초(SCRUM-345)
 const CLOCK = new Intl.DateTimeFormat("ko-KR", {
@@ -35,14 +29,16 @@ export default function DashboardView({
 	casePath = (n) => `/cases/${encodeURIComponent(n)}`,
 	listPath = "/cases",
 	demo = false,
+	// 조사역 대시보드 — 내 담당만 받은 items. 카드·안내 문구를 그 범위로 (SCRUM-337)
+	mine = false,
 	dark = false,
 	hero = null,
 	onRefresh = null, // 업무 화면: 서버에서 다시 불러오기(Promise). 시연 화면은 없음 → 효과만 다시
 	refreshing = false,
 	updatedAt = 0, // 마지막으로 받아 온 시각(ms) — 0이면 표시 안 함
-	role = null, // 업무 화면 역할 — 조사역은 "내 담당", 그 밖은 "진행 중" 카드
-	me = null, // 로그인 아이디(내 담당 케이스 셈)
 	alertStats = null, // 관리자: 경보 통계(BE SCRUM-360) — 있으면 경보 기준 카드·도넛
+	// 우선 목록 자리를 바꿔 끼울 때(승인자 — 승인 대기 보고서, SCRUM-336). 없으면 점수 높은 케이스
+	focusPanel = null,
 }) {
 	const [period, setPeriod] = useState(10)
 	const [replay, setReplay] = useState(0)
@@ -54,7 +50,7 @@ export default function DashboardView({
 	const counts = useMemo(() => riskCounts(items), [items])
 	// 역할별 카드(SCRUM-345) — 카드에는 제목·건수·아이콘만, 뜻은 제목 옆 ⓘ 툴팁으로.
 	// 케이스는 HIGH 경보로만 만들어져 "고위험 케이스"는 전체 케이스와 늘 같아서, 관리자는 경보 기준으로,
-	// 조사역·승인자는 내 담당·진행 중으로 바꿨어요. 관리자의 고위험 경보는 케이스 전환 수와 정책상 같아 한 카드로 합쳤어요.
+	// 조사역·승인자는 조사 단계별(조사 중 → 보완 → 승인 대기)로 바꿨어요. 관리자의 고위험 경보는 케이스 전환 수와 정책상 같아 한 카드로 합쳤어요.
 	// 시연 화면은 합성 데이터라 기존 그대로.
 	const unassigned = [
 		"미배정 케이스",
@@ -68,6 +64,11 @@ export default function DashboardView({
 		"승인자 검토가 필요한 케이스 수",
 		"approval",
 	]
+	// 목록 링크도 집계와 같은 범위로 — 조사역은 내 담당 목록(SCRUM-337)
+	const scopedListPath = mine ? `${listPath}?mine=1` : listPath
+	const investigating = items.filter((i) => INVESTIGATING.includes(i.status)).length
+	// 보완 요청으로 반려된 직후 — 본문을 고쳐 저장하기 시작하면 빠져요(SCRUM-339)
+	const needRevision = items.filter((i) => i.rejectionReasonCode === "NEED_REVISION").length
 	const alertScope = alertStats?.date ? `기준일 ${alertStats.date}` : "전체 기간"
 	let cards
 	if (alertStats)
@@ -91,25 +92,45 @@ export default function DashboardView({
 			unassigned,
 			pending,
 		]
-	else
+	else if (mine)
+		// 조사역 — 내 담당 기준. 2·3·4번은 조사 → 보완 → 승인 대기 단계라 서로 겹치지 않아요
 		cards = [
-			["전체 케이스", total, "조회 가능한 전체 케이스 수", "case"],
-			role === "INVESTIGATOR"
-				? [
-						"내 담당 케이스",
-						items.filter(
-							(i) => i.assignee?.loginId === me && ASSIGNED_ACTIVE.includes(i.status),
-						).length,
-						"나에게 배정되어 처리 중인 케이스 수",
-						"user",
-					]
-				: [
-						"진행 중 케이스",
-						items.filter((i) => IN_PROGRESS.includes(i.status)).length,
-						"접수부터 승인 대기·반려까지 아직 끝나지 않은 케이스 수",
-						"clock",
-					],
-			unassigned,
+			["내 담당 케이스", total, "나에게 배정된 케이스 수", "case"],
+			[
+				"조사 중",
+				investigating,
+				"내 담당 중 아직 조사하고 있는 케이스 수(조사 중·에스컬레이션·초안 작성됨)",
+				"clock",
+			],
+			[
+				"보완할 초안",
+				needRevision,
+				"보완 요청으로 반려된 직후의 초안 수 — 본문을 고쳐 저장하기 시작하면 빠져요",
+				"user",
+			],
+			[
+				"승인 대기",
+				pending[1],
+				"승인 요청을 올려 승인자 검토를 기다리는 케이스 수",
+				"approval",
+			],
+		]
+	else
+		// 승인자 — 전체 기준, 조사역과 같은 단계 틀
+		cards = [
+			["전체 조회 케이스", total, "조회 가능한 전체 케이스 수", "case"],
+			[
+				"조사 중",
+				investigating,
+				"아직 조사 단계라 곧 승인 요청이 올라올 케이스 수(조사 중·에스컬레이션·초안 작성됨)",
+				"clock",
+			],
+			[
+				"보완 중",
+				needRevision,
+				"보완 요청으로 반려돼 조사역이 고치고 있는 케이스 수",
+				"user",
+			],
 			pending,
 		]
 	// 오른쪽 도넛 — 관리자는 경보 위험 등급, 그 밖은 케이스 위험 등급
@@ -137,7 +158,11 @@ export default function DashboardView({
 		donut = {
 			title: "위험 등급 분포",
 			note: SCORE_NOTE,
-			scope: demo ? "현재 시연 케이스 기준" : "조회 가능한 전체 케이스 기준",
+			scope: demo
+				? "현재 시연 케이스 기준"
+				: mine
+					? "내 담당 케이스 기준"
+					: "조회 가능한 전체 케이스 기준",
 			names: riskNames,
 			counts,
 		}
@@ -330,63 +355,70 @@ export default function DashboardView({
 					</div>
 				</section>
 			</div>
-			<section className="analytics-panel focus-panel">
-				<div className="analytics-head">
-					<div>
-						<h2>지금 바로 확인해야 할 케이스</h2>
-						<p>위험도가 높은 케이스를 우선 확인하세요.</p>
+			{/* 승인자는 이 자리에 승인 대기 보고서(focusPanel, SCRUM-336) */}
+			{focusPanel ?? (
+				<section className="analytics-panel focus-panel">
+					<div className="analytics-head">
+						<div>
+							<h2>지금 바로 확인해야 할 케이스</h2>
+							<p>위험 점수가 가장 높은 케이스예요. 지금 바로 열어 확인해 주세요.</p>
+						</div>
+						<Link className="text-link" to={scopedListPath}>
+							{mine ? "내 담당 케이스" : "전체 케이스"}{" "}
+							<Icon name="arrow" size={14} />
+						</Link>
 					</div>
-					<Link className="text-link" to={listPath}>
-						전체 케이스 <Icon name="arrow" size={14} />
-					</Link>
-				</div>
-				{items.length ? (
-					items.slice(0, 3).map((item) => {
-						// 점수가 없으면 등급도 보이지 않게 — 미산출을 고위험처럼 칠하지 않는다.
-						const band =
-							item.score != null && ["HIGH", "MEDIUM", "LOW"].includes(item.scoreBand)
-								? item.scoreBand
-								: null
-						return (
-							<div
-								className="focus-case"
-								data-band={band ?? "NONE"}
-								key={item.caseNo}
-							>
-								<div className="case-symbol">
-									<Icon name="alert" size={22} />
-								</div>
-								<div className="case-identity">
-									<Link to={casePath(item.caseNo)}>{item.caseNo}</Link>
-									<span>
-										{item.accountNo ?? "계좌 정보 없음"} ·{" "}
-										{item.assignee?.displayName ?? "미배정"}
-									</span>
-								</div>
-								<div className="case-score">
-									{band && <em className="band-badge">{band}</em>}
-									<div className="case-score-main">
-										<strong>
-											{item.score == null ? "미산출" : item.score.toFixed(2)}
-										</strong>
-										<span>{STATUS_LABELS[item.status] ?? item.status}</span>
+					{items.length ? (
+						items.slice(0, 3).map((item) => {
+							// 점수가 없으면 등급도 보이지 않게 — 미산출을 고위험처럼 칠하지 않는다.
+							const band =
+								item.score != null &&
+								["HIGH", "MEDIUM", "LOW"].includes(item.scoreBand)
+									? item.scoreBand
+									: null
+							return (
+								<div
+									className="focus-case"
+									data-band={band ?? "NONE"}
+									key={item.caseNo}
+								>
+									<div className="case-symbol">
+										<Icon name="alert" size={22} />
 									</div>
+									<div className="case-identity">
+										<Link to={casePath(item.caseNo)}>{item.caseNo}</Link>
+										<span>
+											{item.accountNo ?? "계좌 정보 없음"} ·{" "}
+											{item.assignee?.displayName ?? "미배정"}
+										</span>
+									</div>
+									<div className="case-score">
+										{band && <em className="band-badge">{band}</em>}
+										<div className="case-score-main">
+											<strong>{formatScore(item.score) ?? "미산출"}</strong>
+											<span>{STATUS_LABELS[item.status] ?? item.status}</span>
+										</div>
+									</div>
+									<Link className="case-open" to={casePath(item.caseNo)}>
+										지금 확인 <Icon name="arrow" size={14} />
+									</Link>
 								</div>
-								<Link className="case-open" to={casePath(item.caseNo)}>
-									지금 확인 <Icon name="arrow" size={14} />
-								</Link>
-							</div>
-						)
-					})
-				) : (
-					<div className="focus-empty" role="status">
-						<span className="focus-empty-icon" aria-hidden="true">
-							<Icon name="approval" size={22} />
-						</span>
-						<p>현재 확인할 케이스가 없습니다.</p>
-					</div>
-				)}
-			</section>
+							)
+						})
+					) : (
+						<div className="focus-empty" role="status">
+							<span className="focus-empty-icon" aria-hidden="true">
+								<Icon name="approval" size={22} />
+							</span>
+							<p>
+								{mine
+									? "나에게 배정된 케이스가 없습니다."
+									: "현재 확인할 케이스가 없습니다."}
+							</p>
+						</div>
+					)}
+				</section>
+			)}
 			{/* 업무 화면의 맨 아래 안내는 뺐어요 — 점수 뜻은 위험 등급 분포 ⓘ 로(SCRUM-345). 시연 화면은 합성 데이터 표시만 */}
 			{demo && (
 				<p className="analytics-footnote">

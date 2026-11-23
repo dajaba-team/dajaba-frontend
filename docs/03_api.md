@@ -1,6 +1,6 @@
 # 03. API 연동
 
-> v0.3 · 2026-11-19 · 초안(팀 확인 중) · 정리 지윤 · 11/19 계약서 v0.2(11/19본) 대조 반영(SCRUM-315~318)
+> v0.4 · 2026-11-22 · 초안(팀 확인 중) · 정리 지윤 · 11/19 계약서 v0.2(11/19본) 대조 반영(SCRUM-315~318) · 11/22 참고 사례 찾기 〔임시〕(SCRUM-333)
 
 백엔드 API를 화면에 붙일 때 보는 문서예요. 백엔드 쪽 규칙은 [BE 03 §2·§3]이 정본이고, 여기는 **프론트가 그걸 어떻게 받는지**를 적어요.
 
@@ -88,6 +88,7 @@
 - 화면을 떠나도 서버 작업은 계속될 수 있어요. "취소됐다"고 표시하지 않아요.
 - 응답이 없거나 timeout이면 **최신 초안·검증·상태를 먼저 조회**하고 나서 다시 할지 정해요(같은 초안이 두 번 생길 수 있음 — BE 미결 21). 케이스 작업(`useCaseCommand`)은 응답이 없으면 상세·목록을 다시 불러요. 요약 갱신은 다시 불러온 요약의 `produced_at`이 누르기 전과 다르면 저장된 것으로 보고 실패 안내를 띄우지 않아요.
 - 질문하기(A8)만 한도가 30초라 timeout `ASK_REQUEST_TIMEOUT_MS`(35초)예요(계약서 2.6, SCRUM-303). 응답 없이 끊기면 지난 질문(C9)을 다시 불러 저장됐는지 먼저 봐요.
+- 참고 사례 찾기만 timeout `REFERENCE_SEARCH_TIMEOUT_MS`(10초)예요(BE 8초 + 여유, 설계 문서 A 7.3). 조회라 응답 없이 끊겨도 저장 확인 없이 [다시 시도]만 보여 줘요. 자동 재시도·폴링 없음.
 - 생성과 검증은 버튼이 따로예요. 생성 직후 자동 검증하지 않아요(안건 17).
 - 적재·**케이스 생성**은 `202 + batch_run_id` 비동기 → `GET /admin/batches/{batch_run_id}` 상태 조회(계약서 B4·B5, 11/4 Q8). 케이스 생성 카드(`OpenCasesCard`, SCRUM-180)는 202 뒤 바로 한 번, `RUNNING`이면 2초마다 다시 불러 끝나면 멈춰요. 자동 조회는 최대 10분(계약서 5.6) — 넘으면 멈추고 [상태 다시 확인]으로 직접 불러요. 적재 카드(`LoadDatasetCard`, SCRUM-220)도 같은 방식이고 상태 확인은 `useBatchRun` 훅이에요. 이미 적재된 DB의 409 `BATCH_ALREADY_DONE`은 실패가 아니라 "이미 적재돼 있음"으로 보여 줘요. 케이스 생성은 성공한 날짜도 다시 실행할 수 있어요(BE V014, SCRUM-238) — 이미 케이스가 된 경보는 건너뛰고 새로 HIGH가 된 경보만 만들어요. 같은 날짜가 돌고 있으면 409 `BATCH_RUNNING`.
 - 룰 스캔(`RuleScanCard`, SCRUM-220)은 동기 200 + `alerts_by_rule`(룰별 경보 수). 9/1(111만 건)도 기다리게 이 요청만 timeout 120초. 룰 스캔·점수는 동기라 폴링을 가정하지 않아요.
@@ -119,7 +120,7 @@
 | 근거 거래      | `GET …/transactions?scope&page&size` (C3, BE SCRUM-179)                                       | `{items:[{transaction_id, from/to_account_ref·no, ts, amount_paid·currency_paid, amount_received·currency_received, payment_format, direction, scope}], page, size, total}`                                            | `casesApi.transactions`                |
 | 거래 원본      | `GET …/evidence/{transaction_id}` (C4)                                                        | `{case_no, transaction, source{dataset, record_id, is_synthetic}, eligible_for_str}`, 이 케이스 거래가 아니면 404 `EVIDENCE_NOT_FOUND`                                                                                 | `casesApi.evidence`                    |
 | 그래프         | `GET …/graph` (C5)                                                                            | `{nodes, edges, returned_transaction_count, total_transaction_count, truncated}`                                                                                                                                       | `casesApi.graph`                       |
-| 이력 전체      | `GET …/histories?page&size` (C6)                                                              | 상세 `history`와 같은 줄, NOTE 제외                                                                                                                                                                                    | `casesApi.histories`                   |
+| 이력 전체      | `GET …/histories?page&size` (C6)                                                              | 상세 `history`와 같은 줄, NOTE 제외. 줄마다 `from_assignee`·`to_assignee` `{login_id, display_name}`(ASSIGN은 받은 사람만, REASSIGN은 둘 다, 그 밖 null — BE SCRUM-348)                                                | `casesApi.histories`                   |
 | 요약 생성·갱신 | `POST …/refresh-summary` `{version}` (A7, 담당만)                                             | 201 `{case_no, summary, case_version}` → 상세 다시 조회. 실패(502 `SUMMARY_CODE_CHECK_FAILED` 등)면 기존 요약 그대로                                                                                                   | `casesApi.refreshSummary`              |
 | 현재 요약      | `GET …/summary` (C7, 조회 3역할)                                                              | `{case_no, summary}` — 없으면 `summary: null`. 상세 `latest_summary`와 같은 값                                                                                                                                         | `casesApi.summary`                     |
 
@@ -132,6 +133,21 @@
 - 변경 응답(M)은 상세 전체가 아니라서 성공 뒤 상세·목록을 무효화해 다시 불러요(`useCaseCommand`). `CONCURRENT_UPDATE`·`INVALID_CASE_TRANSITION`·`NOT_ASSIGNEE`면 입력을 두고 상세만 다시 불러요.
 - 400 `details`의 필드 이름은 요청 JSON 이름(snake_case, 예: `investigator_notes`) 하나로 와요(BE SCRUM-167 #76).
 
+### 업무 알림 [「비동기 작업 알림 설계 문서」 6.5절, 11/22 진희님 확인, BE SCRUM-355 #169, FE 코드 `notificationsApi.js`·`mocks/notifications.js`, SCRUM-334]
+
+BE `GET /notifications`는 develop에 있어요(SCRUM-355 #169, BE `06_features/cases.md` 「업무 알림 조회」). MSW는 같은 모양으로 답해요.
+
+| 동작    | API                                      | 응답                                                                                                                                        | 프론트                  |
+| ------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| 내 알림 | `GET /api/v1/notifications?since=&size=` | `{ items[{type, case_no, draft_no, reason_code, actor{login_id, display_name}, at}], total, server_time }`, 형식 오류 400 `INVALID_REQUEST` | `notificationsApi.list` |
+
+- `since`는 **Z로 끝나는 UTC만**(`+09:00`은 400). 없으면 최근 7일, 30일보다 오래되면 30일 전으로 맞춰요. 다음 조회 `since`엔 응답 `server_time`을 그대로 넣어요(화면 시계 안 씀). API 모듈은 Z가 아닌 값을 보내지 않아요.
+- `size` 1~50, 기본 20, 최신순. `total`은 `since` 뒤 전체 건수이고 **99에서 멈춰요** — 화면은 99면 "99+"(`badgeLabel`).
+- **관리자는 늘 `items: []`, `total: 0`**(관리자 알림은 작업 추적기 몫). 자기가 한 일은 안 나와요.
+- `draft_no`는 `APPROVAL_REQUESTED`·`STR_APPROVED`·`STR_REJECTED`·`STR_REPORTED`에만, 케이스 알림 3종(`CASE_ASSIGNED`·`CASE_REASSIGNED_TO_ME`·`CASE_REASSIGNED_AWAY`)은 `null`. `reason_code`는 `STR_REJECTED`일 때만.
+- 반려 코멘트·메모·계좌·금액·DB id는 없어요. 문구·이동 경로는 화면이 `type`으로 만들어요(`features/notifications/model/notificationRules.js`, 설계 7.8 예시).
+- **화면(종, `NotificationBell`)** — 위 띠 오른쪽, 모든 역할. 숫자는 `since=마지막으로 본 시각`·`size=1`로 30초마다 받은 `total`(탭이 가려지면 멈추고 보이면 바로 한 번). 열면 최근 7일 50건(`since` 없이, `size=50` 최대)을 보여 주고, 받은 `server_time`을 `localStorage` `aml.notifications.seen.{login_id}`에 저장해 본 것으로 쳐요 — 목록을 못 받으면 저장하지 않아요. 숫자가 늘면 "새 알림 n건" 토스트 하나(로그인 직후 첫 조회엔 없음). 숫자 조회 실패는 조용히 직전 숫자 유지, 목록 조회 실패는 목록 자리에만 안내 + [다시 불러오기]. 목록에선 이전에 본 시각보다 새 줄에 "새 알림" 표시. `total`이 받은 줄 수보다 크면 목록 아래 "이전 알림 n건 더 있음"(n = `total` − 줄 수, `total`이 99면 "n건 이상" — 커서가 없어 더 불러오지 않음, BE 1단계 한계). 작업 알림(추적기, 준혁님)은 아직 없어 "업무" 꼬리표만 — 생기면 같은 목록에 시간순으로 섞어요. 테스트 `notifications.test.js`·`notificationBell.test.jsx`.
+
 ### STR — 단계별 연결 (11/10)
 
 S1(SCRUM-183, `case_version` #89)·S2(SCRUM-205 #84)·S3·S4(SCRUM-184 #91)는 BE develop에 있어요. S5·S6·A6은 아직 MSW예요. 표는 `06_features/str.md` "백엔드 연결 상태".
@@ -140,8 +156,9 @@ S1(SCRUM-183, `case_version` #89)·S2(SCRUM-205 #84)·S3·S4(SCRUM-184 #91)는 B
 
 수정 이력(S4)은 BE develop에 있어요. MSW는 같은 모양으로 답해요. 본문 열람 제한 규칙은 `06_features/str.md` §3.
 
-| 동작           | API                                                         | 응답                                                                                                              | 프론트                |
-| -------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------- |
-| 초안 보기      | `GET /api/v1/str-drafts/{draft_no}`                         | 명세 1번 모양 또는 상태·날짜만의 제한 응답(`access: "META_ONLY"`, 본문 필드 `null`), 없으면 404 `DRAFT_NOT_FOUND` | `strApi.getDraft`     |
-| 수정 이력 목록 | `GET /api/v1/str-drafts/{draft_no}/revisions`               | `{ draft_no, current_revision_no, items }` (본문 없음, 행마다 `ai_original`). 열람 권한 없으면 403 `NOT_ASSIGNEE` | `strApi.getRevisions` |
-| 수정본 한 행   | `GET /api/v1/str-drafts/{draft_no}/revisions?revision_no=n` | 평평한 모양 `narrative_before`·`narrative_after`(1번은 before `[]`), 없는 번호 404 `REVISION_NOT_FOUND`           | `strApi.getRevision`  |
+| 동작                    | API                                                                          | 응답                                                                                                                                                                                                       | 프론트                    |
+| ----------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| 초안 보기               | `GET /api/v1/str-drafts/{draft_no}`                                          | 명세 1번 모양 또는 상태·날짜만의 제한 응답(`access: "META_ONLY"`, 본문 필드 `null`), 없으면 404 `DRAFT_NOT_FOUND`                                                                                          | `strApi.getDraft`         |
+| 수정 이력 목록          | `GET /api/v1/str-drafts/{draft_no}/revisions`                                | `{ draft_no, current_revision_no, items }` (본문 없음, 행마다 `ai_original`). 열람 권한 없으면 403 `NOT_ASSIGNEE`                                                                                          | `strApi.getRevisions`     |
+| 수정본 한 행            | `GET /api/v1/str-drafts/{draft_no}/revisions?revision_no=n`                  | 평평한 모양 `narrative_before`·`narrative_after`(1번은 before `[]`), 없는 번호 404 `REVISION_NOT_FOUND`                                                                                                    | `strApi.getRevision`      |
+| 참고 사례 찾기 〔임시〕 | `POST /api/v1/str-drafts/{draft_no}/references/search` `{typologies, query}` | `{ items[{doc_title, publisher, year, page, score, typologies, source_type}], degraded }`. 0건도 200. BE 아직 없음(SCRUM-313·354) — 계약서 S9(설계 문서 A 6.1) 모양 그대로 MSW(`mocks/referenceSearch.js`) | `strApi.searchReferences` |

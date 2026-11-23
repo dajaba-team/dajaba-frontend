@@ -38,6 +38,9 @@ const toHistory = (data) => ({
 	comment: data.comment ?? null,
 	createdBy: data.created_by ?? null,
 	createdAt: data.created_at,
+	// 담당이 바뀐 줄만 — ASSIGN은 받은 사람, REASSIGN은 둘 다, 그 밖 null (BE SCRUM-348)
+	fromAssignee: toUser(data.from_assignee),
+	toAssignee: toUser(data.to_assignee),
 })
 
 // 연결 경보 (C2 alert). window_*·reference_ts는 데이터 시각, batch_date는 날짜 — 시간대를 붙이지 않아요.
@@ -193,16 +196,9 @@ export const casesApi = {
 	},
 	detail: async (caseNo, signal) =>
 		toCaseDetail((await apiClient.get(casePath(caseNo), { signal })).data),
-	/** 조사역은 assignee 없이(본인), 관리자는 배정할 조사역 login_id. */
+	/** 담당자 배정(A1, ADMIN만 — SCRUM-339). assignee는 배정할 조사역 login_id. */
 	assign: async ({ caseNo, version, assignee }) =>
-		toChange(
-			(
-				await apiClient.post(`${casePath(caseNo)}/assign`, {
-					version,
-					...(assignee ? { assignee } : {}),
-				})
-			).data,
-		),
+		toChange((await apiClient.post(`${casePath(caseNo)}/assign`, { version, assignee })).data),
 	/** 담당자 변경(A2, ADMIN만). assignee는 새 담당 조사역 login_id, comment는 선택. */
 	reassign: async ({ caseNo, version, assignee, comment }) =>
 		toChange(

@@ -51,7 +51,7 @@ describe("역할별 대시보드", () => {
 	it("조사역은 경보 통계를 부르지 않고 케이스 위험 등급 분포를 본다", async () => {
 		const calls = show("inv01")
 		expect(await screen.findByRole("heading", { name: "위험 등급 분포" })).toBeInTheDocument()
-		expect(screen.getByText("내 담당 케이스")).toBeInTheDocument()
+		expect(screen.getByText("보완할 초안")).toBeInTheDocument()
 		expect(calls).toEqual([])
 	})
 

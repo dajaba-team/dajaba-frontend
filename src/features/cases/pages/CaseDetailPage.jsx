@@ -11,13 +11,18 @@ import bearFace from "../../../shared/assets/bear-face.png"
 import CaseEvidenceCard from "../components/CaseEvidenceCard"
 import CaseNotesCard from "../components/CaseNotesCard"
 import CaseScoreReasons from "../components/CaseScoreReasons"
+import { formatScore } from "../../../shared/format/score"
 import {
 	CLOSE_REASON_LABELS,
 	REJECTION_LABELS,
 	SCORE_STATUS_LABELS,
 	STATUS_LABELS,
+	STATUS_TONES,
 	labelOf,
 } from "../labels"
+import StatusBadge from "../../../shared/ui/StatusBadge"
+import { useGuide } from "../../../shared/ui/useGuide"
+import { caseDetailWorkflowGuide } from "../../../shared/ui/workflowGuide"
 
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
 // 카드 제목은 명사형으로 맞춰요: 케이스 개요 · 경보 정보 · 점수 근거 · 조사 메모/AI 요약/처리 이력 · 처리 작업 · 거래 분석.
@@ -41,7 +46,7 @@ function ScoreBlock({ detail }) {
 			<p className="case-score-label">조사 우선순위 점수</p>
 			{score != null ? (
 				<p className="case-score-value">
-					<strong>{score}</strong>
+					<strong>{formatScore(score)}</strong>
 					{band && <span className="case-status">등급 {band}</span>}
 				</p>
 			) : (
@@ -150,6 +155,7 @@ function CaseDetail({ caseNo }) {
 	const query = useCaseDetail(caseNo)
 	const detail = query.data
 	const viewer = useSession().data
+	useGuide(caseDetailWorkflowGuide(detail, viewer?.role))
 	const ask = useAskPanel()
 	// 버튼·패널은 서버가 준 ASK_QUESTION 으로만 그려요. 역할·상태를 화면에서 계산하지 않아요.
 	const canAsk = Boolean(detail?.availableActions?.includes("ASK_QUESTION"))
@@ -181,9 +187,9 @@ function CaseDetail({ caseNo }) {
 							<div className="case-heading-side">
 								{canAsk && <AskButton ask={ask} />}
 								<p className="case-heading-badges">
-									<span className="case-status">
+									<StatusBadge tone={STATUS_TONES[detail.status]}>
 										{labelOf(STATUS_LABELS, detail.status)}
-									</span>
+									</StatusBadge>
 									<span className="case-badge">
 										담당자 {detail.assignee?.displayName || "미배정"} · 버전{" "}
 										{detail.version}

@@ -1,5 +1,6 @@
 import { canViewStrContent, seedStrDrafts, visibleStrDraft } from "./strDrafts"
 import { createDraft, draftActions, saveRevision, submitDraft, verifyDraft } from "./strCommands"
+import { searchReferences } from "./referenceSearch"
 import {
 	approveDraft,
 	listApprovals,
@@ -26,6 +27,7 @@ import {
 	transactionsResponse,
 } from "./cases"
 import { http, HttpResponse } from "msw"
+import { listNotifications, resetNotifications } from "./notifications"
 
 let cases = seedCases()
 let drafts = seedStrDrafts()
@@ -202,6 +204,8 @@ export function resetCases(
 			comment: null,
 			created_by: formerAssignee,
 			created_at: "2026-11-01T00:00:00Z",
+			from_assignee: { login_id: formerAssignee, display_name: `예시 ${formerAssignee}` },
+			to_assignee: item.assignee ?? null,
 		})
 	}
 	currentUser = user
@@ -210,6 +214,7 @@ export function resetCases(
 	scoreAttempts = {}
 	scoreFails = failFirstScore
 	askLog = []
+	resetNotifications()
 }
 const draftNotFound = () =>
 	HttpResponse.json(
@@ -597,6 +602,11 @@ export const handlers = [
 		}),
 	),
 	// 케이스 — 계약서 C1·C2·A1·A3·A4·A5·A6 (요약 A7·C7은 아래, 실제 백엔드 CaseController와 같은 경로, 메모 A3·초안 있는 종료 A6은 백엔드 준비 중)
+	// 업무 알림 — BE SCRUM-355 #169와 같은 모양(설계 6.5절)
+	http.get(`${base}/api/v1/notifications`, ({ request }) => {
+		if (!currentUser) return unauthenticated()
+		return reply(listNotifications(currentUser, new URL(request.url)))
+	}),
 	http.get(`${base}/api/v1/cases`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
 		return HttpResponse.json(listResponse(cases, new URL(request.url), currentUser))
@@ -875,6 +885,17 @@ export const handlers = [
 				return reply(run(currentUser, caseOf(draft), draft, body))
 			},
 		),
+	),
+	// 참고 사례 찾기 〔임시〕 — BE 아직 없음(SCRUM-313·354), 계약서 S9(설계 문서 A 6.1) 모양
+	http.post(
+		`${base}/api/v1/str-drafts/:draftNo/references/search`,
+		async ({ params, request }) => {
+			if (!currentUser) return unauthenticated()
+			const draft = drafts.find((item) => item.draft_no === params.draftNo)
+			if (!draft) return draftNotFound()
+			const body = await request.json().catch(() => null)
+			return reply(searchReferences(currentUser, draft, body))
+		},
 	),
 	// 승인함 P1~P3 (BE ApprovalController, SCRUM-217~219) — 경로 번호는 draft_no
 	http.get(`${base}/api/v1/approvals`, ({ request }) => {

@@ -2,15 +2,17 @@ import { useIsFetching } from "@tanstack/react-query"
 import { caseKey, useCaseCommand } from "../hooks/useCases"
 import { getErrorMessage, isNoResponse } from "../../../shared/api/apiClient"
 import { formatSystemTime } from "../../../shared/format/time"
+import StatusBadge from "../../../shared/ui/StatusBadge"
 
 // AI 조사 요약 (FR-CASE-19·20, 화면 CASE-02-E, 계약서 A7·C7). 요약은 보조 정보라 실패해도 다른 작업은 그대로예요.
 // 요약 내용은 상세의 latestSummary를 그대로 써요(C7과 같은 값). 만들고 나면 상세를 다시 불러 version도 맞춰요.
 // 실패는 이 칸에만 보여 주고, 기존 요약은 지우지 않고 "이전에 만든 요약"으로 구분해요.
 // 응답 없이 끊겨도 서버엔 저장됐을 수 있어요 — 다시 불러온 요약의 producedAt이 누르기 전과 다르면 실패로 보지 않아요(SCRUM-315).
 // 다시 불러오는 동안은 실패 안내 대신 "결과 확인 중"을 보여 줘요(실제로 저장된 경우 경고가 잠깐 떴다 사라지지 않게).
+// 배지 뜻은 공통 상태 배지 규칙(SCRUM-332) — 현재 기준 success, 바뀜·이전 요약 warning, 알 수 없음 neutral.
 const CURRENT_BADGE = {
-	true: { label: "현재 입력 기준", className: "summary-badge is-current" },
-	false: { label: "입력 변경됨", className: "summary-badge is-stale" },
+	true: { label: "현재 입력 기준", tone: "success" },
+	false: { label: "입력 변경됨", tone: "warning" },
 }
 
 export default function CaseSummaryPanel({ detail }) {
@@ -36,13 +38,13 @@ export default function CaseSummaryPanel({ detail }) {
 				<div aria-label={failed ? "이전에 만든 요약" : "현재 요약"} role="group">
 					<p>
 						{badge ? (
-							<span className={badge.className}>{badge.label}</span>
+							<StatusBadge tone={badge.tone}>{badge.label}</StatusBadge>
 						) : (
-							<span className="summary-badge">
+							<StatusBadge tone="neutral">
 								입력 기준 확인 불가 — 다시 생성해 주세요
-							</span>
+							</StatusBadge>
 						)}{" "}
-						{failed && <span className="summary-badge is-stale">이전에 만든 요약</span>}{" "}
+						{failed && <StatusBadge tone="warning">이전에 만든 요약</StatusBadge>}{" "}
 						<small>
 							{formatSystemTime(summary.producedAt)} · {summary.generatorVersion}
 						</small>

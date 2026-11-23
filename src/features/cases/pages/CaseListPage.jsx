@@ -2,12 +2,17 @@ import { useState } from "react"
 import { Link, useLocation, useSearchParams } from "react-router"
 import "../styles/cases.css"
 import { useCases } from "../hooks/useCases"
-import { REJECTION_LABELS, STATUS_LABELS, labelOf } from "../labels"
+import { REJECTION_LABELS, STATUS_LABELS, STATUS_TONES, labelOf } from "../labels"
+import StatusBadge from "../../../shared/ui/StatusBadge"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
 import CaseOverview from "../components/CaseOverview"
 import ReassignDialog from "../components/ReassignDialog"
 import Pagination from "../../../shared/ui/Pagination"
+import { formatScore } from "../../../shared/format/score"
+import { useSession } from "../../auth/hooks/useSession"
+import { useGuide } from "../../../shared/ui/useGuide"
+import { caseListWorkflowGuide } from "../../../shared/ui/workflowGuide"
 
 // 목록의 [담당자 변경]도 상세처럼 서버가 준 available_actions(REASSIGN)만 보고 켜요(#23 리뷰). 누르면 서버가 다시 검사해요.
 const canReassign = (item) => item.availableActions.includes("REASSIGN")
@@ -63,6 +68,8 @@ function statusText(item) {
 // 케이스 목록 — 계약서 C1 `GET /cases`. 필터·정렬·페이지는 주소(query)에 둬서 새로고침·링크 공유·상세에서 돌아와도 유지해요.
 // 계정 관리의 [케이스 보기] → /cases?assignee=login_id 도 그대로 받아요(SCRUM-169).
 export default function CaseListPage() {
+	const role = useSession().data?.role
+	useGuide(caseListWorkflowGuide(role))
 	const [params, setParams] = useSearchParams()
 	const location = useLocation()
 	const filters = readFilters(params)
@@ -215,11 +222,11 @@ export default function CaseListPage() {
 												</td>
 												<td>{item.accountNo}</td>
 												<td>
-													<span className="case-status">
+													<StatusBadge tone={STATUS_TONES[item.status]}>
 														{statusText(item)}
-													</span>
+													</StatusBadge>
 												</td>
-												<td>{item.score ?? "—"}</td>
+												<td>{formatScore(item.score) ?? "—"}</td>
 												<td>{item.assignee?.displayName || "미배정"}</td>
 												<td>{formatSystemTime(item.createdAt)}</td>
 												{manageColumn && (

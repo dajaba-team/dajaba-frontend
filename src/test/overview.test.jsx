@@ -33,24 +33,27 @@ const titles = (cards) =>
 	cards.map((card) => card.querySelector(".metric-title").firstChild.textContent)
 
 describe("일반 대시보드의 데이터 범위", () => {
-	it("조사역은 케이스 기준 — 내 담당 카드와 위험 등급 도넛, 미산출을 고위험이나 0점으로 바꾸지 않는다", () => {
-		show(sample, { role: "INVESTIGATOR", me: "inv01" })
+	it("조사역은 내 담당 기준 — 조사 중·보완할 초안·승인 대기, 미산출을 고위험이나 0점으로 바꾸지 않는다", () => {
+		show(sample, { mine: true })
 		const cards = kpiCards()
 		expect(cards[0]).toHaveTextContent("3건")
-		expect(cards[1]).toHaveTextContent("1건") // 내가 담당한 승인 대기 1건
+		expect(cards[1]).toHaveTextContent("1건") // 조사 중(REVIEWING) 1건 — 접수·승인 대기는 빼요
+		expect(cards[2]).toHaveTextContent("0건")
+		expect(cards[3]).toHaveTextContent("1건")
 		// 카드는 제목·건수·아이콘만, 뜻은 제목 옆 ⓘ 툴팁(버튼 설명)으로, 카드 안 이동 링크 없음(SCRUM-345)
-		expect(titles(cards)).toEqual([
-			"전체 케이스",
-			"내 담당 케이스",
-			"미배정 케이스",
-			"승인 대기",
-		])
+		expect(titles(cards)).toEqual(["내 담당 케이스", "조사 중", "보완할 초안", "승인 대기"])
 		expect(cards.every((card) => card.querySelector(":scope > p") === null)).toBe(true)
 		const tips = [
-			["전체 케이스", "조회 가능한 전체 케이스 수"],
-			["내 담당 케이스", "나에게 배정되어 처리 중인 케이스 수"],
-			["미배정 케이스", "담당 조사역이 배정되지 않은 케이스 수"],
-			["승인 대기", "승인자 검토가 필요한 케이스 수"],
+			["내 담당 케이스", "나에게 배정된 케이스 수"],
+			[
+				"조사 중",
+				"내 담당 중 아직 조사하고 있는 케이스 수(조사 중·에스컬레이션·초안 작성됨)",
+			],
+			[
+				"보완할 초안",
+				"보완 요청으로 반려된 직후의 초안 수 — 본문을 고쳐 저장하기 시작하면 빠져요",
+			],
+			["승인 대기", "승인 요청을 올려 승인자 검토를 기다리는 케이스 수"],
 		]
 		tips.forEach(([name, tip], index) => {
 			const info = within(cards[index]).getByRole("button", { name: `${name} 설명` })
@@ -58,7 +61,7 @@ describe("일반 대시보드의 데이터 범위", () => {
 		})
 		expect(screen.queryByRole("link", { name: /케이스에서 확인/ })).toBeNull()
 		expect(screen.getByRole("heading", { name: "위험 등급 분포" })).toBeInTheDocument()
-		expect(screen.getByText("조회 가능한 전체 케이스 기준")).toBeInTheDocument()
+		expect(screen.getByText("내 담당 케이스 기준")).toBeInTheDocument()
 		expect(
 			screen.getByRole("button", { name: "위험 등급 분포 설명" }),
 		).toHaveAccessibleDescription("위험 점수는 범죄 확률이 아닌 조사 우선순위 지표입니다.")
@@ -81,7 +84,13 @@ describe("일반 대시보드의 데이터 범위", () => {
 		expect(
 			screen.getByRole("heading", { name: "지금 바로 확인해야 할 케이스" }),
 		).toBeInTheDocument()
-		expect(screen.getByText("위험도가 높은 케이스를 우선 확인하세요.")).toBeInTheDocument()
+		expect(
+			screen.getByText("위험 점수가 가장 높은 케이스예요. 지금 바로 열어 확인해 주세요."),
+		).toBeInTheDocument()
+		expect(screen.getByRole("link", { name: /내 담당 케이스/ })).toHaveAttribute(
+			"href",
+			"/cases?mine=1",
+		)
 		expect(screen.queryByText(/카드와 차트는 현재 계정이/)).toBeNull()
 		// 확인할 케이스 줄: 점수 있는 케이스만 등급 배지, 미산출은 배지·등급색 없음
 		const rows = document.querySelectorAll(".focus-case")
@@ -96,19 +105,28 @@ describe("일반 대시보드의 데이터 범위", () => {
 		)
 	})
 
-	it("승인자는 내 담당 대신 아직 끝나지 않은 진행 중 케이스를 센다", () => {
-		show(
-			[...sample, { caseNo: "CASE-DONE", status: "REPORTED", score: 0.85, assignee: null }],
-			{ role: "APPROVER", me: "apr01" },
-		)
-		const cards = kpiCards()
-		expect(titles(cards)).toEqual([
-			"전체 케이스",
-			"진행 중 케이스",
-			"미배정 케이스",
-			"승인 대기",
+	it("승인자는 전체 기준 같은 단계 — 조사 중·보완 중·승인 대기, 보고 안 함 반려는 보완이 아니다", () => {
+		show([
+			...sample,
+			{
+				caseNo: "CASE-REV",
+				status: "REJECTED",
+				rejectionReasonCode: "NEED_REVISION",
+				score: 0.8,
+			},
+			{
+				caseNo: "CASE-NR",
+				status: "REJECTED",
+				rejectionReasonCode: "NOT_REPORTABLE",
+				score: 0.8,
+			},
 		])
-		expect(cards[1]).toHaveTextContent("3건") // 보고된 1건 제외
+		const cards = kpiCards()
+		expect(titles(cards)).toEqual(["전체 조회 케이스", "조사 중", "보완 중", "승인 대기"])
+		expect(cards[0]).toHaveTextContent("5건")
+		expect(cards[1]).toHaveTextContent("1건")
+		expect(cards[2]).toHaveTextContent("1건")
+		expect(cards[3]).toHaveTextContent("1건")
 	})
 
 	it("관리자는 경보 기준 — 탐지 경보·고위험 경보(케이스 전환 포함)와 경보 위험 등급 도넛", () => {

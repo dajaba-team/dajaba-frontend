@@ -91,7 +91,7 @@ describe("AI 호출 기록 탭", () => {
 		expect(within(form).getByRole("button", { name: "조회" })).toBeDisabled()
 		server.events.removeAllListeners()
 	})
-	it("엔드포인트 필터에 질문 답변(/v1/cases/ask)이 있다 — 계약서 5.9 여섯 개", async () => {
+	it("엔드포인트 필터에 질문 답변(/v1/cases/ask)·참고 사례 찾기가 있다 — 계약서 5.9 + SCRUM-309", async () => {
 		renderApp()
 		const form = await screen.findByRole("form", { name: "AI 호출 기록 필터" })
 		const options = within(within(form).getByLabelText("엔드포인트"))
@@ -105,6 +105,7 @@ describe("AI 호출 기록 탭", () => {
 			"/v1/cases/summary",
 			"/v1/cases/ask",
 			"/v1/health",
+			"/v1/references/search",
 		])
 	})
 	it("결과가 없으면 안내와 [필터 초기화]", async () => {
@@ -126,6 +127,35 @@ describe("AI 호출 기록 탭", () => {
 		expect(await screen.findByText("데이터를 불러오지 못했습니다.")).toBeInTheDocument()
 		expect(screen.getByRole("button", { name: "다시 불러오기" })).toBeInTheDocument()
 		expect(screen.queryByText("조건에 맞는 기록이 없어요.")).not.toBeInTheDocument()
+	})
+})
+
+// 상태 배지(SCRUM-332) — 성공·실패를 색(data-tone)과 글자 둘 다로 구분하고, 강조는 상태 칸 배지에만.
+const badgesIn = (row) => [...row.querySelectorAll(".status-badge")]
+describe("감사 기록 상태 배지 (SCRUM-332)", () => {
+	it("AI 호출 결과는 성공 success · 실패 danger 배지 — 글자로도 구분되고 행 전체는 칠하지 않는다", async () => {
+		renderApp()
+		const list = await rows("AI 호출 기록")
+		const failed = badgesIn(list[0])
+		expect(failed).toHaveLength(1)
+		expect(failed[0]).toHaveAttribute("data-tone", "danger")
+		expect(failed[0]).toHaveTextContent("실패 · AI_TIMEOUT")
+		const ok = list.flatMap(badgesIn).filter((b) => b.dataset.tone === "success")
+		expect(ok.length).toBeGreaterThan(0)
+		ok.forEach((b) => expect(b).toHaveTextContent("성공"))
+		list.forEach((row) => expect(row).not.toHaveAttribute("data-tone"))
+	})
+	it("접근 기록은 로그인 성공·실패만 배지, 다른 동작은 글자 그대로", async () => {
+		const user = renderApp()
+		await user.click(await screen.findByRole("tab", { name: "접근 기록" }))
+		const list = await rows("접근 기록")
+		const badges = list.flatMap(badgesIn)
+		expect(badges.map((b) => [b.dataset.tone, b.textContent])).toEqual([
+			["danger", "로그인 실패"],
+			["success", "로그인"],
+		])
+		expect(badgesIn(list[0])).toHaveLength(0)
+		expect(within(list[0]).getByText("역할 변경")).toBeInTheDocument()
 	})
 })
 

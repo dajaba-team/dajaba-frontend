@@ -10,8 +10,7 @@ export function riskCounts(items) {
 			).length,
 	)
 }
-// 담당 조사역이 처리 중인 상태(BE 계정 목록 open_case_count 와 같은 기준) — 진행 중은 여기에 접수(OPEN)까지
-export const ASSIGNED_ACTIVE = ["REVIEWING", "ESCALATED", "DRAFTED", "PENDING_APPROVAL", "REJECTED"]
-export const IN_PROGRESS = ["OPEN", ...ASSIGNED_ACTIVE]
+// 조사 단계(대시보드 "조사 중" 카드, SCRUM-345) — 승인 대기·반려(보완)는 따로 세서 겹치지 않게
+export const INVESTIGATING = ["REVIEWING", "ESCALATED", "DRAFTED"]
 // Presentation-only synthetic daily volumes; never used by the live overview.
 export const demoTrend = [1240, 1680, 1490, 2150, 1830, 2420, 1760, 2120, 1660, 2070]

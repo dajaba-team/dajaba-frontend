@@ -3,8 +3,7 @@ import Modal from "./dashboard/Modal"
 import Icon from "./dashboard/Icon"
 import { GuideContext } from "./useGuide"
 
-// 역할 기본 문구는 〔초안〕입니다. UI/UX v1.4 COM-02에 역할별 GuideBar 문구가 없어서
-// 흐름 데모 nextTask()의 톤을 참고해 뽑았어요. 확정되면 〔초안〕 표시를 뗍니다.
+// 역할 기본 문구. 업무 페이지는 useGuide로 현재 단계와 다음 행동을 더 구체적으로 덮어써요(SCRUM-330).
 const ROLE_DEFAULT = {
 	ADMIN: "데이터를 적재하고 케이스를 만든 뒤 담당 조사역을 배정해 주세요.",
 	INVESTIGATOR: "배정된 케이스부터 근거를 확인해 주세요.",

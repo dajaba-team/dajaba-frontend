@@ -1,0 +1,45 @@
+/* 상태 배지(SCRUM-332) — 같은 뜻의 상태는 어느 화면이든 같은 색·같은 모양이에요(05_ui.md 4절 「상태 배지」).
+   색은 보조예요. 배지 글자만으로도 상태를 알 수 있게 써요. 강조는 배지에만, 행 전체는 칠하지 않아요.
+   여백(0.125rem 0.625rem)·점(0.375rem)은 표 줄 높이를 늘리지 않게 간격 토큰보다 작게 고정해요(05_ui.md 4절). */
+.status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.125rem 0.625rem;
+	border: var(--border-width) solid color-mix(in srgb, var(--status-ink) 24%, transparent);
+	border-radius: var(--radius-pill);
+	background: var(--status-soft);
+	color: var(--status-ink);
+	font-size: var(--font-small);
+	font-weight: 600;
+	line-height: 1.5;
+	white-space: nowrap;
+}
+.status-badge::before {
+	content: "";
+	flex: none;
+	width: 0.375rem;
+	height: 0.375rem;
+	border-radius: 50%;
+	background: currentcolor;
+}
+.status-badge[data-tone="success"] {
+	--status-ink: var(--color-pass);
+	--status-soft: var(--color-pass-soft);
+}
+.status-badge[data-tone="danger"] {
+	--status-ink: var(--color-fail);
+	--status-soft: var(--color-fail-soft);
+}
+.status-badge[data-tone="warning"] {
+	--status-ink: var(--color-warn);
+	--status-soft: var(--color-warn-soft);
+}
+.status-badge[data-tone="info"] {
+	--status-ink: var(--color-primary-strong);
+	--status-soft: var(--color-primary-soft);
+}
+.status-badge[data-tone="neutral"] {
+	--status-ink: var(--color-muted);
+	--status-soft: var(--color-soft);
+}

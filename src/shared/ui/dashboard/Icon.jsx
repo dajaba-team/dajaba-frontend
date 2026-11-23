@@ -141,6 +141,13 @@ const iconPaths = {
 	// 사이드바 접기·펼치기(SCRUM-327)
 	chevronsLeft: <path d="m12 6-6 6 6 6m6-12-6 6 6 6" />,
 	chevronsRight: <path d="m6 6 6 6-6 6m6-12 6 6-6 6" />,
+	// 업무 알림 종(SCRUM-334)
+	bell: (
+		<>
+			<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z" />
+			<path d="M10 20.5a2.2 2.2 0 0 0 4 0" />
+		</>
+	),
 }
 export default function Icon({ name, size = 18 }) {
 	return (
