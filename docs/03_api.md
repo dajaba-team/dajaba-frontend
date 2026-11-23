@@ -97,6 +97,14 @@
 - **폴링** — 그 날짜 실행 목록(`useBatchRunsForDate`)을 RUNNING이 있는 동안 2초마다(최대 10분, 넘으면 [상태 다시 확인]), 끝난 직후 15초까지 다시 읽어요. 원천 적재는 실행 한 건(`useBatchRun`)을 같은 방식으로.
 - 고른 분석 날짜는 `sessionStorage` `dajaba.batches.date.v1.{login_id}`에 둬요(`batchDate.js`) — 다른 메뉴에 갔다 오거나 새로고침해도 그 날짜 실행 목록으로 자동 처리 현황·결과 표를 다시 그려요.
 - 409 — 이미 적재된 DB의 `BATCH_ALREADY_DONE`은 실패가 아니라 "이미 적재돼 있음". 그 밖의 409(`BATCH_RUNNING`·`DATASET_NOT_LOADED`·`DATE_OUT_OF_RANGE`·`NO_ACTIVE_RULES`·`RULE_SCAN_NOT_DONE` 등)는 실행 카드 안에 보여 줘요. 룰 스캔은 성공한 날짜를 다시 돌릴 수 없어요.
+- **작업 추적기**(SCRUM-365, 「비동기 작업 알림 설계 문서」 7절) — 내가 시작한 비동기 작업을 화면을 옮겨도 지켜보다가 끝나면 토스트로 알려요(`shared/jobs`, `AppLayout`이 감싸요). 종류별 조회·판정은 `app/jobs/jobKinds.js`:
+    - `LOAD_DATASET` — 원천 적재 202 뒤 등록, B5를 2초마다(키는 `useBatchRun`과 같아 요청이 합쳐져요)
+    - `ANALYSIS` — 룰 스캔·[점수 재처리]·[다시 실행] 202 뒤 등록, 그 날짜 목록을 2초마다. 시작한 실행 이후 케이스 생성이 `SUCCEEDED`면 끝, 어느 단계든 `FAILED`면 실패
+    - `REPORT_PDF` — 모의 제출(P4)·다시 만들기(P5) 뒤 등록, 상태만 주는 API가 없어 S8을 3초마다(409 `REPORT_PDF_NOT_READY` `pdf_status` PENDING 진행·FAILED 실패, 200 완성)
+    - 10분이 지나도 진행 중이면 "확인 필요"(실패로 단정하지 않음) + 종 목록의 [다시 확인]. 404·403은 "확인할 수 없어요"(토스트 없음), 401은 전부 멈춤, 네트워크·5xx는 간격을 늘려 가며(최대 30초) 계속
+    - 저장은 `sessionStorage` `aml.jobs.{login_id}`(새로고침해도 이어짐, 로그아웃하면 지움). 진행 중 최대 10개, 끝난 것 최근 5개
+    - 토스트: 성공은 5초 뒤 사라지고 실패는 닫을 때까지 남아요, 둘 다 [결과 보기]. 그 작업 화면에 있거나 복구했는데 끝난 지 1분이 넘었으면 토스트 없이 종 목록에만. 문구엔 작업 이름·날짜·건수만(오류 원문 없음)
+    - 토스트는 최대 3개까지 쌓이고(`show({tone, text, sticky, action})`, 기존 호출 그대로), 종은 "작업" 칸 + 안 본 끝난 작업 수를 숫자에 더하고 진행 중이면 돌아가는 표시
 
 ## 5. 지금 연결된 API
 

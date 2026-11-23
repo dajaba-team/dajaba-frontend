@@ -789,6 +789,11 @@
 	/* 모달 위로 떠요(모달 50). 영역 자체는 pointer-events:none 이라 배경 차단은 그대로. */
 	z-index: 60;
 	pointer-events: none;
+	/* 최대 3개 쌓기(SCRUM-365) */
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	max-width: min(420px, calc(100vw - 2 * var(--space-4)));
 }
 .toast {
 	padding: var(--space-3) var(--space-4);
@@ -797,6 +802,31 @@
 	border: 1px solid var(--color-border);
 	box-shadow: 0 6px 16px rgba(32, 48, 68, 0.12);
 	pointer-events: auto;
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+.toast-text {
+	flex: 1;
+}
+/* [결과 보기]·닫기 — 실패 알림은 닫을 때까지 남아요(SCRUM-365) */
+.toast-action,
+.toast-close {
+	flex-shrink: 0;
+	min-height: 0;
+	padding: 0 var(--space-1);
+	border: 0;
+	background: transparent;
+	color: inherit;
+	font-weight: 700;
+	cursor: pointer;
+}
+.toast-action {
+	color: var(--brand-primary);
+}
+.toast-close {
+	font-size: 1.125rem;
+	line-height: 1;
 }
 .toast.is-error {
 	border-color: #c0392b;

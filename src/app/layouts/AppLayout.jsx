@@ -10,6 +10,8 @@ import Icon from "../../shared/ui/dashboard/Icon"
 import { visibleMenus } from "../navigation/appNavigation"
 import brandMark from "../../assets/brand-mark.png"
 import { useSidebarCollapsed } from "./useSidebarCollapsed"
+import JobsProvider from "../../shared/jobs/JobsProvider"
+import { jobKinds } from "../jobs/jobKinds"
 
 // 위 띠 왼쪽에 지금 열린 메뉴 이름을 보여 줘요. 상세 화면(/cases/:caseNo)은 가장 긴 경로가 같은 메뉴로.
 function currentMenu(menus, pathname) {
@@ -65,8 +67,9 @@ export default function AppLayout() {
 			document.removeEventListener("keydown", onKey)
 		}
 	}, [pathname])
+	// 작업 추적기(SCRUM-365) — 화면을 옮겨도 내가 시작한 작업을 지켜봐요. 알림 종도 여기서 읽어요.
 	return (
-		<>
+		<JobsProvider loginId={loginId} kinds={jobKinds}>
 			<a className="skip-link" href="#main-content">
 				본문으로 건너뛰기
 			</a>
@@ -197,6 +200,6 @@ export default function AppLayout() {
 					</main>
 				</div>
 			</div>
-		</>
+		</JobsProvider>
 	)
 }
