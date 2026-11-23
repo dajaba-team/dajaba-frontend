@@ -801,8 +801,9 @@
 	font-size: var(--font-small);
 	font-weight: var(--weight-semibold);
 }
-/* 좁은 화면(한 열)은 마크업 순서 그대로: 점수 근거 → 거래 분석 → 메모·처리 작업·정보.
-   CSS order 로 바꾸면 Tab 순서와 보이는 순서가 달라져서(WCAG 1.3.2·2.4.3, SCRUM-373) 넓은 화면만 grid 영역으로 옮겨요. */
+/* 마크업 순서 = Tab 순서: 점수 근거 → 거래 분석 → 메모·처리 작업·정보(WCAG 1.3.2·2.4.3, SCRUM-373).
+   좁은 화면은 한 열로 그대로, 넓은 화면은 왼쪽 열(점수 근거·거래 분석) → 오른쪽 열(메모·처리 작업·정보)로 읽혀요.
+   오른쪽 열을 위로 올리고 거래 분석을 아래 전체 폭으로 두면 Tab 이 아래로 갔다가 위로 돌아와서 그렇게 하지 않아요. */
 @media (min-width: 48rem) and (max-width: 77.49rem) {
 	.case-detail-aside {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -817,9 +818,10 @@
 		grid-template-columns: minmax(0, 1fr) 23rem;
 	}
 	.case-detail-layout {
+		grid-template-rows: auto 1fr;
 		grid-template-areas:
 			"main aside"
-			"evidence evidence";
+			"evidence aside";
 	}
 	.case-detail-main {
 		grid-area: main;
