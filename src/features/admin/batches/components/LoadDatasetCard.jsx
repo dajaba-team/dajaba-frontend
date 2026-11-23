@@ -4,6 +4,7 @@ import ConfirmDialog from "../../../../shared/ui/ConfirmDialog"
 import { getErrorCode, getErrorMessage } from "../../../../shared/api/apiClient"
 import { formatSystemTime } from "../../../../shared/format/time"
 import { batchesApi } from "../api/batchesApi"
+import { useJobs } from "../../../../shared/jobs/useJobs"
 import { MAX_POLL_MS, useBatchRun } from "../hooks/useBatchRun"
 import { formatCount } from "../formatCount"
 import Icon from "../../../../shared/ui/dashboard/Icon"
@@ -88,11 +89,19 @@ const finishedText = (run) =>
 export default function LoadDatasetCard({ onResult, primary = false, maxPollMs = MAX_POLL_MS }) {
 	const [confirming, setConfirming] = useState(false)
 	const [runId, setRunId] = useState(null)
+	const { track } = useJobs()
 	const start = useMutation({
 		mutationFn: () => batchesApi.load(),
 		onSuccess: (run) => {
 			setConfirming(false)
 			setRunId(run.batchRunId)
+			// 다른 화면에 가도 끝나면 알려요(SCRUM-365)
+			track({
+				kind: "LOAD_DATASET",
+				id: String(run.batchRunId),
+				label: "원천 적재",
+				to: "/admin/batches",
+			})
 		},
 		onError: (error) => {
 			if (getErrorCode(error) !== "BATCH_ALREADY_DONE") return

@@ -121,3 +121,37 @@
 	background: var(--color-primary-soft);
 	color: var(--color-primary-strong);
 }
+
+/* 작업 알림(SCRUM-365) — 진행 중이면 종 옆 작은 돌아가는 점, 목록 위 "작업" 칸 */
+.notification-running {
+	position: absolute;
+	inset-block-end: 0.25rem;
+	inset-inline-end: 0.25rem;
+	width: 0.5rem;
+	height: 0.5rem;
+	border: 2px solid var(--color-primary);
+	border-inline-end-color: transparent;
+	border-radius: 50%;
+	animation: notification-spin 0.9s linear infinite;
+}
+@keyframes notification-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.notification-running {
+		animation: none;
+	}
+}
+.notification-tag.is-job {
+	background: var(--color-primary-soft);
+	color: var(--color-primary-strong);
+}
+.notification-job[data-state="FAILED"] .notification-text {
+	color: var(--color-fail);
+}
+.notification-recheck {
+	margin: 0 0 var(--space-2) var(--space-3);
+	font-size: 0.75rem;
+}

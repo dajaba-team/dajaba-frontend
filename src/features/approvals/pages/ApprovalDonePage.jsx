@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useJobs } from "../../../shared/jobs/useJobs"
 import { Link, useParams } from "react-router"
 import { useMutation } from "@tanstack/react-query"
 import "../../cases/styles/cases.css"
@@ -69,8 +70,17 @@ export default function ApprovalDonePage() {
 	const canReport = strActionsFor(draft.data).includes("REPORT")
 
 	const target = { draftNo, caseNo, caseVersion: draft.data?.caseVersion }
-	const report = useApprovalCommand(target, "report")
-	const regenerate = useApprovalCommand(target, "regeneratePdf")
+	// 모의 제출·다시 만들기 뒤 확정본 PDF를 화면을 옮겨도 추적(SCRUM-365, 채영 님 요청)
+	const { track } = useJobs()
+	const trackPdf = () =>
+		track({
+			kind: "REPORT_PDF",
+			id: draftNo,
+			label: `확정본 PDF · ${draftNo}`,
+			to: `/approvals/${draftNo}`,
+		})
+	const report = useApprovalCommand(target, "report", { onDone: trackPdf })
+	const regenerate = useApprovalCommand(target, "regeneratePdf", { onDone: trackPdf })
 	const [confirming, setConfirming] = useState(false)
 
 	const [previewUrl, setPreviewUrl] = useState(null)
