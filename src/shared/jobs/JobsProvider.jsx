@@ -104,7 +104,11 @@ export default function JobsProvider({ loginId, kinds, children }) {
 		tracking.forEach((job, index) => {
 			const result = results[index]
 			if (!result) return
+			// 등록(또는 [다시 확인]) 전에 받은 결과는 쓰지 않아요 — 같은 번호로 다시 등록하면
+			// 캐시에 남은 예전 결과(예: PDF FAILED)로 바로 끝나 버려서(#96 리뷰)
+			const since = Date.parse(job.trackedAt)
 			if (result.isError) {
+				if (result.errorUpdatedAt < since) return
 				const status = result.error?.response?.status
 				if (status === 401) setStopped(true)
 				else if (status === 403 || status === 404)
@@ -117,7 +121,7 @@ export default function JobsProvider({ loginId, kinds, children }) {
 					setJobs((all) => updateJob(all, job, { state: "STALE" }))
 				return
 			}
-			if (!result.data) return
+			if (!result.data || result.dataUpdatedAt < since) return
 			const verdict = kinds[job.kind].evaluate(job, result.data)
 			if (verdict.state === "TRACKING") {
 				if (isStale(job, now)) setJobs((all) => updateJob(all, job, { state: "STALE" }))

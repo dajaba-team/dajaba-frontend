@@ -167,6 +167,22 @@ describe("작업 추적기", () => {
 		expect(document.querySelector(".toast")).toBeNull()
 	})
 
+	it("실패로 끝난 작업을 같은 번호로 다시 등록하면 캐시에 남은 예전 결과로 끝나지 않고 새로 추적한다", async () => {
+		// PDF 다시 만들기처럼 같은 종류·번호로 다시 등록(#96 리뷰)
+		states.h = "FAILED"
+		show()
+		track("h")
+		await waitFor(() => expect(jobOf("h").state).toBe("FAILED"))
+		states.h = "RUNNING"
+		track("h")
+		expect(jobOf("h").state).toBe("TRACKING")
+		await new Promise((resolve) => setTimeout(resolve, 80))
+		expect(jobOf("h").state).toBe("TRACKING")
+		states.h = "DONE"
+		await waitFor(() => expect(jobOf("h").state).toBe("DONE"))
+		expect(screen.getByRole("status")).toHaveTextContent("작업h 끝")
+	})
+
 	it("같은 작업은 한 번만 등록하고, 로그아웃하면 저장값을 지운다", async () => {
 		states.g = "RUNNING"
 		const { rerenderAs } = show()

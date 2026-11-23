@@ -47,6 +47,17 @@ describe("토스트 확장", () => {
 		expect([...toasts()].map((t) => t.textContent)).toEqual(["둘", "셋", "넷"])
 	})
 
+	it("넘쳐도 실패(sticky) 토스트는 남고 일반 토스트부터 밀려난다", () => {
+		show()
+		act(() => api.current.show({ tone: "error", text: "실패", sticky: true }))
+		act(() => ["하나", "둘", "셋"].forEach((text) => api.current.show({ text })))
+		expect([...toasts()].map((t) => t.textContent.replace("×", ""))).toEqual([
+			"실패",
+			"둘",
+			"셋",
+		])
+	})
+
 	it("sticky는 시간이 지나도 남고 [알림 닫기]로 닫는다", async () => {
 		show(30)
 		act(() => api.current.show({ tone: "error", text: "적재에 실패했어요", sticky: true }))

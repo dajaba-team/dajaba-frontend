@@ -43,11 +43,14 @@ export default function ToastProvider({ children, duration = 5000 }) {
 			}
 			setToasts((all) => {
 				const kept = [...all, toast]
-				kept.slice(0, Math.max(0, kept.length - MAX_TOASTS)).forEach((old) => {
+				// 넘치면 남는(sticky) 토스트가 아닌 것부터 — 실패 알림은 닫을 때까지 남게(#96 리뷰). 다 남는 것이면 오래된 것부터
+				while (kept.length > MAX_TOASTS) {
+					const index = kept.findIndex((item) => !item.sticky)
+					const [old] = kept.splice(index === -1 ? 0 : index, 1)
 					clearTimeout(timers.current.get(old.id))
 					timers.current.delete(old.id)
-				})
-				return kept.slice(-MAX_TOASTS)
+				}
+				return kept
 			})
 			if (!toast.sticky)
 				timers.current.set(

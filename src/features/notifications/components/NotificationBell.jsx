@@ -33,12 +33,15 @@ export default function NotificationBell({ loginId }) {
 		markSeen(list.data.serverTime)
 	}, [open, list.data, list.isFetching, list.dataUpdatedAt, markSeen])
 
+	// 열려 있는 동안 끝난 작업도 본 것으로 — 열 때 한 번만 부르면 열어 둔 사이 끝난 건 "안 봄"으로 남아서(#96 리뷰)
+	const { unseen, markSeen: markJobsSeen } = jobs
+	useEffect(() => {
+		if (open && unseen > 0) markJobsSeen()
+	}, [open, unseen, markJobsSeen])
+
 	const onToggle = (event) => {
 		const next = event.currentTarget.open
-		if (next) {
-			seenAtOpen.current = seen
-			jobs.markSeen()
-		}
+		if (next) seenAtOpen.current = seen
 		setOpen(next)
 	}
 	const isNew = (item) =>

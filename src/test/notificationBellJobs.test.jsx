@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { render, screen, within } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -43,21 +43,22 @@ const jobs = [
 	},
 ]
 
+let client
+const wrap = (value) => (
+	<QueryClientProvider client={client}>
+		<MemoryRouter>
+			<ToastProvider>
+				<JobsContext.Provider value={value}>
+					<NotificationBell loginId="admin" />
+				</JobsContext.Provider>
+			</ToastProvider>
+		</MemoryRouter>
+	</QueryClientProvider>
+)
 function show(value) {
 	resetCases(admin)
-	render(
-		<QueryClientProvider
-			client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-		>
-			<MemoryRouter>
-				<ToastProvider>
-					<JobsContext.Provider value={value}>
-						<NotificationBell loginId="admin" />
-					</JobsContext.Provider>
-				</ToastProvider>
-			</MemoryRouter>
-		</QueryClientProvider>,
-	)
+	client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+	return render(wrap(value))
 }
 
 beforeEach(() => localStorage.clear())
@@ -107,6 +108,17 @@ describe("알림 종 — 작업 알림", () => {
 		await user.click(await screen.findByLabelText("알림, 작업 2개 진행 중"))
 		await user.click(screen.getByRole("button", { name: "다시 확인" }))
 		expect(value.recheck).toHaveBeenCalledWith(jobs[1])
+	})
+
+	it("종을 열어 둔 동안 끝난 작업도 본 것으로 친다", async () => {
+		// 열 때 한 번만이 아니라 열려 있는 동안 안 본 수가 생기면 바로(#96 리뷰)
+		const markSeen = vi.fn()
+		const base = { jobs, track: vi.fn(), recheck: vi.fn(), markSeen, running: 1 }
+		const view = show({ ...base, unseen: 0 })
+		await userEvent.setup().click(await screen.findByLabelText("알림, 작업 1개 진행 중"))
+		expect(markSeen).not.toHaveBeenCalled()
+		view.rerender(wrap({ ...base, unseen: 1 }))
+		await waitFor(() => expect(markSeen).toHaveBeenCalledTimes(1))
 	})
 
 	it("작업이 없으면 작업 칸도 진행 표시도 없다", async () => {
