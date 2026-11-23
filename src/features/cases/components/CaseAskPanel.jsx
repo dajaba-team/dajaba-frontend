@@ -228,10 +228,13 @@ export default function CaseAskPanel({
 	const displayItems = [...items].reverse() // C9는 최신순, 패널은 오래된 질문부터 표시
 	const empty = data && data.total === 0 && !pending
 
+	// 맨 아래(최신)로 내리는 건 페이지가 바뀔 때·보내기 시작/끝날 때·가장 최근 질문이 바뀔 때만이에요.
+	// 같은 내용을 다시 불러와(창 포커스 복귀 등) data 객체만 새로 와도 읽던 자리를 건드리지 않아요.
+	const newestNo = items[0]?.questionNo
 	useEffect(() => {
 		if (hidden || !historyRef.current) return
 		historyRef.current.scrollTop = page === 1 ? historyRef.current.scrollHeight : 0
-	}, [hidden, page, pending, data])
+	}, [hidden, page, pending, newestNo])
 
 	return (
 		<section
@@ -328,6 +331,27 @@ export default function CaseAskPanel({
 					</>
 				)}
 				{(items.length > 0 || pending) && <p className="ask-kicker">질의 이력</p>}
+				{data && data.totalPages > 1 && (
+					<nav className="ask-pages" aria-label="질의 이력 페이지">
+						<button
+							type="button"
+							disabled={page >= data.totalPages}
+							onClick={() => setPage(page + 1)}
+						>
+							이전 질의
+						</button>
+						<span>
+							{page} / {data.totalPages}
+						</span>
+						<button
+							type="button"
+							disabled={page <= 1}
+							onClick={() => setPage(page - 1)}
+						>
+							최신
+						</button>
+					</nav>
+				)}
 				{displayItems.map((record) => (
 					<AskCard
 						key={record.questionNo}
@@ -350,27 +374,6 @@ export default function CaseAskPanel({
 							</p>
 						</AskReply>
 					</article>
-				)}
-				{data && data.totalPages > 1 && (
-					<nav className="ask-pages" aria-label="질의 이력 페이지">
-						<button
-							type="button"
-							disabled={page <= 1}
-							onClick={() => setPage(page - 1)}
-						>
-							최신
-						</button>
-						<span>
-							{page} / {data.totalPages}
-						</span>
-						<button
-							type="button"
-							disabled={page >= data.totalPages}
-							onClick={() => setPage(page + 1)}
-						>
-							이전 질의
-						</button>
-					</nav>
 				)}
 			</div>
 			<form className="ask-composer" onSubmit={submit} noValidate>

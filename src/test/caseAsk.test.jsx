@@ -402,6 +402,12 @@ describe("지난 질문(C9)", () => {
 				.getAllByRole("heading", { name: /지난 질문/ })
 				.map((heading) => heading.textContent),
 		).toEqual(["지난 질문 3", "지난 질문 4", "지난 질문 5", "지난 질문 6", "지난 질문 7"])
+		// 오래된 질문이 위에 있으니 [이전 질의]도 목록 위에 있어요.
+		const pages = within(panel).getByRole("navigation", { name: "질의 이력 페이지" })
+		const oldest = within(panel).getByRole("heading", { name: "지난 질문 3" })
+		expect(
+			pages.compareDocumentPosition(oldest) & Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy()
 		await user.click(within(panel).getByRole("button", { name: "이전 질의" }))
 		expect(
 			await within(panel).findByRole("heading", { name: "지난 질문 1" }),
