@@ -92,7 +92,8 @@ describe("작업 추적기", () => {
 		states.a = "DONE"
 		const toast = await screen.findByRole("status")
 		expect(toast).toHaveTextContent("작업a 끝")
-		expect(jobOf("a")).toMatchObject({ state: "DONE", seen: false })
+		// holder 는 Grab 의 effect 에서 바뀌어서, 토스트가 그려진 직후엔 아직 이전 값일 수 있어요(CI에서 가끔 실패) — 기다려서 봐요.
+		await waitFor(() => expect(jobOf("a")).toMatchObject({ state: "DONE", seen: false }))
 		expect(holder.current.unseen).toBe(1)
 		await userEvent.setup().click(screen.getByRole("button", { name: "결과 보기" }))
 		expect(screen.getByText("배치 화면")).toBeInTheDocument()
