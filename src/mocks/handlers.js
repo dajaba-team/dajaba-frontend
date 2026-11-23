@@ -30,14 +30,102 @@ import { http, HttpResponse } from "msw"
 let cases = seedCases()
 let drafts = seedStrDrafts()
 let currentUser = null
-// 배치 실행 (B1~B5) — 적재·케이스 생성은 접수하면 RUNNING, 첫 상태 조회에서 끝나요. 룰 스캔·점수는 바로 끝나요.
-// 같은 유형·날짜가 성공했으면 409 BATCH_ALREADY_DONE(적재는 날짜와 상관없이 한 번).
+// 배치 실행 (B1~B5, BE SCRUM-356) — 네 배치 모두 202 로 RUNNING 을 돌려주고 뒤에서 돌아요. 결과는 상태 조회·목록의 summary·progress.
+// 실행 목록(GET /admin/batches)을 읽을 때마다 한 걸음: 처음 읽을 땐 RUNNING(진행 단계 포함) 그대로, 다음 읽을 때 끝나요.
+// 상태 조회(B5)는 읽자마자 끝나요(적재 카드가 첫 조회에서 결과를 보게). 끝날 때 서버처럼 연쇄해요:
+// 룰 스캔 성공 → 같은 날짜 점수 RUNNING, 점수 성공 → 같은 날짜 케이스 생성 RUNNING(배치 자동 연쇄, 항상 켜짐).
+// 같은 유형·날짜가 성공했으면 409 BATCH_ALREADY_DONE(적재는 날짜와 상관없이 한 번, 룰 스캔은 날짜마다 한 번).
 // 점수(V012)·케이스 생성(V014, SCRUM-238)은 성공한 날도 다시 돌릴 수 있어요 — 같은 날짜가 돌고 있으면 409 BATCH_RUNNING.
 let batchRuns = []
-// 점수(B3) 날짜별 실행 횟수 — 첫 실행은 1건 실패(다시 보낼 수 있음), 두 번째는 남은 1건 성공, 그 뒤는 대상 없음
+// 점수 날짜별 실행 횟수 — scoreFails 면 첫 실행은 1건 다시 보낼 실패(FAILED·연쇄 멈춤), 재처리는 남은 1건 성공
 let scoreAttempts = {}
-// 케이스 생성(B4)을 같은 날짜로 다시 돌린 실행 번호 — 상태 조회 때 새로 만든 건수를 0으로 보여 줘요(응답 JSON 에는 안 넣어요)
-let openCasesReruns = new Set()
+let scoreFails = false
+const nowSeconds = () => new Date().toISOString().replace(/\.\d+Z$/, "Z")
+const PROGRESS = {
+	LOAD_DATASET: { done: 2, total: 4, current: "TRANSACTIONS" },
+	RULE_SCAN: { done: 2, total: 6, current: "R03_FX_RELAY" },
+}
+const newRun = (type, date) => ({
+	batch_run_id: 100 + batchRuns.length,
+	batch_type: type,
+	batch_date: date,
+	status: "RUNNING",
+	started_at: nowSeconds(),
+	finished_at: null,
+	rows_in: null,
+	rows_out: null,
+	error_message: null,
+	summary: null,
+	progress: PROGRESS[type] ?? null,
+	triggered_by: { login_id: currentUser?.login_id ?? "admin" },
+	seen: false,
+})
+const finishRun = (run) => {
+	const done = { finished_at: nowSeconds(), progress: null }
+	if (run.batch_type === "LOAD_DATASET") {
+		Object.assign(run, done, { status: "SUCCEEDED", rows_in: 2, rows_out: 1 })
+	} else if (run.batch_type === "RULE_SCAN") {
+		Object.assign(run, done, {
+			status: "SUCCEEDED",
+			rows_in: 1200,
+			rows_out: 3,
+			summary: {
+				alerts_by_rule: [{ rule_id: "R02_FAN_IN", rule_version: 1, alert_count: 3 }],
+			},
+		})
+		batchRuns.push(newRun("SCORE_REQUEST", run.batch_date))
+	} else if (run.batch_type === "SCORE_REQUEST") {
+		const attempt = (scoreAttempts[run.batch_date] = (scoreAttempts[run.batch_date] ?? 0) + 1)
+		const [requested, scored, failed] =
+			attempt === 1
+				? scoreFails
+					? [3, 2, 1]
+					: [3, 3, 0]
+				: attempt === 2
+					? [1, 1, 0]
+					: [0, 0, 0]
+		Object.assign(run, done, {
+			status: failed ? "FAILED" : "SUCCEEDED", // 다시 보낼 실패가 남으면 FAILED — 연쇄가 멈춰요
+			rows_in: failed ? null : requested,
+			rows_out: failed ? null : scored,
+			error_message: failed
+				? `대상 ${requested} · 점수 ${scored} · 실패 ${failed}(다시 보낼 것 ${failed})`
+				: null,
+			summary: {
+				requested,
+				scored,
+				failed,
+				retryable: failed,
+				chunks: { total: requested ? 1 : 0, failed: 0 },
+				model_versions: requested ? ["stub-1"] : [],
+			},
+		})
+		if (!failed) batchRuns.push(newRun("OPEN_CASES", run.batch_date))
+	} else {
+		// 다시 돌리면(보충 실행) 이미 케이스가 된 경보는 대상이 아니라 새로 만들 게 없어요(예시)
+		const rerun = batchRuns.some(
+			(other) =>
+				other !== run &&
+				other.batch_type === "OPEN_CASES" &&
+				other.batch_date === run.batch_date &&
+				other.status === "SUCCEEDED",
+		)
+		Object.assign(run, done, {
+			status: "SUCCEEDED",
+			rows_in: rerun ? 0 : 3,
+			rows_out: rerun ? 0 : 1,
+		})
+	}
+}
+const advanceBatches = () => {
+	for (const run of [...batchRuns]) if (run.status === "RUNNING" && run.seen) finishRun(run)
+	for (const run of batchRuns) run.seen = true
+}
+const publicRun = ({ seen, ...run }) => run // eslint-disable-line no-unused-vars
+const runningOf = (type, date) =>
+	batchRuns.some(
+		(run) => run.batch_type === type && run.batch_date === date && run.status === "RUNNING",
+	)
 // 질문하기(A8) 1분 횟수 제한용 — 사용자별 최근 질문 시각
 let askLog = []
 const batchConflict = (code, message) =>
@@ -97,7 +185,10 @@ const accountFail = (status, code, message, details = {}) =>
 
 // pendingApproval: 케이스 1001을 승인 대기로 둔 시드(승인함 테스트 — mocks/approvals.js seedPendingApproval)
 // formerAssignee: 승인 대기 케이스 1001을 예전에 담당했던 사람(login_id) — 이력에 REASSIGN 행을 남겨요(자기 승인 막기 시험).
-export function resetCases(user = null, { pendingApproval = false, formerAssignee = null } = {}) {
+export function resetCases(
+	user = null,
+	{ pendingApproval = false, formerAssignee = null, scoreFails: failFirstScore = false } = {},
+) {
 	cases = seedCases()
 	drafts = seedStrDrafts()
 	if (pendingApproval) seedPendingApproval(cases, drafts)
@@ -117,7 +208,7 @@ export function resetCases(user = null, { pendingApproval = false, formerAssigne
 	accounts = seedAccounts()
 	batchRuns = []
 	scoreAttempts = {}
-	openCasesReruns = new Set()
+	scoreFails = failFirstScore
 	askLog = []
 }
 const draftNotFound = () =>
@@ -320,20 +411,44 @@ export const handlers = [
 			),
 		)
 	}),
+	// 경보 위험 등급 집계(BE SCRUM-360) — 시연용 고정 분포. HIGH·케이스 전환은 지금 케이스 수와 맞춰요.
+	http.get(`${base}/api/v1/admin/alerts/stats`, ({ request }) => {
+		if (!currentUser) return unauthenticated()
+		const denied = adminOnly()
+		if (denied) return denied
+		const date = new URL(request.url).searchParams.get("date")
+		if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date))
+			return HttpResponse.json(
+				{
+					error: {
+						code: "INVALID_REQUEST",
+						message: "날짜 형식이 올바르지 않습니다",
+						details: {},
+					},
+				},
+				{ status: 400 },
+			)
+		const high = cases.length
+		return HttpResponse.json({
+			date: date ?? null,
+			total: high + 17 + 1572 + 3 + 1,
+			scored: high + 17 + 1572,
+			bands: { high, medium: 17, low: 1572 },
+			unscored: 3,
+			failed: 1,
+			case_opened: high,
+			policy_version: "v1",
+		})
+	}),
 	http.post(`${base}/api/v1/admin/batches/load`, () => {
 		if (!currentUser) return unauthenticated()
 		const denied = adminOnly()
 		if (denied) return denied
 		if (succeeded("LOAD_DATASET"))
 			return batchConflict("BATCH_ALREADY_DONE", "이미 적재된 데이터가 있습니다")
-		const run = {
-			batch_run_id: 100 + batchRuns.length,
-			batch_type: "LOAD_DATASET",
-			batch_date: new Date().toISOString().slice(0, 10),
-			status: "RUNNING",
-		}
+		const run = newRun("LOAD_DATASET", new Date().toISOString().slice(0, 10))
 		batchRuns.push(run)
-		return HttpResponse.json(run, { status: 202 })
+		return HttpResponse.json(publicRun(run), { status: 202 })
 	}),
 	http.post(`${base}/api/v1/admin/batches/rule-scan`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
@@ -349,24 +464,16 @@ export const handlers = [
 			return batchConflict("DATASET_NOT_LOADED", "적재된 거래가 없습니다")
 		if (date < "2022-09-01" || date > "2022-09-18")
 			return batchConflict("DATE_OUT_OF_RANGE", "거래가 있는 날짜가 아닙니다")
+		if (runningOf("RULE_SCAN", date))
+			return batchConflict("BATCH_RUNNING", `RULE_SCAN ${date} 가 실행 중입니다`)
 		if (succeeded("RULE_SCAN", date))
 			return batchConflict(
 				"BATCH_ALREADY_DONE",
 				`RULE_SCAN ${date} 는 이미 성공한 배치입니다`,
 			)
-		const run = {
-			batch_run_id: 100 + batchRuns.length,
-			batch_type: "RULE_SCAN",
-			batch_date: date,
-			status: "SUCCEEDED",
-			rows_in: 1200,
-			rows_out: 3,
-			alerts_by_rule: [{ rule_id: "R02_FAN_IN", rule_version: 1, alert_count: 3 }],
-			started_at: "2026-11-12T03:00:00Z",
-			finished_at: "2026-11-12T03:00:02Z",
-		}
+		const run = newRun("RULE_SCAN", date)
 		batchRuns.push(run)
-		return HttpResponse.json(run)
+		return HttpResponse.json(publicRun(run), { status: 202 })
 	}),
 	http.post(`${base}/api/v1/admin/batches/score`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
@@ -380,25 +487,11 @@ export const handlers = [
 			)
 		if (!succeeded("RULE_SCAN", date))
 			return batchConflict("RULE_SCAN_NOT_DONE", `${date} 룰 스캔이 아직 성공하지 않았습니다`)
-		const attempt = (scoreAttempts[date] = (scoreAttempts[date] ?? 0) + 1)
-		const [requested, scored, failed] =
-			attempt === 1 ? [3, 2, 1] : attempt === 2 ? [1, 1, 0] : [0, 0, 0]
-		const run = {
-			batch_run_id: 100 + batchRuns.length,
-			batch_type: "SCORE_REQUEST",
-			batch_date: date,
-			status: failed ? "FAILED" : "SUCCEEDED", // 다시 보낼 실패가 남으면 FAILED 여도 200
-			requested,
-			scored,
-			failed,
-			retryable: failed,
-			chunks: { total: requested ? 1 : 0, failed: 0 },
-			model_versions: requested ? ["stub-1"] : [],
-			started_at: "2026-11-12T03:00:00Z",
-			finished_at: "2026-11-12T03:00:04Z",
-		}
+		if (runningOf("SCORE_REQUEST", date))
+			return batchConflict("BATCH_RUNNING", "같은 날짜의 점수 배치가 실행 중입니다")
+		const run = newRun("SCORE_REQUEST", date)
 		batchRuns.push(run)
-		return HttpResponse.json(run)
+		return HttpResponse.json(publicRun(run), { status: 202 })
 	}),
 	http.post(`${base}/api/v1/admin/batches/open-cases`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
@@ -414,32 +507,18 @@ export const handlers = [
 				{ status: 400 },
 			)
 		// 성공한 날도 다시 받아요(보충 실행, BE V014·SCRUM-238). 같은 날짜가 돌고 있을 때만 409.
-		// 다른 유형(룰 스캔)이 같은 날짜에 돌아도 막지 않게 유형까지 봐요(SCRUM-220)
-		if (
-			batchRuns.some(
-				(item) =>
-					item.batch_type === "OPEN_CASES" &&
-					item.batch_date === date &&
-					item.status === "RUNNING",
-			)
-		)
+		if (runningOf("OPEN_CASES", date))
 			return batchConflict("BATCH_RUNNING", "같은 날짜의 케이스 생성이 실행 중입니다")
-		const run = {
-			batch_run_id: 100 + batchRuns.length,
-			batch_type: "OPEN_CASES",
-			batch_date: date,
-			status: "RUNNING",
-		}
-		// 다시 돌리면 이미 케이스가 된 경보는 대상이 아니라 새로 만들 게 없어요(예시)
-		if (succeeded("OPEN_CASES", date)) openCasesReruns.add(run.batch_run_id)
+		const run = newRun("OPEN_CASES", date)
 		batchRuns.push(run)
-		return HttpResponse.json(run, { status: 202 })
+		return HttpResponse.json(publicRun(run), { status: 202 })
 	}),
-	// 실행 목록 — type·status·date 로 거르고 최신 순(BE 기본 started_at,desc). 적재 카드가 열 때 성공한 적재를 찾아요(SCRUM-344)
+	// 실행 목록 — type·status·date 로 거르고 최신 순(BE 기본 started_at,desc). 읽을 때마다 실행 중인 배치가 한 걸음 나아가요.
 	http.get(`${base}/api/v1/admin/batches`, ({ request }) => {
 		if (!currentUser) return unauthenticated()
 		const denied = adminOnly()
 		if (denied) return denied
+		advanceBatches()
 		const url = new URL(request.url)
 		const want = {
 			batch_type: url.searchParams.get("type"),
@@ -450,6 +529,7 @@ export const handlers = [
 			.filter((run) =>
 				Object.entries(want).every(([key, value]) => !value || run[key] === value),
 			)
+			.map(publicRun)
 			.reverse()
 		return HttpResponse.json(pageOf(rows, url))
 	}),
@@ -461,17 +541,8 @@ export const handlers = [
 				{ error: { code: "NOT_FOUND", message: "요청한 주소가 없습니다", details: {} } },
 				{ status: 404 },
 			)
-		if (run.status === "RUNNING")
-			Object.assign(run, {
-				status: "SUCCEEDED",
-				started_at: "2026-11-02T03:00:00Z",
-				finished_at: "2026-11-02T03:00:05Z",
-				rows_in: openCasesReruns.has(run.batch_run_id) ? 0 : 2,
-				rows_out: openCasesReruns.has(run.batch_run_id) ? 0 : 1,
-				error_message: null,
-				triggered_by: { login_id: currentUser.login_id },
-			})
-		return HttpResponse.json(run)
+		if (run.status === "RUNNING") finishRun(run)
+		return HttpResponse.json(publicRun(run))
 	}),
 	http.get(`${base}/api/v1/auth/me`, () =>
 		currentUser
