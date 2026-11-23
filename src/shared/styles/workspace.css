@@ -388,6 +388,10 @@
 .risk-donut-center strong .count-up {
 	font-weight: inherit;
 }
+/* 네 자리 이상(1,624건 등)은 고리에 닿지 않게 줄여요 */
+.risk-donut-center[data-long] strong {
+	font-size: 32px;
+}
 .risk-donut-center small {
 	color: var(--color-muted);
 	font-size: 14px;

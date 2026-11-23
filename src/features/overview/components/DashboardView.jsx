@@ -1,12 +1,20 @@
-import { useId, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { Link } from "react-router"
 import AnalyticsChart from "../../../shared/ui/charts/AnalyticsChart"
 import RiskDonut from "./RiskDonut"
 import DashboardHero from "../../../shared/ui/dashboard/DashboardHero"
 import CountUp from "../../../shared/ui/dashboard/CountUp"
 import Icon from "../../../shared/ui/dashboard/Icon"
+import InfoTip from "../../../shared/ui/InfoTip"
 import { STATUS_LABELS } from "../../cases/labels"
-import { riskCounts, riskNames, riskColors, demoTrend } from "../model/analytics"
+import {
+	riskCounts,
+	riskNames,
+	riskColors,
+	ASSIGNED_ACTIVE,
+	IN_PROGRESS,
+	demoTrend,
+} from "../model/analytics"
 
 // 마지막 갱신 시각 — 브라우저 시간대의 시:분:초(SCRUM-345)
 const CLOCK = new Intl.DateTimeFormat("ko-KR", {
@@ -17,28 +25,7 @@ const CLOCK = new Intl.DateTimeFormat("ko-KR", {
 })
 const clockOf = (ms) => CLOCK.format(new Date(ms))
 
-// KPI 카드 제목 옆 ⓘ — 마우스를 올리거나 키보드로 가면 카드 뜻을 한 줄로 보여 줘요(SCRUM-345).
-// 화면 읽기 프로그램에는 버튼 설명(aria-describedby)으로 읽혀요.
-function InfoTip({ label, text }) {
-	const tipId = useId()
-	return (
-		<span className="kpi-info">
-			<button
-				type="button"
-				className="kpi-info-button"
-				aria-label={`${label} 설명`}
-				aria-describedby={tipId}
-				// 키보드로 띄운 설명은 Esc 로 닫아요(포커스를 놓으면 사라짐)
-				onKeyDown={(event) => event.key === "Escape" && event.currentTarget.blur()}
-			>
-				<Icon name="info" size={14} />
-			</button>
-			<span role="tooltip" id={tipId} className="kpi-info-tip">
-				{text}
-			</span>
-		</span>
-	)
-}
+// KPI 카드 제목 옆 ⓘ 툴팁은 공통 InfoTip(shared/ui) — 데이터·배치 운영 카드도 같이 써요(SCRUM-345).
 
 export default function DashboardView({
 	items,
@@ -53,6 +40,9 @@ export default function DashboardView({
 	onRefresh = null, // 업무 화면: 서버에서 다시 불러오기(Promise). 시연 화면은 없음 → 효과만 다시
 	refreshing = false,
 	updatedAt = 0, // 마지막으로 받아 온 시각(ms) — 0이면 표시 안 함
+	role = null, // 업무 화면 역할 — 조사역은 "내 담당", 그 밖은 "진행 중" 카드
+	me = null, // 로그인 아이디(내 담당 케이스 셈)
+	alertStats = null, // 관리자: 경보 통계(BE SCRUM-360) — 있으면 경보 기준 카드·도넛
 }) {
 	const [period, setPeriod] = useState(10)
 	const [replay, setReplay] = useState(0)
@@ -62,28 +52,95 @@ export default function DashboardView({
 		setReplay((v) => v + 1)
 	}
 	const counts = useMemo(() => riskCounts(items), [items])
-	// 카드에는 제목·건수·아이콘만, 뜻은 제목 옆 ⓘ 툴팁으로(SCRUM-345). 시연 화면 첫 카드만 시연 데이터라고 알려요
-	const cards = [
-		[
-			demo ? "시연 케이스" : "전체 케이스",
-			total,
-			demo ? "시연용 합성 데이터의 케이스 수" : "조회 가능한 전체 케이스 수",
-			"case",
-		],
-		["고위험 케이스", counts[0], "위험 등급이 HIGH인 케이스 수", "alert"],
-		[
-			"미배정 케이스",
-			items.filter((i) => !i.assignee).length,
-			"담당 조사역이 배정되지 않은 케이스 수",
-			"user",
-		],
-		[
-			"승인 대기",
-			items.filter((i) => i.status === "PENDING_APPROVAL").length,
-			"승인자 검토가 필요한 케이스 수",
-			"approval",
-		],
+	// 역할별 카드(SCRUM-345) — 카드에는 제목·건수·아이콘만, 뜻은 제목 옆 ⓘ 툴팁으로.
+	// 케이스는 HIGH 경보로만 만들어져 "고위험 케이스"는 전체 케이스와 늘 같아서, 관리자는 경보 기준으로,
+	// 조사역·승인자는 내 담당·진행 중으로 바꿨어요. 관리자의 고위험 경보는 케이스 전환 수와 정책상 같아 한 카드로 합쳤어요.
+	// 시연 화면은 합성 데이터라 기존 그대로.
+	const unassigned = [
+		"미배정 케이스",
+		items.filter((i) => !i.assignee).length,
+		"담당 조사역이 배정되지 않은 케이스 수",
+		"user",
 	]
+	const pending = [
+		"승인 대기",
+		items.filter((i) => i.status === "PENDING_APPROVAL").length,
+		"승인자 검토가 필요한 케이스 수",
+		"approval",
+	]
+	const alertScope = alertStats?.date ? `기준일 ${alertStats.date}` : "전체 기간"
+	let cards
+	if (alertStats)
+		cards = [
+			["탐지 경보", alertStats.total, `${alertScope}에 룰 스캔이 탐지한 경보 수`, "alert"],
+			[
+				"고위험 경보",
+				alertStats.bands?.high ?? null,
+				alertStats.bands
+					? `운영 경계값 기준 HIGH 경보 수 — 이 경보만 케이스로 전환돼요(전환 ${alertStats.caseOpened.toLocaleString("ko-KR")}건)`
+					: "운영 등급 경계값이 아직 없어 나눌 수 없어요",
+				"warning",
+			],
+			unassigned,
+			pending,
+		]
+	else if (demo)
+		cards = [
+			["시연 케이스", total, "시연용 합성 데이터의 케이스 수", "case"],
+			["고위험 케이스", counts[0], "위험 등급이 HIGH인 케이스 수", "alert"],
+			unassigned,
+			pending,
+		]
+	else
+		cards = [
+			["전체 케이스", total, "조회 가능한 전체 케이스 수", "case"],
+			role === "INVESTIGATOR"
+				? [
+						"내 담당 케이스",
+						items.filter(
+							(i) => i.assignee?.loginId === me && ASSIGNED_ACTIVE.includes(i.status),
+						).length,
+						"나에게 배정되어 처리 중인 케이스 수",
+						"user",
+					]
+				: [
+						"진행 중 케이스",
+						items.filter((i) => IN_PROGRESS.includes(i.status)).length,
+						"접수부터 승인 대기·반려까지 아직 끝나지 않은 케이스 수",
+						"clock",
+					],
+			unassigned,
+			pending,
+		]
+	// 오른쪽 도넛 — 관리자는 경보 위험 등급, 그 밖은 케이스 위험 등급
+	const SCORE_NOTE = "위험 점수는 범죄 확률이 아닌 조사 우선순위 지표입니다."
+	let donut
+	if (alertStats)
+		donut = {
+			title: "경보 위험 등급 분포",
+			note: `케이스 생성과 같은 운영 경계값으로 나눈 경보 등급입니다. ${SCORE_NOTE}`,
+			scope: `${alertScope} 탐지 경보 기준`,
+			names: [
+				...riskNames.slice(0, 3),
+				alertStats.bands ? "점수 대기·실패" : "등급 없음(경계값 미설정)",
+			],
+			counts: alertStats.bands
+				? [
+						alertStats.bands.high,
+						alertStats.bands.medium,
+						alertStats.bands.low,
+						alertStats.unscored + alertStats.failed,
+					]
+				: [0, 0, 0, alertStats.total],
+		}
+	else
+		donut = {
+			title: "위험 등급 분포",
+			note: SCORE_NOTE,
+			scope: demo ? "현재 시연 케이스 기준" : "조회 가능한 전체 케이스 기준",
+			names: riskNames,
+			counts,
+		}
 	const trend = useMemo(() => {
 		if (demo)
 			return {
@@ -158,8 +215,16 @@ export default function DashboardView({
 							<Icon name={icon} size={18} />
 						</div>
 						<strong>
-							<CountUp value={value} replay={replay} />
-							<small>건</small>
+							{value == null ? (
+								<b className="count-up" aria-label="없음">
+									—
+								</b>
+							) : (
+								<>
+									<CountUp value={value} replay={replay} />
+									<small>건</small>
+								</>
+							)}
 						</strong>
 						{index === 0 && (
 							<div className="metric-bars" aria-hidden="true">
@@ -239,28 +304,25 @@ export default function DashboardView({
 						<div>
 							{/* ⓘ 는 제목(h2) 밖에 둬요 — 제목 이름에 설명 문구가 섞이지 않게 */}
 							<div className="panel-title">
-								<h2>위험 등급 분포</h2>
-								<InfoTip
-									label="위험 등급 분포"
-									text="위험 점수는 범죄 확률이 아닌 조사 우선순위 지표입니다."
-								/>
+								<h2>{donut.title}</h2>
+								<InfoTip label={donut.title} text={donut.note} />
 							</div>
-							<p>{demo ? "현재 시연 케이스 기준" : "조회 가능한 전체 케이스 기준"}</p>
+							<p>{donut.scope}</p>
 						</div>
 						<i className="soft-dot" />
 					</div>
 					<RiskDonut
-						counts={counts}
+						counts={donut.counts}
 						replay={replay}
-						label={riskNames.map((n, i) => `${n} ${counts[i]}건`).join(", ")}
+						label={donut.names.map((n, i) => `${n} ${donut.counts[i]}건`).join(", ")}
 					/>
 					<div className="risk-legend">
-						{riskNames.map((n, i) => (
+						{donut.names.map((n, i) => (
 							<div key={n}>
 								<i style={{ background: `var(${riskColors[i]})` }} />
 								<span>{n}</span>
 								<strong>
-									{counts[i]}
+									{donut.counts[i].toLocaleString("ko-KR")}
 									<small>건</small>
 								</strong>
 							</div>

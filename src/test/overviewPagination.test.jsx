@@ -72,7 +72,8 @@ describe("SCRUM-335 전체 케이스 집계", () => {
 			show(role)
 			const summary = await cards()
 			expectCount(summary[0], 28)
-			expectCount(summary[1], 27)
+			// 두 번째 카드: 조사역은 내 담당 처리 중(27건), 승인자는 아직 끝나지 않은 진행 중(28건) — SCRUM-345
+			expectCount(summary[1], role === "INVESTIGATOR" ? 27 : 28)
 			expectCount(summary[2], 1)
 			expectCount(summary[3], 1)
 			expect(screen.getByRole("img", { name: /승인 대기: 1/ })).toBeInTheDocument()

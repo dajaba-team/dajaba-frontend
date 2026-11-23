@@ -1,7 +1,7 @@
 import CountUp from "../../../shared/ui/dashboard/CountUp"
 
 // 위험 등급 분포 도넛(SCRUM-345, 계기판 대신) — 조각은 등급별 건수, 가운데는 전체 케이스 수(숫자만 크게).
-// 순서·색은 범례와 같아요(HIGH · MEDIUM · LOW · 미산출). 0건이면 회색 빈 고리만.
+// 순서·색은 범례와 같아요(HIGH · MEDIUM · LOW · 미산출). 0건이면 회색 빈 고리만. 네 자리 이상이면 가운데 숫자를 줄여 고리에 닿지 않게.
 // 처음 보일 때(replay 가 바뀔 때도) 고리가 살짝 돌며 나타나요.
 const R = 52
 const W = 14
@@ -46,7 +46,7 @@ export default function RiskDonut({ counts, label, replay = 0 }) {
 						})}
 				</g>
 			</svg>
-			<div className="risk-donut-center">
+			<div className="risk-donut-center" data-long={total >= 1000 || undefined}>
 				<strong>
 					<CountUp value={total} replay={replay} />
 					<small>건</small>
