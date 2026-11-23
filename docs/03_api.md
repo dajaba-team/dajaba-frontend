@@ -90,9 +90,13 @@
 - 질문하기(A8)만 한도가 30초라 timeout `ASK_REQUEST_TIMEOUT_MS`(35초)예요(계약서 2.6, SCRUM-303). 응답 없이 끊기면 지난 질문(C9)을 다시 불러 저장됐는지 먼저 봐요.
 - 참고 사례 찾기만 timeout `REFERENCE_SEARCH_TIMEOUT_MS`(10초)예요(BE 8초 + 여유, 설계 문서 A 7.3). 조회라 응답 없이 끊겨도 저장 확인 없이 [다시 시도]만 보여 줘요. 자동 재시도·폴링 없음.
 - 생성과 검증은 버튼이 따로예요. 생성 직후 자동 검증하지 않아요(안건 17).
-- 적재·**케이스 생성**은 `202 + batch_run_id` 비동기 → `GET /admin/batches/{batch_run_id}` 상태 조회(계약서 B4·B5, 11/4 Q8). 케이스 생성 카드(`OpenCasesCard`, SCRUM-180)는 202 뒤 바로 한 번, `RUNNING`이면 2초마다 다시 불러 끝나면 멈춰요. 자동 조회는 최대 10분(계약서 5.6) — 넘으면 멈추고 [상태 다시 확인]으로 직접 불러요. 적재 카드(`LoadDatasetCard`, SCRUM-220)도 같은 방식이고 상태 확인은 `useBatchRun` 훅이에요. 이미 적재된 DB의 409 `BATCH_ALREADY_DONE`은 실패가 아니라 "이미 적재돼 있음"으로 보여 줘요. 케이스 생성은 성공한 날짜도 다시 실행할 수 있어요(BE V014, SCRUM-238) — 이미 케이스가 된 경보는 건너뛰고 새로 HIGH가 된 경보만 만들어요. 같은 날짜가 돌고 있으면 409 `BATCH_RUNNING`.
-- 룰 스캔(`RuleScanCard`, SCRUM-220)은 동기 200 + `alerts_by_rule`(룰별 경보 수). 9/1(111만 건)도 기다리게 이 요청만 timeout 120초. 룰 스캔·점수는 동기라 폴링을 가정하지 않아요.
-- 점수(`ScoreCard`, SCRUM-221)는 동기 200 + `requested`·`scored`·`failed`·`retryable`·`chunks{total, failed}`·`model_versions`. **`status: FAILED`여도 200**(다시 보낼 실패가 남음) — 상태가 아니라 건수로 보여 주고, 실패를 0점·저위험으로 표시하지 않아요. `retryable > 0`이면 버튼 이름이 [점수 재처리](같은 API를 다시 부르면 남은 대상만, 따로 API 없음). 묶음마다 AI 최대 90초라 이 요청만 timeout 10분.
+- **배치 네 개(적재 B1·룰 스캔 B2·점수 B3·케이스 생성 B4)는 모두 `202` + RUNNING 실행**(BE SCRUM-356). 결과는 `GET /admin/batches/{batch_run_id}`(B5)·목록 `GET /admin/batches?date=`로 읽어요. 요청은 기본 timeout(15초)이고, 화면을 떠나도 서버 작업은 계속돼요.
+    - `summary` — 룰 스캔 `alerts_by_rule[{rule_id, rule_version, alert_count}]`, 점수 `requested·scored·failed·retryable·chunks{total, failed}·model_versions`. 적재·케이스 생성·실행 중은 null. 점수는 **다시 보낼 실패가 남으면 `FAILED`여도 `summary`가 있어요** — 실패를 0점·저위험으로 표시하지 않아요.
+    - `progress` — RUNNING인 적재·룰 스캔만 `{done, total, current}`(적재 `PATTERNS→ACCOUNTS→TRANSACTIONS→VERIFY`, 룰 스캔은 룰 ID). 화면은 "R03 환전 중계 실행 중 (3/6)"처럼 보여 줘요(`batchText.js`).
+- **자동 연쇄**(BE, 항상 켜짐) — 룰 스캔 성공 → 점수 → 점수 SUCCEEDED → 케이스 생성. 화면은 [분석 일괄 실행](룰 스캔) 한 번만 부르고, 점수·케이스 생성은 실패했을 때만 [점수 재처리]·[다시 실행](같은 API, 남은 대상만)으로 불러요.
+- **폴링** — 그 날짜 실행 목록(`useBatchRunsForDate`)을 RUNNING이 있는 동안 2초마다(최대 10분, 넘으면 [상태 다시 확인]), 끝난 직후 15초까지 다시 읽어요. 원천 적재는 실행 한 건(`useBatchRun`)을 같은 방식으로.
+- 고른 분석 날짜는 `sessionStorage` `dajaba.batches.date.v1.{login_id}`에 둬요(`batchDate.js`) — 다른 메뉴에 갔다 오거나 새로고침해도 그 날짜 실행 목록으로 자동 처리 현황·결과 표를 다시 그려요.
+- 409 — 이미 적재된 DB의 `BATCH_ALREADY_DONE`은 실패가 아니라 "이미 적재돼 있음". 그 밖의 409(`BATCH_RUNNING`·`DATASET_NOT_LOADED`·`DATE_OUT_OF_RANGE`·`NO_ACTIVE_RULES`·`RULE_SCAN_NOT_DONE` 등)는 실행 카드 안에 보여 줘요. 룰 스캔은 성공한 날짜를 다시 돌릴 수 없어요.
 
 ## 5. 지금 연결된 API
 
@@ -147,6 +151,18 @@ BE `GET /notifications`는 develop에 있어요(SCRUM-355 #169, BE `06_features/
 - `draft_no`는 `APPROVAL_REQUESTED`·`STR_APPROVED`·`STR_REJECTED`·`STR_REPORTED`에만, 케이스 알림 3종(`CASE_ASSIGNED`·`CASE_REASSIGNED_TO_ME`·`CASE_REASSIGNED_AWAY`)은 `null`. `reason_code`는 `STR_REJECTED`일 때만.
 - 반려 코멘트·메모·계좌·금액·DB id는 없어요. 문구·이동 경로는 화면이 `type`으로 만들어요(`features/notifications/model/notificationRules.js`, 설계 7.8 예시).
 - **화면(종, `NotificationBell`)** — 위 띠 오른쪽, 모든 역할. 숫자는 `since=마지막으로 본 시각`·`size=1`로 30초마다 받은 `total`(탭이 가려지면 멈추고 보이면 바로 한 번). 열면 최근 7일 50건(`since` 없이, `size=50` 최대)을 보여 주고, 받은 `server_time`을 `localStorage` `aml.notifications.seen.{login_id}`에 저장해 본 것으로 쳐요 — 목록을 못 받으면 저장하지 않아요. 숫자가 늘면 "새 알림 n건" 토스트 하나(로그인 직후 첫 조회엔 없음). 숫자 조회 실패는 조용히 직전 숫자 유지, 목록 조회 실패는 목록 자리에만 안내 + [다시 불러오기]. 목록에선 이전에 본 시각보다 새 줄에 "새 알림" 표시. `total`이 받은 줄 수보다 크면 목록 아래 "이전 알림 n건 더 있음"(n = `total` − 줄 수, `total`이 99면 "n건 이상" — 커서가 없어 더 불러오지 않음, BE 1단계 한계). 작업 알림(추적기, 준혁님)은 아직 없어 "업무" 꼬리표만 — 생기면 같은 목록에 시간순으로 섞어요. 테스트 `notifications.test.js`·`notificationBell.test.jsx`.
+
+### 관리자 대시보드 경보 통계 [BE SCRUM-360 #176, BE `06_features/cases.md`, FE 코드 `alertStatsApi.js`·`mocks/handlers.js`, SCRUM-345]
+
+BE #176이 develop에 들어가야 실제 서버에서 동작해요 — 그 전 develop 서버는 이 주소를 경보 상세로 받아 404 `ALERT_NOT_FOUND`("경보가 없습니다")를 줘요. 머지 순서 BE 360 → FE 345.
+
+| 동작           | API                                            | 응답                                            | 프론트                                                                                      |
+| -------------- | ---------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| 경보 등급 통계 | `GET /api/v1/admin/alerts/stats?date=` (ADMIN) | `{date, total, scored, bands{high, medium, low} | null, unscored, failed, case_opened, policy_version}`, 날짜 형식 오류 400 `INVALID_REQUEST` | `alertStatsApi.stats` |
+
+- 대시보드는 **`date` 없이(전체 기간 누적)** 불러요(`useAlertStats`) — 미배정·승인 대기 같은 케이스 카드와 같은 누적 기준. `date`는 특정 배치일만 볼 때 쓰는 선택 값이에요.
+- 등급은 케이스 생성과 같은 운영 경계값(`CasePolicy`)이라 HIGH 수 = 케이스 전환 수. 경계값이 없으면 `bands`·`policy_version`이 null — 화면은 고위험 경보 "—", 반원은 "등급 없음(경계값 미설정)" 한 조각.
+- 관리자만 불러요(조사역·승인자 대시보드는 케이스 기준). 통계를 못 받으면 대시보드 대신 오류와 [다시 불러오기].
 
 ### STR — 단계별 연결 (11/10)
 
