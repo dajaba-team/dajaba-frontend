@@ -539,9 +539,6 @@
 	font-size: var(--font-section);
 	font-weight: 650;
 }
-.case-str-link {
-	font-weight: 650;
-}
 /* 카드 — 안쪽 여백은 카드가 갖고, 안에 들어온 패널은 테두리 없이 한 덩어리로 보여 줘요. */
 .case-card {
 	min-inline-size: 0;
@@ -667,40 +664,10 @@
 .case-detail .case-page-heading p {
 	margin: 0;
 }
-.case-eyebrow {
-	margin-block-end: var(--space-1);
-	color: var(--color-primary);
-	font-size: var(--font-2xs);
-	font-weight: 700;
-	letter-spacing: 0.1em;
-}
-.case-page-desc {
-	margin-block-start: var(--space-1);
-	color: var(--color-muted);
-	font-size: var(--font-small);
-	font-variant-numeric: tabular-nums;
-}
-.case-heading-badges {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: var(--space-2);
-}
-.case-badge {
-	display: inline-flex;
-	padding: 0.125rem 0.625rem;
-	border: var(--border-width) solid var(--color-border);
-	border-radius: var(--radius-pill);
-	background: var(--color-table-head);
-	color: var(--color-muted);
-	font-size: var(--font-small);
-	font-weight: 600;
-}
 .case-detail-layout,
 .case-detail-main,
 .case-detail-aside,
-.case-evidence,
-.case-detail-top {
+.case-evidence {
 	display: grid;
 	gap: var(--space-4);
 	align-items: start;
@@ -713,8 +680,8 @@
 	box-shadow: none;
 }
 /* 카드 제목 띠 — 바깥 카드의 첫 제목만(카드 안에 들어간 합계·메모 제목은 그대로). */
-.case-detail-top > .case-panel > h2,
 .case-detail-main > .case-summary > h2,
+.case-detail-aside .case-info-card > h2,
 .case-detail .case-card > .case-card-head,
 .case-detail-aside .case-actions > h2 {
 	display: flex;
@@ -725,8 +692,8 @@
 	margin: 0;
 	padding: var(--space-3) var(--space-4);
 	border-block-end: var(--border-width) solid var(--color-border);
-	font-size: var(--font-body);
-	font-weight: 700;
+	font-size: var(--font-lead);
+	font-weight: var(--weight-semibold);
 }
 .case-detail .case-card > .case-card-head,
 .case-detail-aside .case-actions > h2 {
@@ -734,57 +701,126 @@
 }
 .case-detail .case-card > .case-card-head h2 {
 	margin: 0;
-	font-size: var(--font-body);
+	font-size: var(--font-lead);
+	font-weight: var(--weight-semibold);
 }
 .case-detail-main > .case-summary > h2 + p {
 	margin-block-start: var(--space-3);
 }
-/* 보고서(STR) 화면으로 가는 길 — 케이스 상세에서 가장 먼저 눈에 띄는 다음 작업이라 채운 파란 버튼. */
-.case-detail-aside .case-str-link {
+/* 1240px 아래에선 오른쪽 단이 본문 밑으로 내려가 둘씩 나란히 — 시연 화면과 같은 기준. */
+/* ── 판단 요약(SCRUM-369 B안) — 카드가 아니라 바탕 위. 등급·점수 → 상태·담당·규칙 → 탐지 기간 → [다음 처리] ── */
+.case-summary-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: var(--space-4);
+	margin-block-end: var(--space-5);
+}
+.case-summary-main {
 	display: grid;
-	gap: var(--space-1);
-	padding: var(--space-4) var(--space-5);
-	border: 0;
-	border-radius: var(--radius-card);
-	background: var(--color-primary);
-	color: var(--color-on-dark);
-	box-shadow: var(--case-card-shadow);
-	font-size: 1.0625rem;
-	text-decoration: none;
-	transition: background-color 120ms ease;
+	gap: var(--space-2);
+	min-inline-size: 0;
 }
-.case-detail-aside .case-str-link span::after {
-	content: " →";
+.case-summary-main p {
+	margin: 0;
 }
-.case-detail-aside .case-str-link small {
-	color: var(--color-on-dark);
+.case-summary-head h1 {
+	margin: 0;
+	font-size: var(--font-section);
+	font-weight: var(--weight-semibold);
+	line-height: var(--leading-tight);
+	font-variant-numeric: tabular-nums;
+}
+.case-summary-score {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2) var(--space-3);
+}
+/* 점수가 이 화면에서 가장 큰 글자 — 색은 본문색(파랑은 주 버튼 몫). */
+.case-summary-score strong {
+	color: var(--color-text);
+	font-size: var(--font-title);
+	font-weight: var(--weight-bold);
+	line-height: var(--leading-tight);
+	font-variant-numeric: tabular-nums;
+}
+.case-summary-score-label,
+.case-summary-window {
+	color: var(--color-muted);
 	font-size: var(--font-small);
-	font-weight: 400;
-	opacity: 0.85;
+	font-variant-numeric: tabular-nums;
 }
-.case-detail-aside .case-str-link:hover {
-	background: var(--color-primary-strong);
+.case-summary-score-status {
+	font-size: var(--font-lead);
+	font-weight: var(--weight-semibold);
 }
-.case-detail-aside .case-str-link:focus-visible {
-	outline: 3px solid var(--color-focus);
-	outline-offset: 2px;
+.case-summary-score .kpi-info {
+	position: relative;
+	display: inline-flex;
+	color: var(--color-muted);
 }
-@media (min-width: 48rem) {
-	/* 위쪽 두 카드(케이스 개요·경보 정보)는 높이를 맞춰 한 줄로 보이게. */
-	.case-detail-top {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		align-items: stretch;
+/* 설명은 ⓘ 오른쪽 끝에 맞춰 왼쪽으로 펼쳐요 — 숨겨져 있어도 자리를 차지해 좁은 화면에서 가로로 넘치지 않게. */
+.case-summary-score .kpi-info-tip {
+	top: calc(100% + var(--space-1));
+	right: 0;
+	left: auto;
+	max-width: min(16rem, 70vw);
+	white-space: normal;
+}
+.case-summary-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2) var(--space-3);
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.case-summary-actions {
+	display: grid;
+	gap: var(--space-2);
+	inline-size: 100%;
+}
+@media (min-width: 36rem) {
+	.case-summary-actions {
+		grid-auto-flow: column;
+		inline-size: auto;
 	}
 }
-/* 1240px 아래에선 오른쪽 단이 본문 밑으로 내려가 둘씩 나란히 — 시연 화면과 같은 기준. */
+/* 카드 안 소제목(메모 이력 등)은 카드 제목보다 한 단계 아래. */
+.case-detail .case-card h3 {
+	margin-block: var(--space-4) var(--space-2);
+	font-size: var(--font-small);
+	font-weight: var(--weight-semibold);
+}
+/* 좁은 화면(한 열): 근거(거래 분석)를 메모·처리 작업보다 먼저. 넓은 화면(2단)에선 원래 자리. */
+.case-detail-main {
+	order: 1;
+}
+.case-evidence {
+	order: 2;
+}
+.case-detail-aside {
+	order: 3;
+}
 @media (min-width: 48rem) and (max-width: 77.49rem) {
 	.case-detail-aside {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	/* 정보 카드는 줄이 길어(경보 번호·시각) 두 칸 다 써요. */
+	.case-detail-aside .case-info-card {
+		grid-column: 1 / -1;
 	}
 }
 @media (min-width: 77.5rem) {
 	.case-detail-layout {
 		grid-template-columns: minmax(0, 1fr) 23rem;
+	}
+	.case-detail-main,
+	.case-detail-aside,
+	.case-evidence {
+		order: 0;
 	}
 	.case-evidence {
 		grid-column: 1 / -1;
@@ -794,42 +830,26 @@
 /* ── 거래 근거 카드 — 팀 검토 시안 모양으로(SCRUM-280) ─────────────────
    머리(거래 분석 01 · 거래 근거 · 직접/경유 건수) → 유입·유출 합계 띠 → 밑줄 탭 → 경로 지도(점 무늬 캔버스) → 경로 거래 표 → 바닥 설명 */
 .case-detail .case-card > .evidence-head {
-	align-items: flex-end;
-	margin-block-end: 0;
-	padding: var(--space-4) var(--space-4) var(--space-3);
-	border-block-end: 0;
+	align-items: baseline;
 }
-.kicker {
-	margin: 0;
-	color: #485e7e;
-	font-size: var(--font-2xs);
-	font-weight: 730;
-	letter-spacing: 0.045em;
-}
-.kicker span {
-	margin-inline-start: 0.5rem;
-	padding: 0.125rem 0.3125rem;
-	border-radius: 0.25rem;
-	background: #e8f0ff;
-	color: #2853ad;
-	letter-spacing: 0;
-}
+/* 거래 분석 제목도 다른 카드 제목과 같은 단계(SCRUM-369). */
 .case-detail .case-card > .evidence-head h2 {
-	margin-block-start: 0.1875rem;
-	color: #1b2638;
-	font-size: var(--font-section);
-	font-weight: 800;
-	letter-spacing: -0.02em;
+	color: var(--color-text);
+	font-size: var(--font-lead);
+	font-weight: var(--weight-semibold);
 }
 .minor-pair {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
-	gap: 0.3125rem;
+	gap: var(--space-1);
 	margin: 0;
 	color: var(--color-muted);
 	font-size: var(--font-xs);
 }
+/* 숫자와 단위(「2건」)가 떨어지지 않게 — 좁은 화면에서 글자 단위로 쪼개지던 문제(SCRUM-367). */
 .minor-pair b {
+	white-space: nowrap;
 	color: var(--color-text);
 }
 .minor-pair i {
@@ -1174,6 +1194,12 @@
 	.route-canvas {
 		padding: 0.5625rem 0.75rem;
 	}
+}
+/* 경로 그림은 화면 폭이 아니라 그림 영역 폭으로 가로·세로를 바꿔요 — 사이드바가 있는 768px 에서 노드·라벨이 겹치던 문제(SCRUM-367). */
+.route-canvas {
+	container: route-canvas / inline-size;
+}
+@container route-canvas (max-width: 40rem) {
 	/* 좁은 화면: 작은 원은 위로, 경로는 세로로 — 계좌 원 왼쪽, 거래는 점선 따라 아래로 */
 	.route-body {
 		grid-template-columns: minmax(0, 1fr);
@@ -1482,7 +1508,7 @@
 	align-items: center;
 	gap: var(--space-3);
 	margin: 0 0 var(--space-4);
-	color: #8a94a8;
+	color: var(--color-muted);
 	font-size: var(--font-2xs);
 	font-weight: 600;
 	letter-spacing: 0.02em;
@@ -1507,7 +1533,7 @@
 	margin-inline-start: 2.5rem;
 }
 .ask-who {
-	color: #8a94a8;
+	color: var(--color-muted);
 	font-size: var(--font-2xs);
 	line-height: 1.4;
 }
@@ -1610,7 +1636,7 @@
 }
 .ask-idle h3 {
 	margin: 0 0 0.625rem 2.375rem;
-	color: #8a94a8;
+	color: var(--color-muted);
 	font-size: var(--font-2xs);
 	font-weight: 600;
 }
@@ -1772,7 +1798,7 @@
 	gap: var(--space-3);
 	margin-block-start: 0.4375rem;
 	padding-inline: 0.5rem;
-	color: #8a94a8;
+	color: var(--color-muted);
 	font-size: var(--font-2xs);
 }
 .ask-counter {

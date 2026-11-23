@@ -13,7 +13,7 @@ export default function CaseNoteHistory({ caseNo }) {
 	const data = query.data
 	return (
 		<section aria-labelledby="note-history-title">
-			<h2 id="note-history-title">메모 이력</h2>
+			<h3 id="note-history-title">메모 이력</h3>
 			<AsyncState query={query} />
 			{data &&
 				(data.items.length ? (

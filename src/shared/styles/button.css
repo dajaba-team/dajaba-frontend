@@ -1,0 +1,85 @@
+/* 공통 버튼(SCRUM-371) — 05_ui.md 1-1절. 토큰만 써요. */
+/* 변형은 [class]로 한 단계 높여요 — index.css 의 button[type="submit"]:enabled(채움 파랑)보다 앞서야 [메모 저장] 같은 submit 도 보조 모양이 돼요. */
+.ui-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-2);
+	min-height: var(--control-height);
+	padding: 0 var(--space-4);
+	border: var(--border-width) solid var(--color-control-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+	box-shadow: none;
+	color: var(--color-text);
+	font: inherit;
+	font-size: var(--font-small);
+	font-weight: var(--weight-semibold);
+	line-height: var(--leading-tight);
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
+	transition:
+		background-color 120ms ease,
+		border-color 120ms ease;
+}
+.ui-button:focus-visible {
+	outline: var(--focus-width) solid var(--color-focus);
+	outline-offset: var(--focus-width);
+}
+.ui-button:disabled {
+	cursor: not-allowed;
+	opacity: 0.55;
+}
+.ui-button[aria-busy="true"] {
+	cursor: progress;
+}
+.ui-button.is-block {
+	display: flex;
+	width: 100%;
+}
+.ui-button-sm {
+	min-height: 2rem;
+	padding-inline: var(--space-3);
+	font-size: var(--font-xs);
+}
+.ui-button[class].ui-button-primary {
+	border-color: var(--color-primary);
+	background: var(--color-primary);
+	color: var(--color-on-dark);
+}
+.ui-button[class].ui-button-primary:hover:not(:disabled) {
+	border-color: var(--color-primary-strong);
+	background: var(--color-primary-strong);
+	color: var(--color-on-dark);
+}
+.ui-button[class].ui-button-secondary {
+	border-color: var(--color-control-border);
+	background: var(--color-surface);
+	color: var(--color-text);
+}
+.ui-button[class].ui-button-secondary:hover:not(:disabled) {
+	border-color: var(--color-control-border-hover);
+	background: var(--color-table-head);
+}
+.ui-button[class].ui-button-ghost {
+	border-color: transparent;
+	background: transparent;
+	color: var(--color-primary);
+}
+.ui-button[class].ui-button-ghost:hover:not(:disabled) {
+	background: var(--color-primary-soft);
+}
+.ui-button[class].ui-button-danger {
+	border-color: var(--color-fail);
+	background: var(--color-surface);
+	color: var(--color-fail);
+}
+.ui-button[class].ui-button-danger:hover:not(:disabled) {
+	background: var(--color-fail-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+	.ui-button {
+		transition: none;
+	}
+}
