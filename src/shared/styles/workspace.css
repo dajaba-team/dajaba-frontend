@@ -54,10 +54,16 @@
 	display: flex;
 	align-items: center;
 	justify-content: flex-end;
+	gap: 10px;
 	margin: 28px 2px 14px;
 	color: var(--color-muted);
 	font: 600 11px var(--mono);
 	letter-spacing: 0.12em;
+}
+/* 새로고침 옆 마지막 갱신 시각 */
+.refresh-time {
+	font-size: var(--font-2xs);
+	letter-spacing: 0;
 }
 .dashboard-section-label button {
 	display: flex;
@@ -77,24 +83,20 @@
 	gap: var(--dashboard-gap);
 	margin-bottom: var(--dashboard-gap);
 }
+/* 카드를 세로로 조금 키우고 건수는 아래쪽에 — 제목 줄과 숫자 사이에 숨 쉴 틈(SCRUM-345) */
 .signal-kpi {
 	position: relative;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
 	min-width: 0;
-	padding: 22px 22px 18px;
+	min-height: 176px;
+	padding: 24px 24px 22px;
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-card);
 	background: var(--color-surface);
 	box-shadow: var(--shadow-card);
 	overflow: hidden;
-	transition:
-		transform 0.2s ease,
-		box-shadow 0.2s ease;
-}
-.signal-kpi:hover {
-	transform: translateY(-2px);
-	box-shadow:
-		0 2px 4px rgb(16 24 40 / 4%),
-		0 16px 32px -16px rgb(0 35 110 / 18%);
 }
 .signal-kpi-primary {
 	color: #fff;
@@ -126,7 +128,7 @@
 	font-weight: 600;
 }
 /* DashStack KPI 카드처럼 아이콘을 오른쪽 위 둥근 색 타일에 담아요. */
-.metric-label svg {
+.metric-label > svg {
 	box-sizing: content-box;
 	flex-shrink: 0;
 	padding: 11px;
@@ -134,22 +136,22 @@
 	color: var(--brand-primary);
 	background: var(--color-primary-soft);
 }
-.signal-kpi:nth-child(2) .metric-label svg {
+.signal-kpi:nth-child(2) .metric-label > svg {
 	color: var(--risk-high);
 	background: var(--risk-high-soft);
 }
-.signal-kpi:nth-child(3) .metric-label svg {
+.signal-kpi:nth-child(3) .metric-label > svg {
 	color: var(--brand-royal);
 	background: #eaf4fe;
 }
-.signal-kpi:nth-child(4) .metric-label svg {
+.signal-kpi:nth-child(4) .metric-label > svg {
 	color: var(--success);
 	background: var(--success-soft);
 }
 .signal-kpi-primary .metric-label {
 	color: #fff;
 }
-.signal-kpi-primary .metric-label svg {
+.signal-kpi-primary .metric-label > svg {
 	color: #fff;
 	background: rgb(255 255 255 / 18%);
 }
@@ -158,7 +160,7 @@
 	font-size: clamp(32px, 3vw, 46px);
 	line-height: 1.2;
 	letter-spacing: -0.05em;
-	margin: 6px 0 6px;
+	margin: 18px 0 0;
 	font-weight: 700;
 }
 .signal-kpi > strong small {
@@ -172,38 +174,74 @@
 	font: inherit;
 	font-variant-numeric: tabular-nums;
 }
-.signal-kpi > p {
-	margin: 0;
-	font-size: var(--font-xs);
-	color: var(--color-muted);
+/* 제목 옆 ⓘ 툴팁(SCRUM-345) — 카드(overflow: hidden) 밖으로 잘리지 않게 카드 기준으로 제목 바로 아래에 띄워요 */
+.metric-title {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	min-width: 0;
 }
-.signal-kpi-primary > p {
-	color: #dbeaff;
+.kpi-info-button {
+	display: inline-grid;
+	place-items: center;
+	min-width: 0;
+	min-height: 0;
+	padding: 2px;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: inherit;
+	opacity: 0.7;
+	cursor: help;
 }
+.kpi-info-button:hover,
+.kpi-info-button:focus-visible {
+	background: transparent;
+	opacity: 1;
+}
+.kpi-info-tip {
+	position: absolute;
+	top: 66px;
+	left: 24px;
+	z-index: 2;
+	width: max-content;
+	max-width: calc(100% - 48px);
+	padding: 6px 10px;
+	border-radius: 8px;
+	background: #1b2638;
+	color: #fff;
+	font-size: var(--font-2xs);
+	font-weight: 500;
+	line-height: 1.4;
+	letter-spacing: 0;
+	box-shadow: 0 8px 20px -8px rgb(16 24 40 / 45%);
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity 0.15s ease;
+}
+/* 마우스는 올려 둔 동안만, 키보드는 Tab 으로 갔을 때만(focus-visible) — 클릭한 뒤 포커스가 남아도 계속 떠 있지 않게 */
+.kpi-info:hover .kpi-info-tip,
+.kpi-info-button:focus-visible + .kpi-info-tip {
+	opacity: 1;
+	visibility: visible;
+}
+/* 장식 막대는 첫 카드 오른쪽 아래에 겹쳐 둬요 — 카드 높이를 늘리지 않아서 네 카드 아래가 비지 않게(SCRUM-345) */
 .metric-bars {
+	position: absolute;
+	right: 24px;
+	bottom: 30px; /* 아래로 내려간 건수 숫자 줄에 맞춰요 */
 	display: flex;
 	align-items: flex-end;
 	gap: 3px;
+	width: 36%;
 	height: 26px;
-	margin-top: 18px;
 }
 .metric-bars i {
 	flex: 1;
 	min-width: 0;
 	background: #fff;
 	border-radius: 3px;
-}
-.metric-link {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	color: var(--brand-primary);
-	font-size: var(--font-xs);
-	font-weight: 600;
-	margin-top: 18px;
-	padding-top: 14px;
-	border-top: 1px solid var(--color-border);
-	text-decoration: none;
 }
 .analytics-grid {
 	display: grid;
@@ -212,6 +250,7 @@
 	margin-bottom: var(--dashboard-gap);
 }
 .analytics-panel {
+	position: relative; /* 패널 제목 옆 ⓘ 툴팁의 기준 */
 	min-width: 0;
 	background: var(--color-surface);
 	border: 1px solid var(--color-border);
@@ -237,6 +276,19 @@
 	margin: 4px 0 0;
 	font-size: var(--font-xs);
 	color: var(--color-muted);
+}
+/* 패널 제목 + ⓘ(SCRUM-345) — 툴팁은 패널 기준으로 제목 아래에 */
+.panel-title {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	color: var(--color-muted);
+}
+.panel-title h2 {
+	color: var(--color-text);
+}
+.analytics-panel .kpi-info-tip {
+	top: 58px;
 }
 .chart-period {
 	display: flex;
@@ -282,130 +334,85 @@
 	font: 10px var(--mono);
 	color: var(--color-muted);
 }
+/* 조사 진행 현황 — 패널 높이(옆 위험 등급 분포에 맞춰 늘어남)만큼 차트를 늘려 아래 빈칸을 채워요(SCRUM-345).
+   flex-basis 0 이라 차트 크기가 패널을 다시 밀어 올리지 않아요. 한 줄 배치(좁은 화면)에서는 최소 242px. */
+.trend-panel {
+	display: flex;
+	flex-direction: column;
+}
 .trend-canvas {
 	position: relative;
-	height: 242px;
-	padding: 5px 14px 14px;
+	flex: 1 1 0;
+	min-height: 242px;
+	padding: 5px 14px 18px;
 }
-.risk-gauge {
-	width: min(100%, 250px);
+/* 위험 등급 분포 반원(SCRUM-345, 원 → 반원) — 아래 가운데 전체 건수 */
+.risk-donut {
+	position: relative;
+	width: min(100%, 260px);
 	margin: 14px auto 18px;
-	text-align: center;
 }
-.risk-gauge svg {
+.risk-donut svg {
 	display: block;
 	width: 100%;
-	overflow: visible;
 }
-.risk-gauge-track {
+.risk-donut-track {
 	fill: none;
 	stroke: var(--color-soft);
-	stroke-linecap: round;
 }
-/* HIGH 조각만 같은 색으로 은은하게 번져 보이게 */
-.risk-gauge-hot {
-	filter: drop-shadow(0 3px 6px color-mix(in srgb, var(--risk-high) 35%, transparent));
-}
-.risk-gauge-tick {
-	fill: var(--color-control-border);
-	opacity: 0.45;
-}
-.risk-gauge-tick.is-major {
-	opacity: 0.8;
-}
-/* 바늘 — 왼쪽(0)을 향해 그려 두고 HIGH 비율만큼 돌린다 */
-.risk-gauge-needle {
+/* 반원은 왼쪽 끝에서 시작해 위로 돌아 오른쪽 끝까지 — 나타날 때 아래 가운데를 기준으로 커져요 */
+.risk-donut-sweep {
 	transform-box: view-box;
-	transform-origin: 120px 116px;
-	transform: rotate(var(--needle));
-	fill: var(--color-text);
-	opacity: 0.88;
+	transform-origin: 70px 70px;
 }
-.risk-gauge-hub {
-	fill: var(--color-surface-raised);
-	stroke: var(--color-text);
-	stroke-width: 2;
-	opacity: 0.95;
-}
-.risk-gauge-hub-dot {
-	fill: var(--risk-high);
-}
-.risk-gauge-readout {
+.risk-donut-center {
+	position: absolute;
+	inset: 0;
 	display: grid;
+	place-content: end center;
+	padding-bottom: 2px;
 	justify-items: center;
 	gap: 2px;
-	margin-top: 10px;
+	pointer-events: none;
 }
-.risk-gauge-label {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	color: var(--risk-high);
-	font-size: var(--font-2xs);
-	font-weight: 700;
-	letter-spacing: 0.14em;
-}
-.risk-gauge-label i {
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	background: var(--risk-high);
-	box-shadow: 0 0 0 3px var(--risk-high-soft);
-}
-.risk-gauge-readout strong {
+/* 가운데 숫자를 크게 — 단위 "건"만 작게 붙여요 */
+.risk-donut-center strong {
 	display: inline-flex;
 	align-items: baseline;
 	gap: 4px;
-	font-size: 34px;
-	font-weight: 650;
-	line-height: 1.1;
+	color: var(--color-text);
+	font-size: 46px;
+	font-weight: 800;
+	line-height: 1;
 	letter-spacing: -0.04em;
 }
-.risk-gauge-readout strong .count-up {
+.risk-donut-center strong .count-up {
 	font-weight: inherit;
 }
-.risk-gauge-readout small {
+/* 네 자리 이상(1,624건 등)은 반원에 닿지 않게 줄여요 */
+.risk-donut-center[data-long] strong {
+	font-size: 32px;
+}
+.risk-donut-center small {
 	color: var(--color-muted);
-	font-size: var(--font-xs);
-	font-weight: 500;
+	font-size: var(--font-small);
+	font-weight: 600;
 	letter-spacing: 0;
 }
-.risk-gauge-note {
-	color: var(--color-muted);
-	font-size: var(--font-2xs);
-}
-.risk-gauge-note b {
-	color: var(--color-text);
-	font-weight: 600;
-}
 @media (prefers-reduced-motion: no-preference) {
-	/* 조각이 왼쪽부터 차오르고, 바늘이 0에서 출렁이며 자리를 잡는 계기판 효과 */
-	.risk-gauge-sweep {
-		stroke-dasharray: 1;
-		stroke-dashoffset: 1;
-		animation: risk-gauge-sweep 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-	}
-	.risk-gauge-needle {
-		animation: risk-gauge-needle 1.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+	/* 반원이 살짝 커지며 나타나요 */
+	.risk-donut-sweep {
+		animation: risk-donut-sweep 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 	}
 }
-@keyframes risk-gauge-sweep {
+@keyframes risk-donut-sweep {
+	from {
+		opacity: 0;
+		transform: scale(0.92);
+	}
 	to {
-		stroke-dashoffset: 0;
-	}
-}
-@keyframes risk-gauge-needle {
-	0% {
-		transform: rotate(0deg);
-	}
-	55% {
-		transform: rotate(calc(var(--needle) + 6deg));
-	}
-	78% {
-		transform: rotate(calc(var(--needle) - 2deg));
-	}
-	100% {
-		transform: rotate(var(--needle));
+		opacity: 1;
+		transform: scale(1);
 	}
 }
 .risk-legend {
@@ -448,6 +455,28 @@
 }
 .focus-panel {
 	margin-bottom: 18px;
+}
+/* 확인할 케이스가 없을 때 — 카드 가운데 아이콘 + 한 줄(SCRUM-345) */
+.focus-empty {
+	display: grid;
+	justify-items: center;
+	gap: 10px;
+	padding: 28px 24px 36px;
+	color: var(--color-muted);
+	text-align: center;
+}
+.focus-empty-icon {
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	background: var(--color-primary-soft);
+	color: var(--brand-primary);
+}
+.focus-empty p {
+	margin: 0;
+	font-size: var(--font-xs);
 }
 .focus-case {
 	display: flex;
@@ -675,18 +704,16 @@
 		--dashboard-gap: 12px;
 	}
 	.signal-kpi {
+		min-height: 132px;
 		padding: 16px 13px;
 		border-radius: 15px;
 	}
 	.metric-label {
 		font-size: var(--font-xs);
 	}
-	.metric-label svg {
+	.metric-label > svg {
 		padding: 8px;
 		border-radius: 11px;
-	}
-	.signal-kpi > p {
-		font-size: var(--font-2xs);
 	}
 	.focus-case {
 		flex-wrap: wrap;
@@ -718,16 +745,6 @@
 .role-heading {
 	margin-block-end: 1.5rem;
 }
-.role-heading .crumbs {
-	margin: 0 0 0.625rem;
-	color: var(--color-muted);
-	font-size: var(--font-xs);
-	font-weight: 560;
-}
-.role-heading .crumbs span {
-	padding: 0 0.25rem;
-	color: #8996a6;
-}
 .role-heading h1 {
 	margin: 0;
 	color: #1b2638;
@@ -741,111 +758,8 @@
 	color: var(--color-muted);
 	font-size: var(--font-body);
 }
-/* 시안 B(SCRUM-286): 문구 아래 폭을 꽉 채운 이동 카드 + 전신 곰. 움직임은 작게 유지해요. */
-.role-band {
-	display: grid;
-	gap: 1.25rem;
-	margin-block-end: 0.875rem;
-	padding: 1.5rem;
-	border: var(--border-width) solid #c7daf7;
-	border-radius: 1.25rem;
-	background: #edf4ff;
-}
-/* 관리자 대시보드 바로가기 줄(SCRUM-327) */
-.role-shortcuts {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.5rem 0.75rem;
-	margin-block: -0.25rem 1.25rem;
-}
-.role-shortcuts-label {
-	color: var(--color-muted);
-	font-size: var(--font-small);
-	font-weight: 700;
-}
-.role-shortcuts ul {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-.role-shortcuts a {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.375rem;
-	min-height: 2.25rem;
-	padding: 0.375rem 0.875rem;
-	border: var(--border-width) solid var(--color-border);
-	border-radius: 999px;
-	background: var(--color-surface);
-	color: var(--color-text);
-	font-size: var(--font-body);
-	font-weight: 600;
-	text-decoration: none;
-	transition:
-		background-color 0.15s ease,
-		border-color 0.15s ease,
-		color 0.15s ease;
-}
-.role-shortcuts a svg {
-	color: var(--color-muted);
-}
-.role-shortcuts a:hover {
-	border-color: #c7daf7;
-	background: var(--color-primary-soft);
-	color: var(--color-primary);
-}
-.role-shortcuts a:hover svg {
-	color: currentColor;
-}
-.role-band-copy {
-	min-width: 0;
-}
-.role-band-copy .ux-eyebrow {
-	margin: 0;
-	color: #466493;
-	font-size: var(--font-small);
-	font-weight: 700;
-	letter-spacing: 0.02em;
-}
-.role-band-copy h2 {
-	margin: 0.25rem 0 0.5rem;
-	color: #1b2638;
-	font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2.125rem);
-	font-weight: 800;
-	line-height: 1.25;
-	letter-spacing: -0.04em;
-}
-.bear-hint {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: baseline;
-	gap: 0 0.5rem;
-}
-.bear-hint p {
-	margin: 0;
-	color: #425775;
-	font-size: var(--font-lead);
-	line-height: 1.6;
-}
-.role-band .hide-hint {
-	min-height: 1.75rem;
-	margin: 0;
-	padding: 1px 3px;
-	border: 0;
-	background: transparent;
-	color: #526783;
-	font-size: var(--font-small);
-	text-decoration: underline;
-	text-underline-offset: 3px;
-}
-.role-band .hide-hint:hover:enabled {
-	background: transparent;
-	color: var(--color-primary);
-}
+/* 시안 B(SCRUM-286): 문구 아래 폭을 꽉 채운 이동 카드 + 전신 곰. 움직임은 작게 유지해요.
+   하늘색 바깥 박스·안내 문장·바로가기 줄은 뺐어요(SCRUM-345). */
 .role-band-cta {
 	position: relative;
 	display: flex;
@@ -853,6 +767,7 @@
 	justify-content: flex-end;
 	gap: 0.5rem;
 	min-height: 15rem;
+	margin-block-end: 0.875rem;
 	padding: 1.75rem 2rem;
 	overflow: hidden;
 	border-radius: 1.125rem;
@@ -916,19 +831,6 @@
 .role-band-cta:hover .bear-full {
 	transform: translateY(-4px);
 }
-/* 안내를 접으면 카드를 낮춰 KPI·차트를 첫 화면에 더 보여 줘요. */
-.role-band.is-compact {
-	gap: 1rem;
-	padding-block: 1.25rem;
-}
-.role-band.is-compact .role-band-cta {
-	min-height: 10.5rem;
-	padding-block: 1.5rem;
-}
-.role-band.is-compact .bear-full {
-	top: 0.5rem;
-	width: clamp(8rem, 14vw, 10rem);
-}
 @media (prefers-reduced-motion: no-preference) {
 	.bear-full {
 		animation: bear-peek 0.6s ease-out 0.15s both;
@@ -958,10 +860,6 @@
 	}
 }
 @media (max-width: 650px) {
-	.role-band {
-		gap: 1rem;
-		padding: 1rem;
-	}
 	.role-band-cta {
 		min-height: 13rem;
 		padding: 1.25rem;
@@ -973,12 +871,8 @@
 		width: 2.5rem;
 		height: 2.5rem;
 	}
-	.bear-full,
-	.role-band.is-compact .bear-full {
+	.bear-full {
 		right: 0.5rem;
 		width: 9.5rem;
-	}
-	.role-band.is-compact .role-band-cta {
-		min-height: 10rem;
 	}
 }

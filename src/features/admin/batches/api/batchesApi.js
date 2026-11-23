@@ -1,11 +1,35 @@
 import { apiClient } from "../../../../shared/api/apiClient"
 
-// 배치 — 계약서 B1 load(202) · B2 rule-scan(200) · B3 score(200) · B4 open-cases(202) · B5 `GET /admin/batches/{batch_run_id}`.
+// 배치 — 계약서 B1 load · B2 rule-scan · B3 score · B4 open-cases(모두 202) · B5 `GET /admin/batches/{batch_run_id}`.
+// 네 배치 모두 202 로 RUNNING 을 돌려주고 뒤에서 돌아요(BE SCRUM-356). 결과는 상태 조회·목록으로 읽어요:
+// - summary: 룰 스캔 룰별 경보 수(alerts_by_rule), 점수 건수(requested·scored·failed·retryable·chunks·model_versions). 그 밖은 null
+// - progress: 실행 중 진행 단계 {done, total, current} — 적재(파일 단계 4개)·룰 스캔(룰 단위)만, 끝나면 null
+// 룰 스캔이 끝나면 점수 → 케이스 생성이 서버에서 자동으로 이어져요(배치 자동 연쇄, 항상 켜짐).
 // 서버는 snake_case, 화면은 camelCase. 시각은 시스템 시각(UTC Z).
-// 룰 스캔은 동기라 9/1(111만 건)도 기다릴 수 있게 이 요청만 120초(기본 15초).
-const SYNC_BATCH_TIMEOUT_MS = 120_000
-// 점수는 묶음(500건)마다 AI 최대 90초 — 경보가 많으면 몇 분이라 10분까지 기다려요.
-const SCORE_TIMEOUT_MS = 10 * 60 * 1000
+const toSummary = (summary) => {
+	if (!summary) return null
+	return {
+		alertsByRule: (summary.alerts_by_rule ?? []).map((rule) => ({
+			ruleId: rule.rule_id,
+			ruleVersion: rule.rule_version,
+			alertCount: rule.alert_count,
+		})),
+		requested: summary.requested ?? 0,
+		scored: summary.scored ?? 0,
+		failed: summary.failed ?? 0,
+		retryable: summary.retryable ?? 0,
+		chunks: { total: summary.chunks?.total ?? 0, failed: summary.chunks?.failed ?? 0 },
+		modelVersions: summary.model_versions ?? [],
+	}
+}
+const toProgress = (progress) =>
+	progress
+		? {
+				done: progress.done ?? 0,
+				total: progress.total ?? 0,
+				current: progress.current ?? null,
+			}
+		: null
 const toRun = (data) => ({
 	batchRunId: data.batch_run_id,
 	batchType: data.batch_type,
@@ -16,55 +40,22 @@ const toRun = (data) => ({
 	rowsIn: data.rows_in ?? null,
 	rowsOut: data.rows_out ?? null,
 	errorMessage: data.error_message ?? null,
+	summary: toSummary(data.summary),
+	progress: toProgress(data.progress),
 })
-const toRuleScan = (data) => ({
-	...toRun(data),
-	alertsByRule: (data.alerts_by_rule ?? []).map((rule) => ({
-		ruleId: rule.rule_id,
-		ruleVersion: rule.rule_version,
-		alertCount: rule.alert_count,
-	})),
-})
-const toScore = (data) => ({
-	...toRun(data),
-	requested: data.requested ?? 0,
-	scored: data.scored ?? 0,
-	failed: data.failed ?? 0,
-	retryable: data.retryable ?? 0,
-	chunks: { total: data.chunks?.total ?? 0, failed: data.chunks?.failed ?? 0 },
-	modelVersions: data.model_versions ?? [],
-})
+const post = async (path, params) =>
+	toRun((await apiClient.post(`/api/v1/admin/batches/${path}`, null, { params })).data)
 
 export const batchesApi = {
-	/** 원천 적재(B1). 날짜 없음 — 전체 데이터 1회. 202 로 RUNNING 을 돌려줘요. */
-	load: async () => toRun((await apiClient.post("/api/v1/admin/batches/load")).data),
-	/** 룰 스캔(B2). 동기 200 — 룰별 경보 수까지. */
-	ruleScan: async ({ date }) =>
-		toRuleScan(
-			(
-				await apiClient.post("/api/v1/admin/batches/rule-scan", null, {
-					params: { date },
-					timeout: SYNC_BATCH_TIMEOUT_MS,
-				})
-			).data,
-		),
-	/** 점수(B3). 동기 200 — status FAILED 여도 200(다시 보낼 실패가 남음). 다시 부르면 남은 대상만. */
-	score: async ({ date }) =>
-		toScore(
-			(
-				await apiClient.post("/api/v1/admin/batches/score", null, {
-					params: { date },
-					timeout: SCORE_TIMEOUT_MS,
-				})
-			).data,
-		),
-	/** 케이스 생성(B4). date 는 경보 배치 기준일 YYYY-MM-DD. 202 로 RUNNING 을 돌려줘요. */
-	openCases: async ({ date }) =>
-		toRun(
-			(await apiClient.post("/api/v1/admin/batches/open-cases", null, { params: { date } }))
-				.data,
-		),
-	/** 실행 목록 — type·status·date 로 거르고 최신 순(서버 기본 started_at,desc). 화면은 첫 줄만 써요. */
+	/** 원천 적재(B1). 날짜 없음 — 전체 데이터 1회. */
+	load: () => post("load"),
+	/** 룰 스캔(B2). 끝나면 점수 → 케이스 생성이 자동으로 이어져요. */
+	ruleScan: ({ date }) => post("rule-scan", { date }),
+	/** 점수(B3) — 화면에선 [점수 재처리]만. 다시 보낼 실패·남은 대상만 보내고, 성공하면 케이스 생성이 이어져요. */
+	score: ({ date }) => post("score", { date }),
+	/** 케이스 생성(B4) — 화면에선 실패했을 때 [다시 실행]만. 남은 경보만 처리해요. */
+	openCases: ({ date }) => post("open-cases", { date }),
+	/** 실행 목록 — type·status·date 로 거르고 최신 순(서버 기본 started_at,desc). */
 	list: async ({ type, status, date, size = 1 } = {}, signal) =>
 		(
 			(

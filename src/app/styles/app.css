@@ -347,6 +347,55 @@
 .auth-heading p {
 	margin: 0;
 	color: var(--color-muted);
+	word-break: keep-all; /* 글자 단위로 끊기지 않게 */
+}
+/* 로그인 카드 머리 — 로고·제목·부제목 가운데(SCRUM-345) */
+.app-main.is-signed-out .auth-heading {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+}
+.auth-brand-mark {
+	display: block;
+	width: 3.5rem;
+	height: 3.5rem;
+	margin-block-end: var(--space-3);
+	border-radius: 50%;
+	object-fit: contain;
+	box-shadow: 0 6px 14px -6px rgb(0 70 255 / 55%); /* 왼쪽 위 로고(.app-brand-mark)와 같은 그림자 */
+}
+/* 비밀번호 칸 오른쪽 안의 보기/숨기기 버튼 */
+.password-field {
+	position: relative;
+}
+.password-field input {
+	width: 100%;
+	padding-inline-end: 2.75rem;
+}
+/* Edge 가 비밀번호 칸에 자체로 붙이는 눈 버튼은 숨겨요 — 우리 버튼과 두 개가 겹치지 않게 */
+.password-field input::-ms-reveal,
+.password-field input::-ms-clear {
+	display: none;
+}
+.auth-panel .password-toggle {
+	position: absolute;
+	inset-block: 0;
+	inset-inline-end: var(--space-1);
+	display: grid;
+	place-items: center;
+	min-width: 0;
+	min-height: 0;
+	margin: auto 0;
+	padding: var(--space-1);
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	color: var(--color-muted);
+}
+.auth-panel .password-toggle:hover:enabled {
+	background: transparent;
+	color: var(--color-text);
 }
 .auth-panel form {
 	display: flex;

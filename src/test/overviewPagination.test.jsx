@@ -79,14 +79,21 @@ describe("SCRUM-335 전체 케이스 집계", () => {
 			serve(fixture(28))
 			show(role)
 			const summary = await cards()
-			expectCount(summary[0], 28)
-			expectCount(summary[1], 27)
-			expectCount(summary[2], 1)
-			expectCount(summary[3], 1)
+			expectCount(summary[3], 1) // 승인 대기
 			expect(screen.getByRole("img", { name: /승인 대기: 1/ })).toBeInTheDocument()
-			expect(
-				screen.getByRole("img", { name: /높음 · HIGH 27건.*중간 · MEDIUM 1건/ }),
-			).toBeInTheDocument()
+			if (role === "APPROVER") {
+				// 승인자: 전체 · 조사 중 · 보완 중 · 승인 대기(SCRUM-345)
+				expectCount(summary[0], 28)
+				expectCount(summary[1], 27)
+				expectCount(summary[2], 0)
+				expect(
+					screen.getByRole("img", { name: /높음 · HIGH 27건.*중간 · MEDIUM 1건/ }),
+				).toBeInTheDocument()
+			} else {
+				// 관리자: 앞 두 칸은 경보 통계(BE SCRUM-360), 미배정은 케이스 기준
+				expect(summary[0]).toHaveTextContent("탐지 경보")
+				expectCount(summary[2], 1)
+			}
 			// 승인자는 우선 목록 자리에 승인 대기 보고서가 와요(SCRUM-336) — 점수 높은 케이스 줄은 관리자만
 			if (role === "ADMIN") expect(document.querySelectorAll(".focus-case")).toHaveLength(3)
 		},
@@ -104,6 +111,22 @@ describe("SCRUM-335 전체 케이스 집계", () => {
 			expectCount(screen.getByRole("region", { name: "업무 현황 요약" }).lastElementChild, 0),
 		)
 		expect(pages).toEqual([0, 1, 0, 1])
+	})
+
+	it("[새로고침]을 누르면 케이스를 다시 불러와 바뀐 숫자를 보여 준다 (SCRUM-345)", async () => {
+		const rows = fixture(3)
+		const pages = serve(rows)
+		show()
+		expectCount((await cards())[3], 1)
+		expect(pages).toEqual([0])
+		rows[0].status = "PENDING_APPROVAL"
+		await userEvent.setup().click(screen.getByRole("button", { name: "새로고침" }))
+		await waitFor(() => expectCount(screen.getAllByRole("article")[3], 2))
+		expect(pages).toEqual([0, 0])
+		expect(screen.getByRole("button", { name: "새로고침" })).toBeEnabled()
+		expect(screen.getByText(/^마지막 갱신 \d{2}:\d{2}:\d{2}$/)).toBeInTheDocument()
+		// 조사 진행 현황에는 전체 건수 줄이 없어요(위 카드·도넛과 겹쳐서)
+		expect(document.querySelector(".trend-summary")).toBeNull()
 	})
 
 	it("뒤 페이지 실패 시 부분 통계를 숨기고 다시 불러오면 전체를 표시한다", async () => {
@@ -129,7 +152,7 @@ describe("SCRUM-335 전체 케이스 집계", () => {
 		show("ADMIN")
 		expectCount((await cards())[3], 0)
 		expect(pages).toEqual([0])
-		expect(screen.getByText("조회 가능한 케이스가 없습니다.")).toBeInTheDocument()
+		expect(screen.getByText("현재 확인할 케이스가 없습니다.")).toBeInTheDocument()
 	})
 })
 
@@ -148,22 +171,20 @@ describe("SCRUM-337 조사역 대시보드는 내 담당만", () => {
 		expect(summary[0]).toHaveTextContent("내 담당 케이스")
 		expect(summary[2]).toHaveTextContent("보완할 초안")
 		expectCount(summary[2], 1)
-		expect(summary[1]).toHaveTextContent("내 담당 128건 기준")
+		// 2번은 조사 중(조사 중·에스컬레이션·초안) — 반려 2건·승인 대기 1건은 빼요(SCRUM-345)
+		expect(summary[1]).toHaveTextContent("조사 중")
+		expectCount(summary[1], 125)
 		expect(screen.queryByText("미배정 케이스")).toBeNull()
 		expect(screen.getByRole("link", { name: "내 담당 케이스", exact: true })).toHaveAttribute(
 			"href",
 			"/cases?mine=1",
 		)
-		// KPI 카드 [케이스에서 확인]도 내 담당 목록으로 (SCRUM-337 후속)
-		const kpiLinks = screen.getAllByRole("link", { name: "케이스에서 확인" })
-		expect(kpiLinks).toHaveLength(3)
-		for (const link of kpiLinks) expect(link).toHaveAttribute("href", "/cases?mine=1")
-		expect(screen.getByText(/나에게 배정된 케이스 기준/)).toBeInTheDocument()
+		// 카드 안 링크·맨 아래 안내는 없고(SCRUM-345) 범위는 도넛 설명, 보완할 초안 기준은 ⓘ 로
+		expect(screen.queryByRole("link", { name: "케이스에서 확인" })).toBeNull()
+		expect(screen.getByText("내 담당 케이스 기준")).toBeInTheDocument()
 		expect(
-			screen.getByText(
-				/보완할 초안은 보완 요청으로 반려된 직후의 초안만 세요 — 본문을 고쳐 저장하기 시작하면 이 숫자에서 빠져요/,
-			),
-		).toBeInTheDocument()
+			within(summary[2]).getByRole("button", { name: "보완할 초안 설명" }),
+		).toHaveAccessibleDescription(/본문을 고쳐 저장하기 시작하면 빠져요/)
 	})
 
 	it.each(["APPROVER", "ADMIN"])("%s는 지금처럼 전체를 센다(assignee 없음)", async (role) => {
@@ -171,10 +192,16 @@ describe("SCRUM-337 조사역 대시보드는 내 담당만", () => {
 		show(role)
 		const summary = await cards()
 		expect(assignees).toEqual([null])
-		expect(summary[2]).toHaveTextContent("미배정 케이스")
-		expect(summary[0]).toHaveTextContent("전체 조회 케이스")
-		for (const link of screen.getAllByRole("link", { name: "케이스에서 확인" }))
-			expect(link).toHaveAttribute("href", "/cases")
+		if (role === "APPROVER") {
+			expect(summary[0]).toHaveTextContent("전체 조회 케이스")
+			expect(summary[2]).toHaveTextContent("보완 중")
+		} else {
+			expect(summary[2]).toHaveTextContent("미배정 케이스")
+			expect(screen.getByRole("link", { name: /전체 케이스/ })).toHaveAttribute(
+				"href",
+				"/cases",
+			)
+		}
 	})
 
 	it("조사역에게 배정된 케이스가 없으면 그렇게 안내한다", async () => {

@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest"
-import { render, screen, within } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
+import { render, screen } from "@testing-library/react"
 import { MemoryRouter } from "react-router"
 import RoleHero from "../features/overview/components/RoleHero"
 
@@ -36,37 +35,19 @@ describe("역할별 Hero 이동 카드", () => {
 		)
 	})
 
-	it("안내를 접으면 안내 문장이 사라지고 카드가 낮은 모양으로 바뀌며 다시 열어도 유지된다", async () => {
-		const { unmount } = show("ADMIN", "admin")
-		const band = screen.getByRole("region", { name: "오늘의 배치와 배정 현황" })
-		expect(band).not.toHaveClass("is-compact")
-		await userEvent.click(screen.getByRole("button", { name: "첫 이용 안내 닫기" }))
-		expect(screen.queryByRole("button", { name: "첫 이용 안내 닫기" })).not.toBeInTheDocument()
-		expect(band).toHaveClass("is-compact")
-		unmount()
+	it("관리자 머리말은 제목·설명과 이동 카드만 — 빵부스러기·하늘색 박스 문구·바로가기는 없다 (SCRUM-345)", () => {
 		show("ADMIN", "admin")
-		expect(screen.getByRole("region", { name: "오늘의 배치와 배정 현황" })).toHaveClass(
-			"is-compact",
-		)
-	})
-})
-
-describe("관리자 대시보드 바로가기(SCRUM-327)", () => {
-	it("관리자는 사이드바의 모든 켜진 메뉴로 바로 갈 수 있다", () => {
-		show("ADMIN", "admin")
-		const nav = screen.getByRole("navigation", { name: "바로가기" })
-		const links = within(nav).getAllByRole("link")
-		expect(links.map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
-			["데이터·배치 운영", "/admin/batches"],
-			["조사 케이스", "/cases"],
-			["승인함", "/approvals"],
-			["감사 기록", "/admin/audit"],
-			["계정 관리", "/admin/accounts"],
-		])
-	})
-
-	it.each(["INVESTIGATOR", "APPROVER"])("%s 대시보드에는 바로가기 줄이 없다", (role) => {
-		show(role)
+		expect(
+			screen.getByRole("heading", { level: 1, name: "관리자 대시보드" }),
+		).toBeInTheDocument()
+		expect(
+			screen.getByText("배치 운영, 조사 관리, 승인 등의 업무 현황을 한눈에 확인하세요."),
+		).toBeInTheDocument()
+		expect(screen.queryByText(/업무 공간/)).toBeNull()
+		expect(screen.queryByText(/업무 시작/)).toBeNull()
+		expect(screen.queryByRole("heading", { name: "오늘의 배치와 배정 현황" })).toBeNull()
+		expect(screen.queryByRole("button", { name: "첫 이용 안내 닫기" })).toBeNull()
 		expect(screen.queryByRole("navigation", { name: "바로가기" })).toBeNull()
+		expect(screen.getAllByRole("link")).toHaveLength(1) // 데이터·배치 운영 열기 하나
 	})
 })
