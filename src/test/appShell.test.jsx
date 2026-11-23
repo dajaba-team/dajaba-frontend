@@ -326,7 +326,8 @@ describe("알림(Toast)", () => {
 	}
 	afterEach(() => vi.useRealTimers())
 
-	it("새 알림이 이전 알림을 교체한다(쌓지 않음)", async () => {
+	// SCRUM-365(설계 7.4): 한 개 교체 → 최대 3개 쌓기로 바뀜. 3개를 넘는 경우는 toastStack.test
+	it("새 알림은 이전 알림 아래에 쌓인다", async () => {
 		const u = userEvent.setup()
 		render(
 			<ToastProvider>
@@ -336,7 +337,7 @@ describe("알림(Toast)", () => {
 		await u.click(screen.getByRole("button", { name: "show1" }))
 		expect(screen.getByText("첫 번째")).toBeInTheDocument()
 		await u.click(screen.getByRole("button", { name: "show2" }))
-		await waitFor(() => expect(screen.queryByText("첫 번째")).not.toBeInTheDocument())
+		expect(screen.getByText("첫 번째")).toBeInTheDocument()
 		expect(screen.getByText("두 번째")).toBeInTheDocument()
 	})
 	it("5초 뒤 사라진다", async () => {
