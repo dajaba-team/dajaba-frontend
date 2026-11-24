@@ -43,8 +43,13 @@ export default function CaseNotesCard({ detail, onRefresh }) {
 				) : (
 					<section aria-labelledby="memo-readonly-title">
 						<h2 id="memo-readonly-title">조사 메모</h2>
-						<p className="preserve-lines">{detail.investigatorNotes || "메모 없음"}</p>
-						<p className="case-action-note">
+						{/* 빈 메모 안내는 아래 "메모 이력" 소제목과 같은 글자 모양, 안내 문구도 같은 글자색(회색 아님). */}
+						{detail.investigatorNotes ? (
+							<p className="preserve-lines">{detail.investigatorNotes}</p>
+						) : (
+							<p className="case-memo-empty">메모 없음</p>
+						)}
+						<p>
 							{memoEditableStatus(detail)
 								? "담당 조사역만 메모를 수정할 수 있어요."
 								: "현재 케이스는 읽기 전용입니다."}

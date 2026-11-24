@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { AsyncState } from "../../../shared/ui/AsyncState"
-import { formatDataTime } from "../../../shared/format/time"
+import { formatDataMinute as formatDataTime } from "../caseTime"
 import { useCaseGraph } from "../hooks/useCases"
 import { formatAmount } from "./caseMoney"
 import { layoutFlowGraph } from "./flowGraphLayout"

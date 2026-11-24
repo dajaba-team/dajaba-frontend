@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { AsyncState } from "../../../shared/ui/AsyncState"
-import { formatDataTime } from "../../../shared/format/time"
+import { formatDataMinute as formatDataTime } from "../caseTime"
 import { useCaseTransactions } from "../hooks/useCases"
 import { formatAmount } from "./caseMoney"
 import EvidenceDialog from "./EvidenceDialog"

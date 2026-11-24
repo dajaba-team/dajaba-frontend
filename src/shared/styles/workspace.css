@@ -250,6 +250,28 @@
 	opacity: 1;
 	visibility: visible;
 }
+/* 누르는 ⓘ(InfoTip clickable) — 눌러서 연 동안 보이고, 위치는 InfoTip 이 화면 기준으로 잡아요(카드 overflow 에 안 잘리게).
+   is-clickable·is-fixed 를 붙인 것에만 적용돼서 기존 ⓘ(대시보드·배치)는 그대로예요. */
+.kpi-info.is-open .kpi-info-tip {
+	opacity: 1;
+	visibility: visible;
+}
+.kpi-info.is-clickable .kpi-info-button {
+	cursor: pointer;
+}
+.kpi-info-tip.is-fixed {
+	position: fixed;
+	right: auto;
+	bottom: auto;
+	z-index: 30;
+	width: max-content;
+	max-width: min(20rem, calc(100vw - 16px));
+	white-space: normal;
+	text-align: start;
+	word-break: keep-all;
+	transform: none;
+	translate: none;
+}
 /* 장식 막대는 첫 카드 오른쪽 아래에 겹쳐 둬요 — 카드 높이를 늘리지 않아서 네 카드 아래가 비지 않게(SCRUM-345) */
 .metric-bars {
 	position: absolute;

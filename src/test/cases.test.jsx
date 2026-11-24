@@ -690,12 +690,12 @@ describe("케이스 조사", () => {
 		expect(within(panel).getByText("R02_FAN_IN")).toBeInTheDocument()
 		// 탐지 기간은 판단 요약에만 있어요. 데이터 시각은 시간대를 붙이지 않고 받은 그대로(T만 공백)
 		expect(
-			screen.getByText(/탐지 기간 2022-10-31 00:00:00 ~ 2022-11-01 00:00:00/),
+			screen.getByText(/탐지 기간 2022-10-31 00:00 ~ 2022-11-01 00:00/), // 상세는 분까지
 		).toBeInTheDocument()
 		expect(within(panel).getByText("15건")).toBeInTheDocument()
 		// 점수·등급은 맨 위 판단 요약(h1 이 있는 banner)으로 올라왔어요. 범죄 확률 아님 안내는 ⓘ 설명으로.
 		const summary = screen.getByRole("heading", { level: 1, name: REVIEWING }).closest("header")
-		expect(within(summary).getByText("0.9100")).toBeInTheDocument() // 넷째 자리 표기 (SCRUM-347)
+		expect(within(summary).getByText("0.91")).toBeInTheDocument() // 둘째 자리 표기
 		expect(within(summary).getByText("등급 HIGH")).toBeInTheDocument()
 		expect(within(summary).getByRole("tooltip", { hidden: true })).toHaveTextContent(
 			"모델 점수예요. 범죄 확률이 아니에요. 모델 xgb-2022.11",
@@ -1062,7 +1062,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		const rows = await within(table).findAllByRole("row")
 		expect(rows).toHaveLength(5) // 머리 + 4건
 		expect(within(rows[1]).getByText("III부 1 · 입금")).toBeInTheDocument()
-		expect(within(rows[1]).getByText("2022-10-31 09:00:00")).toBeInTheDocument()
+		expect(within(rows[1]).getByText("2022-10-31 09:00")).toBeInTheDocument()
 		expect(within(rows[3]).getByText("III부 3 · 출금")).toBeInTheDocument()
 		expect(within(rows[4]).getByText("대상 계좌 미참여")).toBeInTheDocument()
 	})

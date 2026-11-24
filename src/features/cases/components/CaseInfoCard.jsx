@@ -1,4 +1,4 @@
-import { formatSystemTime } from "../../../shared/format/time"
+import { formatSystemMinute as formatSystemTime } from "../caseTime"
 import { CLOSE_REASON_LABELS, REJECTION_LABELS, labelOf } from "../labels"
 
 // 케이스·경보 정보(SCRUM-369) — 예전 「케이스 개요」·「경보 정보」 두 카드를 하나로. 점수는 판단 요약으로 올라갔어요.
