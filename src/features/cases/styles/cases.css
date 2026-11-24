@@ -816,9 +816,13 @@
 		inline-size: auto;
 	}
 }
-/* 카드 안 소제목(메모 이력 등)은 카드 제목보다 한 단계 아래. */
+/* 카드 안 소제목(메모 이력 등)은 카드 제목보다 한 단계 아래. 빈 메모 안내("메모 없음")도 같은 글자 모양. */
 .case-detail .case-card h3 {
 	margin-block: var(--space-4) var(--space-2);
+}
+.case-detail .case-card h3,
+.case-detail .case-card .case-memo-empty {
+	color: var(--color-text);
 	font-size: var(--font-small);
 	font-weight: var(--weight-semibold);
 }
