@@ -106,8 +106,9 @@ export default function AdminAccountsPage() {
 										<th scope="col">역할</th>
 										<th scope="col">상태</th>
 										<th scope="col">진행 중 담당</th>
+										{/* 머리글 글자는 화면에서 빼고 화면 읽기 프로그램에만(SCRUM-410) */}
 										<th scope="col" className="account-manage-head">
-											관리
+											<span className="visually-hidden">관리</span>
 										</th>
 									</tr>
 								</thead>
