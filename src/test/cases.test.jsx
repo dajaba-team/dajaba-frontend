@@ -721,7 +721,6 @@ describe("케이스 조사", () => {
 		expect(within(items[2]).getByText("확인 못 함")).toBeInTheDocument()
 		expect(within(items[2]).getByText("-0.18 (SHAP · raw_margin)")).toBeInTheDocument()
 		expect(within(panel).getAllByText("모델 기여 (거래 사실 아님)")).toHaveLength(3)
-		expect(within(panel).getByText(/STR 근거로 쓰지 않아요/)).toBeInTheDocument()
 	})
 	it.each([
 		["FAILED", [], "점수 산출에 실패해서 이유가 없어요. 위험이 낮다는 뜻이 아니에요."],
@@ -777,9 +776,6 @@ describe("케이스 조사", () => {
 		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		expect(within(panel).getByText("아직 만든 요약이 없습니다.")).toBeInTheDocument()
-		expect(
-			within(panel).getByText("요약 실패가 거래 열람·메모·상태 변경을 막지 않습니다."),
-		).toBeInTheDocument()
 		await user.click(within(panel).getByRole("button", { name: "요약 생성" }))
 		expect(await within(panel).findByText("현재 입력 기준")).toBeInTheDocument()
 		expect(within(panel).getByText(/모델이 주목한 점/)).toBeInTheDocument()
@@ -1040,9 +1036,6 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		expect(within(agg).getByText("유입 합계 (2건)")).toBeInTheDocument()
 		expect(within(agg).getByText("1,000 US Dollar")).toBeInTheDocument()
 		expect(within(agg).getByText("유출 합계 (1건)")).toBeInTheDocument()
-		expect(
-			within(agg).getByText(/경유 거래와 내 계좌끼리 옮긴 돈은 합계에서/),
-		).toBeInTheDocument()
 
 		// 처음 열려 있는 탭은 자금 흐름 그래프
 		expect(screen.getByRole("button", { name: "자금 흐름" })).toHaveAttribute(
@@ -1066,11 +1059,10 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 	it("그래프에서 거래 선을 누르면 그 거래 내용이 아래에 고정된다", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
 		const graph = await screen.findByRole("group", { name: /거래 4건/ })
-		expect(screen.getByText(/누르면 고정돼요/)).toBeInTheDocument()
+		expect(document.querySelector(".flow-graph-detail")).toBeEmptyDOMElement()
 		await user.click(within(graph).getAllByTestId("graph-edge")[0])
 		await user.unhover(graph)
 		expect(screen.getByText(/거래 4721/)).toBeInTheDocument()
-		expect(screen.queryByText(/누르면 고정돼요/)).not.toBeInTheDocument()
 	})
 	it("그래프의 계좌는 Tab으로 옮기고 Enter로 고정·해제할 수 있다", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
@@ -1087,7 +1079,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		await user.keyboard("{Enter}")
 		expect(target).toHaveAttribute("aria-pressed", "false")
 		act(() => target.blur())
-		expect(screen.getByText(/누르면 고정돼요/)).toBeInTheDocument()
+		expect(document.querySelector(".flow-graph-detail")).toBeEmptyDOMElement()
 	})
 	it("[거래 원본]은 C4 원본을 창으로 보여 주고, 404면 그 창에만 안내", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 import Modal from "./dashboard/Modal"
-import Icon from "./dashboard/Icon"
+import dajabaIcon from "../assets/dajaba-icon.svg"
 import { GuideContext } from "./useGuide"
 
 // 역할 기본 문구. 업무 페이지는 useGuide로 현재 단계와 다음 행동을 더 구체적으로 덮어써요(SCRUM-330).
@@ -82,7 +82,7 @@ export default function GuideBar({ role, children }) {
 				aria-live="polite"
 			>
 				<span className="guide-bar-icon">
-					<Icon name="sparkle" size={16} />
+					<img src={dajabaIcon} alt="" aria-hidden="true" width={20} height={20} />
 				</span>
 				<span className="guide-bar-text">{text}</span>
 				<button type="button" className="guide-bar-full" onClick={() => setOpen(true)}>

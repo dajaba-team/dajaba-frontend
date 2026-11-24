@@ -13,6 +13,7 @@ import CaseNotesCard from "../components/CaseNotesCard"
 import CaseScoreReasons from "../components/CaseScoreReasons"
 import CaseSummaryHeader from "../components/CaseSummaryHeader"
 import { nextActionOf } from "../components/nextAction"
+import Icon from "../../../shared/ui/dashboard/Icon"
 import { useGuide } from "../../../shared/ui/useGuide"
 import { caseDetailWorkflowGuide } from "../../../shared/ui/workflowGuide"
 
@@ -73,10 +74,7 @@ function AskButton({ ask }) {
 			aria-controls={ask.open ? "ask-panel" : undefined}
 			onClick={ask.openPanel}
 		>
-			<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-				<path d="M4 4.5h12a1.5 1.5 0 0 1 1.5 1.5v6.5A1.5 1.5 0 0 1 16 14h-6.2L6 17v-3H4a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 4 4.5Z" />
-				<path d="M7 9.25h6M7 11.25h3.5" />
-			</svg>
+			<Icon name="message" size={16} />
 			{ask.open && ask.collapsed ? "질의 창 열기" : "근거 질의"}
 		</button>
 	)

@@ -1,4 +1,3 @@
-import { formatDataTime } from "../../../shared/format/time"
 import { formatAmount } from "./caseMoney"
 
 // 유입·유출 합계 — 계약서 C2 aggregates. 경보의 근거 거래 전체 기준(그래프·표 미리보기 건수가 아님).
@@ -29,18 +28,10 @@ export default function CaseAggregatesPanel({ aggregates }) {
 				유입·유출 합계
 			</h2>
 			{aggregates && aggregates.transactionCount > 0 ? (
-				<>
-					<dl className="ledger-strip">
-						<Side title="유입" side={aggregates.inbound} kind="in" />
-						<Side title="유출" side={aggregates.outbound} kind="out" />
-					</dl>
-					<p className="ledger-note">
-						근거 거래 {aggregates.transactionCount}건 ·{" "}
-						{formatDataTime(aggregates.firstTs)} ~ {formatDataTime(aggregates.lastTs)}.
-						경유 거래와 내 계좌끼리 옮긴 돈은 합계에서 뺐어요. 통화가 다르면 더하지
-						않아요.
-					</p>
-				</>
+				<dl className="ledger-strip">
+					<Side title="유입" side={aggregates.inbound} kind="in" />
+					<Side title="유출" side={aggregates.outbound} kind="out" />
+				</dl>
 			) : (
 				<p className="ledger-note">근거 거래가 없어요.</p>
 			)}

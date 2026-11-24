@@ -287,6 +287,12 @@
 	min-block-size: 3rem;
 	border-block-start: var(--border-width) solid var(--color-graph-border);
 }
+/* 안내 문구를 뺐어요 — 선·계좌를 고르기 전엔 빈 띠가 남지 않게 접어 두고, 알림 영역(aria-live)은 그대로 둬요. */
+.flow-graph-detail:empty {
+	min-block-size: 0;
+	padding: 0;
+	border: 0;
+}
 .flow-graph-head p,
 .flow-graph-detail p {
 	margin: 0;
@@ -331,9 +337,6 @@
 	border-block-start: 0.125rem dashed var(--color-graph-muted);
 	border-radius: 0;
 	background: none;
-}
-.flow-graph-hint {
-	color: var(--color-graph-muted);
 }
 .flow-graph-mono {
 	font-variant-numeric: tabular-nums;
@@ -506,10 +509,6 @@
 .case-ai-summary > button {
 	margin: var(--space-4);
 }
-.case-ai-summary-note {
-	color: var(--color-muted);
-	font-size: var(--font-small);
-}
 .case-ai-summary-lines {
 	margin: 0;
 	padding-inline-start: var(--space-5);
@@ -629,7 +628,8 @@
 	display: grid;
 	gap: var(--space-3);
 	margin: 0;
-	padding: 0 var(--space-4) var(--space-4) calc(var(--space-4) + 1.25rem);
+	/* 위 설명 문구를 뺐어요 — 첫 이유가 머리 띠 구분선에 붙지 않게 위 여백을 둬요. */
+	padding: var(--space-4) var(--space-4) var(--space-4) calc(var(--space-4) + 1.25rem);
 }
 .case-reasons li > dl {
 	padding: var(--space-2) 0 0;
@@ -700,6 +700,16 @@
 .case-detail .case-card > .case-card-head,
 .case-detail-aside .case-actions > h2 {
 	margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) var(--space-4);
+}
+/* 탭이 카드 맨 위에 오면(조사 메모 카드) 탭 줄이 곧 머리 띠 — 위 여백 없이 붙이고, 옆 카드 머리 띠와 높이·구분선을 맞춰요. */
+.case-detail .case-card > .case-tabs:first-child {
+	margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) var(--space-4);
+	padding-inline: var(--space-2);
+}
+.case-detail .case-card > .case-tabs:first-child button {
+	/* 아래 여백은 선택 밑줄(0.125rem)만큼 줄여 옆 카드 머리 띠와 구분선 높이를 맞춰요. */
+	padding-block: var(--space-3) calc(var(--space-3) - 0.125rem);
+	font-size: var(--font-lead);
 }
 .case-detail .case-card > .case-card-head h2 {
 	margin: 0;
@@ -875,10 +885,9 @@
 	margin: 0 0.1875rem;
 	border-inline-start: var(--border-width) solid #c5cfdd;
 }
+/* 위 선은 카드 머리 띠 구분선과 겹쳐 두 줄로 보여 없앴어요(SCRUM-397). */
 .case-ledger {
 	margin: 0 0 var(--space-2);
-	padding-block-start: var(--space-3);
-	border-block-start: var(--border-width) solid #e2e8f2;
 }
 .ledger-strip {
 	display: flex;
@@ -1197,13 +1206,6 @@
 	background-image: radial-gradient(#c9d8ef 0.8px, transparent 0.8px);
 	background-size: 14px 14px;
 }
-.case-card > .evidence-foot {
-	margin: var(--space-3) 0 0;
-	padding-block-start: 0.5625rem;
-	border-block-start: var(--border-width) solid #e2e8f2;
-	color: var(--color-muted);
-	font-size: var(--font-xs);
-}
 @media (max-width: 36rem) {
 	.ledger-strip {
 		display: grid;
@@ -1292,34 +1294,38 @@
 	gap: var(--space-3);
 }
 .case-ask-open {
+	/* 옆 [다음 처리] 주 버튼(.ui-button)과 높이·모서리·글자를 맞추고, 색만 연한 파랑 보조 모양(SCRUM-395 후속). */
 	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	gap: var(--space-2);
 	min-height: var(--control-height);
 	padding: 0 var(--space-4);
-	border: var(--border-width) solid #aec8f3;
-	border-radius: var(--radius-pill);
-	background: #eff5ff;
-	color: #1649b7;
-	font-weight: 700;
+	border: var(--border-width) solid var(--color-primary-soft);
+	border-radius: var(--radius-control);
+	background: var(--color-primary-soft);
+	color: var(--color-primary);
+	font-size: var(--font-small);
+	font-weight: var(--weight-semibold);
+	line-height: var(--leading-tight);
+	white-space: nowrap;
 }
 .case-ask-open:hover:enabled {
-	background: #e2ecff;
+	border-color: var(--color-primary);
+	background: var(--color-primary-soft);
 }
 .case-ask-open svg {
-	width: 1.125rem;
-	height: 1.125rem;
-	fill: none;
-	stroke: currentColor;
-	stroke-width: 1.6;
-	stroke-linecap: round;
-	stroke-linejoin: round;
+	flex-shrink: 0;
 }
-.case-ask-open[aria-expanded="true"],
-.case-ask-open[aria-expanded="true"]:hover:enabled {
-	background: #1649b7;
-	border-color: #1649b7;
+/* 열린 상태는 [다음 처리] 주 버튼(.ui-button-primary)과 같은 파랑 — hover 도 같은 진한 파랑. */
+.case-ask-open[aria-expanded="true"] {
+	border-color: var(--color-primary);
+	background: var(--color-primary);
 	color: var(--color-on-dark);
+}
+.case-ask-open[aria-expanded="true"]:hover:enabled {
+	border-color: var(--color-primary-strong);
+	background: var(--color-primary-strong);
 }
 .case-ask-main {
 	min-width: 0;
@@ -1505,12 +1511,21 @@
 /* ── 대화 */
 .ask-history {
 	flex: 1 1 auto;
+	/* 채팅처럼 아래부터 쌓여요 — 내용이 적으면 첫 줄 위를 auto 로 밀어 맨 아래(입력창 쪽)에 붙고, 넘치면 그대로 스크롤해요. */
+	display: flex;
+	flex-direction: column;
 	min-height: 0;
 	overflow-y: auto;
 	padding: 1.25rem 1rem 1.5rem;
 	background: var(--ask-wash);
 	scrollbar-width: thin;
 	scrollbar-color: #cdd5e3 transparent;
+}
+.ask-history > * {
+	flex-shrink: 0;
+}
+.ask-history > :first-child {
+	margin-block-start: auto;
 }
 .ask-history:focus-visible {
 	outline: var(--focus-width) solid var(--color-focus);

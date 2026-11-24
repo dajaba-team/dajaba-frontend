@@ -97,6 +97,12 @@ const iconPaths = {
 			<path d="M4 21a8 8 0 0 1 16 0" />
 		</>
 	),
+	message: (
+		<>
+			<path d="M20 15a2 2 0 0 1-2 2H8l-4 3.5V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2Z" />
+			<path d="M8.5 9h7M8.5 12.5h4.5" />
+		</>
+	),
 	search: (
 		<>
 			<circle cx="11" cy="11" r="7" />
