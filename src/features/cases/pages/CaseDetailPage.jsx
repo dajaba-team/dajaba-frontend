@@ -49,7 +49,8 @@ function useAskPanel() {
 			setOpen(false)
 			setCollapsed(false)
 			setHighlight(null)
-			document.getElementById("ask-open")?.focus({ preventScroll: true })
+			// 닫으면 떠 있는 곰 버튼이 다시 그려진 뒤에 그 버튼으로 초점을 돌려요.
+			setTimeout(() => document.getElementById("ask-open")?.focus({ preventScroll: true }), 0)
 		},
 		showEvidence: (record) => {
 			setHighlight((prev) => ({
@@ -64,19 +65,27 @@ function useAskPanel() {
 	}
 }
 
-function AskButton({ ask }) {
-	const shown = ask.open && !ask.collapsed
+// 근거 질의 열기 — 오른쪽 아래에 떠 있는 챗봇 곰 버튼(SCRUM-410). 채팅창이 닫혔거나 접혔을 때만 보여요.
+// 초록 점은 "물어볼 수 있어요" 표시로 깜빡여요(움직임 줄이기 설정이면 멈춰요). 마우스를 올리면 왼쪽에 이름이 나와요.
+function AskLauncher({ ask }) {
+	const label = ask.open && ask.collapsed ? "질의 창 열기" : "근거 질의"
 	return (
 		<button
 			id="ask-open"
 			type="button"
-			className="case-ask-open"
-			aria-expanded={shown}
+			className="ask-launcher"
+			aria-label={label}
+			aria-expanded={false}
 			aria-controls={ask.open ? "ask-panel" : undefined}
 			onClick={ask.openPanel}
 		>
-			<Icon name="message" size={16} />
-			{ask.open && ask.collapsed ? "질의 창 열기" : "근거 질의"}
+			<span className="ask-launcher-label" aria-hidden="true">
+				{ask.open && ask.collapsed ? "질의 창 열기" : "케이스 근거 질의"}
+			</span>
+			<span className="ask-launcher-avatar" aria-hidden="true">
+				<img src={bearFace} alt="" />
+				<span className="ask-launcher-dot" />
+			</span>
 		</button>
 	)
 }
@@ -110,11 +119,7 @@ function CaseDetail({ caseNo }) {
 				<AsyncState query={query} />
 				{detail && (
 					<>
-						<CaseSummaryHeader
-							detail={detail}
-							askButton={canAsk ? <AskButton ask={ask} /> : null}
-							onAction={requestAction}
-						/>
+						<CaseSummaryHeader detail={detail} onAction={requestAction} />
 						<div className="case-detail-layout">
 							<div className="case-detail-main">
 								{/* AI 요약은 메모 탭에서 빼서 점수 근거 위 카드로(SCRUM-408) — 요약 → 근거 순서로 읽어요. */}
@@ -144,14 +149,9 @@ function CaseDetail({ caseNo }) {
 					</>
 				)}
 			</div>
+			{canAsk && (!ask.open || ask.collapsed) && <AskLauncher ask={ask} />}
 			{panelOpen && (
 				<div className="ask-float" id="ask-panel">
-					{ask.collapsed && (
-						<button type="button" className="ask-float-reopen" onClick={ask.openPanel}>
-							<img src={bearFace} alt="" aria-hidden="true" />
-							질의 창 열기
-						</button>
-					)}
 					<CaseAskPanel
 						caseNo={detail.caseNo}
 						viewerName={viewer?.displayName ?? "나"}

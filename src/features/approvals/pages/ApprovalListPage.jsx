@@ -57,11 +57,12 @@ export default function ApprovalListPage() {
 		<>
 			<header className="case-page-heading">
 				<h1>승인함</h1>
-				<p>
-					{isAdmin
-						? "관리자는 승인 대기 목록만 볼 수 있어요. 승인·반려는 승인자가 해요."
-						: "검증을 통과한 STR 초안을 열어 본문과 바뀐 곳을 확인한 뒤, 초안 화면에서 승인하거나 반려하세요."}
-				</p>
+				{!isAdmin && (
+					<p>
+						검증을 통과한 STR 초안을 열어 본문과 바뀐 곳을 확인한 뒤, 초안 화면에서
+						승인하거나 반려하세요.
+					</p>
+				)}
 			</header>
 			<section className="case-panel" aria-label="승인 대기 목록">
 				<AsyncState query={query} />

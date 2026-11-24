@@ -132,6 +132,35 @@
 	min-width: 32rem;
 	border-collapse: collapse;
 }
+/* 거래 표(SCRUM-410) — 칸 안에서 아무 데서나 끊기지 않게: 머리글·한 줄 값은 줄바꿈 없음,
+   두 줄 값(날짜/시각 · 보낸/받는 계좌 · 숫자/통화)은 정해 둔 자리에서만 나눠요. 좁으면 표만 가로로 밀어요. */
+.case-tx-table th,
+.case-tx-table td {
+	padding-inline: var(--space-4);
+	white-space: nowrap;
+	vertical-align: middle;
+}
+.case-tx-table td {
+	font-variant-numeric: tabular-nums;
+}
+.case-tx-table .tx-num {
+	text-align: right;
+}
+.tx-lines {
+	display: inline-grid;
+	gap: 0.125rem;
+	line-height: var(--leading-tight);
+}
+.tx-sub {
+	color: var(--color-muted);
+	font-size: var(--font-xs);
+}
+.case-tx-table button {
+	min-height: 2rem;
+	padding: 0 var(--space-3);
+	font-size: var(--font-xs);
+	white-space: nowrap;
+}
 /* 행 간격은 화면 폭과 상관없이 좁게(세로 --space-3), 가로만 폭에 따라 넓혀요. */
 .case-table th,
 .case-table td {
@@ -213,14 +242,18 @@
 .case-action-note {
 	color: var(--color-muted);
 }
+/* 처리 작업 폼 — 처리 작업 카드 안에 바로 펼쳐요. 테두리 상자를 따로 두지 않고(카드 속 카드 X),
+   문단 기본 여백은 없애고 칸 사이 간격(gap)만으로 줄을 띄워요(SCRUM-410). */
 .case-action-form {
 	display: grid;
 	gap: var(--space-3);
-	margin-block-start: var(--space-4);
-	padding: var(--space-4);
-	border: var(--border-width) solid var(--color-border);
-	border-radius: var(--radius-card);
-	background: var(--color-surface);
+}
+.case-action-form p {
+	margin: 0;
+	word-break: keep-all;
+}
+.case-action-form > .case-action-buttons {
+	margin-block-start: var(--space-1);
 }
 /* 되돌릴 수 없는 확정 버튼 — 전역 submit 의 파란 면을 덮어 흰 바탕 + 빨간 글자·테두리. 꺼져 있으면 기본 회색. */
 .case-action-form button.is-irreversible:enabled {
@@ -233,8 +266,12 @@
 	background: var(--color-fail-soft);
 	color: var(--color-fail);
 }
-.case-action-form h3 {
+.case-action-form h3,
+.case-detail .case-card .case-action-form h3 {
 	margin: 0;
+	color: var(--color-text);
+	font-size: var(--font-body);
+	font-weight: var(--weight-bold);
 }
 .case-field {
 	display: grid;
@@ -633,14 +670,40 @@
 	flex: none;
 	color: var(--color-primary);
 }
+/* [요약 생성/갱신] — 연한 파랑 면·파랑 글자(예전 [근거 질의] 버튼 모양), 중요한 동작이라 한 단계 크게.
+   마우스를 올리면 1.1배로 살짝 커져요(움직임 줄이기 설정이면 크기는 그대로). */
 .case-ai-summary-refresh {
 	display: inline-flex;
 	align-items: center;
-	gap: var(--space-1);
-	min-height: 2rem;
-	padding: 0 var(--space-3);
-	font-size: var(--font-small);
+	justify-content: center;
+	gap: var(--space-2);
+	min-height: 2.75rem;
+	padding: 0 var(--space-5);
+	border: var(--border-width) solid var(--color-primary-soft);
+	border-radius: var(--radius-control);
+	background: var(--color-primary-soft);
+	color: var(--color-primary);
+	font-size: var(--font-body);
 	font-weight: var(--weight-semibold);
+	line-height: var(--leading-tight);
+	transition:
+		transform 0.15s ease,
+		border-color 0.15s ease;
+}
+.case-ai-summary-refresh:hover:enabled {
+	border-color: var(--color-primary);
+	background: var(--color-primary-soft);
+	transform: scale(1.1);
+}
+.case-ai-summary-refresh:disabled {
+	border-color: var(--color-border);
+	background: var(--color-soft);
+	color: var(--color-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+	.case-ai-summary-refresh:hover:enabled {
+		transform: none;
+	}
 }
 .case-ai-summary-body {
 	display: grid;
@@ -1212,6 +1275,25 @@
 		inline-size: auto;
 	}
 }
+/* 판단 요약의 [다음 처리](에스컬레이션·보고서 열기 등) — [요약 생성]처럼 한 단계 크게, 마우스를 올리면 1.1배(SCRUM-410).
+   움직임 줄이기 설정이면 크기는 그대로. */
+.case-summary-actions .ui-button {
+	min-height: 2.75rem;
+	padding-inline: var(--space-5);
+	font-size: var(--font-body);
+	transition:
+		transform 0.15s ease,
+		background-color 0.15s ease,
+		border-color 0.15s ease;
+}
+.case-summary-actions .ui-button:hover:not(:disabled) {
+	transform: scale(1.1);
+}
+@media (prefers-reduced-motion: reduce) {
+	.case-summary-actions .ui-button:hover:not(:disabled) {
+		transform: none;
+	}
+}
 /* 카드 안 소제목은 카드 제목보다 한 단계 아래. */
 .case-detail .case-card h3 {
 	margin-block: var(--space-4) var(--space-2);
@@ -1699,40 +1781,6 @@
 	justify-content: space-between;
 	gap: var(--space-3);
 }
-.case-ask-open {
-	/* 옆 [다음 처리] 주 버튼(.ui-button)과 높이·모서리·글자를 맞추고, 색만 연한 파랑 보조 모양(SCRUM-395 후속). */
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: var(--space-2);
-	min-height: var(--control-height);
-	padding: 0 var(--space-4);
-	border: var(--border-width) solid var(--color-primary-soft);
-	border-radius: var(--radius-control);
-	background: var(--color-primary-soft);
-	color: var(--color-primary);
-	font-size: var(--font-small);
-	font-weight: var(--weight-semibold);
-	line-height: var(--leading-tight);
-	white-space: nowrap;
-}
-.case-ask-open:hover:enabled {
-	border-color: var(--color-primary);
-	background: var(--color-primary-soft);
-}
-.case-ask-open svg {
-	flex-shrink: 0;
-}
-/* 열린 상태는 [다음 처리] 주 버튼(.ui-button-primary)과 같은 파랑 — hover 도 같은 진한 파랑. */
-.case-ask-open[aria-expanded="true"] {
-	border-color: var(--color-primary);
-	background: var(--color-primary);
-	color: var(--color-on-dark);
-}
-.case-ask-open[aria-expanded="true"]:hover:enabled {
-	border-color: var(--color-primary-strong);
-	background: var(--color-primary-strong);
-}
 .case-ask-main {
 	min-width: 0;
 }
@@ -1765,30 +1813,126 @@
 		animation: none;
 	}
 }
-.ask-float-reopen {
+/* 근거 질의 열기 — 오른쪽 아래에 떠 있는 챗봇 곰 버튼(SCRUM-410). 채팅창과 같은 자리에 떠요. */
+.ask-launcher {
+	position: fixed;
+	z-index: 40;
+	inset-block-end: var(--space-5);
+	inset-inline-end: var(--space-5);
 	display: inline-flex;
 	align-items: center;
-	gap: 0.625rem;
-	min-height: 3rem;
-	padding: 0 1.125rem 0 0.25rem;
+	gap: var(--space-3);
+	min-height: 0;
+	padding: 0;
 	border: 0;
-	border-radius: var(--radius-pill);
-	background: linear-gradient(135deg, #2f63f0 0%, #1a4fd8 100%);
-	color: var(--color-on-dark);
-	font-size: var(--font-body);
-	font-weight: 700;
-	box-shadow: 0 14px 32px -10px rgb(26 79 216 / 60%);
-	transition: transform 120ms ease;
+	background: none;
+	cursor: pointer;
 }
-.ask-float-reopen:hover:enabled {
-	background: linear-gradient(135deg, #2858e0 0%, #133fb4 100%);
-	transform: translateY(-1px);
+.ask-launcher:hover:enabled {
+	background: none;
 }
-.ask-float-reopen img {
-	width: 2.5rem;
-	height: 2.5rem;
+.ask-launcher-avatar {
+	position: relative;
+	display: block;
+	width: 4rem;
+	height: 4rem;
 	border-radius: 50%;
-	background: #e2eeff;
+	background: linear-gradient(145deg, #eaf1ff, #d8e5ff);
+	box-shadow:
+		inset 0 0 0 1px rgb(26 79 216 / 12%),
+		0 14px 32px -10px rgb(26 79 216 / 55%);
+	transition: transform 0.15s ease;
+}
+.ask-launcher:hover .ask-launcher-avatar,
+.ask-launcher:focus-visible .ask-launcher-avatar {
+	transform: scale(1.08);
+}
+.ask-launcher:focus-visible {
+	outline: none;
+}
+.ask-launcher:focus-visible .ask-launcher-avatar {
+	outline: var(--focus-width) solid var(--color-focus);
+	outline-offset: 3px;
+}
+.ask-launcher-avatar img {
+	width: 100%;
+	height: 100%;
+	border-radius: 50%;
+	object-fit: cover;
+}
+/* 초록 점 — 켜졌다 흐려졌다 깜빡이고, 바깥으로 옅은 물결이 퍼져요. */
+.ask-launcher-dot {
+	position: absolute;
+	inset-block-end: 0.125rem;
+	inset-inline-end: 0.125rem;
+	width: 0.9375rem;
+	height: 0.9375rem;
+	border: 0.1875rem solid #fff;
+	border-radius: 50%;
+	background: #22b07d;
+	animation: ask-dot-blink 1.4s ease-in-out infinite;
+}
+.ask-launcher-dot::after {
+	content: "";
+	position: absolute;
+	inset: -0.1875rem;
+	border-radius: 50%;
+	box-shadow: 0 0 0 0 rgb(34 176 125 / 55%);
+	animation: ask-dot-ring 1.4s ease-out infinite;
+}
+@keyframes ask-dot-blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.35;
+	}
+}
+@keyframes ask-dot-ring {
+	0% {
+		box-shadow: 0 0 0 0 rgb(34 176 125 / 55%);
+	}
+	100% {
+		box-shadow: 0 0 0 0.5rem rgb(34 176 125 / 0%);
+	}
+}
+/* 이름표 — 마우스를 올리거나 키보드로 오면 곰 왼쪽에 말풍선처럼 나와요. */
+.ask-launcher-label {
+	padding: var(--space-2) var(--space-3);
+	border-radius: var(--radius-pill);
+	background: var(--color-text);
+	color: var(--color-on-dark);
+	font-size: var(--font-small);
+	font-weight: var(--weight-semibold);
+	white-space: nowrap;
+	opacity: 0;
+	transform: translateX(0.5rem);
+	pointer-events: none;
+	transition:
+		opacity 0.15s ease,
+		transform 0.15s ease;
+}
+.ask-launcher:hover .ask-launcher-label,
+.ask-launcher:focus-visible .ask-launcher-label {
+	opacity: 1;
+	transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	.ask-launcher-dot,
+	.ask-launcher-dot::after {
+		animation: none;
+	}
+	.ask-launcher-avatar,
+	.ask-launcher-label {
+		transition: none;
+	}
+}
+@media (max-width: 36rem) {
+	.ask-launcher {
+		inset-block-end: var(--space-3);
+		inset-inline-end: var(--space-3);
+	}
 }
 @media (max-width: 36rem) {
 	.ask-float {

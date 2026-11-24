@@ -108,6 +108,31 @@ describe("AI 호출 기록 탭", () => {
 			"/v1/references/search",
 		])
 	})
+	it("[조회] 전에 고친 값도 [필터 초기화]로 모두 기본값으로 비운다 (SCRUM-410)", async () => {
+		// 주소가 이미 ?tab=ai 라 [필터 초기화]가 주소를 바꾸지 못하는 경우 — 예전엔 칸이 그대로 남았어요.
+		const user = renderApp("/admin/audit?tab=ai")
+		let form = await screen.findByRole("form", { name: "AI 호출 기록 필터" })
+		await user.selectOptions(within(form).getByLabelText("결과"), "SUCCESS")
+		await user.selectOptions(within(form).getByLabelText("대상 종류"), "DRAFT")
+		await user.type(within(form).getByLabelText("대상 번호"), "DRF-1")
+		await user.type(within(form).getByLabelText("요청 ID"), "req-1")
+		await user.type(within(form).getByLabelText("실패 코드"), "AI_TIMEOUT")
+		await user.type(within(form).getByLabelText("시작일"), "2026-11-01")
+		await user.click(within(form).getByRole("button", { name: "필터 초기화" }))
+		form = screen.getByRole("form", { name: "AI 호출 기록 필터" })
+		for (const name of [
+			"엔드포인트",
+			"결과",
+			"대상 종류",
+			"대상 번호",
+			"요청 ID",
+			"실패 코드",
+			"시작일",
+			"종료일",
+		])
+			expect(within(form).getByLabelText(name)).toHaveValue("")
+		expect(within(form).getByLabelText("대상 번호")).toBeDisabled()
+	})
 	it("결과가 없으면 안내와 [필터 초기화]", async () => {
 		const user = renderApp("/admin/audit?tab=ai&error_code=NOPE")
 		expect(await screen.findByText("조건에 맞는 기록이 없어요.")).toBeInTheDocument()
@@ -145,21 +170,32 @@ describe("감사 기록 상태 배지 (SCRUM-332)", () => {
 		ok.forEach((b) => expect(b).toHaveTextContent("성공"))
 		list.forEach((row) => expect(row).not.toHaveAttribute("data-tone"))
 	})
-	it("접근 기록은 로그인 성공·실패만 배지, 다른 동작은 글자 그대로", async () => {
+	it("접근 기록 동작은 로그인 성공·실패도 배지 없이 모두 글자로 (SCRUM-410)", async () => {
 		const user = renderApp()
 		await user.click(await screen.findByRole("tab", { name: "접근 기록" }))
 		const list = await rows("접근 기록")
-		const badges = list.flatMap(badgesIn)
-		expect(badges.map((b) => [b.dataset.tone, b.textContent])).toEqual([
-			["danger", "로그인 실패"],
-			["success", "로그인"],
-		])
-		expect(badgesIn(list[0])).toHaveLength(0)
+		expect(list.flatMap(badgesIn)).toHaveLength(0)
 		expect(within(list[0]).getByText("역할 변경")).toBeInTheDocument()
+		const cells = list.map((row) => row.cells[2].textContent)
+		expect(cells).toContain("로그인 실패")
+		expect(cells).toContain("로그인")
 	})
 })
 
 describe("접근 기록 탭", () => {
+	it("[조회] 전에 고친 값도 [필터 초기화]로 모두 비운다 (SCRUM-410)", async () => {
+		const user = renderApp("/admin/audit?tab=access")
+		let form = await screen.findByRole("form", { name: "접근 기록 필터" })
+		await user.type(within(form).getByLabelText("사용자 아이디"), "inv01")
+		await user.selectOptions(within(form).getByLabelText("동작"), "LOGIN_FAIL")
+		await user.selectOptions(within(form).getByLabelText("대상 종류"), "CASE")
+		await user.type(within(form).getByLabelText("대상 번호"), "CASE-2022-000057")
+		await user.type(within(form).getByLabelText("종료일"), "2026-11-20")
+		await user.click(within(form).getByRole("button", { name: "필터 초기화" }))
+		form = screen.getByRole("form", { name: "접근 기록 필터" })
+		for (const name of ["사용자 아이디", "동작", "대상 종류", "대상 번호", "시작일", "종료일"])
+			expect(within(form).getByLabelText(name)).toHaveValue("")
+	})
 	it("탭을 바꾸면 접근 기록을 부르고, 동작·사용자 필터가 된다", async () => {
 		const urls = recordUrls("/api/v1/admin/access-logs")
 		const user = renderApp()

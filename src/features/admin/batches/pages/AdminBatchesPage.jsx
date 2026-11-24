@@ -142,7 +142,6 @@ export default function AdminBatchesPage() {
 		<>
 			<header className="case-page-heading">
 				<h1>데이터·배치 운영</h1>
-				<p>원천 데이터 적재부터 이상거래 탐지 및 케이스 생성까지 관리합니다.</p>
 			</header>
 			{/* 위: 사용자가 직접 실행하는 작업 두 개. 아래: 자동으로 이어지는 ②→③→④ 단계와 상태(SCRUM-345) */}
 			<div className="batch-actions">

@@ -29,8 +29,9 @@ function renderApp(who = "admin") {
 
 const table = () => screen.findByRole("region", { name: "계정 목록 표" })
 async function rowOf(loginId) {
-	const cell = await within(await table()).findByRole("cell", { name: loginId })
-	return cell.closest("tr")
+	// 계정 칸은 이름 + 아이디(.account-login-id)를 한 칸에 보여 줘요(SCRUM-410)
+	const id = await within(await table()).findByText(loginId, { selector: ".account-login-id" })
+	return id.closest("tr")
 }
 function recordBodies(suffix) {
 	const bodies = []
@@ -45,7 +46,7 @@ describe("계정 목록", () => {
 	it("기본은 활성만, 조사역 행에 진행 중 담당 건수, 내 계정·SYSTEM 에는 버튼이 없다", async () => {
 		const user = renderApp()
 		const inv01 = await rowOf("inv01")
-		expect(within(inv01).getByText("2")).toBeInTheDocument() // DRAFTED + REVIEWING (APPROVED 는 안 셈)
+		expect(within(inv01).getByText("2건")).toBeInTheDocument() // DRAFTED + REVIEWING (APPROVED 는 안 셈)
 		expect(within(inv01).getByRole("link", { name: "케이스 보기" })).toHaveAttribute(
 			"href",
 			"/cases?assignee=inv01",
@@ -57,7 +58,7 @@ describe("계정 목록", () => {
 		const apr = await rowOf("apr01")
 		expect(within(apr).getAllByText("—").length).toBeGreaterThan(0) // 조사역 아닌 행은 건수 없음
 		expect(
-			within(await table()).queryByRole("cell", { name: "system" }),
+			within(await table()).queryByText("system", { selector: ".account-login-id" }),
 		).not.toBeInTheDocument()
 
 		await user.selectOptions(screen.getByLabelText("상태"), "inactive")
@@ -172,7 +173,7 @@ describe("비활성화·재활성화·비밀번호 초기화", () => {
 		).toHaveAttribute("href", "/cases?assignee=inv01")
 		await waitFor(async () =>
 			expect(
-				within(await table()).queryByRole("cell", { name: "inv01" }),
+				within(await table()).queryByText("inv01", { selector: ".account-login-id" }),
 			).not.toBeInTheDocument(),
 		)
 

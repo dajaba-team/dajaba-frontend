@@ -12,5 +12,7 @@ export function riskCounts(items) {
 }
 // 조사 단계(대시보드 "조사 중" 카드, SCRUM-345) — 승인 대기·반려(보완)는 따로 세서 겹치지 않게
 export const INVESTIGATING = ["REVIEWING", "ESCALATED", "DRAFTED"]
+// 끝난 케이스 — "지금 바로 확인해야 할 케이스"에서 빼요(SCRUM-410). 개수·도넛 같은 집계에는 그대로 들어가요.
+export const FINISHED = ["CLOSED", "REPORTED"]
 // Presentation-only synthetic daily volumes; never used by the live overview.
 export const demoTrend = [1240, 1680, 1490, 2150, 1830, 2420, 1760, 2120, 1660, 2070]

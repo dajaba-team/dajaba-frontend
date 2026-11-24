@@ -7,7 +7,14 @@ import CountUp from "../../../shared/ui/dashboard/CountUp"
 import Icon from "../../../shared/ui/dashboard/Icon"
 import InfoTip from "../../../shared/ui/InfoTip"
 import { STATUS_LABELS } from "../../cases/labels"
-import { riskCounts, riskNames, riskColors, INVESTIGATING, demoTrend } from "../model/analytics"
+import {
+	riskCounts,
+	riskNames,
+	riskColors,
+	INVESTIGATING,
+	FINISHED,
+	demoTrend,
+} from "../model/analytics"
 import { formatScore } from "../../../shared/format/score"
 
 // 마지막 갱신 시각 — 브라우저 시간대의 시:분:초(SCRUM-345)
@@ -48,6 +55,8 @@ export default function DashboardView({
 		setReplay((v) => v + 1)
 	}
 	const counts = useMemo(() => riskCounts(items), [items])
+	// 지금 바로 확인할 케이스 — 끝난 케이스(종료·보고됨)는 빼고 점수 높은 순 그대로 위 3개
+	const focusItems = useMemo(() => items.filter((i) => !FINISHED.includes(i.status)), [items])
 	// 역할별 카드(SCRUM-345) — 카드에는 제목·건수·아이콘만, 뜻은 제목 옆 ⓘ 툴팁으로.
 	// 케이스는 HIGH 경보로만 만들어져 "고위험 케이스"는 전체 케이스와 늘 같아서, 관리자는 경보 기준으로,
 	// 조사역·승인자는 조사 단계별(조사 중 → 보완 → 승인 대기)로 바꿨어요. 관리자의 고위험 경보는 케이스 전환 수와 정책상 같아 한 카드로 합쳤어요.
@@ -368,8 +377,8 @@ export default function DashboardView({
 							<Icon name="arrow" size={14} />
 						</Link>
 					</div>
-					{items.length ? (
-						items.slice(0, 3).map((item) => {
+					{focusItems.length ? (
+						focusItems.slice(0, 3).map((item) => {
 							// 점수가 없으면 등급도 보이지 않게 — 미산출을 고위험처럼 칠하지 않는다.
 							const band =
 								item.score != null &&
