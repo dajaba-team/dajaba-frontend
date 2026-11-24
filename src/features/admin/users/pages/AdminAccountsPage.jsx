@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link } from "react-router"
 import { useQuery } from "@tanstack/react-query"
 import "../../../cases/styles/cases.css"
+import "../styles/accounts.css"
 import { AsyncState } from "../../../../shared/ui/AsyncState"
 import { useSession } from "../../../auth/hooks/useSession"
 import { adminUsersApi } from "../api/adminUsersApi"
@@ -98,47 +99,79 @@ export default function AdminAccountsPage() {
 							aria-label="계정 목록 표"
 							tabIndex={0}
 						>
-							<table className="case-table">
+							{/* 계정 표(SCRUM-410) — 이름·아이디는 한 칸, 상태는 점+글자, 관리는 오른쪽 작은 글자 버튼. */}
+							<table className="case-table account-table">
 								<thead>
 									<tr>
-										<th scope="col">아이디</th>
-										<th scope="col">이름</th>
+										<th scope="col">계정</th>
 										<th scope="col">역할</th>
 										<th scope="col">상태</th>
 										<th scope="col">진행 중 담당</th>
-										<th scope="col">관리</th>
+										<th scope="col" className="account-manage-head">
+											관리
+										</th>
 									</tr>
 								</thead>
 								<tbody>
 									{data.items.map((user) => {
 										const manageable =
 											user.role !== "SYSTEM" && user.id !== me?.id
+										const isMe = user.id === me?.id
 										return (
 											<tr key={user.id}>
-												<td>{user.loginId}</td>
-												<td>{user.displayName}</td>
-												<td>{ROLE_LABELS[user.role] ?? user.role}</td>
-												<td>{user.isActive ? "활성" : "비활성"}</td>
 												<td>
-													{user.role === "INVESTIGATOR" ? (
-														<>
-															{user.activeCaseCount ?? "—"}
-															{user.activeCaseCount > 0 && (
-																<>
-																	{" "}
-																	<Link to={casesOf(user)}>
-																		케이스 보기
-																	</Link>
-																</>
-															)}
-														</>
-													) : (
-														"—"
-													)}
+													<div className="account-who">
+														<span
+															className="account-avatar"
+															aria-hidden="true"
+														>
+															{(
+																user.displayName || user.loginId
+															).slice(0, 1)}
+														</span>
+														<span>
+															<strong>{user.displayName}</strong>
+															<span className="account-login-id">
+																{user.loginId}
+															</span>
+														</span>
+														{isMe && (
+															<span className="account-me">
+																내 계정
+															</span>
+														)}
+													</div>
+												</td>
+												<td>{ROLE_LABELS[user.role] ?? user.role}</td>
+												<td>
+													<span
+														className="account-state"
+														data-active={user.isActive || undefined}
+													>
+														{user.isActive ? "활성" : "비활성"}
+													</span>
 												</td>
 												<td>
+													{user.role === "INVESTIGATOR" ? (
+														<span className="account-cases">
+															<span>
+																{user.activeCaseCount != null
+																	? `${user.activeCaseCount}건`
+																	: "—"}
+															</span>
+															{user.activeCaseCount > 0 && (
+																<Link to={casesOf(user)}>
+																	케이스 보기
+																</Link>
+															)}
+														</span>
+													) : (
+														<span className="account-none">—</span>
+													)}
+												</td>
+												<td className="account-manage">
 													{manageable ? (
-														<div className="case-action-buttons">
+														<div className="account-actions">
 															{ROLE_SWAP[user.role] &&
 																user.isActive && (
 																	<button
@@ -150,14 +183,6 @@ export default function AdminAccountsPage() {
 																		역할 변경
 																	</button>
 																)}
-															<button
-																type="button"
-																onClick={() => open("active", user)}
-															>
-																{user.isActive
-																	? "비활성화"
-																	: "재활성화"}
-															</button>
 															{user.isActive && (
 																<button
 																	type="button"
@@ -168,11 +193,22 @@ export default function AdminAccountsPage() {
 																	비밀번호 초기화
 																</button>
 															)}
+															<button
+																type="button"
+																className={
+																	user.isActive
+																		? "is-danger"
+																		: "is-primary"
+																}
+																onClick={() => open("active", user)}
+															>
+																{user.isActive
+																	? "비활성화"
+																	: "재활성화"}
+															</button>
 														</div>
 													) : (
-														<span>
-															{user.id === me?.id ? "내 계정" : "—"}
-														</span>
+														<span className="account-none">—</span>
 													)}
 												</td>
 											</tr>
