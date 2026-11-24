@@ -4,6 +4,7 @@ import "../styles/cases.css"
 import { useCases } from "../hooks/useCases"
 import { REJECTION_LABELS, STATUS_LABELS, STATUS_TONES, labelOf } from "../labels"
 import StatusBadge from "../../../shared/ui/StatusBadge"
+import Button from "../../../shared/ui/Button"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
 import CaseOverview from "../components/CaseOverview"
@@ -67,6 +68,25 @@ function statusText(item) {
 
 // 케이스 목록 — 계약서 C1 `GET /cases`. 필터·정렬·페이지는 주소(query)에 둬서 새로고침·링크 공유·상세에서 돌아와도 유지해요.
 // 계정 관리의 [케이스 보기] → /cases?assignee=login_id 도 그대로 받아요(SCRUM-169).
+function ResetIcon() {
+	return (
+		<svg
+			width="14"
+			height="14"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			aria-hidden="true"
+		>
+			<path d="M3 12a9 9 0 1 0 3-6.7" />
+			<path d="M3 4v5h5" />
+		</svg>
+	)
+}
+
 export default function CaseListPage() {
 	const role = useSession().data?.role
 	useGuide(caseListWorkflowGuide(role))
@@ -174,9 +194,15 @@ export default function CaseListPage() {
 						</select>
 					</label>
 					{filtered && (
-						<button type="button" onClick={reset}>
+						<Button
+							variant="ghost"
+							size="sm"
+							className="case-filter-reset"
+							onClick={reset}
+						>
+							<ResetIcon />
 							필터 초기화
-						</button>
+						</Button>
 					)}
 				</div>
 				{periodInvalid && (
@@ -247,12 +273,16 @@ export default function CaseListPage() {
 								</table>
 							</div>
 						) : (
-							<div>
-								<p>조건에 맞는 케이스가 없습니다.</p>
+							<div className="case-empty" role="status">
+								<strong>조건에 맞는 케이스가 없습니다.</strong>
 								{filtered && (
-									<button type="button" onClick={reset}>
-										필터 초기화
-									</button>
+									<>
+										<p>기간이나 상태 조건을 바꾸거나 필터를 초기화해 보세요.</p>
+										<Button variant="secondary" onClick={reset}>
+											<ResetIcon />
+											필터 초기화
+										</Button>
+									</>
 								)}
 							</div>
 						)}
