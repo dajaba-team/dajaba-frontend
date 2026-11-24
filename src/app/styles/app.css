@@ -507,7 +507,9 @@
 	.app-header {
 		background: color-mix(in srgb, var(--color-surface) 94%, transparent);
 		border-bottom: var(--border-width) solid var(--color-border);
-		box-shadow: 0 1px 2px rgb(16 24 40 / 4%), 0 6px 16px -10px rgb(0 35 110 / 12%);
+		box-shadow:
+			0 1px 2px rgb(16 24 40 / 4%),
+			0 6px 16px -10px rgb(0 35 110 / 12%);
 	}
 	.sidebar-toggle {
 		display: grid;
