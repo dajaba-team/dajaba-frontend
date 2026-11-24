@@ -1,3 +1,5 @@
+import { currencyLabel } from "./currencyLabels"
+
 // 점수 근거(latest_score.reasons) 화면 글자 — AI 점수 서버가 준 값은 기계용 코드(영문)라 여기서만 한글로 바꿔요.
 // 서버·AI 요청·요약 해시는 코드를 그대로 써야 해서(규약 v0.4, 안건 3) 값 자체는 바꾸지 않아요.
 // 이름은 "<지표>_<기간>" 꼴(account_in_counterparties_24h). 모르는 지표는 코드를 그대로 보여 줘요.
@@ -48,7 +50,7 @@ export function reasonLabel(name) {
 export const basisLabel = (basis) => BASES[basis] ?? null
 
 /**
- * 값 + 단위. count → 개/건, ratio → %, 통화 코드(USD)는 그대로. 모르는 단위는 붙이지 않아요.
+ * 값 + 단위. count → 개/건, ratio → %, 통화 코드(USD)는 한글 통화 이름. 모르는 단위는 붙이지 않아요.
  * @param format 숫자 서식 함수(반올림하지 않는 formatNumber)
  */
 export function withReasonUnit(value, unit, name, format) {
@@ -56,6 +58,6 @@ export function withReasonUnit(value, unit, name, format) {
 	if (typeof value !== "number") return String(value)
 	if (unit === "ratio") return `${format(Math.round(value * 1000) / 10)}%`
 	if (unit === "count") return `${format(value)}${COUNT_UNIT[split(name).metric] ?? "건"}`
-	if (/^[A-Z]{3}$/.test(unit ?? "")) return `${format(value)} ${unit}`
+	if (/^[A-Z]{3}$/.test(unit ?? "")) return `${format(value)} ${currencyLabel(unit)}`
 	return format(value)
 }

@@ -3,6 +3,7 @@ import { caseKey, useCaseCommand } from "../hooks/useCases"
 import { getErrorMessage, isNoResponse } from "../../../shared/api/apiClient"
 import { formatSystemTime } from "../../../shared/format/time"
 import StatusBadge from "../../../shared/ui/StatusBadge"
+import { humanizeText } from "../displayText"
 
 // AI 조사 요약 (FR-CASE-19·20, 화면 CASE-02-E, 계약서 A7·C7). 요약은 보조 정보라 실패해도 다른 작업은 그대로예요.
 // 요약 내용은 상세의 latestSummary를 그대로 써요(C7과 같은 값). 만들고 나면 상세를 다시 불러 version도 맞춰요.
@@ -48,7 +49,7 @@ export default function CaseSummaryPanel({ detail }) {
 					{summary.summaryLines.length ? (
 						<ul className="case-ai-summary-lines">
 							{summary.summaryLines.map((line, index) => (
-								<li key={index}>{line}</li>
+								<li key={index}>{humanizeText(line)}</li>
 							))}
 						</ul>
 					) : (
@@ -56,7 +57,7 @@ export default function CaseSummaryPanel({ detail }) {
 					)}
 					{summary.modelFocus && (
 						<p>
-							<strong>모델이 주목한 점</strong> {summary.modelFocus}
+							<strong>모델이 주목한 점</strong> {humanizeText(summary.modelFocus)}
 						</p>
 					)}
 				</div>

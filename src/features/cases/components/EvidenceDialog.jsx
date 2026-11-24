@@ -5,6 +5,7 @@ import { useCaseEvidence } from "../hooks/useCases"
 import { formatAmount } from "./caseMoney"
 import { DIRECTION_LABELS } from "../labels"
 import "./evidenceDialog.css"
+import { paymentFormatLabel } from "../displayText"
 
 // [거래 원본] 창 — 계약서 C4 `GET /cases/{case_no}/evidence/{transaction_id}`. 서버가 열람 기록을 남겨요.
 // 이 케이스의 근거 거래가 아니면 404 EVIDENCE_NOT_FOUND. 계좌는 가린 값만 와요.
@@ -77,7 +78,7 @@ function EvidenceBody({ data, t }) {
 			<dl className="evidence-grid">
 				<div>
 					<dt>결제 방식</dt>
-					<dd>{t.paymentFormat}</dd>
+					<dd>{paymentFormatLabel(t.paymentFormat)}</dd>
 				</div>
 				<div>
 					<dt>거래 시각</dt>

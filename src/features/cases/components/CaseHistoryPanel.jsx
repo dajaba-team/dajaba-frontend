@@ -4,6 +4,7 @@ import { formatSystemTime } from "../../../shared/format/time"
 import Pagination from "../../../shared/ui/Pagination"
 import { useCaseHistories } from "../hooks/useCases"
 import { HISTORY_LABELS, STATUS_LABELS, labelOf } from "../labels"
+import { actorLabel } from "../displayText"
 
 // 상태 이력 — 기본은 상세의 최근 20건, [이력 전체 보기]면 계약서 C6 `GET /cases/{case_no}/histories`(페이지).
 // 메모 이력은 따로(CaseNoteHistory) — 서버도 상태 이력에 메모(NOTE)를 넣지 않아요.
@@ -27,7 +28,7 @@ function HistoryList({ items }) {
 				<li key={`${entry.createdAt}-${index}`}>
 					<strong>{labelOf(HISTORY_LABELS, entry.action)}</strong> {assigneeChange(entry)}
 					{entry.fromStatus && `${labelOf(STATUS_LABELS, entry.fromStatus)} → `}
-					{labelOf(STATUS_LABELS, entry.toStatus)} · {entry.createdBy} ·{" "}
+					{labelOf(STATUS_LABELS, entry.toStatus)} · {actorLabel(entry.createdBy)} ·{" "}
 					{formatSystemTime(entry.createdAt)}
 					{entry.comment && <p className="preserve-lines">{entry.comment}</p>}
 				</li>
