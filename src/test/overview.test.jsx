@@ -96,6 +96,8 @@ describe("일반 대시보드의 데이터 범위", () => {
 		const rows = document.querySelectorAll(".focus-case")
 		expect(rows[0]).toHaveAttribute("data-band", "HIGH")
 		expect(within(rows[0]).getByText("HIGH")).toBeInTheDocument()
+		expect(within(rows[0]).getByText("0.94")).toBeInTheDocument() // 둘째 자리 (SCRUM-392)
+		expect(within(rows[2]).getByText("0.00")).toBeInTheDocument()
 		expect(rows[1]).toHaveAttribute("data-band", "NONE")
 		expect(rows[1].querySelector(".band-badge")).toBeNull()
 		expect(rows[2]).toHaveAttribute("data-band", "LOW")

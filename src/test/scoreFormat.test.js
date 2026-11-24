@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { formatScore } from "../shared/format/score"
+import { formatScore, DASHBOARD_SCORE_DECIMALS } from "../shared/format/score"
 
 describe("점수 표기 [SCRUM-347]", () => {
 	it("부동소수점 끝자리를 정리해 소수 넷째 자리까지 보여 준다", () => {
@@ -20,5 +20,14 @@ describe("점수 표기 [SCRUM-347]", () => {
 		expect(formatScore(undefined)).toBeNull()
 		expect(formatScore("")).toBeNull()
 		expect(formatScore("abc")).toBeNull()
+	})
+	it("대시보드는 소수 둘째 자리까지 버린다 [SCRUM-392]", () => {
+		expect(formatScore(0.9233, DASHBOARD_SCORE_DECIMALS)).toBe("0.92")
+		expect(formatScore(0.94, DASHBOARD_SCORE_DECIMALS)).toBe("0.94")
+		expect(formatScore(0.8600000000000001, DASHBOARD_SCORE_DECIMALS)).toBe("0.86")
+		expect(formatScore(0.29, DASHBOARD_SCORE_DECIMALS)).toBe("0.29")
+		expect(formatScore(0.69996, DASHBOARD_SCORE_DECIMALS)).toBe("0.69") // 반올림하면 0.70 — MEDIUM 배지와 어긋남
+		expect(formatScore(1, DASHBOARD_SCORE_DECIMALS)).toBe("1.00")
+		expect(formatScore(null, DASHBOARD_SCORE_DECIMALS)).toBeNull()
 	})
 })
