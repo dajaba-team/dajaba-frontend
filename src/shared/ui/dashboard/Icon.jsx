@@ -144,9 +144,8 @@ const iconPaths = {
 	),
 	chevron: <path d="m6 9 6 6 6-6" />,
 	minus: <path d="M5 12h14" />,
-	// 사이드바 접기·펼치기(SCRUM-327)
-	chevronsLeft: <path d="m12 6-6 6 6 6m6-12-6 6 6 6" />,
-	chevronsRight: <path d="m6 6 6 6-6 6m6-12 6 6-6 6" />,
+	// 사이드바 접기·펼치기 햄버거 버튼(SCRUM-327 → SCRUM-408)
+	menu: <path d="M4 6.5h16M4 12h16M4 17.5h16" />,
 	// 업무 알림 종(SCRUM-334)
 	bell: (
 		<>

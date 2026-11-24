@@ -70,8 +70,19 @@ export default function AppLayout() {
 			>
 				{signedIn && (
 					<header className="app-header">
-						{/* 로고·접기 버튼은 사이드바를 접어도 같은 크기로 위 띠 왼쪽에 남아요(SCRUM-408). */}
+						{/* 햄버거 버튼 + 로고 — 사이드바를 접어도 같은 크기로 위 띠 왼쪽에 남아요(SCRUM-408). */}
 						<div className="app-header-brand">
+							<button
+								type="button"
+								className="sidebar-toggle"
+								onClick={toggleSidebar}
+								aria-label={sidebarCollapsed ? "사이드바 열기" : "사이드바 닫기"}
+								aria-expanded={!sidebarCollapsed}
+								aria-controls="app-sidebar"
+								title={`${sidebarCollapsed ? "사이드바 열기" : "사이드바 닫기"} (Ctrl+B)`}
+							>
+								<Icon name="menu" size={20} />
+							</button>
 							<Link
 								className="app-brand"
 								to="/overview"
@@ -82,20 +93,6 @@ export default function AppLayout() {
 									DAJAVA<span>AML 인텔리전스</span>
 								</div>
 							</Link>
-							<button
-								type="button"
-								className="sidebar-toggle"
-								onClick={toggleSidebar}
-								aria-label={sidebarCollapsed ? "사이드바 열기" : "사이드바 닫기"}
-								aria-expanded={!sidebarCollapsed}
-								aria-controls="app-sidebar"
-								title={`${sidebarCollapsed ? "사이드바 열기" : "사이드바 닫기"} (Ctrl+B)`}
-							>
-								<Icon
-									name={sidebarCollapsed ? "chevronsRight" : "chevronsLeft"}
-									size={16}
-								/>
-							</button>
 						</div>
 						<div className="app-header-context">
 							<span className="app-header-title">
