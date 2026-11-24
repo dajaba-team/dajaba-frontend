@@ -711,7 +711,11 @@ describe("케이스 조사", () => {
 		expect(within(summary).getByText("0.91")).toBeInTheDocument() // 둘째 자리 표기
 		expect(within(summary).getByText("등급 HIGH")).toBeInTheDocument()
 		expect(within(summary).getByRole("tooltip", { hidden: true })).toHaveTextContent(
-			"모델 점수예요. 범죄 확률이 아니에요. 모델 xgb-2022.11",
+			"모델 점수예요. 범죄 확률이 아니에요.",
+		)
+		// 모델 버전 문자열은 보이지 않아요(SCRUM-408)
+		expect(within(summary).getByRole("tooltip", { hidden: true })).not.toHaveTextContent(
+			"xgb-2022.11",
 		)
 	})
 	it("점수 근거: 기여 크기 순 상위 3개를 관측값·기준값·모델 기여로 나눠 보여 준다 (SCRUM-208)", async () => {
