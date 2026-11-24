@@ -324,10 +324,6 @@ export default function AdminAuditPage() {
 		<div className="audit-page">
 			<header className="case-page-heading">
 				<h1>감사 기록</h1>
-				<p>
-					누가 무엇을 봤는지, 백엔드가 AI를 언제 불렀는지 기록만 보여 줘요.
-					본문·메모·계좌번호는 없어요.
-				</p>
 			</header>
 			<div className="audit-tabs" role="tablist" aria-label="감사 기록 종류">
 				{Object.entries(TABS).map(([key, value]) => (

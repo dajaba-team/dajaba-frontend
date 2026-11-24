@@ -126,7 +126,6 @@ export default function CaseListPage() {
 		<>
 			<header className="case-page-heading">
 				<h1>케이스 목록</h1>
-				<p>의심 거래의 근거를 확인하고 조사 내용을 기록하세요.</p>
 			</header>
 			{!periodInvalid && query.data && !query.isError && <CaseOverview data={query.data} />}
 			<section className="case-panel" aria-label="케이스 조회">

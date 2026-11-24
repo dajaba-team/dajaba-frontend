@@ -40,7 +40,6 @@ export default function AdminAccountsPage() {
 		<>
 			<header className="case-page-heading">
 				<h1>계정 관리</h1>
-				<p>계정은 지우지 않아요. 퇴사·휴직은 비활성화로 처리해요.</p>
 			</header>
 			<section className="case-panel" aria-label="계정 조회">
 				<div className="case-filter">

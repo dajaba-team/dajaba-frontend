@@ -77,7 +77,8 @@ describe("승인함 — 목록 (상태만, 결정은 초안 화면에서)", () =
 		expect(
 			within(row).getByRole("link", { name: "CASE-2022-001001 초안 상태 보기" }),
 		).toBeInTheDocument()
-		expect(screen.getByText(/관리자는 승인 대기 목록만 볼 수 있어요/)).toBeInTheDocument()
+		// 머리말 설명 문구는 뺐어요(SCRUM-410) — 승인 버튼이 없는 것으로 충분히 보여요.
+		expect(screen.queryByText(/관리자는 승인 대기 목록만 볼 수 있어요/)).not.toBeInTheDocument()
 	})
 
 	it("내가 담당했던 케이스는 다른 승인자가 결정한다고 상태로 알린다", async () => {
