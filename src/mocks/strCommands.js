@@ -50,13 +50,18 @@ const pushHistory = (item, action, from, to, by) =>
 /** S2 available_actions (계약서 Q16) — 케이스 C2 규칙(cases.availableActions) + 초안 상태로. 조사역 동작만 흉내 내요. */
 export function draftActions(viewer, item, draft) {
 	if (!item || item.current_draft_no !== draft.draft_no) return []
-	// 승인 뒤: 케이스 APPROVED·초안 LOCKED이고 이 초안을 승인한 사람이면 REPORT(모의 제출 P4, BE StrDraftActions)
-	if (draft.status === "LOCKED")
-		return viewer.role === "APPROVER" &&
-			item.status === "APPROVED" &&
-			approvedBy(item) === viewer.login_id
-			? ["REPORT"]
-			: []
+	// 승인 뒤(초안 LOCKED) — BE StrDraftActions·StrReportPdfAccess.canRead 와 같게:
+	// PDF 는 승인자(누구나)와 담당 조사역. APPROVED 면 PREVIEW_PDF(S7), REPORTED 면 DOWNLOAD_PDF(S8).
+	// 모의 제출 REPORT(P4)는 APPROVED 이고 이 초안을 승인한 사람만. 다시 만들기(P5)는 목업에 PDF 상태가 없어 흉내 내지 않아요.
+	if (draft.status === "LOCKED") {
+		const canReadPdf = viewer.role === "APPROVER" || isAssignee(viewer, item)
+		if (item.status === "APPROVED") {
+			const report = viewer.role === "APPROVER" && approvedBy(item) === viewer.login_id
+			return [...(report ? ["REPORT"] : []), ...(canReadPdf ? ["PREVIEW_PDF"] : [])]
+		}
+		if (item.status === "REPORTED") return canReadPdf ? ["DOWNLOAD_PDF"] : []
+		return []
+	}
 	if (draft.status !== "ACTIVE") return []
 	// 승인자: 승인 대기 + 지금·예전 담당 아님 → APPROVE·REJECT (BE StrDraftActions, WasCaseAssignee)
 	if (viewer.role === "APPROVER")

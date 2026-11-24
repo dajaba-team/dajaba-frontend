@@ -557,3 +557,23 @@
 .str-ref-list .str-badge {
 	justify-self: start;
 }
+
+/* 보고서 PDF(S7·S8) 버튼 — 서버가 PREVIEW_PDF·DOWNLOAD_PDF 를 줄 때만 (QnA BH-FE-01). 작업 바(sticky)와 따로 본문 흐름에 둬요 */
+.str-pdf {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+	align-items: center;
+	margin-block-start: var(--space-4);
+}
+.str-pdf > p {
+	flex-basis: 100%;
+	margin: 0;
+}
+.str-pdf-preview {
+	flex-basis: 100%;
+	width: 100%;
+	min-height: 32rem;
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-card);
+}

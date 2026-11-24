@@ -9,12 +9,13 @@ import { useApprovalCommand } from "../hooks/useApprovals"
 import { deadlineStatus, deadlineText } from "../model/deadline"
 import { useStrDraft } from "../../str/hooks/useStrDraft"
 import { strActionsFor } from "../../str/model/strRules"
+import { pdfStatusOf, saveFile } from "../../str/model/strPdf"
 import { useCaseDetail } from "../../cases/hooks/useCases"
 import { useSession } from "../../auth/hooks/useSession"
 import { STATUS_LABELS, labelOf } from "../../cases/labels"
 import ConfirmDialog from "../../../shared/ui/ConfirmDialog"
 import { AsyncState } from "../../../shared/ui/AsyncState"
-import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
+import { getErrorMessage } from "../../../shared/api/apiClient"
 import { formatSystemTime } from "../../../shared/format/time"
 import StatusBadge from "../../../shared/ui/StatusBadge"
 
@@ -29,20 +30,8 @@ const latestAt = (history, action) =>
 		.sort()
 		.at(-1) ?? null
 
-// PDF 상태 — 확정본 받기(S8)가 409 REPORT_PDF_NOT_READY 로 알려 줘요(details.pdf_status). 그 밖의 방법은 아직 없어요.
-const pdfStatusOf = (error) =>
-	getErrorCode(error) === "REPORT_PDF_NOT_READY"
-		? (error.response?.data?.error?.details?.pdf_status ?? null)
-		: null
-
-function saveFile(blob, name) {
-	const url = URL.createObjectURL(blob)
-	const link = document.createElement("a")
-	link.href = url
-	link.download = name
-	link.click()
-	setTimeout(() => URL.revokeObjectURL(url), 60_000)
-}
+// PDF 상태(pdfStatusOf) — 확정본 받기(S8)가 409 REPORT_PDF_NOT_READY 로 알려 줘요(details.pdf_status). 그 밖의 방법은 아직 없어요.
+// pdfStatusOf·saveFile 은 STR 화면 PDF 버튼과 같이 써요(str/model/strPdf).
 
 // 403 NOT_DRAFT_APPROVER 안내(apiClient)·docs 와 같은 규칙 문장. 보는 사람이 승인자가 아니라고 단정하지 않아요.
 const REPORT_UNAVAILABLE =
