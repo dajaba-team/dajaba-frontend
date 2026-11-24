@@ -104,6 +104,11 @@
 /* 표의 열 관계를 보존하며 좁은 화면에서는 이 영역만 가로 스크롤합니다. */
 .case-table-scroll {
 	overflow-x: auto;
+	transition: opacity 0.15s ease;
+}
+/* 조건을 바꾼 뒤 새 목록이 오기 전 — 이전 목록을 흐리게 두고 자리는 그대로 유지해요. */
+.case-table-scroll[data-stale] {
+	opacity: 0.55;
 }
 .case-table {
 	width: 100%;

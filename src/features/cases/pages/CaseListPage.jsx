@@ -9,6 +9,7 @@ import { formatSystemTime } from "../../../shared/format/time"
 import CaseOverview from "../components/CaseOverview"
 import ReassignDialog from "../components/ReassignDialog"
 import Pagination from "../../../shared/ui/Pagination"
+import SelectMenu from "../../../shared/ui/SelectMenu"
 import { formatScore } from "../../../shared/format/score"
 import { useSession } from "../../auth/hooks/useSession"
 import { useGuide } from "../../../shared/ui/useGuide"
@@ -162,16 +163,11 @@ export default function CaseListPage() {
 					)}
 					<label>
 						정렬{" "}
-						<select
+						<SelectMenu
 							value={filters.sort}
-							onChange={(event) => update({ sort: event.target.value })}
-						>
-							{SORTS.map(([value, label]) => (
-								<option key={value} value={value}>
-									{label}
-								</option>
-							))}
-						</select>
+							options={SORTS}
+							onChange={(sort) => update({ sort })}
+						/>
 					</label>
 					{filtered && (
 						<button type="button" onClick={reset}>
@@ -190,6 +186,8 @@ export default function CaseListPage() {
 						{query.data.items.length ? (
 							<div
 								className="case-table-scroll"
+								data-stale={query.isPlaceholderData || undefined}
+								aria-busy={query.isPlaceholderData || undefined}
 								role="region"
 								aria-label="케이스 목록 표"
 								tabIndex={0}

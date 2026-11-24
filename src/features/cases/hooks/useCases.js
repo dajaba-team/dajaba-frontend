@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { casesApi } from "../api/casesApi"
 import { getErrorCode, isNoResponse } from "../../../shared/api/apiClient"
 
@@ -9,6 +9,8 @@ export function useCases(params, { enabled = true } = {}) {
 		queryKey: ["cases", params],
 		queryFn: ({ signal }) => casesApi.list(params, signal),
 		enabled,
+		// 필터·정렬·페이지를 바꿔도 새 응답이 올 때까지 이전 목록을 보여 줘서 화면이 비었다 채워지며 깜빡이지 않게 해요.
+		placeholderData: keepPreviousData,
 	})
 }
 
