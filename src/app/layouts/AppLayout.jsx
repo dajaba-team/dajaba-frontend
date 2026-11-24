@@ -86,10 +86,10 @@ export default function AppLayout() {
 						<Link
 							className="sidebar-pill-brand"
 							to="/overview"
-							aria-label="DAJABA 업무 대시보드"
+							aria-label="DAJAVA 업무 대시보드"
 						>
 							<img src={brandMark} alt="" />
-							<span aria-hidden="true">DAJABA</span>
+							<span aria-hidden="true">DAJAVA</span>
 						</Link>
 						<button
 							ref={openSidebarButton}
@@ -111,7 +111,7 @@ export default function AppLayout() {
 							<Link className="app-brand" to="/overview">
 								<img className="app-brand-mark" src={brandMark} alt="" />
 								<div>
-									DAJABA<span>AML 인텔리전스</span>
+									DAJAVA<span>AML 인텔리전스</span>
 								</div>
 							</Link>
 							<button

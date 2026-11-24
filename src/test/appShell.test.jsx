@@ -218,7 +218,7 @@ describe("사이드바 접기·펼치기(SCRUM-327)", () => {
 		const open = screen.getByRole("button", { name: "사이드바 열기" })
 		expect(open).toHaveAttribute("aria-expanded", "false")
 		expect(open).toHaveFocus()
-		expect(screen.getByRole("link", { name: "DAJABA 업무 대시보드" })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: "DAJAVA 업무 대시보드" })).toHaveAttribute(
 			"href",
 			"/overview",
 		)

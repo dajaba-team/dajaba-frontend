@@ -100,7 +100,7 @@ export default function AuthPanel({ placement = "main" }) {
 			{me.data === null && !sessionEnded && (
 				<header className="auth-heading">
 					<img className="auth-brand-mark" src={brandMark} alt="" />
-					<h2>DAJABA</h2>
+					<h2>DAJAVA</h2>
 					<p>AI 기반 자금세탁방지 업무 시스템</p>
 				</header>
 			)}
