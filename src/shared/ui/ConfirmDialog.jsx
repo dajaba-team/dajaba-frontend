@@ -18,6 +18,7 @@ export default function ConfirmDialog({
 }) {
 	return (
 		<Modal
+			className="modal-confirm"
 			title={title}
 			onClose={confirming ? () => {} : onCancel}
 			footer={
