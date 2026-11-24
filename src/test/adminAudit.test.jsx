@@ -183,6 +183,19 @@ describe("감사 기록 상태 배지 (SCRUM-332)", () => {
 })
 
 describe("접근 기록 탭", () => {
+	it("[조회] 전에 고친 값도 [필터 초기화]로 모두 비운다 (SCRUM-410)", async () => {
+		const user = renderApp("/admin/audit?tab=access")
+		let form = await screen.findByRole("form", { name: "접근 기록 필터" })
+		await user.type(within(form).getByLabelText("사용자 아이디"), "inv01")
+		await user.selectOptions(within(form).getByLabelText("동작"), "LOGIN_FAIL")
+		await user.selectOptions(within(form).getByLabelText("대상 종류"), "CASE")
+		await user.type(within(form).getByLabelText("대상 번호"), "CASE-2022-000057")
+		await user.type(within(form).getByLabelText("종료일"), "2026-11-20")
+		await user.click(within(form).getByRole("button", { name: "필터 초기화" }))
+		form = screen.getByRole("form", { name: "접근 기록 필터" })
+		for (const name of ["사용자 아이디", "동작", "대상 종류", "대상 번호", "시작일", "종료일"])
+			expect(within(form).getByLabelText(name)).toHaveValue("")
+	})
 	it("탭을 바꾸면 접근 기록을 부르고, 동작·사용자 필터가 된다", async () => {
 		const urls = recordUrls("/api/v1/admin/access-logs")
 		const user = renderApp()
