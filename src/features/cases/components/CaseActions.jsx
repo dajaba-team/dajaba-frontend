@@ -51,11 +51,7 @@ export default function CaseActions({ detail, request = null, primaryKey = null 
 	const anyButton = Object.values(buttons).some(Boolean)
 	if (!anyButton && !shown && !reassigning) return null
 	return (
-		<section
-			ref={sectionRef}
-			className="case-panel case-card case-actions"
-			aria-labelledby="case-actions-title"
-		>
+		<section ref={sectionRef} className="case-actions" aria-labelledby="case-actions-title">
 			<h2 id="case-actions-title">처리 작업</h2>
 			{anyButton && (
 				<div className="case-action-buttons">

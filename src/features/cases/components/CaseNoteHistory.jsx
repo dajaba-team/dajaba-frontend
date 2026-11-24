@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useCaseNoteHistories } from "../hooks/useCases"
 import { AsyncState } from "../../../shared/ui/AsyncState"
-import { formatSystemTime } from "../../../shared/format/time"
+import { formatSystemMinute as formatSystemTime } from "../caseTime"
 import Pagination from "../../../shared/ui/Pagination"
 import { actorLabel } from "../displayText"
 

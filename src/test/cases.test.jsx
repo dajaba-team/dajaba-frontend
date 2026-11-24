@@ -714,10 +714,8 @@ describe("케이스 조사", () => {
 		expect(within(panel).getByText("R02 집중 입금")).toBeInTheDocument()
 		// 동시 수정 검사용 version 은 화면에 없어요
 		expect(within(panel).queryByText("버전")).not.toBeInTheDocument()
-		// 데이터 시각은 시간대를 붙이지 않고 받은 그대로(T만 공백)
-		expect(
-			within(panel).getByText("2022-10-31 00:00:00 ~ 2022-11-01 00:00:00"),
-		).toBeInTheDocument()
+		// 데이터 시각은 시간대를 붙이지 않고 받은 그대로(T만 공백), 상세는 분까지만
+		expect(within(panel).getByText("2022-10-31 00:00 ~ 2022-11-01 00:00")).toBeInTheDocument()
 		expect(within(panel).getByText("15건")).toBeInTheDocument()
 		// 점수·등급은 맨 위 판단 요약(h1 이 있는 banner)으로 올라왔어요. 범죄 확률 아님 안내는 ⓘ 설명으로.
 		const summary = screen.getByRole("heading", { level: 1, name: REVIEWING }).closest("header")
@@ -1097,7 +1095,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		const rows = await within(table).findAllByRole("row")
 		expect(rows).toHaveLength(5) // 머리 + 4건
 		expect(within(rows[1]).getByText("입금")).toBeInTheDocument()
-		expect(within(rows[1]).getByText("2022-10-31 09:00:00")).toBeInTheDocument()
+		expect(within(rows[1]).getByText("2022-10-31 09:00")).toBeInTheDocument()
 		expect(within(rows[3]).getByText("출금")).toBeInTheDocument()
 		expect(within(rows[4]).getByText("경유")).toBeInTheDocument()
 	})

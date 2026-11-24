@@ -1,4 +1,4 @@
-import { formatDataTime } from "../../../shared/format/time"
+import { formatDataMinute as formatDataTime } from "../caseTime"
 import { formatAmount } from "./caseMoney"
 import { hopKind, hopTime, routeRows } from "./flowRoutes"
 

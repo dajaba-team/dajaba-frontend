@@ -739,14 +739,11 @@
 .case-notes-card > section > h2:first-child {
 	margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) var(--space-4);
 }
-/* 개요 띠 — 판단 요약 바로 아래 한 장. 항목 수·폭에 맞춰 칸이 저절로 줄바꿈돼요. */
+/* 개요 띠 — 판단 요약 바로 아래. 상자 없이 바탕 위 한 줄(카드처럼 보이지 않게 — 카드는 본문만).
+   항목 수·폭에 맞춰 칸이 저절로 줄바꿈돼요. */
 .case-overview-strip {
-	margin-block-end: var(--space-4);
-	padding: var(--space-3) var(--space-4);
-	border: var(--border-width) solid var(--color-border);
-	border-radius: var(--radius-card);
-	background: var(--color-surface);
-	box-shadow: var(--case-card-shadow);
+	margin-block-end: var(--space-5);
+	padding: 0;
 }
 .case-overview-strip dl {
 	display: grid;
@@ -890,13 +887,8 @@
 }
 /* 마크업 순서 = Tab 순서 = 읽는 순서(WCAG 1.3.2·2.4.3, SCRUM-373):
    본문(점수 근거 → AI 요약 → 거래 분석) → 작업대(조사 메모 → 처리 작업) → 이력.
-   좁은 화면은 한 열, 중간 폭은 작업대 두 카드를 나란히, 넓은 화면은 이력이 본문 아래 왼쪽 열로 가고
+   좁은 화면·중간 폭은 한 열, 넓은 화면은 이력이 본문 아래 왼쪽 열로 가고
    오른쪽 작업대는 스크롤을 따라와요(앱 머리 띠 4.25rem 아래). 작업대가 화면보다 길면 함께 스크롤돼요. */
-@media (min-width: 48rem) and (max-width: 77.49rem) {
-	.case-detail-aside {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-}
 @media (min-width: 77.5rem) {
 	.case-detail-layout {
 		grid-template-columns: minmax(0, 1fr) 23rem;
@@ -1959,4 +1951,135 @@
 .case-table tr.is-ask-hit td:first-child {
 	box-shadow: inset 3px 0 0 #547edc;
 	font-weight: 700;
+}
+
+/* ── 케이스 상세 정돈(A안) — 한 벌의 기준으로 맞춰요. 모두 .case-detail 안에서만 ──────────────
+   토큰을 이 화면 안에서 다시 정해 안쪽 요소가 같은 값을 따르게 해요(다른 화면은 그대로).
+   · 둥글기 두 가지: 카드 12px, 컨트롤 8px (상태 배지 알약 모양은 예외)
+   · 회색 두 가지: 본문 --color-text, 보조 --color-muted (그래프 글자색도 같은 두 가지로)
+   · 보조 버튼 높이 36px 한 가지 (터치 화면은 전역 44px 그대로) */
+.case-detail {
+	--radius-card: 0.75rem;
+	--radius-control: 0.5rem;
+	--color-graph-ink: var(--color-text);
+	--color-graph-node-strong: var(--color-text);
+	--color-graph-muted: var(--color-muted);
+	--font-card: 1.25rem;
+}
+@media (pointer: fine) {
+	.case-detail {
+		--control-height: 2.25rem;
+	}
+}
+
+/* 글자 위계 — 크기 6단계·굵기 4단계(400·500·600·700). 단계마다 2px 이상 + 굵기 차이.
+   L1 케이스 번호 28/700 · 강조 점수 34/700 · L2 카드 제목 20/700 · L3 항목 제목 16/600
+   · 본문 15/400 · 라벨 13/500 흐리게 · 탭(컨트롤) 14/500, 선택 600 · 데이터 강조 16/700 */
+.case-detail .case-summary-head h1 {
+	font-size: 1.75rem;
+	font-weight: var(--weight-bold);
+	letter-spacing: -0.02em;
+}
+.case-detail .case-detail-main > .case-summary > h2,
+.case-detail .case-card > .case-card-head h2,
+.case-detail .case-workbench section > h2 {
+	font-size: var(--font-card);
+	font-weight: var(--weight-bold);
+	letter-spacing: -0.01em;
+}
+.case-detail .case-reasons li > strong {
+	font-size: var(--font-lead);
+	font-weight: var(--weight-semibold);
+}
+.case-detail .case-reasons dt,
+.case-detail .case-overview-strip dt,
+.case-detail .ledger-side dt,
+.case-detail .case-workbench label[for="memo"] {
+	color: var(--color-muted);
+	font-size: var(--font-xs);
+	font-weight: var(--weight-medium);
+}
+.case-detail .case-overview-strip dd {
+	font-size: var(--font-body);
+}
+.case-detail .case-tabs button {
+	font-size: var(--font-small);
+	font-weight: var(--weight-medium);
+}
+.case-detail .case-tabs button[aria-pressed="true"] {
+	font-weight: var(--weight-semibold);
+}
+.case-detail .ledger-side dd,
+.case-detail .flow-graph-stats strong {
+	font-size: var(--font-lead);
+	font-weight: var(--weight-bold);
+}
+
+/* 보조 버튼 한 가지 — 클래스 없는 기본 버튼(요약 생성·이력 전체 보기·취소 등)을 공통 보조 버튼(.ui-button-secondary)과
+   같은 높이·글자로. 폼 확정(submit)·탭(aria-pressed)·펼침 줄·ⓘ·질의 창 버튼은 각자 모양을 유지해요. */
+.case-detail .case-panel button:not([class]):not([type="submit"]):not([aria-pressed]) {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: var(--control-height);
+	padding: 0 var(--space-4);
+	border-color: var(--color-control-border);
+	font-size: var(--font-small);
+	font-weight: var(--weight-semibold);
+	line-height: var(--leading-tight);
+}
+.case-detail .case-action-form button {
+	min-height: var(--control-height);
+	padding: 0 var(--space-4);
+	font-size: var(--font-small);
+	font-weight: var(--weight-semibold);
+}
+/* 표 안 [상세]는 작은 버튼 */
+.case-detail .case-table button:not([class]) {
+	min-height: 2rem;
+	padding-inline: var(--space-3);
+	font-size: var(--font-xs);
+}
+
+/* 상자 안 상자 없애기 — 카드 안의 그래프 틀·처리 폼·합계 윗선은 여백과 배경으로만 구분 */
+.case-detail .flow-graph {
+	border: 0;
+	border-radius: var(--radius-control);
+}
+.case-detail .case-ledger {
+	padding-block-start: 0;
+	border-block-start: 0;
+}
+.case-detail .case-action-form {
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+}
+
+/* 작업대 — 메모와 처리 작업을 카드 한 장에. 처리 작업 제목 띠는 위아래 선으로 메모와 나눠요. */
+.case-detail-aside .case-workbench .case-actions {
+	margin-block-start: var(--space-5);
+}
+.case-detail-aside .case-workbench .case-actions > h2 {
+	margin: 0 calc(var(--space-4) * -1) var(--space-4);
+	border-block-start: var(--border-width) solid var(--color-border);
+}
+
+/* 남은 굵기 정리 — 750·800 을 700 으로, 이력 동작 이름·근거 질의 버튼은 다른 보조 버튼과 같은 단계로 */
+.case-detail .flow-graph-node.is-target text,
+.case-detail .route-ring text,
+.case-detail .node-circle,
+.case-detail .cash-dot {
+	font-weight: var(--weight-bold);
+}
+.case-detail .case-card .case-tabs [aria-pressed="true"]:hover:enabled {
+	font-weight: var(--weight-semibold);
+}
+.case-detail .case-history li > strong {
+	font-weight: var(--weight-semibold);
+}
+.case-detail .case-ask-open {
+	font-size: var(--font-small);
+	font-weight: var(--weight-semibold);
 }

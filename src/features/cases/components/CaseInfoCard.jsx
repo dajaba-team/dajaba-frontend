@@ -1,4 +1,7 @@
-import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
+import {
+	formatDataMinute as formatDataTime,
+	formatSystemMinute as formatSystemTime,
+} from "../caseTime"
 import { ruleLabel } from "../../../shared/format/rule"
 
 // 케이스 개요 띠 — 판단 요약 바로 아래, 본문을 읽기 전에 "무엇을 보고 있는지"를 한 줄로(계좌·경보·규칙·탐지 기간).

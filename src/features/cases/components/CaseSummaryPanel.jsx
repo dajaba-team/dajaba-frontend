@@ -1,7 +1,7 @@
 import { useIsFetching } from "@tanstack/react-query"
 import { caseKey, useCaseCommand } from "../hooks/useCases"
 import { getErrorMessage, isNoResponse } from "../../../shared/api/apiClient"
-import { formatSystemTime } from "../../../shared/format/time"
+import { formatSystemMinute as formatSystemTime } from "../caseTime"
 import StatusBadge from "../../../shared/ui/StatusBadge"
 import { humanizeText } from "../displayText"
 

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { AsyncState } from "../../../shared/ui/AsyncState"
-import { formatSystemTime } from "../../../shared/format/time"
+import { formatSystemMinute as formatSystemTime } from "../caseTime"
 import Pagination from "../../../shared/ui/Pagination"
 import { useCaseHistories } from "../hooks/useCases"
 import { HISTORY_LABELS, STATUS_LABELS, labelOf } from "../labels"

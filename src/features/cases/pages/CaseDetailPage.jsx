@@ -138,12 +138,18 @@ function CaseDetail({ caseNo }) {
 								/>
 							</div>
 							<aside className="case-detail-aside" aria-label="조사 메모와 처리 작업">
-								<CaseNotesCard detail={detail} onRefresh={() => query.refetch()} />
-								<CaseActions
-									detail={detail}
-									request={actionRequest}
-									primaryKey={nextActionOf(detail)?.key ?? null}
-								/>
+								{/* 작업대 — 메모와 처리 작업을 카드 한 장에(위 칸 메모, 아래 칸 처리). */}
+								<div className="case-panel case-card case-workbench">
+									<CaseNotesCard
+										detail={detail}
+										onRefresh={() => query.refetch()}
+									/>
+									<CaseActions
+										detail={detail}
+										request={actionRequest}
+										primaryKey={nextActionOf(detail)?.key ?? null}
+									/>
+								</div>
 							</aside>
 							<div className="case-detail-history">
 								<CaseHistoryCard detail={detail} />
