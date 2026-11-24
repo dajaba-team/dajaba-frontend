@@ -11,8 +11,8 @@ import StatusBadge from "../../../shared/ui/StatusBadge"
 // 다시 불러오는 동안은 실패 안내 대신 "결과 확인 중"을 보여 줘요(실제로 저장된 경우 경고가 잠깐 떴다 사라지지 않게).
 // 배지 뜻은 공통 상태 배지 규칙(SCRUM-332) — 현재 기준 success, 바뀜·이전 요약 warning, 알 수 없음 neutral.
 const CURRENT_BADGE = {
-	true: { label: "현재 입력 기준", tone: "success" },
-	false: { label: "입력 변경됨", tone: "warning" },
+	true: { label: "최신", tone: "success" },
+	false: { label: "데이터 변경됨 · 갱신 필요", tone: "warning" },
 }
 
 export default function CaseSummaryPanel({ detail }) {
@@ -27,11 +27,11 @@ export default function CaseSummaryPanel({ detail }) {
 	const checking = noResponse && !savedAnyway && refetching
 	const failed = command.isError && !savedAnyway && !checking
 	return (
-		<section className="case-panel case-ai-summary" aria-labelledby="ai-summary-title">
+		<section
+			className="case-panel case-summary case-ai-summary"
+			aria-labelledby="ai-summary-title"
+		>
 			<h2 id="ai-summary-title">AI 요약</h2>
-			<p className="case-ai-summary-note">
-				요약 실패가 거래 열람·메모·상태 변경을 막지 않습니다.
-			</p>
 			{checking && <p role="status">결과를 확인하는 중이에요…</p>}
 			{failed && <p role="alert">{getErrorMessage(command.error)}</p>}
 			{summary ? (
@@ -40,14 +40,10 @@ export default function CaseSummaryPanel({ detail }) {
 						{badge ? (
 							<StatusBadge tone={badge.tone}>{badge.label}</StatusBadge>
 						) : (
-							<StatusBadge tone="neutral">
-								입력 기준 확인 불가 — 다시 생성해 주세요
-							</StatusBadge>
+							<StatusBadge tone="neutral">갱신 필요</StatusBadge>
 						)}{" "}
 						{failed && <StatusBadge tone="warning">이전에 만든 요약</StatusBadge>}{" "}
-						<small>
-							{formatSystemTime(summary.producedAt)} · {summary.generatorVersion}
-						</small>
+						<small>{formatSystemTime(summary.producedAt)} 생성</small>
 					</p>
 					{summary.summaryLines.length ? (
 						<ul className="case-ai-summary-lines">
@@ -65,7 +61,11 @@ export default function CaseSummaryPanel({ detail }) {
 					)}
 				</div>
 			) : (
-				<p>아직 만든 요약이 없습니다.</p>
+				<p>
+					{canRefresh
+						? "아직 요약이 없습니다. [요약 생성]을 누르면 근거 거래를 바탕으로 요약을 만듭니다."
+						: "아직 요약이 없습니다."}
+				</p>
 			)}
 			{canRefresh && (
 				<button

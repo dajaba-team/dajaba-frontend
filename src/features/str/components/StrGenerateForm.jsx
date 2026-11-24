@@ -24,23 +24,22 @@ export default function StrGenerateForm({ detail, regenerate = false, blockedRea
 			<h3 id={titleId}>{regenerate ? "STR 초안 다시 생성" : "STR 초안 생성"}</h3>
 			{regenerate ? (
 				<p>
-					새 초안이 저장되면 지금 초안({detail.currentDraftNo})은 대체돼요. 지금 본문과
-					수정 이력은 과거 초안으로 남아요.
+					현재 초안({detail.currentDraftNo})은 새 초안으로 대체되고, 기존 본문과 수정
+					이력은 과거 초안으로 보관됩니다.
 				</p>
 			) : (
-				<p>현재 경보와 근거로 STR 초안을 만들어요.</p>
+				<p>현재 경보와 근거 거래로 STR 초안을 생성합니다.</p>
 			)}
 			<p className="case-action-note">
-				AI가 만드는 데 최대 90초쯤 걸려요. 생성과 검증은 따로예요 — 만든 뒤 본문을 확인하고
-				검증해 주세요.
+				최대 90초 소요됩니다. 생성 후 본문을 확인하고 검증을 진행하세요.
 			</p>
 			{blockedReason && <p role="note">{blockedReason}</p>}
 			{command.isPending && (
-				<p role="status">초안을 만들고 있어요. 이 화면을 닫아도 서버 작업은 계속돼요.</p>
+				<p role="status">초안을 생성하는 중입니다. 화면을 닫아도 생성은 계속됩니다.</p>
 			)}
 			{command.isSuccess && (
 				<p role="status">
-					초안 {command.data.draftNo}을 저장했어요.{" "}
+					초안 {command.data.draftNo}을 저장했습니다.{" "}
 					{!regenerate && (
 						<Link to={`/cases/${encodeURIComponent(detail.caseNo)}/str`}>
 							STR 화면에서 확인하기 →
@@ -52,7 +51,7 @@ export default function StrGenerateForm({ detail, regenerate = false, blockedRea
 				<p role="alert">
 					{getErrorMessage(command.error)}
 					{(code === "DRAFT_IN_PROGRESS" || isNoResponse(command.error)) &&
-						" 최신 상태를 다시 불러왔어요."}
+						" 최신 상태를 다시 불러왔습니다."}
 				</p>
 			)}
 			<div className="case-action-buttons">

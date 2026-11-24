@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemTime } from "../../../shared/format/time"
+import Pagination from "../../../shared/ui/Pagination"
 import { useCaseHistories } from "../hooks/useCases"
 import { HISTORY_LABELS, STATUS_LABELS, labelOf } from "../labels"
 
@@ -60,23 +61,14 @@ export default function CaseHistoryPanel({ caseNo, recent }) {
 					<>
 						<HistoryList items={data.items} />
 						{data.totalPages > 1 && (
-							<nav aria-label="이력 페이지">
-								<button
-									type="button"
-									disabled={page <= 1}
-									onClick={() => setPage(page - 1)}
-								>
-									최근
-								</button>{" "}
-								{page} / {data.totalPages}{" "}
-								<button
-									type="button"
-									disabled={page >= data.totalPages}
-									onClick={() => setPage(page + 1)}
-								>
-									이전
-								</button>
-							</nav>
+							<Pagination
+								label="이력 페이지"
+								page={page}
+								totalPages={data.totalPages}
+								total={data.total}
+								size={data.size}
+								onChange={setPage}
+							/>
 						)}
 					</>
 				) : (

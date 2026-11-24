@@ -164,14 +164,6 @@ describe("인증 통신", () => {
 	})
 })
 
-// 케이스 버전은 「케이스·경보 정보」 카드의 버전 줄에 있어요(SCRUM-369).
-async function expectCaseVersion(version) {
-	const info = await screen.findByRole("region", { name: "케이스·경보 정보" })
-	await waitFor(() =>
-		expect(within(info).getByText("버전").nextElementSibling).toHaveTextContent(version),
-	)
-}
-
 describe("케이스 조사", () => {
 	it("목록은 가린 계좌·상태 이름·담당자를 보여 주고 API page는 0부터 보낸다", async () => {
 		let query
@@ -236,9 +228,9 @@ describe("케이스 조사", () => {
 		await user.type(screen.getByLabelText("종료 설명"), "동일 법인 내부 이체")
 		await user.click(submit)
 		expect(await screen.findByText("종료", { selector: ".status-badge" })).toBeInTheDocument()
-		expect(screen.getByText("오탐")).toBeInTheDocument()
+		expect(screen.getByText("종료 사유: 오탐")).toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "종료" })).not.toBeInTheDocument()
-		expect(screen.getByText("현재 케이스는 읽기 전용입니다.")).toBeInTheDocument()
+		expect(screen.getByText("이 상태에서는 수정할 수 없습니다.")).toBeInTheDocument()
 		expect(closeBodies).toEqual([
 			{ close_reason: "FALSE_POSITIVE", comment: "동일 법인 내부 이체", version: 2 },
 		])
@@ -357,7 +349,7 @@ describe("케이스 조사", () => {
 	})
 	it("미배정 케이스는 조사역에게 배정 버튼이 없고, 직접 부르면 403 FORBIDDEN이다 (SCRUM-339)", async () => {
 		renderApp("/cases/CASE-2022-001002")
-		expect(await screen.findByText("현재 케이스는 읽기 전용입니다.")).toBeInTheDocument()
+		expect(await screen.findByText("이 상태에서는 수정할 수 없습니다.")).toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "담당 맡기" })).not.toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "담당자 배정" })).not.toBeInTheDocument()
 		const response = await fetch("/api/v1/cases/CASE-2022-001002/assign", {
@@ -370,7 +362,7 @@ describe("케이스 조사", () => {
 	})
 	it("조사역 배정 요청은 틀린 version·없는 케이스여도 409·404보다 403 FORBIDDEN이 먼저다 (BE #160)", async () => {
 		renderApp("/cases/CASE-2022-001002")
-		await screen.findByText("현재 케이스는 읽기 전용입니다.")
+		await screen.findByText("이 상태에서는 수정할 수 없습니다.")
 		const post = (caseNo, command, version) =>
 			fetch(`/api/v1/cases/${caseNo}/${command}`, {
 				method: "POST",
@@ -389,7 +381,10 @@ describe("케이스 조사", () => {
 	it("관리자가 배정하면 조사역은 로그인해서 그 케이스에 메모를 쓸 수 있다 (SCRUM-339)", async () => {
 		const user = renderApp("/cases/CASE-2022-001002", true, "admin")
 		await user.click(await screen.findByRole("button", { name: "담당자 배정" }))
-		await user.type(screen.getByLabelText("배정할 조사역 아이디"), "inv01")
+		await user.selectOptions(
+			await screen.findByRole("combobox", { name: "담당 조사역" }),
+			"inv01",
+		)
 		await user.click(screen.getByRole("button", { name: "배정" }))
 		expect(await screen.findByText(/담당 예시 inv01/)).toBeInTheDocument()
 		await user.click(screen.getByRole("button", { name: "로그아웃" }))
@@ -401,13 +396,29 @@ describe("케이스 조사", () => {
 	it("관리자 배정은 조사역이 아니면 거절되고 입력을 남겨 다시 고칠 수 있다", async () => {
 		const user = renderApp("/cases/CASE-2022-001002", true, "admin")
 		await user.click(await screen.findByRole("button", { name: "담당자 배정" }))
-		const input = screen.getByLabelText("배정할 조사역 아이디")
-		await user.type(input, "apr01")
+		// 목록에는 활성 조사역만 — 그사이 비활성이 된 사람을 고르면 서버가 거절하고 고른 값은 남겨요.
+		server.use(
+			http.post(
+				`*/api/v1/cases/CASE-2022-001002/assign`,
+				() =>
+					HttpResponse.json(
+						{
+							error: {
+								code: "INVALID_ASSIGNEE",
+								message: "조사역만 배정할 수 있습니다.",
+							},
+						},
+						{ status: 409 },
+					),
+				{ once: true },
+			),
+		)
+		const input = await screen.findByRole("combobox", { name: "담당 조사역" })
+		await user.selectOptions(input, "inv01")
 		await user.click(screen.getByRole("button", { name: "배정" }))
 		expect(await screen.findByRole("alert")).toHaveTextContent("조사역만 배정할 수 있습니다")
-		expect(input).toHaveValue("apr01")
-		await user.clear(input)
-		await user.type(input, "inv02")
+		expect(input).toHaveValue("inv01")
+		await user.selectOptions(input, "inv02")
 		await user.click(screen.getByRole("button", { name: "배정" }))
 		expect(await screen.findByText(/담당 예시 inv02/)).toBeInTheDocument()
 	})
@@ -520,12 +531,12 @@ describe("케이스 조사", () => {
 		await user.click(await screen.findByRole("button", { name: "종료" }))
 		// 케이스 상세의 STR 링크에도 초안 번호가 있어서(SCRUM-295) 종료 폼 안에서만 찾아요.
 		const closeForm = await screen.findByRole("form", { name: "케이스 종료" })
-		expect(within(closeForm).getByText(/DRF-000124/)).toHaveTextContent("대체됨")
+		expect(within(closeForm).getByText(/DRF-000124/)).toHaveTextContent("대체 처리")
 		await user.click(screen.getByRole("radio", { name: "중복 경보" }))
 		await user.type(screen.getByLabelText("종료 설명"), "같은 경보가 다른 케이스로 조사 중")
 		await user.click(screen.getByRole("button", { name: "종료 실행" }))
 		expect(await screen.findByText("종료", { selector: ".status-badge" })).toBeInTheDocument()
-		expect(screen.getByText("중복 경보")).toBeInTheDocument()
+		expect(screen.getByText("종료 사유: 중복 경보")).toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "종료" })).not.toBeInTheDocument()
 		expect(draftBodies).toEqual([
 			{ close_reason: "DUPLICATE", comment: "같은 경보가 다른 케이스로 조사 중", version: 3 },
@@ -549,7 +560,7 @@ describe("케이스 조사", () => {
 		)
 		const user = renderApp(`/cases/${REVIEWING}`)
 		await user.click(await screen.findByRole("button", { name: "종료" }))
-		expect(screen.getByText(/보고 안 함.*으로 반려한 케이스예요/)).toBeInTheDocument()
+		expect(screen.getByText(/보고 안 함.*으로 반려한 케이스입니다/)).toBeInTheDocument()
 		expect(screen.getAllByRole("radio").map((radio) => radio.value)).toEqual([
 			"FALSE_POSITIVE",
 			"DUPLICATE",
@@ -599,7 +610,7 @@ describe("케이스 조사", () => {
 		).toBeInTheDocument()
 		expect(within(historySection).getByText("이전 메모")).toBeInTheDocument()
 		expect(within(historySection).getByText("거래 목적 확인 필요")).toBeInTheDocument()
-		expect(within(historySection).getByText(/버전 1에서/)).toBeInTheDocument()
+		expect(within(historySection).queryByText(/버전/)).not.toBeInTheDocument()
 	})
 	it("메모를 비운 기록은 (메모 비움)으로 보인다", async () => {
 		server.use(
@@ -640,8 +651,15 @@ describe("케이스 조사", () => {
 		await user.type(memo, "거래 목적 확인 완료")
 		await user.click(screen.getByRole("button", { name: "메모 저장" }))
 		expect(await screen.findByText("메모가 저장되었습니다.")).toBeInTheDocument()
-		await expectCaseVersion("2")
-		expect(bodies).toEqual([{ investigator_notes: "거래 목적 확인 완료", version: 1 }])
+		// 저장 뒤 상세를 다시 불러 다음 저장은 새 버전으로 보내요
+		await user.type(memo, " · 추가")
+		await user.click(screen.getByRole("button", { name: "메모 저장" }))
+		await waitFor(() =>
+			expect(bodies).toEqual([
+				{ investigator_notes: "거래 목적 확인 완료", version: 1 },
+				{ investigator_notes: "거래 목적 확인 완료 · 추가", version: 2 },
+			]),
+		)
 		server.events.removeAllListeners()
 	})
 	it("저장 충돌 시 입력을 보존하며 최신 내용을 확인한 후 재저장한다", async () => {
@@ -687,7 +705,9 @@ describe("케이스 조사", () => {
 		// 경보 정보는 「케이스·경보 정보」 카드로 합쳤어요(SCRUM-369).
 		const panel = await screen.findByRole("region", { name: "케이스·경보 정보" })
 		expect(within(panel).getByText("ALT-20221101-000104")).toBeInTheDocument()
-		expect(within(panel).getByText("R02_FAN_IN")).toBeInTheDocument()
+		expect(within(panel).getByText("R02 집중 입금")).toBeInTheDocument()
+		// 동시 수정 검사용 version 은 화면에 없어요
+		expect(within(panel).queryByText("버전")).not.toBeInTheDocument()
 		// 탐지 기간은 판단 요약에만 있어요. 데이터 시각은 시간대를 붙이지 않고 받은 그대로(T만 공백)
 		expect(
 			screen.getByText(/탐지 기간 2022-10-31 00:00:00 ~ 2022-11-01 00:00:00/),
@@ -698,8 +718,9 @@ describe("케이스 조사", () => {
 		expect(within(summary).getByText("0.9100")).toBeInTheDocument() // 넷째 자리 표기 (SCRUM-347)
 		expect(within(summary).getByText("등급 HIGH")).toBeInTheDocument()
 		expect(within(summary).getByRole("tooltip", { hidden: true })).toHaveTextContent(
-			"모델 점수예요. 범죄 확률이 아니에요. 모델 xgb-2022.11",
+			"범죄 확률을 뜻하지 않습니다",
 		)
+		expect(within(summary).getByText("탐지 규칙 R02 집중 입금")).toBeInTheDocument()
 	})
 	it("점수 근거: 기여 크기 순 상위 3개를 관측값·기준값·모델 기여로 나눠 보여 준다 (SCRUM-208)", async () => {
 		renderApp(`/cases/${REVIEWING}`)
@@ -718,15 +739,17 @@ describe("케이스 조사", () => {
 		expect(within(items[0]).getByText("+0.42 (SHAP · raw_margin)")).toBeInTheDocument()
 		expect(within(items[1]).getByText("152,000.5 USD")).toBeInTheDocument()
 		expect(within(items[1]).getByText("기준값 없음")).toBeInTheDocument()
-		expect(within(items[2]).getByText("확인 못 함")).toBeInTheDocument()
+		expect(within(items[2]).getByText("값 없음")).toBeInTheDocument()
 		expect(within(items[2]).getByText("-0.18 (SHAP · raw_margin)")).toBeInTheDocument()
-		expect(within(panel).getAllByText("모델 기여 (거래 사실 아님)")).toHaveLength(3)
-		expect(within(panel).getByText(/STR 근거로 쓰지 않아요/)).toBeInTheDocument()
+		expect(within(panel).getAllByText(/^모델 기여도/, { selector: "dt" })).toHaveLength(3)
+		// 4개 중 상위 3개만, [전체 4개 보기]로 펼친다
+		await userEvent.click(within(panel).getByRole("button", { name: "전체 4개 보기" }))
+		expect(within(panel).getByText("night_tx_ratio_24h")).toBeInTheDocument()
 	})
 	it.each([
-		["FAILED", [], "점수 산출에 실패해서 이유가 없어요. 위험이 낮다는 뜻이 아니에요."],
-		["PENDING", [], "점수 산출 전이라 이유가 아직 없어요."],
-		["SCORED", [], "모델이 이유를 보내지 않았어요."],
+		["FAILED", [], "점수 산출에 실패해 근거가 없습니다."],
+		["PENDING", [], "점수 산출 전입니다."],
+		["SCORED", [], "점수 근거가 없습니다."],
 	])("점수 근거: %s · 이유 없음은 목록 대신 안내만 보여 준다", async (status, reasons, text) => {
 		server.use(
 			http.get(`*/api/v1/cases/${REVIEWING}`, () =>
@@ -768,31 +791,29 @@ describe("케이스 조사", () => {
 			),
 		)
 		renderApp(`/cases/${REVIEWING}`)
-		expect(await screen.findByText("산출 실패 (AI_TIMEOUT)")).toBeInTheDocument()
+		// 실패 코드는 내부 값이라 보여 주지 않아요
+		expect(await screen.findByText("점수 산출 실패")).toBeInTheDocument()
+		expect(screen.queryByText(/AI_TIMEOUT/)).not.toBeInTheDocument()
 		expect(screen.getByText("경보 정보 없음")).toBeInTheDocument()
 	})
 	it("요약이 없으면 [요약 생성]으로 만들고 현재 입력 기준 배지를 보여 준다", async () => {
 		const bodies = recordBodies("/refresh-summary")
 		const user = renderApp(`/cases/${REVIEWING}`)
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
-		expect(within(panel).getByText("아직 만든 요약이 없습니다.")).toBeInTheDocument()
-		expect(
-			within(panel).getByText("요약 실패가 거래 열람·메모·상태 변경을 막지 않습니다."),
-		).toBeInTheDocument()
+		expect(within(panel).getByText(/아직 요약이 없습니다/)).toBeInTheDocument()
 		await user.click(within(panel).getByRole("button", { name: "요약 생성" }))
-		expect(await within(panel).findByText("현재 입력 기준")).toBeInTheDocument()
+		expect(await within(panel).findByText("최신")).toBeInTheDocument()
 		expect(within(panel).getByText(/모델이 주목한 점/)).toBeInTheDocument()
 		expect(within(panel).getByRole("button", { name: "요약 갱신" })).toBeInTheDocument()
-		expect(bodies).toEqual([{ version: 1 }])
-		// 요약 갱신은 version을 올려요 — 상세를 다시 불러 새 버전을 보여 줘요
-		await expectCaseVersion("2")
+		// 요약 갱신은 version을 올려요 — 상세를 다시 불러 다음 요청은 새 버전으로 보내요
+		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))
+		await waitFor(() => expect(bodies).toEqual([{ version: 1 }, { version: 2 }]))
+		server.events.removeAllListeners()
 	})
-	it("입력이 바뀐 요약은 '입력 변경됨'으로 보여 준다", async () => {
-		const user = renderApp("/cases/CASE-2022-001001")
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
+	it("입력이 바뀐 요약은 '데이터 변경됨'으로 보여 준다", async () => {
+		renderApp("/cases/CASE-2022-001001")
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
-		expect(await within(panel).findByText("입력 변경됨")).toBeInTheDocument()
+		expect(await within(panel).findByText("데이터 변경됨 · 갱신 필요")).toBeInTheDocument()
 		expect(within(panel).getByRole("button", { name: "요약 갱신" })).toBeInTheDocument()
 	})
 	it("요약 실패는 그 칸에만 보여 주고 기존 요약은 이전 요약으로 남기며 다른 작업은 그대로 된다", async () => {
@@ -825,7 +846,6 @@ describe("케이스 조사", () => {
 			),
 		)
 		const user = renderApp(`/cases/${REVIEWING}`)
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))
 		expect(await within(panel).findByRole("alert")).toHaveTextContent(
@@ -840,8 +860,7 @@ describe("케이스 조사", () => {
 		expect(screen.getByRole("textbox", { name: "메모 내용" })).toBeEnabled()
 	})
 	it("요약 버튼은 REFRESH_SUMMARY가 있을 때만 보여 준다", async () => {
-		const user = renderApp("/cases/CASE-2022-001003")
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
+		renderApp("/cases/CASE-2022-001003")
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		expect(within(panel).queryByRole("button")).not.toBeInTheDocument()
 	})
@@ -950,9 +969,7 @@ describe("예시 계정 권한과 입력 보호", () => {
 		await login(user, "apr01")
 		await screen.findByText("예시 apr01 (apr01) · APPROVER")
 		// 조사 중인 케이스라 "읽기 전용"이 아니라 담당자 안내 (SCRUM-176)
-		expect(
-			await screen.findByText("담당 조사역만 메모를 수정할 수 있어요."),
-		).toBeInTheDocument()
+		expect(await screen.findByText("담당 조사역만 수정할 수 있습니다.")).toBeInTheDocument()
 		expect(screen.queryByRole("textbox", { name: "메모 내용" })).not.toBeInTheDocument()
 	})
 	it("입력 검증 오류를 메모 입력에 연결하며 내용을 유지한다", async () => {
@@ -1040,9 +1057,9 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		expect(within(agg).getByText("유입 합계 (2건)")).toBeInTheDocument()
 		expect(within(agg).getByText("1,000 US Dollar")).toBeInTheDocument()
 		expect(within(agg).getByText("유출 합계 (1건)")).toBeInTheDocument()
-		expect(
-			within(agg).getByText(/경유 거래와 내 계좌끼리 옮긴 돈은 합계에서/),
-		).toBeInTheDocument()
+		expect(within(agg).getByRole("tooltip", { hidden: true })).toHaveTextContent(
+			"경유 거래와 본인 계좌 간 이체는 합계에서 제외합니다",
+		)
 
 		// 처음 열려 있는 탭은 자금 흐름 그래프
 		expect(screen.getByRole("button", { name: "자금 흐름" })).toHaveAttribute(
@@ -1058,43 +1075,43 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		const table = await screen.findByRole("region", { name: "근거 거래" })
 		const rows = await within(table).findAllByRole("row")
 		expect(rows).toHaveLength(5) // 머리 + 4건
-		expect(within(rows[1]).getByText("III부 1 · 입금")).toBeInTheDocument()
+		expect(within(rows[1]).getByText("입금")).toBeInTheDocument()
 		expect(within(rows[1]).getByText("2022-10-31 09:00:00")).toBeInTheDocument()
-		expect(within(rows[3]).getByText("III부 3 · 출금")).toBeInTheDocument()
-		expect(within(rows[4]).getByText("대상 계좌 미참여")).toBeInTheDocument()
+		expect(within(rows[3]).getByText("출금")).toBeInTheDocument()
+		expect(within(rows[4]).getByText("경유")).toBeInTheDocument()
 	})
 	it("그래프에서 거래 선을 누르면 그 거래 내용이 아래에 고정된다", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
 		const graph = await screen.findByRole("group", { name: /거래 4건/ })
-		expect(screen.getByText(/누르면 고정돼요/)).toBeInTheDocument()
+		expect(screen.getByText(/선택하면 거래 내용이 표시됩니다/)).toBeInTheDocument()
 		await user.click(within(graph).getAllByTestId("graph-edge")[0])
 		await user.unhover(graph)
 		expect(screen.getByText(/거래 4721/)).toBeInTheDocument()
-		expect(screen.queryByText(/누르면 고정돼요/)).not.toBeInTheDocument()
+		expect(screen.queryByText(/선택하면 거래 내용이 표시됩니다/)).not.toBeInTheDocument()
 	})
 	it("그래프의 계좌는 Tab으로 옮기고 Enter로 고정·해제할 수 있다", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
 		const graph = await screen.findByRole("group", { name: /거래 4건/ })
 		const target = within(graph).getByRole("button", { name: /11_\*{4}1021 \(조사 대상\)/ })
 		act(() => target.focus())
-		expect(screen.getByText(/이 그림에서 보낸 거래/)).toBeInTheDocument()
+		expect(screen.getByText(/· 보낸 거래 \d+건/)).toBeInTheDocument()
 		await user.keyboard("{Enter}")
 		expect(target).toHaveAttribute("aria-pressed", "true")
 		// 포커스가 떠나도 고정된 내용은 남아요
 		act(() => target.blur())
-		expect(screen.getByText(/이 그림에서 보낸 거래/)).toBeInTheDocument()
+		expect(screen.getByText(/· 보낸 거래 \d+건/)).toBeInTheDocument()
 		act(() => target.focus())
 		await user.keyboard("{Enter}")
 		expect(target).toHaveAttribute("aria-pressed", "false")
 		act(() => target.blur())
-		expect(screen.getByText(/누르면 고정돼요/)).toBeInTheDocument()
+		expect(screen.getByText(/선택하면 거래 내용이 표시됩니다/)).toBeInTheDocument()
 	})
-	it("[거래 원본]은 C4 원본을 창으로 보여 주고, 404면 그 창에만 안내", async () => {
+	it("[상세]는 C4 원본을 창으로 보여 주고, 404면 그 창에만 안내", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
 		await user.click(await screen.findByRole("button", { name: "근거 거래" }))
 		const table = await screen.findByRole("region", { name: "근거 거래" })
-		await user.click((await within(table).findAllByRole("button", { name: "거래 원본" }))[0])
-		const dialog = await screen.findByRole("dialog", { name: "거래 원본 · 4721" })
+		await user.click(await within(table).findByRole("button", { name: "거래 4721 상세 보기" }))
+		const dialog = await screen.findByRole("dialog", { name: "거래 상세 · 4721" })
 		expect(
 			await within(dialog).findByText(/IBM AML HI-Small · 행 4721 · 합성 데이터/),
 		).toBeInTheDocument()
@@ -1115,20 +1132,19 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 				),
 			),
 		)
-		await user.click(within(table).getAllByRole("button", { name: "거래 원본" })[1])
-		const failed = await screen.findByRole("dialog", { name: "거래 원본 · 4722" })
+		await user.click(within(table).getByRole("button", { name: "거래 4722 상세 보기" }))
+		const failed = await screen.findByRole("dialog", { name: "거래 상세 · 4722" })
 		expect(
 			await within(failed).findByText("이 케이스의 근거 거래가 아닙니다"),
 		).toBeInTheDocument()
 		expect(screen.getByRole("region", { name: "근거 거래" })).toBeInTheDocument()
 	})
-	it("참고 거래 탭과 근거 없는 케이스는 칸마다 빈 상태를 보여 준다", async () => {
+	it("참고 거래는 서버가 아직 늘 빈 목록이라 탭을 두지 않는다 (SCRUM-244)", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
-		await user.click(await screen.findByRole("button", { name: "참고 거래" }))
-		const table = await screen.findByRole("region", { name: "참고 거래" })
-		expect(await within(table).findByText("참고 거래가 없어요.")).toBeInTheDocument()
-		// 탭을 바꾸면 근거 거래 표는 내려가고, 그래프 탭에서 돌아와도 보던 범위 그대로
-		expect(screen.queryByRole("region", { name: "근거 거래" })).not.toBeInTheDocument()
+		await screen.findByRole("button", { name: "자금 흐름" })
+		expect(screen.queryByRole("button", { name: "참고 거래" })).not.toBeInTheDocument()
+		// 그래프 탭에서 돌아와도 근거 거래 표는 그대로
+		await user.click(screen.getByRole("button", { name: "근거 거래" }))
 		await user.click(screen.getByRole("button", { name: "자금 흐름" }))
 		await user.click(screen.getByRole("button", { name: "근거 거래" }))
 		expect(await screen.findByRole("region", { name: "근거 거래" })).toBeInTheDocument()
@@ -1142,7 +1158,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		expect(within(route).getByText("대상 계좌 복귀")).toBeInTheDocument()
 		expect(within(route).getByText("4,600 Euro")).toBeInTheDocument()
 		// 화면이 찾은 길이지 룰 판정이 아니라고 적어요 (SCRUM-296)
-		expect(screen.getByText("화면에서 시간 순서로 찾은 길 · 룰 판정 아님")).toBeInTheDocument()
+		expect(screen.getByText("거래 시각 순으로 이은 경로 (참고용)")).toBeInTheDocument()
 		// 경로 표에 거래 ID가 단계 순서대로
 		const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1)
 		expect(rows.map((row) => within(row).getAllByRole("cell").at(-1).textContent)).toEqual([
@@ -1222,20 +1238,17 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		renderApp(`/cases/${REVIEWING}`)
 		expect(await screen.findByRole("region", { name: "자금 흐름 그림" })).toBeInTheDocument()
 		expect(screen.queryByRole("figure")).not.toBeInTheDocument()
-		expect(screen.queryByText(/룰 판정 아님/)).not.toBeInTheDocument()
-	})
-	it("직접 거래 밖의 건수는 경유·내 계좌 이체를 묶어 '그 밖'으로 적는다 (SCRUM-296)", async () => {
-		renderApp(`/cases/${REVIEWING}`)
-		const card = await screen.findByRole("region", { name: "거래 분석" })
-		expect(await within(card).findByText(/\(경유·내 계좌 이체\)/)).toHaveTextContent(
-			"그 밖 1건(경유·내 계좌 이체)",
-		)
+		expect(screen.queryByText(/이은 경로 \(참고용\)/)).not.toBeInTheDocument()
 	})
 	it("근거 거래가 없는 케이스는 합계·표·그래프가 비어 있다고 알린다", async () => {
 		renderApp("/cases/CASE-2022-001002")
-		expect(await screen.findByText("근거 거래가 없어요.")).toBeInTheDocument()
-		expect(await screen.findByText("이 케이스의 근거 거래가 없어요.")).toBeInTheDocument()
-		expect(await screen.findByText("그릴 거래가 없어요.")).toBeInTheDocument()
+		expect(
+			await screen.findByText("근거 거래가 없습니다.", { selector: ".ledger-note" }),
+		).toBeInTheDocument()
+		expect(
+			await screen.findByText("근거 거래가 없습니다.", { selector: "p:not(.ledger-note)" }),
+		).toBeInTheDocument()
+		expect(await screen.findByText("표시할 거래가 없습니다.")).toBeInTheDocument()
 	})
 	it("그래프가 잘리면 전체 N건 중 M건, 표가 실패해도 다른 칸은 남는다", async () => {
 		server.use(
@@ -1270,7 +1283,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 			),
 		)
 		const user = renderApp(`/cases/${REVIEWING}`)
-		expect(await screen.findByText(/전체 300건 중 200건만 그렸어요/)).toBeInTheDocument()
+		expect(await screen.findByText(/전체 300건 중 200건 표시/)).toBeInTheDocument()
 		await user.click(screen.getByRole("button", { name: "근거 거래" }))
 		const table = screen.getByRole("region", { name: "근거 거래" })
 		expect(await within(table).findByRole("alert")).toHaveTextContent(

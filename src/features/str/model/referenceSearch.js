@@ -1,7 +1,7 @@
 // 참고 사례 패널·찾기 영역 규칙 — 순수 함수 (설계 문서 「참고 사례 검색 · 승인 STR 색인」 A 7절, SCRUM-333).
 
 // 찾을 수 있는 유형은 경보 Typology 중 이 다섯만(규약 5.5 — FX_RELAY 등은 BE·AI가 400). 순서도 이대로.
-// 이름은 룰 화면(admin/batches/ruleLabels.js, BE rules.md v2)과 같게.
+// 이름은 룰 화면(shared/format/rule.js, BE rules.md v2)과 같게.
 export const SEARCH_TYPOLOGIES = [
 	["FAN_IN", "집중 입금"],
 	["FAN_OUT", "분산 송금"],

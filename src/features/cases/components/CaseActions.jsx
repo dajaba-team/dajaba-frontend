@@ -1,5 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useCaseCommand } from "../hooks/useCases"
+import { adminUsersApi } from "../../admin/users/api/adminUsersApi"
+import Spinner from "../../../shared/ui/Spinner"
 import { CLOSE_REASON_LABELS } from "../labels"
 import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
 import ReassignDialog from "./ReassignDialog"
@@ -184,9 +187,14 @@ function CommentField({ label, value, onChange }) {
 // 배정 대상 오류(409 INVALID_ASSIGNEE·404 USER_NOT_FOUND)는 계약서 3절대로 담당자 칸 아래에 — 입력은 남겨요.
 const ASSIGNEE_ERRORS = ["INVALID_ASSIGNEE", "USER_NOT_FOUND"]
 
+// 아이디를 외워 입력하지 않게 활성 조사역 목록에서 골라요(담당자 변경 창과 같은 목록).
 function AssignForm({ detail, onDone }) {
 	const command = useCaseCommand(detail.caseNo, "assign")
 	const [assignee, setAssignee] = useState("")
+	const investigators = useQuery({
+		queryKey: ["admin", "users", "active-investigators"],
+		queryFn: ({ signal }) => adminUsersApi.activeInvestigators(signal),
+	})
 	const inputId = useId()
 	const errorId = useId()
 	const fieldError =
@@ -198,20 +206,39 @@ function AssignForm({ detail, onDone }) {
 			title="담당자 배정"
 			submitLabel="배정"
 			command={command}
-			canSubmit={assignee.trim() !== ""}
-			onSubmit={() => ({ version: detail.version, assignee: assignee.trim() })}
+			canSubmit={assignee !== ""}
+			onSubmit={() => ({ version: detail.version, assignee })}
 			onDone={onDone}
 			fieldError={Boolean(fieldError)}
 		>
 			<div className="case-field">
-				<label htmlFor={inputId}>배정할 조사역 아이디</label>
-				<input
-					id={inputId}
-					value={assignee}
-					aria-invalid={fieldError ? true : undefined}
-					aria-describedby={fieldError ? errorId : undefined}
-					onChange={(event) => setAssignee(event.target.value)}
-				/>
+				<label htmlFor={inputId}>담당 조사역</label>
+				{investigators.isPending && <Spinner size="sm" label="조사역 목록을 불러오는 중" />}
+				{investigators.isError && (
+					<p role="alert">{getErrorMessage(investigators.error)}</p>
+				)}
+				{investigators.isSuccess && (
+					<select
+						id={inputId}
+						value={assignee}
+						aria-invalid={fieldError ? true : undefined}
+						aria-describedby={fieldError ? errorId : undefined}
+						onChange={(event) => {
+							setAssignee(event.target.value)
+							command.reset()
+						}}
+					>
+						<option value="">선택</option>
+						{investigators.data.map((user) => (
+							<option key={user.loginId} value={user.loginId}>
+								{user.displayName} ({user.loginId})
+							</option>
+						))}
+					</select>
+				)}
+				{investigators.isSuccess && !investigators.data.length && (
+					<p>배정할 수 있는 활성 조사역이 없습니다.</p>
+				)}
 				{fieldError && (
 					<p id={errorId} role="alert">
 						{fieldError}
@@ -234,7 +261,7 @@ function EscalateForm({ detail, onDone }) {
 			onSubmit={() => ({ version: detail.version, comment })}
 			onDone={onDone}
 		>
-			<p>성공해도 STR 초안은 자동으로 만들지 않아요. 초안 생성은 따로 요청해요.</p>
+			<p>의심 거래로 판단해 STR 작성 단계로 넘깁니다.</p>
 			<CommentField label="에스컬레이션 사유" value={comment} onChange={setComment} />
 		</ActionForm>
 	)
@@ -257,17 +284,17 @@ export function CloseForm({ detail, name, onDone, onClosed }) {
 			onDone={onDone}
 			onSuccess={onClosed}
 		>
-			<p>종료한 케이스는 다시 열 수 없어요. 종료는 범죄가 없다는 확정이 아니에요.</p>
+			<p>종료한 케이스는 다시 열 수 없습니다.</p>
 			{name === "closeWithDraft" && (
 				<p className="case-action-note">
-					작성한 STR 초안({detail.currentDraftNo})은 대체됨으로 바뀌어 더는 고치거나 승인
-					요청할 수 없어요. 초안 내용은 이력으로 남아요.
+					STR 초안({detail.currentDraftNo})은 대체 처리되어 더 이상 수정하거나 승인 요청할
+					수 없습니다.
 				</p>
 			)}
 			{detail.rejectionReasonCode === "NOT_REPORTABLE" && (
 				<p className="case-action-note">
-					승인자가 &lsquo;보고 안 함&rsquo;으로 반려한 케이스예요. 반려 코드는 이력에 남아
-					있으니 종료 사유는 아래에서 골라요(보통 &lsquo;추가 조치 불필요&rsquo;).
+					승인자가 &lsquo;보고 안 함&rsquo;으로 반려한 케이스입니다. 보통 &lsquo;추가 조치
+					불필요&rsquo;를 선택합니다.
 				</p>
 			)}
 			<fieldset className="case-field">

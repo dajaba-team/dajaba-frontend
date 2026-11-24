@@ -1,3 +1,5 @@
+import { useState } from "react"
+import InfoTip from "../../../shared/ui/InfoTip"
 import { formatDataTime } from "../../../shared/format/time"
 import { formatNumber } from "./caseMoney"
 
@@ -31,7 +33,7 @@ function withUnit(value, unit) {
 
 function Observation({ observation }) {
 	const text = withUnit(observation?.value, observation?.unit)
-	if (text == null) return <dd>확인 못 함</dd>
+	if (text == null) return <dd>값 없음</dd>
 	const window =
 		observation.window_start && observation.window_end
 			? `${formatDataTime(observation.window_start)} ~ ${formatDataTime(observation.window_end)}`
@@ -53,32 +55,30 @@ function Baseline({ baseline }) {
 
 function Contribution({ contribution }) {
 	const value = contributionOf({ contribution })
-	if (value == null) return <dd>확인 못 함</dd>
+	if (value == null) return <dd>값 없음</dd>
 	const how = [contribution.method, contribution.scale].filter(Boolean).join(" · ")
 	const signed = `${value > 0 ? "+" : ""}${formatNumber(value)}`
 	return <dd>{how ? `${signed} (${how})` : signed}</dd>
 }
 
 function emptyText(latest) {
-	if (!latest) return "점수 정보가 없어요."
-	if (latest.scoreStatus === "FAILED")
-		return "점수 산출에 실패해서 이유가 없어요. 위험이 낮다는 뜻이 아니에요."
-	if (latest.scoreStatus !== "SCORED") return "점수 산출 전이라 이유가 아직 없어요."
-	return "모델이 이유를 보내지 않았어요."
+	if (!latest) return "점수 정보가 없습니다."
+	if (latest.scoreStatus === "FAILED") return "점수 산출에 실패해 근거가 없습니다."
+	if (latest.scoreStatus !== "SCORED") return "점수 산출 전입니다."
+	return "점수 근거가 없습니다."
 }
 
+// 처음엔 상위 3개, 더 있으면 [전체 n개 보기]로 펼쳐요.
 export default function CaseScoreReasons({ latestScore }) {
-	const reasons = latestScore?.scoreStatus === "SCORED" ? topReasons(latestScore.reasons) : []
+	const [all, setAll] = useState(false)
+	const scored = latestScore?.scoreStatus === "SCORED"
+	const total = scored && Array.isArray(latestScore.reasons) ? latestScore.reasons.length : 0
+	const reasons = scored ? topReasons(latestScore.reasons, all ? total : TOP_N) : []
 	return (
 		<section className="case-panel case-summary" aria-labelledby="score-reasons-title">
 			<h2 id="score-reasons-title">점수 근거</h2>
 			{reasons.length ? (
 				<>
-					<p className="case-action-note">
-						모델이 이 점수를 매길 때 크게 본 이유 {reasons.length}개예요(모델 기여 크기
-						순). 모델 기여는 모델 안의 값이라 거래 사실이 아니고, STR 근거로 쓰지
-						않아요.
-					</p>
 					<ol className="case-reasons">
 						{reasons.map((reason, index) => (
 							<li key={`${reason.name ?? "reason"}-${index}`}>
@@ -88,12 +88,23 @@ export default function CaseScoreReasons({ latestScore }) {
 									<Observation observation={reason.observation} />
 									<dt>기준값</dt>
 									<Baseline baseline={reason.baseline} />
-									<dt>모델 기여 (거래 사실 아님)</dt>
+									<dt>
+										모델 기여도{" "}
+										<InfoTip
+											label="모델 기여도"
+											text="모델 내부 계산값입니다. 거래 사실이 아니므로 STR 근거로 쓰지 않습니다."
+										/>
+									</dt>
 									<Contribution contribution={reason.contribution} />
 								</dl>
 							</li>
 						))}
 					</ol>
+					{total > TOP_N && (
+						<button type="button" onClick={() => setAll(!all)}>
+							{all ? "상위 3개만 보기" : `전체 ${total}개 보기`}
+						</button>
+					)}
 				</>
 			) : (
 				<p>{emptyText(latestScore)}</p>

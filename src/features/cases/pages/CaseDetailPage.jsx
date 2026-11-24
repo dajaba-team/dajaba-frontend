@@ -11,14 +11,15 @@ import CaseEvidenceCard from "../components/CaseEvidenceCard"
 import CaseInfoCard from "../components/CaseInfoCard"
 import CaseNotesCard from "../components/CaseNotesCard"
 import CaseScoreReasons from "../components/CaseScoreReasons"
+import CaseSummaryPanel from "../components/CaseSummaryPanel"
 import CaseSummaryHeader from "../components/CaseSummaryHeader"
 import { nextActionOf } from "../components/nextAction"
 import { useGuide } from "../../../shared/ui/useGuide"
 import { caseDetailWorkflowGuide } from "../../../shared/ui/workflowGuide"
 
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
-// 위계(SCRUM-369 B안): 맨 위 판단 요약(등급·점수·상태·다음 처리) → 점수 근거 → 거래 분석 → 조사 메모 → 처리 작업 → 케이스·경보 정보.
-// 넓은 화면(77.5rem~)은 2단: 왼쪽 점수 근거, 오른쪽 메모·처리 작업·정보, 거래 분석은 그 아래 전체 폭 —
+// 위계(SCRUM-369 B안): 맨 위 판단 요약(등급·점수·상태·다음 처리) → 점수 근거·AI 요약 → 거래 분석 → 조사 메모 → 처리 작업 → 케이스·경보 정보.
+// 넓은 화면(77.5rem~)은 2단: 왼쪽 점수 근거·AI 요약, 오른쪽 메모·처리 작업·정보, 거래 분석은 그 아래 전체 폭 —
 // 그래프 글자가 줄어들지 않고 표가 가로로 잘리지 않게. 좁은 화면에선 마크업 순서대로 한 줄 — 거래 분석이 메모보다 먼저(Tab 순서도 같게, SCRUM-373).
 // 채움 파랑 버튼은 판단 요약의 [다음 처리] 하나예요.
 
@@ -119,6 +120,7 @@ function CaseDetail({ caseNo }) {
 						<div className="case-detail-layout">
 							<div className="case-detail-main">
 								<CaseScoreReasons latestScore={detail.latestScore} />
+								<CaseSummaryPanel detail={detail} />
 							</div>
 							<div className="case-evidence">
 								<CaseEvidenceCard

@@ -186,7 +186,7 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		expect(
 			screen.getByText("승인 요청을 보냈어요. 승인자 결정을 기다려요."),
 		).toBeInTheDocument()
-		expect(screen.queryByText(/저장했어요/)).not.toBeInTheDocument()
+		expect(screen.queryByText(/저장했습니다/)).not.toBeInTheDocument()
 		expect(screen.queryByRole("textbox")).not.toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "변경 저장" })).not.toBeInTheDocument()
 	})
@@ -347,8 +347,10 @@ describe("STR 초안 생성 (S1)", () => {
 		// 취소하면 아무것도 바뀌지 않아요
 		await user.click(screen.getByRole("button", { name: "다시 생성" }))
 		let form = await screen.findByRole("form", { name: "STR 초안 다시 생성" })
-		expect(within(form).getByText(/지금 초안\(DRF-000124\)은 대체돼요/)).toBeInTheDocument()
-		expect(within(form).getByText(/생성과 검증은 따로예요/)).toBeInTheDocument()
+		expect(
+			within(form).getByText(/현재 초안\(DRF-000124\)은 새 초안으로 대체/),
+		).toBeInTheDocument()
+		expect(within(form).getByText(/생성 후 본문을 확인하고 검증/)).toBeInTheDocument()
 		await user.click(within(form).getByRole("button", { name: "취소" }))
 		expect(screen.queryByRole("form", { name: "STR 초안 다시 생성" })).not.toBeInTheDocument()
 		expect(await draftInfo()).toHaveTextContent(/DRF-000124.*초안 작성됨/)
@@ -401,7 +403,7 @@ describe("STR 초안 생성 (S1)", () => {
 		const user = renderAs("CASE-2022-001004")
 		await user.click(await screen.findByRole("button", { name: "STR 초안 생성" }))
 		await user.click(screen.getByRole("button", { name: "초안 생성" }))
-		await screen.findByText(/초안 DRF-000777을 저장했어요/)
+		await screen.findByText(/초안 DRF-000777을 저장했습니다/)
 		expect(body).toEqual({ case_version: 2 })
 	})
 })

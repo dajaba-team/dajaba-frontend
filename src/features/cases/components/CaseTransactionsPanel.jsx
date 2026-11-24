@@ -11,11 +11,8 @@ import Pagination from "../../../shared/ui/Pagination"
 // 탭은 부모(CaseEvidenceCard)가 들고 scope 로 내려 줘요 — 범위가 바뀌면 key 로 새로 그려 1페이지부터.
 // 참고 거래는 STR 합계·근거에 안 들어가서 행에 "참고" 표시를 붙여요. 지금 서버는 참고 거래를 빈 목록으로 줘요.
 
-// 대상 계좌 기준 칸: 근거 거래 n번째(STR III부 거래 목록 순서) · 입금/출금. 경유 거래는 대상 계좌가 끼지 않아요.
-function directionText(item, n) {
-	if (item.direction === "INDIRECT") return "대상 계좌 미참여"
-	return `III부 ${n} · ${DIRECTION_LABELS[item.direction] ?? item.direction}`
-}
+// 구분 칸: 대상 계좌 기준 입금·출금·경유.
+const directionText = (item) => DIRECTION_LABELS[item.direction] ?? item.direction
 
 const SCOPE_TITLES = { EVIDENCE: "근거 거래", CONTEXT: "참고 거래" }
 
@@ -27,7 +24,7 @@ function AskHighlightBar({ highlight, items, onClear, onReopen }) {
 		<div className="ask-evidence-bar" role="status" tabIndex={-1} id="ask-evidence-bar">
 			<p>
 				<b>질의 근거</b> 현재 페이지 {here}건 / 전체 {highlight.ids.length}건
-				{here === 0 && <small>나머지 근거 거래는 다른 페이지에 있습니다.</small>}
+				{here === 0 && <small>다른 페이지에 있습니다.</small>}
 			</p>
 			<div>
 				{onReopen && (
@@ -73,17 +70,19 @@ export default function CaseTransactionsPanel({
 						<table className="case-table">
 							<thead>
 								<tr>
-									<th scope="col">거래</th>
-									<th scope="col">원천 시각</th>
-									<th scope="col">송금 → 수취</th>
-									<th scope="col">대상 계좌 기준</th>
+									<th scope="col">거래 ID</th>
+									<th scope="col">거래 시각</th>
+									<th scope="col">보낸 계좌 → 받은 계좌</th>
+									<th scope="col">구분</th>
 									<th scope="col">보낸 금액</th>
 									<th scope="col">받은 금액</th>
-									<th scope="col">원본</th>
+									<th scope="col">
+										<span className="visually-hidden">상세</span>
+									</th>
 								</tr>
 							</thead>
 							<tbody>
-								{data.items.map((item, index) => (
+								{data.items.map((item) => (
 									<tr
 										key={item.transactionId}
 										className={
@@ -109,10 +108,7 @@ export default function CaseTransactionsPanel({
 										<td>
 											{item.scope === "CONTEXT"
 												? "참고 거래"
-												: directionText(
-														item,
-														(page - 1) * data.size + index + 1,
-													)}
+												: directionText(item)}
 										</td>
 										<td>{formatAmount(item.amountPaid, item.currencyPaid)}</td>
 										<td>
@@ -124,9 +120,10 @@ export default function CaseTransactionsPanel({
 										<td>
 											<button
 												type="button"
+												aria-label={`거래 ${item.transactionId} 상세 보기`}
 												onClick={() => setOpened(item.transactionId)}
 											>
-												거래 원본
+												상세
 											</button>
 										</td>
 									</tr>
@@ -136,9 +133,7 @@ export default function CaseTransactionsPanel({
 					</div>
 				) : (
 					<p>
-						{scope === "EVIDENCE"
-							? "이 케이스의 근거 거래가 없어요."
-							: "참고 거래가 없어요."}
+						{scope === "EVIDENCE" ? "근거 거래가 없습니다." : "참고 거래가 없습니다."}
 					</p>
 				))}
 			{data && data.totalPages > 1 && (

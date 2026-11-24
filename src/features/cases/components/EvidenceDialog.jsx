@@ -14,7 +14,7 @@ export default function EvidenceDialog({ caseNo, transactionId, onClose }) {
 	const data = query.data
 	const t = data?.transaction
 	return (
-		<Modal title={`거래 원본 · ${transactionId}`} onClose={onClose}>
+		<Modal title={`거래 상세 · ${transactionId}`} onClose={onClose}>
 			<AsyncState query={query} />
 			{t && <EvidenceBody data={data} t={t} />}
 		</Modal>
@@ -30,13 +30,12 @@ function EvidenceBody({ data, t }) {
 		<div className="evidence">
 			<ul className="evidence-chips" aria-label="거래 상태">
 				<li className={data.eligibleForStr ? "chip chip-pass" : "chip"}>
-					{data.eligibleForStr ? "STR 근거로 쓸 수 있음" : "참고 거래 · STR 근거 아님"}
+					{data.eligibleForStr ? "STR 근거 사용 가능" : "참고 거래 (STR 근거 아님)"}
 				</li>
 				<li className={`chip chip-${(t.direction ?? "").toLowerCase()}`}>
 					{target && "대상 계좌 기준 "}
 					<strong>{DIRECTION_LABELS[t.direction] ?? t.direction}</strong>
 				</li>
-				{data.source.isSynthetic && <li className="chip">합성 데이터</li>}
 			</ul>
 
 			<div className="evidence-amount">
@@ -81,11 +80,11 @@ function EvidenceBody({ data, t }) {
 					<dd>{t.paymentFormat}</dd>
 				</div>
 				<div>
-					<dt>원천 시각</dt>
+					<dt>거래 시각</dt>
 					<dd>{formatDataTime(t.ts)}</dd>
 				</div>
 				<div className="evidence-grid-wide">
-					<dt>원천</dt>
+					<dt>데이터 출처</dt>
 					<dd>
 						{data.source.dataset} · 행 {data.source.recordId}
 						{data.source.isSynthetic && " · 합성 데이터"}
@@ -102,7 +101,7 @@ function Account({ role, no, accountRef, tone, isTarget }) {
 			<span className="evidence-label">
 				<i className={`evidence-dot ${tone}`} aria-hidden="true" />
 				{role}
-				{isTarget && " · 대상"}
+				{isTarget && " · 조사 대상"}
 			</span>
 			<strong>{no}</strong>
 			<code>{accountRef}</code>

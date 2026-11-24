@@ -1,7 +1,8 @@
 import { formatSystemTime } from "../../../shared/format/time"
-import { CLOSE_REASON_LABELS, REJECTION_LABELS, labelOf } from "../labels"
+import { ruleLabel } from "../../../shared/format/rule"
 
-// 케이스·경보 정보(SCRUM-369) — 예전 「케이스 개요」·「경보 정보」 두 카드를 하나로. 점수는 판단 요약으로 올라갔어요.
+// 케이스·경보 정보(SCRUM-369). 점수·반려·종료 사유는 판단 요약에 있어요.
+// version 은 동시 수정 검사용 내부 값이라 보여 주지 않아요.
 export default function CaseInfoCard({ detail }) {
 	const alert = detail.alert
 	return (
@@ -18,10 +19,10 @@ export default function CaseInfoCard({ detail }) {
 						<dt>경보 번호</dt>
 						<dd>{alert.alertNo}</dd>
 						<dt>탐지 규칙</dt>
-						<dd>{alert.ruleId}</dd>
-						<dt>배치 기준일</dt>
+						<dd>{ruleLabel(alert.ruleId)}</dd>
+						<dt>탐지 기준일</dt>
 						<dd>{alert.batchDate}</dd>
-						<dt>묶인 거래</dt>
+						<dt>관련 거래</dt>
 						<dd>{alert.transactionCount}건</dd>
 					</>
 				) : (
@@ -32,18 +33,10 @@ export default function CaseInfoCard({ detail }) {
 				)}
 				<dt>생성</dt>
 				<dd>{formatSystemTime(detail.createdAt)}</dd>
-				<dt>버전</dt>
-				<dd>{detail.version}</dd>
-				{detail.rejectionReasonCode && (
+				{detail.updatedAt && (
 					<>
-						<dt>반려</dt>
-						<dd>{labelOf(REJECTION_LABELS, detail.rejectionReasonCode)}</dd>
-					</>
-				)}
-				{detail.closeReason && (
-					<>
-						<dt>종료 사유</dt>
-						<dd>{labelOf(CLOSE_REASON_LABELS, detail.closeReason)}</dd>
+						<dt>최근 변경</dt>
+						<dd>{formatSystemTime(detail.updatedAt)}</dd>
 					</>
 				)}
 			</dl>

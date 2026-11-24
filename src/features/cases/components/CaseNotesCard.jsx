@@ -1,14 +1,12 @@
 import { useState } from "react"
 import CaseMemoEditor from "./CaseMemoEditor"
 import CaseNoteHistory from "./CaseNoteHistory"
-import CaseSummaryPanel from "./CaseSummaryPanel"
 import CaseHistoryPanel from "./CaseHistoryPanel"
 
-// 조사 메모 · AI 요약 · 처리 이력 카드 (화면 설계 CASE-02 오른쪽 단).
-// 탭 이름과 탭 안의 제목은 같은 문구예요. 탭을 바꿔도 쓰던 메모·요약 요청 상태가 사라지지 않게, 안 보이는 탭은 지우지 않고 숨기기만 해요.
+// 조사 메모 · 처리 이력 카드 (화면 설계 CASE-02 오른쪽 단). AI 요약은 점수 근거 아래로 옮겼어요.
+// 탭을 바꿔도 쓰던 메모가 사라지지 않게, 안 보이는 탭은 지우지 않고 숨기기만 해요.
 const TABS = [
 	["memo", "조사 메모"],
-	["summary", "AI 요약"],
 	["history", "처리 이력"],
 ]
 
@@ -24,8 +22,8 @@ function memoEditableStatus(detail) {
 export default function CaseNotesCard({ detail, onRefresh }) {
 	const [tab, setTab] = useState("memo")
 	return (
-		<section className="case-panel case-card" aria-label="조사 메모·AI 요약·처리 이력">
-			<div className="case-tabs" role="group" aria-label="조사 메모·AI 요약·처리 이력 보기">
+		<section className="case-panel case-card" aria-label="조사 메모·처리 이력">
+			<div className="case-tabs" role="group" aria-label="조사 메모·처리 이력 보기">
 				{TABS.map(([value, label]) => (
 					<button
 						key={value}
@@ -46,15 +44,12 @@ export default function CaseNotesCard({ detail, onRefresh }) {
 						<p className="preserve-lines">{detail.investigatorNotes || "메모 없음"}</p>
 						<p className="case-action-note">
 							{memoEditableStatus(detail)
-								? "담당 조사역만 메모를 수정할 수 있어요."
-								: "현재 케이스는 읽기 전용입니다."}
+								? "담당 조사역만 수정할 수 있습니다."
+								: "이 상태에서는 수정할 수 없습니다."}
 						</p>
 					</section>
 				)}
 				<CaseNoteHistory caseNo={detail.caseNo} />
-			</div>
-			<div className="case-tab-panel" hidden={tab !== "summary"}>
-				<CaseSummaryPanel detail={detail} />
 			</div>
 			<div className="case-tab-panel" hidden={tab !== "history"}>
 				<CaseHistoryPanel caseNo={detail.caseNo} recent={detail.history} />

@@ -64,5 +64,5 @@ export const labelOf = (labels, value) => (value == null ? "" : (labels[value] ?
 export const DIRECTION_LABELS = {
 	INBOUND: "입금",
 	OUTBOUND: "출금",
-	INDIRECT: "대상 계좌 미참여 (경유)",
+	INDIRECT: "경유",
 }

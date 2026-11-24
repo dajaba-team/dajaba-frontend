@@ -125,13 +125,13 @@ describe("409 — 버전 충돌·배정 대상", () => {
 		)
 		const user = renderApp(`/cases/${OPEN}`, "admin")
 		await user.click(await screen.findByRole("button", { name: "담당자 배정" }))
-		const input = screen.getByLabelText("배정할 조사역 아이디")
-		await user.type(input, "old01")
+		const input = await screen.findByRole("combobox", { name: "담당 조사역" })
+		await user.selectOptions(input, "inv01")
 		await user.click(screen.getByRole("button", { name: "배정" }))
 		const error = await screen.findByText("활성 조사역에게만 배정할 수 있습니다")
 		expect(input).toHaveAttribute("aria-invalid", "true")
 		expect(input).toHaveAttribute("aria-describedby", error.id)
-		expect(input).toHaveValue("old01")
+		expect(input).toHaveValue("inv01")
 		expect(screen.getAllByRole("alert")).toHaveLength(1) // 폼 공통 안내와 겹치지 않음
 	})
 	it("담당자 변경의 INVALID_ASSIGNEE 는 확인창 안에 안내하고 조사역 목록을 다시 부른다", async () => {
@@ -167,7 +167,6 @@ describe("502 — AI 요약 실패는 요약 칸에만", () => {
 			),
 		)
 		const user = renderApp(`/cases/${DRAFTED}`)
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))
 		expect(await within(panel).findByRole("alert")).toHaveTextContent(
@@ -189,7 +188,6 @@ describe("502 — AI 요약 실패는 요약 칸에만", () => {
 			),
 		)
 		const user = renderApp(`/cases/${DRAFTED}`)
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))
 		expect(await within(panel).findByRole("alert")).toHaveTextContent("AI 응답이 늦어")
@@ -201,7 +199,6 @@ describe("응답 없음 — AI 요약 갱신 (SCRUM-315, 계약서 2.6)", () => 
 	it("요약 갱신은 AI 전용 timeout(100초)으로 보낸다 — 기본 15초가 아님", async () => {
 		const posted = vi.spyOn(apiClient, "post")
 		const user = renderApp(`/cases/${DRAFTED}`)
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))
 		await waitFor(() =>
@@ -234,7 +231,6 @@ describe("응답 없음 — AI 요약 갱신 (SCRUM-315, 계약서 2.6)", () => 
 			}),
 		)
 		const user = renderApp(`/cases/${DRAFTED}`)
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))
 		expect(await within(panel).findByText("(예시) 끊긴 뒤 저장된 새 요약")).toBeInTheDocument()
@@ -265,7 +261,6 @@ describe("응답 없음 — AI 요약 갱신 (SCRUM-315, 계약서 2.6)", () => 
 			}),
 		)
 		const user = renderApp(`/cases/${DRAFTED}`)
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))
 		expect(await within(panel).findByRole("status")).toHaveTextContent("결과를 확인하는 중")
@@ -281,7 +276,6 @@ describe("응답 없음 — AI 요약 갱신 (SCRUM-315, 계약서 2.6)", () => 
 		)
 		const details = countDetail(DRAFTED)
 		const user = renderApp(`/cases/${DRAFTED}`)
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		await waitFor(() => expect(details.n).toBe(1))
 		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))

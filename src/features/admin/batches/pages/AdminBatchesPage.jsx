@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react"
 import { Link } from "react-router"
 import { formatCount } from "../formatCount"
-import { ruleLabel } from "../ruleLabels"
+import { ruleLabel } from "../../../../shared/format/rule"
 import { scanningText } from "../batchText"
 import { latestOf, useBatchRunsForDate } from "../hooks/useBatchRunsForDate"
 import { useSession } from "../../../auth/hooks/useSession"

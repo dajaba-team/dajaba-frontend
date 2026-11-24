@@ -81,7 +81,7 @@ export default function CaseRouteMap({ routes, targetRef, accountNos }) {
 	const no = (ref) => accountNos.get(ref) ?? ref
 	return (
 		<>
-			<p className="route-note">화면에서 시간 순서로 찾은 길 · 룰 판정 아님</p>
+			<p className="route-note">거래 시각 순으로 이은 경로 (참고용)</p>
 			{routes.map((route, index) => {
 				const nodes = [route[0].source, ...route.map((edge) => edge.target)]
 				const nodeLabel = (i) =>

@@ -506,7 +506,25 @@
 .case-ai-summary > button {
 	margin: var(--space-4);
 }
-.case-ai-summary-note {
+.case-ai-summary > p {
+	margin: var(--space-4);
+}
+.case-detail-main > .case-ai-summary {
+	margin-block: 0;
+}
+/* 메모 이력은 접어 두고 건수만 — 펼치면 목록. */
+.case-note-history {
+	margin-block-start: var(--space-4);
+}
+.case-note-history summary {
+	cursor: pointer;
+}
+.case-note-history summary h3 {
+	display: inline;
+	margin: 0;
+	font-size: var(--font-body);
+}
+.case-note-history summary span {
 	color: var(--color-muted);
 	font-size: var(--font-small);
 }
@@ -630,6 +648,9 @@
 	gap: var(--space-3);
 	margin: 0;
 	padding: 0 var(--space-4) var(--space-4) calc(var(--space-4) + 1.25rem);
+}
+.case-reasons + button {
+	margin: 0 var(--space-4) var(--space-4);
 }
 .case-reasons li > dl {
 	padding: var(--space-2) 0 0;
@@ -855,25 +876,6 @@
 	color: var(--color-text);
 	font-size: var(--font-lead);
 	font-weight: var(--weight-semibold);
-}
-.minor-pair {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: var(--space-1);
-	margin: 0;
-	color: var(--color-muted);
-	font-size: var(--font-xs);
-}
-/* 숫자와 단위(「2건」)가 떨어지지 않게 — 좁은 화면에서 글자 단위로 쪼개지던 문제(SCRUM-367). */
-.minor-pair b {
-	white-space: nowrap;
-	color: var(--color-text);
-}
-.minor-pair i {
-	height: 0.9375rem;
-	margin: 0 0.1875rem;
-	border-inline-start: var(--border-width) solid #c5cfdd;
 }
 .case-ledger {
 	margin: 0 0 var(--space-2);
@@ -1196,13 +1198,6 @@
 	background-color: #f5f8ff;
 	background-image: radial-gradient(#c9d8ef 0.8px, transparent 0.8px);
 	background-size: 14px 14px;
-}
-.case-card > .evidence-foot {
-	margin: var(--space-3) 0 0;
-	padding-block-start: 0.5625rem;
-	border-block-start: var(--border-width) solid #e2e8f2;
-	color: var(--color-muted);
-	font-size: var(--font-xs);
 }
 @media (max-width: 36rem) {
 	.ledger-strip {

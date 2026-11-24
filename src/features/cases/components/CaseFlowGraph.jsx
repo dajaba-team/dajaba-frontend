@@ -29,12 +29,7 @@ function edgeKey(edge, index) {
 
 function FlowGraphDetail({ active, graph, accountNos, accountRef }) {
 	if (!active) {
-		return (
-			<p className="flow-graph-hint">
-				선이나 계좌에 마우스를 올리면 거래 내용이 보여요. 누르면 고정돼요. 계좌는 Tab으로
-				옮기고 Enter로 고정할 수 있어요.
-			</p>
-		)
+		return <p className="flow-graph-hint">선이나 계좌를 선택하면 거래 내용이 표시됩니다.</p>
 	}
 	if (active.type === "edge") {
 		const edge = active.edge
@@ -65,7 +60,7 @@ function FlowGraphDetail({ active, graph, accountNos, accountRef }) {
 			{active.ref === accountRef && <span> · 조사 대상 계좌</span>}
 			<span>
 				{" "}
-				· 이 그림에서 보낸 거래 {sent}건 · 받은 거래 {received}건
+				· 보낸 거래 {sent}건 · 받은 거래 {received}건
 			</span>
 		</p>
 	)
@@ -371,8 +366,8 @@ export default function CaseFlowGraph({ caseNo, accountRef, ruleId }) {
 			<AsyncState query={query} />
 			{data && data.truncated && (
 				<p className="case-action-note">
-					전체 {data.totalTransactionCount}건 중 {data.returnedTransactionCount}건만
-					그렸어요. 전체 거래는 근거 거래 탭의 표에서 볼 수 있어요.
+					전체 {data.totalTransactionCount}건 중 {data.returnedTransactionCount}건 표시 ·
+					전체 목록은 근거 거래 탭
 				</p>
 			)}
 			{data &&
@@ -398,7 +393,7 @@ export default function CaseFlowGraph({ caseNo, accountRef, ruleId }) {
 						<FlowGraphView data={data} accountRef={accountRef} />
 					)
 				) : (
-					<p>그릴 거래가 없어요.</p>
+					<p>표시할 거래가 없습니다.</p>
 				))}
 		</section>
 	)
