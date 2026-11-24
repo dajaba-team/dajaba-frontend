@@ -614,6 +614,12 @@
 	background: var(--color-primary-soft);
 	color: var(--color-primary);
 }
+/* SCRUM-395 별 모양(sparkle) 대신 전용 SVG — src/shared/assets/guide-bar-icon.svg 교체로 바꿔요. */
+.guide-bar-icon img {
+	display: block;
+	width: 1rem;
+	height: 1rem;
+}
 .guide-bar-text {
 	flex: 1;
 	font-weight: 500;
