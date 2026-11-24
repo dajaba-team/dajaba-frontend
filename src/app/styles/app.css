@@ -599,7 +599,6 @@
 	padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
 	background: var(--color-surface);
 	border: var(--border-width) solid var(--color-border);
-	border-inline-start: 0.25rem solid var(--color-primary);
 	border-radius: var(--radius-control);
 	box-shadow: var(--shadow-card);
 	margin-block-end: var(--space-5);
@@ -629,7 +628,7 @@
 	min-height: 2.25rem;
 	border-color: var(--color-primary-soft);
 	background: var(--color-primary-soft);
-	color: var(--color-primary);
+	color: var(--color-text);
 	font-weight: 600;
 }
 .guide-bar-full:hover:enabled {
