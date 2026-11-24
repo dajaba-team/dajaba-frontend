@@ -19,6 +19,7 @@ import {
 	askOutcomeText,
 	questionLength,
 } from "../askRules"
+import { humanizeText } from "../displayText"
 
 // 케이스 근거에 물어보기 — 계약서 A8(질문하기)·C9(지난 질문), 노션 「조사역 질문 답변 설계 문서」 8절, SCRUM-303.
 // 질문 하나에 답 하나예요(이전 질문을 기억하지 않음). 질문·답 카드는 오래된 것부터 위에 쌓여요.
@@ -66,7 +67,7 @@ function AskCard({ record, selected, onShowEvidence }) {
 			/>
 			<AskReply>
 				{answered ? (
-					<p>{record.answer}</p>
+					<p>{humanizeText(record.answer)}</p>
 				) : (
 					<p className="ask-neutral">{askOutcomeText(record)}</p>
 				)}

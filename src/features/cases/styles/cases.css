@@ -624,11 +624,11 @@
 	margin-block-start: var(--space-5);
 }
 /* 점수 이유 상위 3개 (SCRUM-208) — 이유마다 관측값·기준값·모델 기여를 한 묶음으로 */
+/* 머리 띠 아래에 여백을 두고 시작해요 — 첫 항목이 구분선에 붙지 않게. 항목 사이는 한 단계 더 넓게. */
 .case-reasons {
 	display: grid;
-	gap: var(--space-3);
+	gap: var(--space-4);
 	margin: 0;
-	/* 위 설명 문구를 뺐어요 — 첫 이유가 머리 띠 구분선에 붙지 않게 위 여백을 둬요. */
 	padding: var(--space-4) var(--space-4) var(--space-4) calc(var(--space-4) + 1.25rem);
 }
 .case-reasons li > dl {

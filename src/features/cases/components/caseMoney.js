@@ -1,4 +1,6 @@
-// 금액은 받은 숫자 + 통화 이름 그대로(계약서 2.4). 통화 이름이 ISO 코드가 아니라("US Dollar") Intl currency 형식은 쓰지 않아요.
+import { currencyLabel } from "../currencyLabels"
+
+// 금액은 받은 숫자 + 한글 통화 이름(계약서 2.4 원문 "US Dollar" → "미국 달러", currencyLabels). 통화 이름이 ISO 코드가 아니라("US Dollar") Intl currency 형식은 쓰지 않아요.
 // 더하거나 환산하지 않아요.
 const number = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 6 })
 
@@ -9,5 +11,5 @@ export function formatNumber(value) {
 
 export function formatAmount(amount, currency) {
 	if (amount == null) return "—"
-	return `${number.format(Number(amount))} ${currency ?? ""}`.trim()
+	return `${number.format(Number(amount))} ${currencyLabel(currency)}`.trim()
 }
