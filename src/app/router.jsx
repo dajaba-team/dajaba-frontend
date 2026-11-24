@@ -11,6 +11,7 @@ import AdminBatchesPage from "../features/admin/batches/pages/AdminBatchesPage"
 import ApprovalListPage from "../features/approvals/pages/ApprovalListPage"
 import ApprovalDonePage from "../features/approvals/pages/ApprovalDonePage"
 import { useSession } from "../features/auth/hooks/useSession"
+import Spinner from "../shared/ui/Spinner"
 const OverviewPage = lazy(() => import("../features/overview/pages/OverviewPage"))
 
 // 전체 시연 묶음은 개발 모드에서만 불러옵니다. 운영 빌드에는 fixture를 포함하지 않습니다.
@@ -56,7 +57,7 @@ export default function AppRouter() {
 				<Route
 					path="demo/*"
 					element={
-						<Suspense fallback={<p role="status">대시보드를 불러오는 중…</p>}>
+						<Suspense fallback={<Spinner label="대시보드를 불러오는 중" />}>
 							<DashboardDemoRouter />
 						</Suspense>
 					}
@@ -66,7 +67,7 @@ export default function AppRouter() {
 				<Route
 					path="overview"
 					element={
-						<Suspense fallback={<p role="status">대시보드를 불러오는 중…</p>}>
+						<Suspense fallback={<Spinner label="대시보드를 불러오는 중" />}>
 							<OverviewPage />
 						</Suspense>
 					}

@@ -3,6 +3,7 @@ import { useOverviewCases } from "../hooks/useOverviewCases"
 import { useAlertStats } from "../hooks/useAlertStats"
 import { useSession } from "../../auth/hooks/useSession"
 import { AsyncState } from "../../../shared/ui/AsyncState"
+import Spinner from "../../../shared/ui/Spinner"
 import DashboardView from "../components/DashboardView"
 import RoleHero from "../components/RoleHero"
 import PendingApprovalsPanel from "../components/PendingApprovalsPanel"
@@ -22,8 +23,10 @@ export default function OverviewPage() {
 	const ready = query.data && !query.isError && (!admin || (stats.data && !stats.isError))
 	return (
 		<>
-			<AsyncState query={query} />
-			{admin && query.data && <AsyncState query={stats} />}
+			<AsyncState query={query} loading={<Spinner label="대시보드를 불러오는 중" />} />
+			{admin && query.data && (
+				<AsyncState query={stats} loading={<Spinner label="대시보드를 불러오는 중" />} />
+			)}
 			{ready && (
 				<DashboardView
 					items={query.data.items}
