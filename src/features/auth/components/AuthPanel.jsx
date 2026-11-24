@@ -66,22 +66,36 @@ export default function AuthPanel({ placement = "main" }) {
 	})
 	const busy = switching || login.isPending || logout.isPending
 	if ((placement === "header") !== Boolean(me.data)) return null
-	// 위 띠: 역할 칩(시안 "조사역 A · inv01 ⌄")을 누르면 로그인 정보·로그아웃이 펼쳐져요.
+	// 위 띠: 칩에는 역할만("조사역 ⌄"), 누르면 이름·아이디·역할과 로그아웃이 펼쳐져요(SCRUM-408).
 	// "현재 사용자 확인" 버튼은 쓸 일이 없어 뺐어요(SCRUM-407).
-	if (placement === "header")
+	if (placement === "header") {
+		const roleLabel = ROLE_LABELS[me.data.role] ?? me.data.role
 		return (
 			<details className="persona">
-				<summary>
+				<summary aria-label={`${roleLabel} 계정 메뉴`}>
 					<Icon name="user" size={16} />
-					<span>
-						{ROLE_LABELS[me.data.role] ?? me.data.role} · {me.data.loginId}
-					</span>
+					<span>{roleLabel}</span>
 					<Icon name="chevron" size={16} />
 				</summary>
-				<section className="persona-menu" aria-label="로그인">
-					<p role="status" className="auth-identity">
-						{`${me.data.displayName} (${me.data.loginId}) · ${me.data.role}`}
-					</p>
+				<section className="persona-menu" aria-label="로그인 정보">
+					<div className="persona-profile" role="status">
+						<span className="persona-avatar" aria-hidden="true">
+							<Icon name="user" size={18} />
+						</span>
+						<div>
+							<strong className="persona-name">{me.data.displayName}</strong>
+							<dl className="persona-facts">
+								<div>
+									<dt>아이디</dt>
+									<dd>{me.data.loginId}</dd>
+								</div>
+								<div>
+									<dt>역할</dt>
+									<dd>{roleLabel}</dd>
+								</div>
+							</dl>
+						</div>
+					</div>
 					<button
 						type="button"
 						className="is-logout"
@@ -94,6 +108,7 @@ export default function AuthPanel({ placement = "main" }) {
 				</section>
 			</details>
 		)
+	}
 
 	return (
 		<section className="auth-panel" aria-label="로그인">

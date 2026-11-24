@@ -103,13 +103,17 @@ describe("인증 통신", () => {
 		const user = renderApp("/cases", false)
 		await screen.findByText("로그인이 필요합니다.")
 		await login(user, "apr01")
-		expect(await screen.findByText("예시 apr01 (apr01) · APPROVER")).toBeInTheDocument()
+		expect(
+			await screen.findByText("예시 apr01", { selector: ".persona-name" }),
+		).toBeInTheDocument()
 		expect(body).toEqual({ login_id: "apr01", password: MOCK_PASSWORD })
 		server.events.removeAllListeners()
 		// 사용자 메뉴에는 "현재 사용자 확인" 버튼이 없어요(SCRUM-407).
 		expect(screen.queryByRole("button", { name: "현재 사용자 확인" })).not.toBeInTheDocument()
 		await act(() => user.queryClient.refetchQueries({ queryKey: sessionKey }))
-		expect(await screen.findByText("예시 apr01 (apr01) · APPROVER")).toBeInTheDocument()
+		expect(
+			await screen.findByText("예시 apr01", { selector: ".persona-name" }),
+		).toBeInTheDocument()
 	})
 	it("LOGIN_FAILED는 사유 없이 한 문구로 보여 주고 다시 시도할 수 있다", async () => {
 		const user = renderApp("/cases", false)
@@ -124,7 +128,9 @@ describe("인증 통신", () => {
 		expect(screen.queryByText(/다른 곳에서 같은 계정으로 로그인/)).not.toBeInTheDocument()
 		await user.type(screen.getByLabelText("비밀번호"), MOCK_PASSWORD)
 		await user.click(screen.getByRole("button", { name: "로그인" }))
-		expect(await screen.findByText("예시 inv01 (inv01) · INVESTIGATOR")).toBeInTheDocument()
+		expect(
+			await screen.findByText("예시 inv01", { selector: ".persona-name" }),
+		).toBeInTheDocument()
 	})
 	it("서버 오류도 표시하고 다시 시도할 수 있다", async () => {
 		server.use(
@@ -138,7 +144,9 @@ describe("인증 통신", () => {
 		expect(await screen.findByRole("alert")).toHaveTextContent("요청을 처리하지 못했습니다.")
 		await user.type(screen.getByLabelText("비밀번호"), MOCK_PASSWORD)
 		await user.click(screen.getByRole("button", { name: "로그인" }))
-		expect(await screen.findByText("예시 inv01 (inv01) · INVESTIGATOR")).toBeInTheDocument()
+		expect(
+			await screen.findByText("예시 inv01", { selector: ".persona-name" }),
+		).toBeInTheDocument()
 	})
 	it("다른 곳 로그인으로 세션이 끊기면 로그인 폼과 안내를 보여 준다", async () => {
 		const user = renderApp("/cases/CASE-2022-001004")
@@ -154,7 +162,7 @@ describe("인증 통신", () => {
 		server.resetHandlers()
 		resetCases()
 		await login(user, "inv01")
-		await screen.findByText("예시 inv01 (inv01) · INVESTIGATOR")
+		await screen.findByText("예시 inv01", { selector: ".persona-name" })
 		expect(screen.queryByText(/다른 곳에서 같은 계정으로 로그인/)).not.toBeInTheDocument()
 	})
 	it("로그아웃 버튼으로 나가면 세션 끊김 안내를 보여 주지 않는다", async () => {
@@ -957,7 +965,7 @@ describe("예시 계정 권한과 입력 보호", () => {
 		await user.click(screen.getByRole("button", { name: "로그아웃" }))
 		await screen.findByText("로그인이 필요합니다.")
 		await login(user, "apr01")
-		await screen.findByText("예시 apr01 (apr01) · APPROVER")
+		await screen.findByText("예시 apr01", { selector: ".persona-name" })
 		// 조사 중인 케이스라 "읽기 전용"이 아니라 담당자 안내 (SCRUM-176)
 		expect(
 			await screen.findByText("담당 조사역만 메모를 수정할 수 있어요."),
