@@ -1267,6 +1267,25 @@
 		inline-size: auto;
 	}
 }
+/* 판단 요약의 [다음 처리](에스컬레이션·보고서 열기 등) — [요약 생성]처럼 한 단계 크게, 마우스를 올리면 1.1배(SCRUM-410).
+   움직임 줄이기 설정이면 크기는 그대로. */
+.case-summary-actions .ui-button {
+	min-height: 2.75rem;
+	padding-inline: var(--space-5);
+	font-size: var(--font-body);
+	transition:
+		transform 0.15s ease,
+		background-color 0.15s ease,
+		border-color 0.15s ease;
+}
+.case-summary-actions .ui-button:hover:not(:disabled) {
+	transform: scale(1.1);
+}
+@media (prefers-reduced-motion: reduce) {
+	.case-summary-actions .ui-button:hover:not(:disabled) {
+		transform: none;
+	}
+}
 /* 카드 안 소제목은 카드 제목보다 한 단계 아래. */
 .case-detail .case-card h3 {
 	margin-block: var(--space-4) var(--space-2);
