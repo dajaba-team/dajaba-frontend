@@ -1,41 +1,25 @@
-/* 위험 등급 배지(SCRUM-371) — 05_ui.md 1-1절. 점은 기본 위험색, 글자는 -strong. */
+/* 위험 등급 배지(SCRUM-371) — 05_ui.md 1-1절. 모양(크기·여백·테두리·점)은 status.css 의 상태 배지와 같고,
+   여기서는 색만 정해요. 점은 기본 위험색, 글자는 -strong(옅은 면 위 4.5:1 이상), 테두리는 글자색을 옅게. */
 .risk-badge {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--space-1);
-	padding: var(--space-1) var(--space-2);
-	border-radius: var(--radius-pill);
-	background: var(--color-soft);
-	color: var(--color-muted);
-	font-size: var(--font-xs);
-	font-weight: var(--weight-semibold);
-	line-height: var(--leading-tight);
-	white-space: nowrap;
+	--status-ink: var(--color-muted);
+	--status-soft: var(--color-soft);
+	--risk-dot: var(--chart-neutral);
 }
-.risk-badge-dot {
-	width: 0.5rem;
-	height: 0.5rem;
-	border-radius: var(--radius-pill);
-	background: var(--chart-neutral);
+.risk-badge::before {
+	background: var(--risk-dot);
 }
 .risk-badge[data-band="HIGH"] {
-	background: var(--risk-high-soft);
-	color: var(--risk-high-strong);
-}
-.risk-badge[data-band="HIGH"] .risk-badge-dot {
-	background: var(--risk-high);
+	--status-ink: var(--risk-high-strong);
+	--status-soft: var(--risk-high-soft);
+	--risk-dot: var(--risk-high);
 }
 .risk-badge[data-band="MEDIUM"] {
-	background: var(--risk-medium-soft);
-	color: var(--risk-medium-strong);
-}
-.risk-badge[data-band="MEDIUM"] .risk-badge-dot {
-	background: var(--risk-medium);
+	--status-ink: var(--risk-medium-strong);
+	--status-soft: var(--risk-medium-soft);
+	--risk-dot: var(--risk-medium);
 }
 .risk-badge[data-band="LOW"] {
-	background: var(--risk-low-soft);
-	color: var(--risk-low-strong);
-}
-.risk-badge[data-band="LOW"] .risk-badge-dot {
-	background: var(--risk-low);
+	--status-ink: var(--risk-low-strong);
+	--status-soft: var(--risk-low-soft);
+	--risk-dot: var(--risk-low);
 }
