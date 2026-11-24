@@ -633,7 +633,7 @@
 .case-ai-summary-head h2 svg {
 	flex: none;
 	color: var(--color-primary);
-	transform: translateY(-0.125rem);
+	transform: translateY(-0.0625rem);
 }
 .case-ai-summary-refresh {
 	display: inline-flex;
