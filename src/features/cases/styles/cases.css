@@ -1302,33 +1302,33 @@
 	gap: var(--space-3);
 }
 .case-ask-open {
+	/* 옆 [다음 처리] 주 버튼(.ui-button)과 높이·모서리·글자를 맞추고, 색만 연한 파랑 보조 모양(SCRUM-395 후속). */
 	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	gap: var(--space-2);
 	min-height: var(--control-height);
 	padding: 0 var(--space-4);
-	border: var(--border-width) solid #aec8f3;
-	border-radius: var(--radius-pill);
-	background: #eff5ff;
-	color: #1649b7;
-	font-weight: 700;
+	border: var(--border-width) solid var(--color-primary-soft);
+	border-radius: var(--radius-control);
+	background: var(--color-primary-soft);
+	color: var(--color-primary);
+	font-size: var(--font-small);
+	font-weight: var(--weight-semibold);
+	line-height: var(--leading-tight);
+	white-space: nowrap;
 }
 .case-ask-open:hover:enabled {
-	background: #e2ecff;
+	border-color: var(--color-primary);
+	background: var(--color-primary-soft);
 }
 .case-ask-open svg {
-	width: 1.125rem;
-	height: 1.125rem;
-	fill: none;
-	stroke: currentColor;
-	stroke-width: 1.6;
-	stroke-linecap: round;
-	stroke-linejoin: round;
+	flex-shrink: 0;
 }
 .case-ask-open[aria-expanded="true"],
 .case-ask-open[aria-expanded="true"]:hover:enabled {
-	background: #1649b7;
-	border-color: #1649b7;
+	border-color: var(--color-primary-strong);
+	background: var(--color-primary-strong);
 	color: var(--color-on-dark);
 }
 .case-ask-main {
