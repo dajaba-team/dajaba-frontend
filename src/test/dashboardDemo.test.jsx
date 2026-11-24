@@ -38,9 +38,12 @@ const role = async (user, value) =>
 describe("대시보드 URL과 화면 분리", () => {
 	it("메뉴를 URL로 이동하고 뒤로가기로 이전 화면을 복원한다", async () => {
 		const user = renderDemo("/demo")
-		await screen.findByRole("heading", {
-			name: "흐름을 읽고, 위험을 발견하다.",
-		})
+		// 시연 화면은 lazy 로딩이라 첫 진입이 느릴 수 있어요 — 전체 테스트를 같이 돌리면 1초를 넘기기도 해서 넉넉히 기다려요.
+		await screen.findByRole(
+			"heading",
+			{ name: "흐름을 읽고, 위험을 발견하다." },
+			{ timeout: 5000 },
+		)
 		expect(screen.getByTestId("location")).toHaveTextContent("/demo/overview")
 		await user.click(screen.getByRole("link", { name: "경보 점검" }))
 		await screen.findByRole("heading", { name: "경보 점검" })

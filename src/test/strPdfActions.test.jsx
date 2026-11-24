@@ -105,6 +105,16 @@ describe("STR 화면 — 승인됨(APPROVED) 제출 전 PDF 미리보기", () =>
 describe("STR 화면 — 보고됨(REPORTED) 확정본 PDF", () => {
 	it("담당 조사역이 [확정본 PDF 받기]로 파일을 받는다", async () => {
 		reportedDraftFor("inv01", ["DOWNLOAD_PDF"])
+		// MSW 케이스 상태는 시드대로 APPROVED라 report.pdf 가 409 를 줘요 — S2 처럼 보고됨 응답(다 만든 PDF)으로 바꿔요.
+		server.use(
+			http.get(
+				"*/api/v1/str-drafts/:draftNo/report.pdf",
+				() =>
+					new HttpResponse("%PDF-1.4\n% REPORT\n", {
+						headers: { "Content-Type": "application/pdf" },
+					}),
+			),
+		)
 		const user = renderStrAs("inv01")
 		const region = await pdfRegion()
 		expect(
