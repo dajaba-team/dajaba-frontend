@@ -706,21 +706,28 @@ describe("케이스 조사", () => {
 		const panel = await screen.findByRole("region", { name: "점수 근거" })
 		const items = within(panel).getAllByRole("listitem")
 		// 목업 reasons 4개(기여 0.05·0.42·0.31·-0.18) → 절댓값 순 0.42·0.31·-0.18, 0.05는 빠짐
-		expect(items.map((item) => within(item).getByRole("code").textContent)).toEqual([
+		// 지표 코드는 한글 이름으로, 원래 코드는 data-reason 에 남겨요
+		expect(items.map((item) => item.querySelector("[data-reason]").dataset.reason)).toEqual([
 			"account_in_counterparties_24h",
 			"amount_out_sum_24h",
 			"fan_out_degree_24h",
 		])
-		expect(within(panel).queryByText("night_tx_ratio_24h")).not.toBeInTheDocument()
-		// 기여값은 관측값 자리에 쓰지 않고 따로, 확인 못 한 값은 채우지 않음
-		expect(within(items[0]).getByText("12 count")).toBeInTheDocument()
-		expect(within(items[0]).getByText("3 (같은 계좌 직전 30일 평균)")).toBeInTheDocument()
-		expect(within(items[0]).getByText("+0.42 (SHAP · raw_margin)")).toBeInTheDocument()
+		expect(within(items[0]).getByText("24시간 입금 상대 계좌 수")).toBeInTheDocument()
+		expect(within(items[1]).getByText("24시간 출금 합계")).toBeInTheDocument()
+		expect(within(items[2]).getByText("24시간 송금 상대 계좌 수")).toBeInTheDocument()
+		expect(within(panel).queryByText("24시간 야간 거래 비율")).not.toBeInTheDocument()
+		// 단위는 한글, 계산 방식(SHAP)·척도(raw_margin)는 값 옆에 쓰지 않아요
+		expect(within(items[0]).getByText("12개")).toBeInTheDocument()
+		expect(within(items[0]).getByText("3개 (같은 계좌 직전 30일 평균)")).toBeInTheDocument()
+		expect(within(items[0]).getByText("(점수를 높임)")).toBeInTheDocument()
 		expect(within(items[1]).getByText("152,000.5 USD")).toBeInTheDocument()
 		expect(within(items[1]).getByText("기준값 없음")).toBeInTheDocument()
 		expect(within(items[2]).getByText("확인 못 함")).toBeInTheDocument()
-		expect(within(items[2]).getByText("-0.18 (SHAP · raw_margin)")).toBeInTheDocument()
-		expect(within(panel).getAllByText("모델 기여 (거래 사실 아님)")).toHaveLength(3)
+		expect(within(items[2]).getByText("(점수를 낮춤)")).toBeInTheDocument()
+		expect(within(panel).queryByText(/raw_margin|SHAP ·|\bcount\b/)).not.toBeInTheDocument()
+		expect(
+			within(panel).getAllByText(/^모델 기여 \(거래 사실 아님\)/, { selector: "dt" }),
+		).toHaveLength(3)
 	})
 	it.each([
 		["FAILED", [], "점수 산출에 실패해서 이유가 없어요. 위험이 낮다는 뜻이 아니에요."],
