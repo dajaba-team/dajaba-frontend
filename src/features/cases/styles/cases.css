@@ -629,11 +629,9 @@
 	font-size: var(--font-lead);
 	font-weight: var(--weight-semibold);
 }
-/* AI 아이콘은 위쪽에 반짝이가 있어 네모(눈에 보이는 중심)가 아래로 처져 보여요 — 글자 가운데에 맞게 살짝 올려요. */
 .case-ai-summary-head h2 svg {
 	flex: none;
 	color: var(--color-primary);
-	transform: translateY(-0.0625rem);
 }
 .case-ai-summary-refresh {
 	display: inline-flex;
