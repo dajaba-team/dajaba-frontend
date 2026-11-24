@@ -502,9 +502,12 @@
 			opacity 0.18s ease,
 			transform 0.18s ease;
 	}
+	/* SCRUM-408: 위 띠를 본문(회색 캔버스)과 구분 — 사이드바·카드와 같은 흰 면 + 아래 경계선 + 옅은 그림자.
+	   스크롤하면 본문이 띠 아래로 들어가는 게 보이도록 살짝만 비쳐요. */
 	.app-header {
-		background: color-mix(in srgb, var(--color-canvas) 88%, transparent);
-		border-bottom: 0;
+		background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+		border-bottom: var(--border-width) solid var(--color-border);
+		box-shadow: 0 1px 2px rgb(16 24 40 / 4%), 0 6px 16px -10px rgb(0 35 110 / 12%);
 	}
 	.sidebar-toggle {
 		display: grid;
