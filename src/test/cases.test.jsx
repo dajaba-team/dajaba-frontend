@@ -608,9 +608,11 @@ describe("케이스 조사", () => {
 		expect(
 			await within(historySection).findByText("거래 목적 자료 요청 완료"),
 		).toBeInTheDocument()
-		expect(within(historySection).getByText("이전 메모")).toBeInTheDocument()
+		expect(within(historySection).getByText("이전 메모 보기")).toBeInTheDocument()
 		expect(within(historySection).getByText("거래 목적 확인 필요")).toBeInTheDocument()
-		expect(within(historySection).getByText(/버전 1에서/)).toBeInTheDocument()
+		// 가장 최근 기록에 [현재] 표시, 내부 버전 번호는 보이지 않아요(SCRUM-408)
+		expect(within(historySection).getByText("현재")).toBeInTheDocument()
+		expect(within(historySection).queryByText(/버전/)).not.toBeInTheDocument()
 	})
 	it("메모를 비운 기록은 (메모 비움)으로 보인다", async () => {
 		server.use(
@@ -791,7 +793,6 @@ describe("케이스 조사", () => {
 	it("요약이 없으면 [요약 생성]으로 만들고 현재 입력 기준 배지를 보여 준다", async () => {
 		const bodies = recordBodies("/refresh-summary")
 		const user = renderApp(`/cases/${REVIEWING}`)
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		expect(within(panel).getByText("아직 만든 요약이 없습니다.")).toBeInTheDocument()
 		await user.click(within(panel).getByRole("button", { name: "요약 생성" }))
@@ -806,8 +807,7 @@ describe("케이스 조사", () => {
 		await expectCaseVersion("2")
 	})
 	it("입력이 바뀐 요약은 '입력 변경됨'으로 보여 준다", async () => {
-		const user = renderApp("/cases/CASE-2022-001001")
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
+		renderApp("/cases/CASE-2022-001001")
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		expect(await within(panel).findByText("입력 변경됨")).toBeInTheDocument()
 		expect(within(panel).getByRole("button", { name: "요약 갱신" })).toBeInTheDocument()
@@ -842,7 +842,6 @@ describe("케이스 조사", () => {
 			),
 		)
 		const user = renderApp(`/cases/${REVIEWING}`)
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		await user.click(within(panel).getByRole("button", { name: "요약 갱신" }))
 		expect(await within(panel).findByRole("alert")).toHaveTextContent(
@@ -857,8 +856,7 @@ describe("케이스 조사", () => {
 		expect(screen.getByRole("textbox", { name: "메모 내용" })).toBeEnabled()
 	})
 	it("요약 버튼은 REFRESH_SUMMARY가 있을 때만 보여 준다", async () => {
-		const user = renderApp("/cases/CASE-2022-001003")
-		await user.click(await screen.findByRole("button", { name: "AI 요약" }))
+		renderApp("/cases/CASE-2022-001003")
 		const panel = await screen.findByRole("region", { name: "AI 요약" })
 		expect(within(panel).queryByRole("button")).not.toBeInTheDocument()
 	})

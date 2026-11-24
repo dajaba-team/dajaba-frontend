@@ -9,6 +9,7 @@ import CaseAskPanel from "../components/CaseAskPanel"
 import bearFace from "../../../shared/assets/bear-face.png"
 import CaseEvidenceCard from "../components/CaseEvidenceCard"
 import CaseInfoCard from "../components/CaseInfoCard"
+import CaseSummaryPanel from "../components/CaseSummaryPanel"
 import CaseNotesCard from "../components/CaseNotesCard"
 import CaseScoreReasons from "../components/CaseScoreReasons"
 import CaseSummaryHeader from "../components/CaseSummaryHeader"
@@ -116,6 +117,8 @@ function CaseDetail({ caseNo }) {
 						/>
 						<div className="case-detail-layout">
 							<div className="case-detail-main">
+								{/* AI 요약은 메모 탭에서 빼서 점수 근거 위 카드로(SCRUM-408) — 요약 → 근거 순서로 읽어요. */}
+								<CaseSummaryPanel detail={detail} />
 								<CaseScoreReasons latestScore={detail.latestScore} />
 							</div>
 							<div className="case-evidence">

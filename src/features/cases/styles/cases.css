@@ -610,18 +610,289 @@
 	font-weight: 700;
 	font-variant-numeric: tabular-nums;
 }
-/* AI 조사 요약 (SCRUM-175) — 배지는 글자로도 상태를 말해서 색만으로 구분하지 않아요. */
-.case-ai-summary {
-	margin-block: var(--space-5);
+/* AI 조사 요약 (SCRUM-175) — 배지는 글자로도 상태를 말해서 색만으로 구분하지 않아요.
+   SCRUM-408: 메모 탭에서 빼서 본문 왼쪽 단의 카드로. 머리 띠(제목 + 생성/갱신 버튼) + 본문. */
+.case-ai-summary-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2) var(--space-4);
+	padding: var(--space-3) var(--space-4);
+	border-block-end: var(--border-width) solid var(--color-border);
 }
-.case-ai-summary > h2,
-.case-ai-summary > [role="group"],
-.case-ai-summary > button {
-	margin: var(--space-4);
+.case-ai-summary-head h2 {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	margin: 0;
+	font-size: var(--font-lead);
+	font-weight: var(--weight-semibold);
+}
+.case-ai-summary-head h2 svg {
+	color: var(--color-primary);
+}
+.case-ai-summary-refresh {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	min-height: 2rem;
+	padding: 0 var(--space-3);
+	font-size: var(--font-small);
+	font-weight: var(--weight-semibold);
+}
+.case-ai-summary-body {
+	display: grid;
+	gap: var(--space-3);
+	padding: var(--space-4);
+}
+.case-ai-summary-body > p,
+.case-ai-summary-body > [role="group"] > p {
+	margin: 0;
+}
+.case-ai-summary-body > [role="group"] {
+	display: grid;
+	gap: var(--space-3);
+}
+.case-ai-summary-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2);
+}
+.case-ai-summary-meta small {
+	color: var(--color-muted);
+	font-size: var(--font-xs);
 }
 .case-ai-summary-lines {
+	display: grid;
+	gap: var(--space-2);
 	margin: 0;
 	padding-inline-start: var(--space-5);
+	line-height: var(--leading-relaxed);
+}
+.case-ai-summary-focus {
+	padding: var(--space-3) var(--space-4);
+	border-radius: var(--radius-control);
+	background: var(--color-primary-soft);
+	line-height: var(--leading-normal);
+}
+.case-ai-summary-focus strong {
+	display: block;
+	margin-block-end: var(--space-1);
+	color: var(--color-primary-strong);
+	font-size: var(--font-small);
+}
+.case-ai-summary-empty {
+	color: var(--color-muted);
+}
+
+/* 조사 메모(SCRUM-408) — 입력 칸 + 저장 줄, 읽기 전용 상자, 메모 이력 타임라인 */
+.memo-input {
+	min-block-size: 8rem;
+	margin: 0;
+	line-height: var(--leading-normal);
+}
+.memo-input::placeholder {
+	color: var(--color-muted);
+}
+.memo-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	margin-block-start: var(--space-3);
+}
+.memo-state {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	margin: 0;
+	color: var(--color-muted);
+	font-size: var(--font-xs);
+}
+.memo-state.is-saved {
+	color: var(--color-pass);
+	font-weight: var(--weight-semibold);
+}
+.memo-conflict {
+	margin-block-start: var(--space-3);
+	padding: var(--space-3) var(--space-4);
+	border: var(--border-width) solid color-mix(in srgb, var(--color-warn) 30%, transparent);
+	border-radius: var(--radius-control);
+	background: var(--color-warn-soft);
+}
+.memo-conflict h3 {
+	margin: 0 0 var(--space-2);
+	color: var(--color-warn);
+	font-size: var(--font-small);
+}
+.memo-conflict p {
+	margin: 0 0 var(--space-2);
+}
+.memo-box {
+	margin: 0;
+	padding: var(--space-3) var(--space-4);
+	border-radius: var(--radius-control);
+	background: var(--color-soft);
+	line-height: var(--leading-normal);
+}
+.memo-box.is-empty {
+	color: var(--color-muted);
+}
+.memo-lock {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+	margin: var(--space-2) 0 0;
+	color: var(--color-muted);
+	font-size: var(--font-xs);
+}
+.memo-history {
+	padding-block-start: var(--space-4);
+	border-block-start: var(--border-width) solid var(--color-border);
+}
+.memo-history h3 {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	margin: 0 0 var(--space-3);
+	font-size: var(--font-small);
+	font-weight: var(--weight-bold);
+}
+.memo-history-count {
+	min-width: 1.25rem;
+	padding: 0 0.375rem;
+	border-radius: var(--radius-pill);
+	background: var(--color-soft);
+	color: var(--color-muted);
+	font-size: var(--font-2xs);
+	font-weight: var(--weight-semibold);
+	line-height: 1.25rem;
+	text-align: center;
+}
+.memo-history-empty {
+	margin: 0;
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+/* 세로선 + 점 타임라인 — 처리 이력(SCRUM-400)과 같은 결 */
+.memo-timeline {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.memo-timeline li {
+	position: relative;
+	padding: 0 0 var(--space-4) var(--space-5);
+}
+.memo-timeline li::before {
+	content: "";
+	position: absolute;
+	inset-block: 0.5rem 0;
+	inset-inline-start: 0.3125rem;
+	border-inline-start: var(--border-width) solid var(--color-border);
+}
+.memo-timeline li:last-child {
+	padding-block-end: 0;
+}
+.memo-timeline li:last-child::before {
+	display: none;
+}
+.memo-timeline li::after {
+	content: "";
+	position: absolute;
+	inset-block-start: 0.375rem;
+	inset-inline-start: 0;
+	width: 0.6875rem;
+	height: 0.6875rem;
+	border: 0.125rem solid var(--color-control-border);
+	border-radius: 50%;
+	background: var(--color-surface);
+	box-sizing: border-box;
+}
+.memo-timeline li:first-child::after {
+	border-color: var(--color-primary);
+	background: var(--color-primary);
+}
+.memo-timeline-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-1) var(--space-2);
+	margin: 0;
+	color: var(--color-muted);
+	font-size: var(--font-xs);
+}
+.memo-timeline-meta strong {
+	color: var(--color-text);
+	font-size: var(--font-small);
+}
+.memo-current {
+	padding: 0 0.4375rem;
+	border-radius: var(--radius-pill);
+	background: var(--color-primary-soft);
+	color: var(--color-primary-strong);
+	font-size: var(--font-2xs);
+	font-weight: var(--weight-semibold);
+	line-height: 1.25rem;
+}
+.memo-timeline-text {
+	margin: var(--space-1) 0 0;
+	color: var(--color-text);
+	font-size: var(--font-small);
+	line-height: var(--leading-normal);
+}
+.memo-before {
+	margin-block-start: var(--space-1);
+	font-size: var(--font-xs);
+}
+.memo-before summary {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	color: var(--color-primary);
+	font-weight: var(--weight-semibold);
+	cursor: pointer;
+	list-style: none;
+}
+.memo-before summary::-webkit-details-marker {
+	display: none;
+}
+.memo-before summary::after {
+	content: "";
+	width: 0.375rem;
+	height: 0.375rem;
+	border-block-end: 0.09375rem solid currentcolor;
+	border-inline-end: 0.09375rem solid currentcolor;
+	transform: translateY(-0.0625rem) rotate(45deg);
+	transition: transform 0.15s ease;
+}
+.memo-before[open] summary::after {
+	transform: translateY(0.125rem) rotate(-135deg);
+}
+.memo-before p {
+	margin: var(--space-1) 0 0;
+	padding: var(--space-2) var(--space-3);
+	border-inline-start: 0.125rem solid var(--color-border);
+	color: var(--color-muted);
+	font-size: var(--font-small);
+	text-decoration: line-through;
+	text-decoration-color: color-mix(in srgb, var(--color-muted) 45%, transparent);
+}
+.memo-history-pages {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-3);
+	margin-block-start: var(--space-3);
+	color: var(--color-muted);
+	font-size: var(--font-xs);
+}
+.memo-history-pages button {
+	min-height: 2rem;
+	padding: 0 var(--space-3);
+	font-size: var(--font-xs);
 }
 .case-score {
 	padding: var(--space-4) var(--space-4) 0;
@@ -675,17 +946,11 @@
 	overflow: visible;
 }
 .case-card .case-panel > p,
-.case-card .case-panel > [role="alert"],
-.case-card .case-ai-summary > h2,
-.case-card .case-ai-summary > [role="group"],
-.case-card .case-ai-summary > button {
+.case-card .case-panel > [role="alert"] {
 	margin-inline: 0;
 }
 .case-card .case-summary dl {
 	padding: 0;
-}
-.case-card .case-ai-summary {
-	margin-block: 0;
 }
 .case-card .case-table th,
 .case-card .case-table td {
@@ -946,15 +1211,21 @@
 		inline-size: auto;
 	}
 }
-/* 카드 안 소제목(메모 이력 등)은 카드 제목보다 한 단계 아래. 빈 메모 안내("메모 없음")도 같은 글자 모양. */
+/* 카드 안 소제목은 카드 제목보다 한 단계 아래. */
 .case-detail .case-card h3 {
 	margin-block: var(--space-4) var(--space-2);
-}
-.case-detail .case-card h3,
-.case-detail .case-card .case-memo-empty {
 	color: var(--color-text);
 	font-size: var(--font-small);
 	font-weight: var(--weight-semibold);
+}
+/* 메모 이력·충돌 안내 제목은 자기 칸 위쪽에 붙여요(SCRUM-408). */
+.case-detail .case-card .memo-history h3 {
+	margin-block: 0 var(--space-3);
+	font-weight: var(--weight-bold);
+}
+.case-detail .case-card .memo-conflict h3 {
+	margin-block: 0 var(--space-2);
+	color: var(--color-warn);
 }
 /* 마크업 순서 = Tab 순서: 점수 근거 → 거래 분석 → 메모·처리 작업·정보(WCAG 1.3.2·2.4.3, SCRUM-373).
    좁은 화면은 한 열로 그대로, 넓은 화면은 왼쪽 열(점수 근거·거래 분석) → 오른쪽 열(메모·처리 작업·정보)로 읽혀요.

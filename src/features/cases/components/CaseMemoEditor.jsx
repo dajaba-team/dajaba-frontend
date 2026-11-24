@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useCaseCommand } from "../hooks/useCases"
 import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
 import Button from "../../../shared/ui/Button"
+import Icon from "../../../shared/ui/dashboard/Icon"
 import ConfirmDialog from "../../../shared/ui/ConfirmDialog"
 import { useUnsavedLinkGuard } from "../../../shared/ui/useUnsavedLinkGuard"
 
@@ -68,9 +69,14 @@ export default function CaseMemoEditor({ detail, onRefresh }) {
 					)
 				}}
 			>
-				<label htmlFor="memo">메모 내용</label>
+				{/* 탭 이름이 "조사 메모"라 칸 이름은 화면 읽기 프로그램에만 */}
+				<label htmlFor="memo" className="visually-hidden">
+					메모 내용
+				</label>
 				<textarea
 					id="memo"
+					className="memo-input"
+					placeholder="확인한 내용, 더 볼 거래, 판단 근거를 적어 두세요."
 					aria-invalid={typeof fieldError === "string" || undefined}
 					aria-describedby={typeof fieldError === "string" ? "memo-error" : undefined}
 					value={memo}
@@ -91,8 +97,8 @@ export default function CaseMemoEditor({ detail, onRefresh }) {
 					</button>
 				)}
 				{changed && (
-					<aside>
-						<h3>서버의 최신 메모 (버전 {detail.version})</h3>
+					<aside className="memo-conflict">
+						<h3>쓰는 동안 케이스가 바뀌었어요 — 서버의 최신 메모</h3>
 						<p className="preserve-lines">{detail.investigatorNotes || "메모 없음"}</p>
 						<label>
 							<input
@@ -108,15 +114,27 @@ export default function CaseMemoEditor({ detail, onRefresh }) {
 						</label>
 					</aside>
 				)}
-				{/* 채움 파랑은 판단 요약의 [다음 처리] 하나라 메모 저장은 보조 모양(SCRUM-369). */}
-				<Button
-					type="submit"
-					variant="secondary"
-					disabled={mutation.isPending || (changed && !confirmed)}
-				>
-					{mutation.isPending ? "저장 중…" : "메모 저장"}
-				</Button>
-				{mutation.isSuccess && <p role="status">메모가 저장되었습니다.</p>}
+				{/* 저장 줄 — 왼쪽은 상태 한 줄(저장됨·저장 안 함), 오른쪽은 저장 버튼.
+				    채움 파랑은 판단 요약의 [다음 처리] 하나라 메모 저장은 보조 모양(SCRUM-369). */}
+				<div className="memo-actions">
+					{mutation.isSuccess && !dirty ? (
+						<p role="status" className="memo-state is-saved">
+							<Icon name="check" size={14} />
+							메모가 저장되었습니다.
+						</p>
+					) : dirty ? (
+						<p className="memo-state">저장하지 않은 변경이 있어요.</p>
+					) : (
+						<span />
+					)}
+					<Button
+						type="submit"
+						variant="secondary"
+						disabled={mutation.isPending || (changed && !confirmed)}
+					>
+						{mutation.isPending ? "저장 중…" : "메모 저장"}
+					</Button>
+				</div>
 			</form>
 		</section>
 	)
