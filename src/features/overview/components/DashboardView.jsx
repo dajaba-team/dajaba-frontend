@@ -8,7 +8,7 @@ import Icon from "../../../shared/ui/dashboard/Icon"
 import InfoTip from "../../../shared/ui/InfoTip"
 import { STATUS_LABELS } from "../../cases/labels"
 import { riskCounts, riskNames, riskColors, INVESTIGATING, demoTrend } from "../model/analytics"
-import { formatScore, DASHBOARD_SCORE_DECIMALS } from "../../../shared/format/score"
+import { formatScore } from "../../../shared/format/score"
 
 // 마지막 갱신 시각 — 브라우저 시간대의 시:분:초(SCRUM-345)
 const CLOCK = new Intl.DateTimeFormat("ko-KR", {
@@ -395,12 +395,7 @@ export default function DashboardView({
 									<div className="case-score">
 										{band && <em className="band-badge">{band}</em>}
 										<div className="case-score-main">
-											<strong>
-												{formatScore(
-													item.score,
-													DASHBOARD_SCORE_DECIMALS,
-												) ?? "미산출"}
-											</strong>
+											<strong>{formatScore(item.score) ?? "미산출"}</strong>
 											<span>{STATUS_LABELS[item.status] ?? item.status}</span>
 										</div>
 									</div>

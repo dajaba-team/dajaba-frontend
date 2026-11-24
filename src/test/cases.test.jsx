@@ -695,7 +695,7 @@ describe("케이스 조사", () => {
 		expect(within(panel).getByText("15건")).toBeInTheDocument()
 		// 점수·등급은 맨 위 판단 요약(h1 이 있는 banner)으로 올라왔어요. 범죄 확률 아님 안내는 ⓘ 설명으로.
 		const summary = screen.getByRole("heading", { level: 1, name: REVIEWING }).closest("header")
-		expect(within(summary).getByText("0.9100")).toBeInTheDocument() // 넷째 자리 표기 (SCRUM-347)
+		expect(within(summary).getByText("0.91")).toBeInTheDocument() // 둘째 자리 표기
 		expect(within(summary).getByText("등급 HIGH")).toBeInTheDocument()
 		expect(within(summary).getByRole("tooltip", { hidden: true })).toHaveTextContent(
 			"모델 점수예요. 범죄 확률이 아니에요. 모델 xgb-2022.11",
