@@ -12,13 +12,6 @@ import brandMark from "../../assets/brand-mark.png"
 import JobsProvider from "../../shared/jobs/JobsProvider"
 import { jobKinds } from "../jobs/jobKinds"
 
-// 위 띠 왼쪽에 지금 열린 메뉴 이름을 보여 줘요. 상세 화면(/cases/:caseNo)은 가장 긴 경로가 같은 메뉴로.
-function currentMenu(menus, pathname) {
-	return menus
-		.filter((m) => pathname === m.path || pathname.startsWith(`${m.path}/`))
-		.sort((a, b) => b.path.length - a.path.length)[0]
-}
-
 export default function AppLayout() {
 	const session = useSession()
 	const { pathname } = useLocation()
@@ -26,7 +19,6 @@ export default function AppLayout() {
 	// 로그인 전(세션 확인 중 포함)에는 사이드바·위 띠 없이 로그인 카드만 보여요(SCRUM-387).
 	const signedIn = Boolean(session.data)
 	const menus = session.data ? visibleMenus(session.data.role) : []
-	const current = currentMenu(menus, pathname)
 	// 로그아웃·계정 전환·401 어느 길이든 loginId 가 바뀌면 이전 사람의 알림을 비워요.
 	const loginId = session.data?.loginId
 	const { dismiss } = useToast()
@@ -75,11 +67,8 @@ export default function AppLayout() {
 								</div>
 							</Link>
 						</div>
-						<div className="app-header-context">
-							<span className="app-header-title">
-								{current ? current.label : "조사 · 검토 · 보고"}
-							</span>
-						</div>
+						{/* 지금 메뉴 이름은 사이드바 선택 칸으로 보여서 위 띠에는 쓰지 않아요(SCRUM-410). 빈 칸은 오른쪽 도구를 밀어 두는 자리예요. */}
+						<div className="app-header-context" />
 						<div className="head-utils" ref={headUtils}>
 							{/* 업무 알림 종(SCRUM-334) — 계정이 바뀌면 본 시각·숫자를 처음부터 */}
 							{loginId && <NotificationBell key={loginId} loginId={loginId} />}

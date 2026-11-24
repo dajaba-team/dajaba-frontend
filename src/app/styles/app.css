@@ -154,12 +154,6 @@
 	flex-direction: column;
 	min-width: 0;
 }
-.app-header-title {
-	color: var(--color-text);
-	font-size: var(--font-lead);
-	font-weight: 700;
-	letter-spacing: -0.01em;
-}
 
 /* ── 로그인 정보 ─────────────────────────
    로그인 뒤: 위 띠 오른쪽 프로필 칩. 로그인 전: 본문 가운데 로그인 카드. */
