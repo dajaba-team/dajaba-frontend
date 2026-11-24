@@ -33,4 +33,15 @@ describe("화면 표기 변환", () => {
 		)
 		expect(humanizeText(null)).toBeNull()
 	})
+	it("모델이 주목한 점의 특징 이름·유형 코드도 한글로 (SCRUM-410)", () => {
+		expect(
+			humanizeText("모델은 paid_raw_currency_count·evidence_account_count 신호를 크게 봄"),
+		).toBe("모델은 '보낸 통화 종류 수'·'근거 거래 관련 계좌 수' 신호를 크게 봄")
+		// 표에 없어도 낱말을 모두 알면 낱말 뜻으로
+		expect(humanizeText("received_amount_max 가 컸음")).toBe("'받은 금액 최대' 가 컸음")
+		// 낱말 하나라도 모르면 그대로 — summary_v2 같은 버전 표기도 건드리지 않아요
+		expect(humanizeText("weird_feature_x · summary_v2")).toBe("weird_feature_x · summary_v2")
+		expect(humanizeText("SCATTER_GATHER 경로는 3개")).toBe("흩었다 모으기 경로는 3개")
+		expect(humanizeText("R05_SCATTER_GATHER 규칙")).toBe("R05 흩었다 모으기 규칙")
+	})
 })

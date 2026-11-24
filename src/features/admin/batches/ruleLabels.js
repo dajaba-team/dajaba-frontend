@@ -12,3 +12,12 @@ const NAMES = {
 /** "R01_FAN_OUT" → "R01 분산 송금". 번호는 ID 앞 세 글자. */
 export const ruleLabel = (ruleId) =>
 	NAMES[ruleId] ? `${ruleId.slice(0, 3)} ${NAMES[ruleId]}` : ruleId
+
+// 룰 ID 없이 유형 코드만 올 때(AI 요약 문장 "SCATTER_GATHER 경로는…") — 같은 이름을 써요(SCRUM-410).
+const TYPOLOGIES = Object.fromEntries(
+	Object.entries(NAMES).map(([id, name]) => [id.slice(4), name]),
+)
+export const TYPOLOGY_CODE = new RegExp(`\\b(?:${Object.keys(TYPOLOGIES).join("|")})\\b`, "g")
+
+/** "SCATTER_GATHER" → "흩었다 모으기". 모르면 null. */
+export const typologyName = (code) => TYPOLOGIES[code] ?? null

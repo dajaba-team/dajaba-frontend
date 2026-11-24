@@ -1,4 +1,4 @@
-import { ruleLabel } from "../admin/batches/ruleLabels"
+import { TYPOLOGY_CODE, ruleLabel, typologyName } from "../admin/batches/ruleLabels"
 import { reasonLabel } from "./reasonLabels"
 
 // 화면 표기 변환 — 서버·데이터셋이 준 원문(영문 코드·이름)을 사람이 읽는 한글로 바꿔요.
@@ -29,6 +29,7 @@ export const actorLabel = (loginId) => (loginId == null ? "" : (ACTORS[loginId] 
 
 // 문장 속 코드 — AI 요약·답변은 지표 코드(account_in_counterparties_24h)·룰 ID(R02_FAN_IN)를 섞어 써요.
 // 아는 코드만 한글 이름으로 바꾸고, 모르는 영문 단어·계좌 표기(10_BD30)는 건드리지 않아요.
+// 룰 ID 없이 오는 유형 코드(SCATTER_GATHER)도 룰 화면과 같은 이름으로 바꿔요(SCRUM-410).
 const RULE_ID = /\bR\d{2}_[A-Z_]+\b/g
 const SNAKE_CODE = /\b[a-z]+(?:_[a-z0-9]+)+\b/g
 
@@ -44,4 +45,5 @@ export function humanizeText(text) {
 			const label = reasonLabel(code)
 			return label ? `'${label}'` : code
 		})
+		.replace(TYPOLOGY_CODE, (code) => typologyName(code) ?? code)
 }
