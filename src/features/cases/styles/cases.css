@@ -662,7 +662,7 @@
 	flex: none;
 	color: var(--color-primary);
 }
-/* [요약 생성/갱신] — [근거 질의](.case-ask-open)와 같은 연한 파랑 모양, 중요한 동작이라 한 단계 크게.
+/* [요약 생성/갱신] — 연한 파랑 면·파랑 글자(예전 [근거 질의] 버튼 모양), 중요한 동작이라 한 단계 크게.
    마우스를 올리면 1.1배로 살짝 커져요(움직임 줄이기 설정이면 크기는 그대로). */
 .case-ai-summary-refresh {
 	display: inline-flex;
@@ -1754,40 +1754,6 @@
 	justify-content: space-between;
 	gap: var(--space-3);
 }
-.case-ask-open {
-	/* 옆 [다음 처리] 주 버튼(.ui-button)과 높이·모서리·글자를 맞추고, 색만 연한 파랑 보조 모양(SCRUM-395 후속). */
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: var(--space-2);
-	min-height: var(--control-height);
-	padding: 0 var(--space-4);
-	border: var(--border-width) solid var(--color-primary-soft);
-	border-radius: var(--radius-control);
-	background: var(--color-primary-soft);
-	color: var(--color-primary);
-	font-size: var(--font-small);
-	font-weight: var(--weight-semibold);
-	line-height: var(--leading-tight);
-	white-space: nowrap;
-}
-.case-ask-open:hover:enabled {
-	border-color: var(--color-primary);
-	background: var(--color-primary-soft);
-}
-.case-ask-open svg {
-	flex-shrink: 0;
-}
-/* 열린 상태는 [다음 처리] 주 버튼(.ui-button-primary)과 같은 파랑 — hover 도 같은 진한 파랑. */
-.case-ask-open[aria-expanded="true"] {
-	border-color: var(--color-primary);
-	background: var(--color-primary);
-	color: var(--color-on-dark);
-}
-.case-ask-open[aria-expanded="true"]:hover:enabled {
-	border-color: var(--color-primary-strong);
-	background: var(--color-primary-strong);
-}
 .case-ask-main {
 	min-width: 0;
 }
@@ -1820,30 +1786,126 @@
 		animation: none;
 	}
 }
-.ask-float-reopen {
+/* 근거 질의 열기 — 오른쪽 아래에 떠 있는 챗봇 곰 버튼(SCRUM-410). 채팅창과 같은 자리에 떠요. */
+.ask-launcher {
+	position: fixed;
+	z-index: 40;
+	inset-block-end: var(--space-5);
+	inset-inline-end: var(--space-5);
 	display: inline-flex;
 	align-items: center;
-	gap: 0.625rem;
-	min-height: 3rem;
-	padding: 0 1.125rem 0 0.25rem;
+	gap: var(--space-3);
+	min-height: 0;
+	padding: 0;
 	border: 0;
-	border-radius: var(--radius-pill);
-	background: linear-gradient(135deg, #2f63f0 0%, #1a4fd8 100%);
-	color: var(--color-on-dark);
-	font-size: var(--font-body);
-	font-weight: 700;
-	box-shadow: 0 14px 32px -10px rgb(26 79 216 / 60%);
-	transition: transform 120ms ease;
+	background: none;
+	cursor: pointer;
 }
-.ask-float-reopen:hover:enabled {
-	background: linear-gradient(135deg, #2858e0 0%, #133fb4 100%);
-	transform: translateY(-1px);
+.ask-launcher:hover:enabled {
+	background: none;
 }
-.ask-float-reopen img {
-	width: 2.5rem;
-	height: 2.5rem;
+.ask-launcher-avatar {
+	position: relative;
+	display: block;
+	width: 4rem;
+	height: 4rem;
 	border-radius: 50%;
-	background: #e2eeff;
+	background: linear-gradient(145deg, #eaf1ff, #d8e5ff);
+	box-shadow:
+		inset 0 0 0 1px rgb(26 79 216 / 12%),
+		0 14px 32px -10px rgb(26 79 216 / 55%);
+	transition: transform 0.15s ease;
+}
+.ask-launcher:hover .ask-launcher-avatar,
+.ask-launcher:focus-visible .ask-launcher-avatar {
+	transform: scale(1.08);
+}
+.ask-launcher:focus-visible {
+	outline: none;
+}
+.ask-launcher:focus-visible .ask-launcher-avatar {
+	outline: var(--focus-width) solid var(--color-focus);
+	outline-offset: 3px;
+}
+.ask-launcher-avatar img {
+	width: 100%;
+	height: 100%;
+	border-radius: 50%;
+	object-fit: cover;
+}
+/* 초록 점 — 켜졌다 흐려졌다 깜빡이고, 바깥으로 옅은 물결이 퍼져요. */
+.ask-launcher-dot {
+	position: absolute;
+	inset-block-end: 0.125rem;
+	inset-inline-end: 0.125rem;
+	width: 0.9375rem;
+	height: 0.9375rem;
+	border: 0.1875rem solid #fff;
+	border-radius: 50%;
+	background: #22b07d;
+	animation: ask-dot-blink 1.4s ease-in-out infinite;
+}
+.ask-launcher-dot::after {
+	content: "";
+	position: absolute;
+	inset: -0.1875rem;
+	border-radius: 50%;
+	box-shadow: 0 0 0 0 rgb(34 176 125 / 55%);
+	animation: ask-dot-ring 1.4s ease-out infinite;
+}
+@keyframes ask-dot-blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.35;
+	}
+}
+@keyframes ask-dot-ring {
+	0% {
+		box-shadow: 0 0 0 0 rgb(34 176 125 / 55%);
+	}
+	100% {
+		box-shadow: 0 0 0 0.5rem rgb(34 176 125 / 0%);
+	}
+}
+/* 이름표 — 마우스를 올리거나 키보드로 오면 곰 왼쪽에 말풍선처럼 나와요. */
+.ask-launcher-label {
+	padding: var(--space-2) var(--space-3);
+	border-radius: var(--radius-pill);
+	background: var(--color-text);
+	color: var(--color-on-dark);
+	font-size: var(--font-small);
+	font-weight: var(--weight-semibold);
+	white-space: nowrap;
+	opacity: 0;
+	transform: translateX(0.5rem);
+	pointer-events: none;
+	transition:
+		opacity 0.15s ease,
+		transform 0.15s ease;
+}
+.ask-launcher:hover .ask-launcher-label,
+.ask-launcher:focus-visible .ask-launcher-label {
+	opacity: 1;
+	transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	.ask-launcher-dot,
+	.ask-launcher-dot::after {
+		animation: none;
+	}
+	.ask-launcher-avatar,
+	.ask-launcher-label {
+		transition: none;
+	}
+}
+@media (max-width: 36rem) {
+	.ask-launcher {
+		inset-block-end: var(--space-3);
+		inset-inline-end: var(--space-3);
+	}
 }
 @media (max-width: 36rem) {
 	.ask-float {

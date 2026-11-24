@@ -23,7 +23,7 @@ function scoreOf(detail) {
 	return { score, band, status }
 }
 
-export default function CaseSummaryHeader({ detail, askButton, onAction }) {
+export default function CaseSummaryHeader({ detail, onAction }) {
 	const { score, band, status } = scoreOf(detail)
 	const next = nextActionOf(detail)
 	const alert = detail.alert
@@ -71,7 +71,7 @@ export default function CaseSummaryHeader({ detail, askButton, onAction }) {
 					</p>
 				)}
 			</div>
-			{(next || askButton) && (
+			{next && (
 				<div className="case-summary-actions">
 					{next?.key === "open_report" && (
 						<ButtonLink
@@ -87,7 +87,6 @@ export default function CaseSummaryHeader({ detail, askButton, onAction }) {
 							{next.label}
 						</Button>
 					)}
-					{askButton}
 				</div>
 			)}
 		</header>
