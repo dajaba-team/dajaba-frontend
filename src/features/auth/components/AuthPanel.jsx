@@ -6,6 +6,7 @@ import { authApi } from "../api/authApi"
 import { getErrorMessage } from "../../../shared/api/apiClient"
 import Icon from "../../../shared/ui/dashboard/Icon"
 import brandMark from "../../../assets/brand-mark.png"
+import Spinner from "../../../shared/ui/Spinner"
 
 const ROLE_LABELS = { INVESTIGATOR: "조사역", APPROVER: "승인자", ADMIN: "운영 관리자" }
 
@@ -104,13 +105,15 @@ export default function AuthPanel({ placement = "main" }) {
 					<p>AI 기반 자금세탁방지 업무 시스템</p>
 				</header>
 			)}
-			<p role="status" className="auth-identity">
-				{me.isPending
-					? "로그인 상태 확인 중…"
-					: me.data === null
+			{me.isPending ? (
+				<Spinner size="sm" label="로그인 상태 확인 중" />
+			) : (
+				<p role="status" className="auth-identity">
+					{me.data === null
 						? "로그인이 필요합니다."
 						: "로그인 상태를 확인하지 못했습니다."}
-			</p>
+				</p>
+			)}
 			{me.isError && !me.data && (
 				// 401이 아닌 실패(네트워크·500)는 로그인 여부를 모르는 상태 — 다시 확인할 길을 줘요(SCRUM-173).
 				<div className="auth-error">

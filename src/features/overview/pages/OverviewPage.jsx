@@ -23,9 +23,15 @@ export default function OverviewPage() {
 	const ready = query.data && !query.isError && (!admin || (stats.data && !stats.isError))
 	return (
 		<>
-			<AsyncState query={query} loading={<Spinner label="대시보드를 불러오는 중" />} />
+			<AsyncState
+				query={query}
+				loading={<Spinner size="lg" label="대시보드를 불러오는 중" />}
+			/>
 			{admin && query.data && (
-				<AsyncState query={stats} loading={<Spinner label="대시보드를 불러오는 중" />} />
+				<AsyncState
+					query={stats}
+					loading={<Spinner size="lg" label="대시보드를 불러오는 중" />}
+				/>
 			)}
 			{ready && (
 				<DashboardView

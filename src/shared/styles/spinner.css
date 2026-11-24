@@ -1,20 +1,35 @@
-/* 로딩 스피너(SCRUM-389) — 토큰만 써요. */
+/* 로딩 스피너(SCRUM-389) — 토큰만 써요. 크기: lg(화면 전체) · md(패널·목록) · sm(대화상자·작은 영역) */
 .ui-spinner {
 	display: flex;
-	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	gap: 12px;
-	min-height: 240px;
 	color: var(--color-muted);
 }
+.ui-spinner-lg {
+	min-height: 240px;
+}
+.ui-spinner-md {
+	min-height: 120px;
+}
+.ui-spinner-sm {
+	padding: 12px 0;
+}
 .ui-spinner-ring {
-	width: 32px;
-	height: 32px;
+	width: 28px;
+	height: 28px;
 	border: 3px solid var(--color-primary-soft);
 	border-top-color: var(--color-primary);
 	border-radius: 50%;
 	animation: ui-spinner-spin 0.8s linear infinite;
+}
+.ui-spinner-lg .ui-spinner-ring {
+	width: 32px;
+	height: 32px;
+}
+.ui-spinner-sm .ui-spinner-ring {
+	width: 18px;
+	height: 18px;
+	border-width: 2px;
 }
 @keyframes ui-spinner-spin {
 	to {
