@@ -54,7 +54,9 @@ export default function CaseActions({ detail, request = null, primaryKey = null 
 			aria-labelledby="case-actions-title"
 		>
 			<h2 id="case-actions-title">처리 작업</h2>
-			{anyButton && (
+			{/* 폼을 열면 그 폼만 같은 카드 안에 보여요 — 카드 속 카드(겹친 테두리)·꺼진 버튼 줄을 남기지 않아요(SCRUM-410).
+			    [취소]·완료로 닫으면 버튼 줄이 다시 나와요. */}
+			{anyButton && !shown && (
 				<div className="case-action-buttons">
 					{/* 배정은 관리자만(SCRUM-339) — 서버가 ASSIGN 을 관리자에게만 줘요. */}
 					{buttons.assign && (
