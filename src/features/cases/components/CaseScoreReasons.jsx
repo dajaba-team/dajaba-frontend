@@ -109,6 +109,7 @@ export default function CaseScoreReasons({ latestScore }) {
 									<dt>
 										모델 기여도{" "}
 										<InfoTip
+											clickable
 											label="모델 기여도"
 											text={contributionTip(reason.contribution?.method)}
 										/>

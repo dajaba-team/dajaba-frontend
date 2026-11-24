@@ -39,6 +39,7 @@ export default function CaseAggregatesPanel({ aggregates }) {
 						근거 거래 {aggregates.transactionCount}건 ·{" "}
 						{formatDataTime(aggregates.firstTs)} ~ {formatDataTime(aggregates.lastTs)}{" "}
 						<InfoTip
+							clickable
 							label="합계 기준"
 							text="경유 거래와 본인 계좌 간 이체는 합계에서 제외합니다. 통화별로 따로 집계하며 환산하지 않습니다."
 						/>

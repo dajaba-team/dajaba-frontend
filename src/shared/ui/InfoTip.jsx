@@ -1,4 +1,4 @@
-import { useId, useRef } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import Icon from "./dashboard/Icon"
 
 const EDGE = 8 // 화면 가장자리와 띄울 거리(px)
@@ -52,22 +52,82 @@ function fitTip(tip) {
 // 제목 옆 ⓘ — 마우스를 올리거나 키보드(Tab)로 가면 설명을 보여 줘요. 화면 읽기 프로그램에는 버튼 설명(aria-describedby)으로.
 // 키보드로 띄운 설명은 Esc 로 닫아요(포커스를 놓으면 사라짐). 클릭 뒤 포커스가 남아도 계속 떠 있지 않게 :focus-visible 만(SCRUM-345).
 // 대시보드 KPI 카드에서 쓰던 것을 데이터·배치 운영 카드도 같이 쓰려고 꺼냈어요. 위치는 쓰는 화면 CSS 가 정해요.
-export default function InfoTip({ label, text }) {
+//
+// clickable(선택) — 누르면 열고 다시 누르거나 포커스를 옮기거나 Esc·스크롤이면 닫아요. 터치 화면에서도 볼 수 있게.
+// 이때 설명은 화면 기준(position: fixed)으로 ⓘ 바로 아래(공간이 없으면 위)에 띄워서, 카드의 overflow: hidden 에 잘리지 않아요.
+// 기본값 false — 기존 화면(대시보드·배치)은 그대로예요.
+const GAP = 6
+
+function placeFixed(button, tip) {
+	if (!button || !tip) return
+	const anchor = button.getBoundingClientRect()
+	tip.style.left = "0px"
+	tip.style.top = "0px"
+	const box = tip.getBoundingClientRect()
+	const maxLeft = window.innerWidth - box.width - EDGE
+	const left = Math.max(EDGE, Math.min(anchor.left, maxLeft))
+	const below = anchor.bottom + GAP
+	const top =
+		below + box.height > window.innerHeight - EDGE
+			? Math.max(EDGE, anchor.top - GAP - box.height)
+			: below
+	tip.style.left = `${Math.round(left)}px`
+	tip.style.top = `${Math.round(top)}px`
+}
+
+export default function InfoTip({ label, text, clickable = false }) {
 	const tipId = useId()
 	const tipRef = useRef(null)
-	const fit = () => fitTip(tipRef.current)
+	const buttonRef = useRef(null)
+	const [open, setOpen] = useState(false)
+	const place = () =>
+		clickable ? placeFixed(buttonRef.current, tipRef.current) : fitTip(tipRef.current)
+	// 열린 동안 스크롤·창 크기가 바뀌면 닫아요 — 고정 위치라 ⓘ 와 떨어져 보이지 않게.
+	useEffect(() => {
+		if (!open) return
+		const close = () => setOpen(false)
+		window.addEventListener("scroll", close, true)
+		window.addEventListener("resize", close)
+		return () => {
+			window.removeEventListener("scroll", close, true)
+			window.removeEventListener("resize", close)
+		}
+	}, [open])
+	const className = ["kpi-info", clickable && "is-clickable", open && "is-open"]
+		.filter(Boolean)
+		.join(" ")
 	return (
-		<span className="kpi-info" onMouseEnter={fit} onFocus={fit}>
+		<span className={className} onMouseEnter={place} onFocus={place}>
 			<button
+				ref={buttonRef}
 				type="button"
 				className="kpi-info-button"
 				aria-label={`${label} 설명`}
 				aria-describedby={tipId}
-				onKeyDown={(event) => event.key === "Escape" && event.currentTarget.blur()}
+				aria-expanded={clickable ? open : undefined}
+				onClick={
+					clickable
+						? () => {
+								place()
+								setOpen((value) => !value)
+							}
+						: undefined
+				}
+				onBlur={clickable ? () => setOpen(false) : undefined}
+				onKeyDown={(event) => {
+					if (event.key !== "Escape") return
+					if (clickable) setOpen(false)
+					event.currentTarget.blur()
+				}}
 			>
 				<Icon name="info" size={14} />
 			</button>
-			<span ref={tipRef} role="tooltip" id={tipId} className="kpi-info-tip">
+			<span
+				ref={tipRef}
+				role="tooltip"
+				id={tipId}
+				className={clickable ? "kpi-info-tip is-fixed" : "kpi-info-tip"}
+			>
 				{text}
 			</span>
 		</span>

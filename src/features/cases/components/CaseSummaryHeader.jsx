@@ -52,6 +52,7 @@ export default function CaseSummaryHeader({ detail, askButton, onAction }) {
 							<span className="case-summary-score-name">
 								<span className="case-summary-score-label">조사 우선순위 점수</span>
 								<InfoTip
+									clickable
 									label="조사 우선순위 점수"
 									text="높을수록 먼저 조사할 케이스입니다. 범죄 확률을 뜻하지 않습니다."
 								/>
