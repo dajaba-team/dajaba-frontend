@@ -207,9 +207,7 @@ export default function AdminAccountsPage() {
 																	: "재활성화"}
 															</button>
 														</div>
-													) : (
-														<span className="account-none">—</span>
-													)}
+													) : null}
 												</td>
 											</tr>
 										)
