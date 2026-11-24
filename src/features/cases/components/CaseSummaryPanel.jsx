@@ -33,7 +33,7 @@ export default function CaseSummaryPanel({ detail }) {
 			{/* 머리 띠: 제목 + [요약 생성/갱신] — 본문 왼쪽 단의 다른 카드와 같은 모양(SCRUM-408 에서 탭 밖으로 뺌). */}
 			<header className="case-ai-summary-head">
 				<h2 id="ai-summary-title">
-					<Icon name="sparkle" size={16} />
+					<Icon name="ai" size={20} />
 					AI 요약
 				</h2>
 				{canRefresh && (
