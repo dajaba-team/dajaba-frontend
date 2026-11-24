@@ -1,7 +1,9 @@
 import { getErrorMessage } from "../api/apiClient"
+import Spinner from "./Spinner"
 
-export function AsyncState({ query }) {
-	if (query.isPending) return <p role="status">불러오는 중…</p>
+// loading을 넘기면 기본 문구 대신 그걸 보여 줘요(예: 대시보드 스피너).
+export function AsyncState({ query, loading = null }) {
+	if (query.isPending) return loading ?? <Spinner />
 	if (query.isError)
 		return (
 			<div role="alert">

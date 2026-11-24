@@ -11,6 +11,7 @@ import AdminBatchesPage from "../features/admin/batches/pages/AdminBatchesPage"
 import ApprovalListPage from "../features/approvals/pages/ApprovalListPage"
 import ApprovalDonePage from "../features/approvals/pages/ApprovalDonePage"
 import { useSession } from "../features/auth/hooks/useSession"
+import Spinner from "../shared/ui/Spinner"
 const OverviewPage = lazy(() => import("../features/overview/pages/OverviewPage"))
 
 // 전체 시연 묶음은 개발 모드에서만 불러옵니다. 운영 빌드에는 fixture를 포함하지 않습니다.
@@ -24,7 +25,7 @@ const ConnectionCheckPage = import.meta.env.DEV
 // The dashboard keeps the current URL through login. Role-specific work starts inside it.
 function HomeRedirect() {
 	const session = useSession()
-	if (session.isPending) return <p role="status">로그인 상태 확인 중…</p>
+	if (session.isPending) return <Spinner size="lg" label="로그인 상태 확인 중" />
 	return <Navigate to="/overview" replace />
 }
 
@@ -46,7 +47,9 @@ export default function AppRouter() {
 				<Route
 					path="dev/connection"
 					element={
-						<Suspense fallback={<p role="status">연동 확인 화면을 불러오는 중…</p>}>
+						<Suspense
+							fallback={<Spinner size="lg" label="연동 확인 화면을 불러오는 중" />}
+						>
 							<ConnectionCheckPage />
 						</Suspense>
 					}
@@ -56,7 +59,7 @@ export default function AppRouter() {
 				<Route
 					path="demo/*"
 					element={
-						<Suspense fallback={<p role="status">대시보드를 불러오는 중…</p>}>
+						<Suspense fallback={<Spinner size="lg" label="대시보드를 불러오는 중" />}>
 							<DashboardDemoRouter />
 						</Suspense>
 					}
@@ -66,7 +69,7 @@ export default function AppRouter() {
 				<Route
 					path="overview"
 					element={
-						<Suspense fallback={<p role="status">대시보드를 불러오는 중…</p>}>
+						<Suspense fallback={<Spinner size="lg" label="대시보드를 불러오는 중" />}>
 							<OverviewPage />
 						</Suspense>
 					}

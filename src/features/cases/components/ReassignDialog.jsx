@@ -4,6 +4,7 @@ import ConfirmDialog from "../../../shared/ui/ConfirmDialog"
 import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
 import { adminUsersApi } from "../../admin/users/api/adminUsersApi"
 import { useCaseCommand } from "../hooks/useCases"
+import Spinner from "../../../shared/ui/Spinner"
 
 const COMMENT_MAX = 2000
 
@@ -58,7 +59,9 @@ export default function ReassignDialog({ caseNo, version, assignee, onClose }) {
 						{caseNo} · 지금 담당 {assignee?.displayName ?? "미배정"}. 상태는 그대로이고
 						담당만 바뀌어요.
 					</p>
-					{investigators.isPending && <p>조사역 목록을 불러오는 중…</p>}
+					{investigators.isPending && (
+						<Spinner size="sm" label="조사역 목록을 불러오는 중" />
+					)}
 					{investigators.isError && (
 						<p role="alert">{getErrorMessage(investigators.error)}</p>
 					)}

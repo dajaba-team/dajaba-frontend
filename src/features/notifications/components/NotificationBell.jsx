@@ -11,6 +11,7 @@ import {
 	notificationText,
 } from "../model/notificationRules"
 import "../styles/notifications.css"
+import Spinner from "../../../shared/ui/Spinner"
 
 // 위 띠 오른쪽 종 (「비동기 작업 알림 설계 문서」 7.5·7.8절, SCRUM-334). 모든 역할에 보여요.
 // 역할 칩·시연 도구처럼 <details>라서 바깥을 누르거나 Esc, 화면을 옮기면 닫혀요(AppLayout이 처리).
@@ -116,7 +117,7 @@ function JobList({ jobs, recheck }) {
 }
 
 function NotificationList({ list, isNew }) {
-	if (list.isPending) return <p className="notification-empty">불러오는 중…</p>
+	if (list.isPending) return <Spinner size="sm" label="알림을 불러오는 중" />
 	if (list.isError)
 		return (
 			<div className="notification-empty" role="alert">

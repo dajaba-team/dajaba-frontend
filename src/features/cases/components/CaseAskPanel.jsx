@@ -11,6 +11,7 @@ import {
 import { formatSystemTime } from "../../../shared/format/time"
 import { casesApi } from "../api/casesApi"
 import { caseQuestionsKey, useAskQuestion, useCaseQuestions } from "../hooks/useCases"
+import Spinner from "../../../shared/ui/Spinner"
 import {
 	ASK_EXAMPLES,
 	QUESTION_MAX,
@@ -294,7 +295,7 @@ export default function CaseAskPanel({
 				tabIndex={0}
 			>
 				{questions.isPending && (
-					<p className="ask-loading">질의 이력을 불러오는 중입니다.</p>
+					<Spinner size="sm" className="ask-loading" label="질의 이력을 불러오는 중" />
 				)}
 				{questions.isError && (
 					<div className="ask-problem" role="alert">
