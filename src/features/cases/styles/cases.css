@@ -101,6 +101,28 @@
 .case-panel > [role="alert"] {
 	margin: var(--space-4);
 }
+/* [필터 초기화] — 툴바 끝에 붙는 가벼운 텍스트 버튼(SCRUM-404). */
+.case-filter .case-filter-reset {
+	margin-inline-start: auto;
+}
+/* 결과 없음 — 패널 가운데에 여백을 두고 보여요(SCRUM-404). */
+.case-empty {
+	display: grid;
+	justify-items: center;
+	gap: var(--space-3);
+	padding: var(--space-6) var(--space-5) calc(var(--space-6) * 1.5);
+	text-align: center;
+	color: var(--color-muted);
+}
+.case-empty strong {
+	color: var(--color-text);
+	font-size: var(--font-small);
+	font-weight: var(--weight-semibold);
+}
+.case-empty p {
+	margin: 0;
+	font-size: var(--font-small);
+}
 /* 표의 열 관계를 보존하며 좁은 화면에서는 이 영역만 가로 스크롤합니다. */
 .case-table-scroll {
 	overflow-x: auto;
