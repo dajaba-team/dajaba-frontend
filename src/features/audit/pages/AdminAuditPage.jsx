@@ -248,12 +248,10 @@ function AiOutcome({ errorCode }) {
 	return <StatusBadge tone="danger">실패 · {errorCode}</StatusBadge>
 }
 
-// 접근 기록 동작 — 성공·실패가 있는 로그인만 배지, 나머지 동작은 글자 그대로(강조는 상태에만).
-const ACCESS_ACTION_TONES = { LOGIN_OK: "success", LOGIN_FAIL: "danger" }
+// 접근 기록 동작 — 모두 글자로(SCRUM-410). 로그인만 배지라 한 칸에 모양이 섞여 보였어요.
+// "로그인 실패"처럼 글자가 이미 결과를 말해요.
 function AccessAction({ action }) {
-	const label = ACCESS_ACTIONS[action] ?? action
-	const tone = ACCESS_ACTION_TONES[action]
-	return tone ? <StatusBadge tone={tone}>{label}</StatusBadge> : label
+	return ACCESS_ACTIONS[action] ?? action
 }
 
 // 사람 칸 — 로그인 실패는 사람이 정해지지 않아 입력한 아이디만 와요(계약서 5.10).

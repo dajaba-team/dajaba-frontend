@@ -170,17 +170,15 @@ describe("감사 기록 상태 배지 (SCRUM-332)", () => {
 		ok.forEach((b) => expect(b).toHaveTextContent("성공"))
 		list.forEach((row) => expect(row).not.toHaveAttribute("data-tone"))
 	})
-	it("접근 기록은 로그인 성공·실패만 배지, 다른 동작은 글자 그대로", async () => {
+	it("접근 기록 동작은 로그인 성공·실패도 배지 없이 모두 글자로 (SCRUM-410)", async () => {
 		const user = renderApp()
 		await user.click(await screen.findByRole("tab", { name: "접근 기록" }))
 		const list = await rows("접근 기록")
-		const badges = list.flatMap(badgesIn)
-		expect(badges.map((b) => [b.dataset.tone, b.textContent])).toEqual([
-			["danger", "로그인 실패"],
-			["success", "로그인"],
-		])
-		expect(badgesIn(list[0])).toHaveLength(0)
+		expect(list.flatMap(badgesIn)).toHaveLength(0)
 		expect(within(list[0]).getByText("역할 변경")).toBeInTheDocument()
+		const cells = list.map((row) => row.cells[2].textContent)
+		expect(cells).toContain("로그인 실패")
+		expect(cells).toContain("로그인")
 	})
 })
 
