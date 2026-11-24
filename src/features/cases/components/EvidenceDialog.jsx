@@ -1,6 +1,6 @@
 import Modal from "../../../shared/ui/dashboard/Modal"
 import { AsyncState } from "../../../shared/ui/AsyncState"
-import { formatDataTime } from "../../../shared/format/time"
+import { formatDataMinute as formatDataTime } from "../caseTime"
 import { useCaseEvidence } from "../hooks/useCases"
 import { formatAmount } from "./caseMoney"
 import { DIRECTION_LABELS } from "../labels"

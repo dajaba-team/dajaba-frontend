@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useCaseNoteHistories } from "../hooks/useCases"
 import { AsyncState } from "../../../shared/ui/AsyncState"
-import { formatSystemTime } from "../../../shared/format/time"
+import { formatSystemMinute as formatSystemTime } from "../caseTime"
 import { actorLabel } from "../displayText"
 
 // 메모 이력 — 계약서 C8 `GET /cases/{case_no}/note-histories`. 조회 3역할, 최신 먼저.

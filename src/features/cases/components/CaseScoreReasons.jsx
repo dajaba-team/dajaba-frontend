@@ -1,5 +1,5 @@
 import InfoTip from "../../../shared/ui/InfoTip"
-import { formatDataTime } from "../../../shared/format/time"
+import { formatDataMinute as formatDataTime } from "../caseTime"
 import { formatNumber } from "./caseMoney"
 import { basisLabel, reasonLabel, withReasonUnit } from "../reasonLabels"
 
@@ -105,6 +105,7 @@ export default function CaseScoreReasons({ latestScore }) {
 									<dt>
 										모델 기여 (거래 사실 아님){" "}
 										<InfoTip
+											clickable
 											label="모델 기여"
 											text={contributionTip(reason.contribution?.method)}
 										/>

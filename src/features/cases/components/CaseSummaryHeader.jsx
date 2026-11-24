@@ -1,4 +1,4 @@
-import { formatDataTime } from "../../../shared/format/time"
+import { formatDataMinute as formatDataTime } from "../caseTime"
 import { formatScore } from "../../../shared/format/score"
 import { ButtonLink } from "../../../shared/ui/Button"
 import Button from "../../../shared/ui/Button"
@@ -45,6 +45,7 @@ export default function CaseSummaryHeader({ detail, askButton, onAction }) {
 							<span className="case-summary-score-name">
 								<span className="case-summary-score-label">조사 우선순위 점수</span>
 								<InfoTip
+									clickable
 									label="조사 우선순위 점수"
 									text={`모델 점수예요. 범죄 확률이 아니에요.${modelVersion ? ` 모델 ${modelVersion}` : ""}`}
 								/>

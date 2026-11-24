@@ -8,7 +8,7 @@ import {
 	isAiFailure,
 	isNoResponse,
 } from "../../../shared/api/apiClient"
-import { formatSystemTime } from "../../../shared/format/time"
+import { formatSystemMinute as formatSystemTime } from "../caseTime"
 import { casesApi } from "../api/casesApi"
 import { caseQuestionsKey, useAskQuestion, useCaseQuestions } from "../hooks/useCases"
 import Spinner from "../../../shared/ui/Spinner"
