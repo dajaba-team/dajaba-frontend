@@ -335,7 +335,6 @@ export default function DashboardView({
 							</div>
 							<p>{donut.scope}</p>
 						</div>
-						<i className="soft-dot" />
 					</div>
 					<RiskDonut
 						counts={donut.counts}
