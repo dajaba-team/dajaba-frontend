@@ -885,10 +885,9 @@
 	margin: 0 0.1875rem;
 	border-inline-start: var(--border-width) solid #c5cfdd;
 }
+/* 위 선은 카드 머리 띠 구분선과 겹쳐 두 줄로 보여 없앴어요(SCRUM-397). */
 .case-ledger {
 	margin: 0 0 var(--space-2);
-	padding-block-start: var(--space-3);
-	border-block-start: var(--border-width) solid #e2e8f2;
 }
 .ledger-strip {
 	display: flex;
