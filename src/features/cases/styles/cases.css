@@ -662,14 +662,40 @@
 	flex: none;
 	color: var(--color-primary);
 }
+/* [요약 생성/갱신] — [근거 질의](.case-ask-open)와 같은 연한 파랑 모양, 중요한 동작이라 한 단계 크게.
+   마우스를 올리면 1.1배로 살짝 커져요(움직임 줄이기 설정이면 크기는 그대로). */
 .case-ai-summary-refresh {
 	display: inline-flex;
 	align-items: center;
-	gap: var(--space-1);
-	min-height: 2rem;
-	padding: 0 var(--space-3);
-	font-size: var(--font-small);
+	justify-content: center;
+	gap: var(--space-2);
+	min-height: 2.75rem;
+	padding: 0 var(--space-5);
+	border: var(--border-width) solid var(--color-primary-soft);
+	border-radius: var(--radius-control);
+	background: var(--color-primary-soft);
+	color: var(--color-primary);
+	font-size: var(--font-body);
 	font-weight: var(--weight-semibold);
+	line-height: var(--leading-tight);
+	transition:
+		transform 0.15s ease,
+		border-color 0.15s ease;
+}
+.case-ai-summary-refresh:hover:enabled {
+	border-color: var(--color-primary);
+	background: var(--color-primary-soft);
+	transform: scale(1.1);
+}
+.case-ai-summary-refresh:disabled {
+	border-color: var(--color-border);
+	background: var(--color-soft);
+	color: var(--color-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+	.case-ai-summary-refresh:hover:enabled {
+		transform: none;
+	}
 }
 .case-ai-summary-body {
 	display: grid;
