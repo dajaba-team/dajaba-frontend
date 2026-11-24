@@ -233,8 +233,9 @@ export default function DashboardView({
 						key={name}
 					>
 						<div className="metric-label">
+							{/* 제목은 낱말 사이에서만 꺾이고, ⓘ 는 마지막 낱말에 붙어 다녀요(SCRUM-390) */}
 							<span className="metric-title">
-								{name}
+								<span className="metric-title-text">{name}</span>
 								<InfoTip label={name} text={note} />
 							</span>
 							<Icon name={icon} size={18} />

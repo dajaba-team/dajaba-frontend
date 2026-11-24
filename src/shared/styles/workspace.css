@@ -119,6 +119,7 @@
 		0 0 0 44px #ffffff04;
 }
 .metric-label {
+	position: relative; /* ⓘ 툴팁 기준 — 제목이 두 줄로 꺾여도 머리줄 바로 아래에 붙게(SCRUM-390) */
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -175,11 +176,22 @@
 	font-variant-numeric: tabular-nums;
 }
 /* 제목 옆 ⓘ 툴팁(SCRUM-345) — 카드(overflow: hidden) 밖으로 잘리지 않게 카드 기준으로 제목 바로 아래에 띄워요 */
+/* 좁은 카드에서 제목이 두 줄이 되면 낱말 단위로만 꺾고(keep-all), ⓘ 는 마지막 낱말에 붙여요(nowrap) —
+   글자 중간에서 꺾이거나 ⓘ 만 다음 줄로 떨어지지 않게(SCRUM-390) */
 .metric-title {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
 	min-width: 0;
+	white-space: nowrap;
+	word-break: keep-all;
+}
+.metric-title-text {
+	white-space: normal; /* 제목 안 낱말 사이는 꺾여도 돼요 */
+	padding-right: 22px; /* 마지막 줄 끝에 ⓘ(18px) + 간격 자리를 미리 잡아 둬요 */
+}
+/* ⓘ 는 제목 글자 높이 가운데에 — 기준선에 앉으면 2px 쯤 위로 떠 보였어요(SCRUM-390) */
+.metric-title .kpi-info {
+	display: inline-flex;
+	margin-left: -18px; /* 제목 끝에 잡아 둔 자리로 당겨 와요 */
+	vertical-align: middle;
 }
 .kpi-info-button {
 	display: inline-grid;
@@ -219,6 +231,13 @@
 	visibility: hidden;
 	pointer-events: none;
 	transition: opacity 0.15s ease;
+}
+/* KPI 카드는 머리줄(제목 + 아이콘) 바로 아래, 제목 왼쪽 끝에 맞춰 띄워요 — 화면 폭별 카드 여백이 달라도 어긋나지 않게(SCRUM-390) */
+.metric-label .kpi-info-tip {
+	top: calc(100% + 2px);
+	left: 0;
+	max-width: 100%;
+	white-space: normal; /* 제목(nowrap) 안에 있어도 설명은 줄바꿈 */
 }
 /* 마우스는 올려 둔 동안만, 키보드는 Tab 으로 갔을 때만(focus-visible) — 클릭한 뒤 포커스가 남아도 계속 떠 있지 않게 */
 .kpi-info:hover .kpi-info-tip,
