@@ -731,24 +731,30 @@ describe("케이스 조사", () => {
 		const panel = await screen.findByRole("region", { name: "점수 근거" })
 		const items = within(panel).getAllByRole("listitem")
 		// 목업 reasons 4개(기여 0.05·0.42·0.31·-0.18) → 절댓값 순 0.42·0.31·-0.18, 0.05는 빠짐
-		expect(items.map((item) => within(item).getByRole("code").textContent)).toEqual([
+		// 이름은 AI 코드 대신 한글(코드는 data-reason 에 남아요)
+		expect(items.map((item) => item.querySelector("[data-reason]").dataset.reason)).toEqual([
 			"account_in_counterparties_24h",
 			"amount_out_sum_24h",
 			"fan_out_degree_24h",
 		])
-		expect(within(panel).queryByText("night_tx_ratio_24h")).not.toBeInTheDocument()
-		// 기여값은 관측값 자리에 쓰지 않고 따로, 확인 못 한 값은 채우지 않음
-		expect(within(items[0]).getByText("12 count")).toBeInTheDocument()
-		expect(within(items[0]).getByText("3 (같은 계좌 직전 30일 평균)")).toBeInTheDocument()
-		expect(within(items[0]).getByText("+0.42 (SHAP · raw_margin)")).toBeInTheDocument()
+		expect(within(items[0]).getByText("24시간 입금 상대 계좌 수")).toBeInTheDocument()
+		expect(within(items[1]).getByText("24시간 출금 합계")).toBeInTheDocument()
+		expect(within(items[2]).getByText("24시간 송금 상대 계좌 수")).toBeInTheDocument()
+		expect(within(panel).queryByText("24시간 야간 거래 비율")).not.toBeInTheDocument()
+		// 단위는 한글, 계산 방식(SHAP)·척도(raw_margin)는 값 옆에 쓰지 않아요
+		expect(within(items[0]).getByText("12개")).toBeInTheDocument()
+		expect(within(items[0]).getByText("3개 (같은 계좌 직전 30일 평균)")).toBeInTheDocument()
+		expect(within(items[0]).getByText("(점수를 높임)")).toBeInTheDocument()
 		expect(within(items[1]).getByText("152,000.5 USD")).toBeInTheDocument()
 		expect(within(items[1]).getByText("기준값 없음")).toBeInTheDocument()
 		expect(within(items[2]).getByText("값 없음")).toBeInTheDocument()
-		expect(within(items[2]).getByText("-0.18 (SHAP · raw_margin)")).toBeInTheDocument()
+		expect(within(items[2]).getByText("(점수를 낮춤)")).toBeInTheDocument()
+		expect(within(panel).queryByText(/raw_margin|SHAP ·|count\b/)).not.toBeInTheDocument()
 		expect(within(panel).getAllByText(/^모델 기여도/, { selector: "dt" })).toHaveLength(3)
 		// 4개 중 상위 3개만, [전체 4개 보기]로 펼친다
 		await userEvent.click(within(panel).getByRole("button", { name: "전체 4개 보기" }))
-		expect(within(panel).getByText("night_tx_ratio_24h")).toBeInTheDocument()
+		expect(within(panel).getByText("24시간 야간 거래 비율")).toBeInTheDocument()
+		expect(within(panel).getByText("40%")).toBeInTheDocument() // ratio 0.4 → 40%
 	})
 	it.each([
 		["FAILED", [], "점수 산출에 실패해 근거가 없습니다."],
