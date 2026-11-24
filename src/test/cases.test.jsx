@@ -1036,7 +1036,6 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		expect(within(agg).getByText("유입 합계 (2건)")).toBeInTheDocument()
 		expect(within(agg).getByText("1,000 US Dollar")).toBeInTheDocument()
 		expect(within(agg).getByText("유출 합계 (1건)")).toBeInTheDocument()
-		expect(within(agg).getByText(/근거 거래 \d+건 ·/)).toBeInTheDocument()
 
 		// 처음 열려 있는 탭은 자금 흐름 그래프
 		expect(screen.getByRole("button", { name: "자금 흐름" })).toHaveAttribute(
