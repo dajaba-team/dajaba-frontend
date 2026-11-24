@@ -1,3 +1,4 @@
+import SelectMenu from "../../../../shared/ui/SelectMenu"
 import { useId, useState } from "react"
 import { Link } from "react-router"
 import ConfirmDialog from "../../../../shared/ui/ConfirmDialog"
@@ -129,13 +130,12 @@ export function CreateAccountDialog({ onClose }) {
 					</Field>
 					<Field label="역할">
 						{(props) => (
-							<select {...props} value={form.role} onChange={set("role")}>
-								{ISSUABLE_ROLES.map((role) => (
-									<option key={role} value={role}>
-										{ROLE_LABELS[role]}
-									</option>
-								))}
-							</select>
+							<SelectMenu
+								{...props}
+								value={form.role}
+								options={ISSUABLE_ROLES.map((role) => [role, ROLE_LABELS[role]])}
+								onChange={(role) => setForm({ ...form, role })}
+							/>
 						)}
 					</Field>
 					<Field label="초기 비밀번호" error={errors.password}>

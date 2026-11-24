@@ -3,7 +3,9 @@ import "./selectMenu.css"
 
 // 네이티브 <select> 대신 쓰는 펼침 목록. macOS 기본 팝업은 고른 항목을 버튼 위에 겹쳐 띄워서
 // 글자가 가려져요 — 이 목록은 항상 버튼 바로 아래에 열려요(select-only combobox 패턴, WAI-ARIA APG).
-// options: [[value, label], ...]. 버튼이라 <label> 로 감싸면 그 글자가 접근 가능한 이름이 돼요.
+// options: [[value, label], ...]. 버튼이라 <label> 로 감싸거나 htmlFor 로 이으면 그 글자가 이름이 돼요.
+// 값은 <select> 처럼 글자로 비교하고 onChange 에도 글자로 넘겨요(숫자 값도 그대로 받아요).
+// disabled·id·aria-* 같은 나머지 속성은 버튼에 그대로 붙어요.
 export default function SelectMenu({ value, options, onChange, className = "", ...buttonProps }) {
 	const listId = useId()
 	const buttonRef = useRef(null)
@@ -13,7 +15,7 @@ export default function SelectMenu({ value, options, onChange, className = "", .
 	const [position, setPosition] = useState(null)
 	const selectedIndex = Math.max(
 		0,
-		options.findIndex(([optionValue]) => optionValue === value),
+		options.findIndex(([optionValue]) => String(optionValue) === String(value ?? "")),
 	)
 	const selectedLabel = options[selectedIndex]?.[1] ?? ""
 
@@ -26,9 +28,9 @@ export default function SelectMenu({ value, options, onChange, className = "", .
 		if (focus) buttonRef.current?.focus()
 	}
 	function choose(index) {
-		const [next] = options[index]
+		const next = String(options[index][0])
 		close()
-		if (next !== value) onChange(next)
+		if (next !== String(value ?? "")) onChange(next)
 	}
 
 	// 패널(overflow: hidden) 밖으로도 보이게 화면 기준(fixed)으로 버튼 아래에 붙여요.
@@ -37,6 +39,22 @@ export default function SelectMenu({ value, options, onChange, className = "", .
 		const rect = buttonRef.current.getBoundingClientRect()
 		setPosition({ top: rect.bottom + 6, left: rect.left, minWidth: rect.width })
 		listRef.current?.focus()
+	}, [open])
+
+	// Esc 는 목록만 닫아요. 모달은 자기 요소에 keydown 을 직접 달아 두어서(React 이벤트보다 먼저 받아요)
+	// 목록 요소에서 네이티브로 전파를 끊어야 모달까지 닫히지 않아요.
+	useEffect(() => {
+		const list = listRef.current
+		if (!open || !list) return
+		const onEscape = (event) => {
+			if (event.key !== "Escape") return
+			event.preventDefault()
+			event.stopPropagation()
+			setOpen(false)
+			buttonRef.current?.focus()
+		}
+		list.addEventListener("keydown", onEscape)
+		return () => list.removeEventListener("keydown", onEscape)
 	}, [open])
 
 	// 바깥을 누르거나 화면이 움직이면 닫아요(목록이 버튼에서 떨어져 보이지 않게).
@@ -83,9 +101,6 @@ export default function SelectMenu({ value, options, onChange, className = "", .
 		} else if (event.key === "Enter" || event.key === " ") {
 			event.preventDefault()
 			choose(active)
-		} else if (event.key === "Escape") {
-			event.preventDefault()
-			close()
 		} else if (event.key === "Tab") {
 			close({ focus: false })
 		}
@@ -126,6 +141,7 @@ export default function SelectMenu({ value, options, onChange, className = "", .
 						<li
 							key={optionValue}
 							id={`${listId}-${index}`}
+							data-value={optionValue}
 							role="option"
 							aria-selected={index === selectedIndex}
 							data-active={index === active || undefined}

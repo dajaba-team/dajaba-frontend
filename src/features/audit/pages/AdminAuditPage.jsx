@@ -16,6 +16,7 @@ import {
 } from "../auditLabels"
 import Pagination from "../../../shared/ui/Pagination"
 import StatusBadge from "../../../shared/ui/StatusBadge"
+import SelectMenu from "../../../shared/ui/SelectMenu"
 
 // 감사 기록 (ADM-05, SCRUM-170) — 관리자만(라우트 RequireRole + 서버 403). 메타만 보여 줘요.
 // 탭·필터·페이지는 주소(query)에 남겨 새로고침·링크 공유에도 그대로예요. 빈 결과와 조회 실패를 다르게(COM-02).
@@ -111,20 +112,14 @@ function FilterForm({ tab, applied, errors = {}, onApply, onReset }) {
 					<div key={field.key} className="audit-field">
 						<label htmlFor={id}>{field.label}</label>
 						{field.options ? (
-							<select
+							<SelectMenu
 								id={id}
 								value={draft[field.key]}
 								aria-invalid={error ? true : undefined}
 								aria-describedby={error ? `${id}-error` : undefined}
-								onChange={set(field.key)}
-							>
-								<option value="">전체</option>
-								{Object.entries(field.options).map(([value, label]) => (
-									<option key={value} value={value}>
-										{label}
-									</option>
-								))}
-							</select>
+								options={[["", "전체"], ...Object.entries(field.options)]}
+								onChange={(value) => setDraft({ ...draft, [field.key]: value })}
+							/>
 						) : (
 							<input
 								id={id}

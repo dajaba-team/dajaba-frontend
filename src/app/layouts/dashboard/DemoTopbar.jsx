@@ -1,6 +1,7 @@
 import Badge from "../../../shared/ui/dashboard/Badge"
 import Icon from "../../../shared/ui/dashboard/Icon"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo"
+import SelectMenu from "../../../shared/ui/SelectMenu"
 
 export default function DemoTopbar() {
 	const { role, changeRole, dark, setDark, user, busy } = useDashboardDemo()
@@ -9,16 +10,17 @@ export default function DemoTopbar() {
 			<div className="demo-role">
 				<Badge tone="purple">데모 전용</Badge>
 				<label htmlFor="demo-role">역할 전환</label>
-				<select
+				<SelectMenu
 					id="demo-role"
 					value={role}
 					disabled={busy}
-					onChange={(event) => changeRole(event.target.value)}
-				>
-					<option value="ADMIN">admin01 · 운영 관리자</option>
-					<option value="INVESTIGATOR">inv01 · 조사역 A</option>
-					<option value="APPROVER">apr01 · 승인 책임자</option>
-				</select>
+					options={[
+						["ADMIN", "admin01 · 운영 관리자"],
+						["INVESTIGATOR", "inv01 · 조사역 A"],
+						["APPROVER", "apr01 · 승인 책임자"],
+					]}
+					onChange={changeRole}
+				/>
 			</div>
 			<div className="top-actions">
 				<span className="review-date">분석 예시: 2022. 9. 1.–9. 10.</span>

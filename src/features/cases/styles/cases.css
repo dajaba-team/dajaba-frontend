@@ -37,7 +37,7 @@
 	font-size: var(--font-small);
 	font-weight: 600;
 }
-.case-filter label :is(input, select) {
+.case-filter label :is(input, select, .select-menu-trigger) {
 	color: var(--color-text);
 	font-weight: 400;
 }

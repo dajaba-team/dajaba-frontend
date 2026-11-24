@@ -1,3 +1,4 @@
+import SelectMenu from "../../../../shared/ui/SelectMenu"
 import { useState } from "react"
 import { Link } from "react-router"
 import { useQuery } from "@tanstack/react-query"
@@ -45,33 +46,34 @@ export default function AdminAccountsPage() {
 				<div className="case-filter">
 					<label>
 						역할{" "}
-						<select
+						<SelectMenu
 							value={role}
-							onChange={(event) => {
-								setRole(event.target.value)
+							options={[
+								["", "전체"],
+								...["INVESTIGATOR", "APPROVER", "ADMIN"].map((value) => [
+									value,
+									ROLE_LABELS[value],
+								]),
+							]}
+							onChange={(value) => {
+								setRole(value)
 								setPage(1)
 							}}
-						>
-							<option value="">전체</option>
-							{["INVESTIGATOR", "APPROVER", "ADMIN"].map((value) => (
-								<option key={value} value={value}>
-									{ROLE_LABELS[value]}
-								</option>
-							))}
-						</select>
+						/>
 					</label>
 					<label>
 						상태{" "}
-						<select
+						<SelectMenu
 							value={active ? "active" : "inactive"}
-							onChange={(event) => {
-								setActive(event.target.value === "active")
+							options={[
+								["active", "활성"],
+								["inactive", "비활성"],
+							]}
+							onChange={(value) => {
+								setActive(value === "active")
 								setPage(1)
 							}}
-						>
-							<option value="active">활성</option>
-							<option value="inactive">비활성</option>
-						</select>
+						/>
 					</label>
 					<button type="button" onClick={() => open("create")}>
 						계정 발급

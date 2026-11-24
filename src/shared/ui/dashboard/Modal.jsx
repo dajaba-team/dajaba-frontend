@@ -7,7 +7,7 @@ import "./modal.css"
 const FOCUSABLE =
 	'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
 const BODY_INPUT =
-	'input:not(:disabled):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]), select:not(:disabled), textarea:not(:disabled)'
+	'input:not(:disabled):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]), select:not(:disabled), .select-menu-trigger:not(:disabled), textarea:not(:disabled)'
 
 // className 으로 창마다 폭·본문 배치를 바꿔요(예: "modal-wide").
 export default function Modal({ title, children, onClose, footer, className }) {

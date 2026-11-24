@@ -8,6 +8,7 @@ import App from "../app/App"
 import { createQueryClient } from "../app/queryClient"
 import { resetCases } from "../mocks/handlers"
 import { server } from "../mocks/server"
+import { pickOption } from "./selectMenu"
 
 // 계정 관리 화면 (SCRUM-169, ADM-03, 계약서 5.8). MSW 는 계약서 모양 — BE SCRUM-135 ② 전.
 const USERS = {
@@ -60,7 +61,7 @@ describe("계정 목록", () => {
 			within(await table()).queryByRole("cell", { name: "system" }),
 		).not.toBeInTheDocument()
 
-		await user.selectOptions(screen.getByLabelText("상태"), "inactive")
+		await pickOption(user, screen.getByLabelText("상태"), "inactive")
 		const system = await rowOf("system")
 		expect(within(system).queryByRole("button")).not.toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "삭제" })).not.toBeInTheDocument()
@@ -176,7 +177,7 @@ describe("비활성화·재활성화·비밀번호 초기화", () => {
 			).not.toBeInTheDocument(),
 		)
 
-		await user.selectOptions(screen.getByLabelText("상태"), "inactive")
+		await pickOption(user, screen.getByLabelText("상태"), "inactive")
 		await user.click(within(await rowOf("inv01")).getByRole("button", { name: "재활성화" }))
 		await user.click(
 			within(await screen.findByRole("dialog", { name: "계정 재활성화" })).getByRole(

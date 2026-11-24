@@ -5,6 +5,7 @@ import { clearBusinessData } from "../../../app/queryClient"
 import { sessionKey } from "../../auth/hooks/useSession"
 import { connectionApi } from "../api/connectionApi"
 import "../styles/connection.css"
+import SelectMenu from "../../../shared/ui/SelectMenu"
 
 const ACCOUNTS = ["inv01", "inv02", "apr01", "admin"]
 const usingMocks = import.meta.env.VITE_USE_MOCKS === "true"
@@ -164,18 +165,13 @@ export default function ConnectionCheckPage() {
 					전체 확인
 				</button>
 				<label htmlFor="connection-login-id">테스트 계정</label>
-				<select
+				<SelectMenu
 					id="connection-login-id"
 					value={loginId}
 					disabled={running}
-					onChange={(event) => setLoginId(event.target.value)}
-				>
-					{ACCOUNTS.map((id) => (
-						<option key={id} value={id}>
-							{id}
-						</option>
-					))}
-				</select>
+					options={ACCOUNTS.map((id) => [id, id])}
+					onChange={setLoginId}
+				/>
 				<label htmlFor="connection-password">비밀번호</label>
 				<input
 					id="connection-password"

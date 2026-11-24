@@ -13,6 +13,7 @@ import { AI_ORIGINAL_REVISION_NO, revisionLabel } from "../../../shared/str/revi
 import Button from "../../../shared/ui/dashboard/Button.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
 import { formatDataTime, formatSystemTime } from "../../../shared/format/time"
+import SelectMenu from "../../../shared/ui/SelectMenu"
 function StrEditor({ draft, isCurrent }) {
 	const { db, role, action } = useDashboardDemo()
 	const item = db.cases[0]
@@ -366,20 +367,18 @@ export default function DemoStrPage() {
 				<div className="demo-draft-switcher">
 					<label>
 						초안 버전{" "}
-						<select
+						<SelectMenu
 							value={selectedId}
-							onChange={(event) => {
+							options={db.drafts.map((entry) => [
+								entry.draft_id,
+								`${entry.draft_id} · ${entry.status}`,
+							])}
+							onChange={(value) => {
 								const next = new URLSearchParams(params)
-								next.set("draft", event.target.value)
+								next.set("draft", value)
 								setParams(next)
 							}}
-						>
-							{db.drafts.map((entry) => (
-								<option key={entry.draft_id} value={entry.draft_id}>
-									{entry.draft_id} · {entry.status}
-								</option>
-							))}
-						</select>
+						/>
 					</label>
 				</div>
 			)}

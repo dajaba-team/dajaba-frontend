@@ -8,6 +8,7 @@ import App from "../app/App"
 import { createQueryClient } from "../app/queryClient"
 import { MOCK_PASSWORD, resetCases } from "../mocks/handlers"
 import { server } from "../mocks/server"
+import { optionValues, pickOption } from "./selectMenu"
 
 const USERS = {
 	inv01: { id: 1, login_id: "inv01", display_name: "예시 inv01", role: "INVESTIGATOR" },
@@ -418,12 +419,12 @@ describe("케이스 조사", () => {
 		const dialog = await screen.findByRole("dialog", { name: "담당자 변경" })
 		const select = await within(dialog).findByLabelText("새 담당 조사역")
 		// 지금 담당(inv01)과 조사역 아닌 사람은 목록에 없다
-		const options = within(select)
-			.getAllByRole("option")
-			.map((option) => option.value)
-		expect(options).toEqual(["", "inv02"])
+		expect(await optionValues(user, select)).toEqual(["", "inv02"])
+		// 목록의 Esc 는 목록만 닫고 모달은 그대로예요
+		expect(dialog).toBeInTheDocument()
+		expect(select).toHaveFocus()
 		expect(within(dialog).getByRole("button", { name: "변경" })).toBeDisabled()
-		await user.selectOptions(select, "inv02")
+		await pickOption(user, select, "inv02")
 		await user.type(within(dialog).getByLabelText("변경 사유 (선택)"), "업무 분담")
 		await user.click(within(dialog).getByRole("button", { name: "변경" }))
 		await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
@@ -458,7 +459,7 @@ describe("케이스 조사", () => {
 		const user = renderApp(`/cases/${REVIEWING}`, true, "admin")
 		await user.click(await screen.findByRole("button", { name: "담당자 변경" }))
 		const dialog = await screen.findByRole("dialog", { name: "담당자 변경" })
-		await user.selectOptions(await within(dialog).findByLabelText("새 담당 조사역"), "inv02")
+		await pickOption(user, await within(dialog).findByLabelText("새 담당 조사역"), "inv02")
 		await user.click(within(dialog).getByRole("button", { name: "변경" }))
 		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
 			"활성 조사역에게만 맡길 수 있어요",

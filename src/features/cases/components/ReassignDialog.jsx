@@ -5,6 +5,7 @@ import { getErrorCode, getErrorMessage } from "../../../shared/api/apiClient"
 import { adminUsersApi } from "../../admin/users/api/adminUsersApi"
 import { useCaseCommand } from "../hooks/useCases"
 import Spinner from "../../../shared/ui/Spinner"
+import SelectMenu from "../../../shared/ui/SelectMenu"
 
 const COMMENT_MAX = 2000
 
@@ -68,18 +69,18 @@ export default function ReassignDialog({ caseNo, version, assignee, onClose }) {
 					{investigators.isSuccess && (
 						<div className="case-field">
 							<label htmlFor={selectId}>새 담당 조사역</label>
-							<select
+							<SelectMenu
 								id={selectId}
 								value={target}
-								onChange={(event) => setTarget(event.target.value)}
-							>
-								<option value="">선택</option>
-								{choices.map((user) => (
-									<option key={user.loginId} value={user.loginId}>
-										{user.displayName} ({user.loginId})
-									</option>
-								))}
-							</select>
+								options={[
+									["", "선택"],
+									...choices.map((user) => [
+										user.loginId,
+										`${user.displayName} (${user.loginId})`,
+									]),
+								]}
+								onChange={setTarget}
+							/>
 							{!choices.length && <p>바꿀 수 있는 활성 조사역이 없어요.</p>}
 						</div>
 					)}

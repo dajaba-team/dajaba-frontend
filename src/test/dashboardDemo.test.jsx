@@ -5,6 +5,7 @@ import { MemoryRouter, useLocation, useNavigate } from "react-router"
 import { QueryClientProvider } from "@tanstack/react-query"
 import App from "../app/App"
 import { createQueryClient } from "../app/queryClient"
+import { pickOption } from "./selectMenu"
 
 function NavigationProbe() {
 	const location = useLocation()
@@ -33,7 +34,7 @@ function renderDemo(path = "/demo/overview") {
 	return userEvent.setup()
 }
 const role = async (user, value) =>
-	user.selectOptions(await screen.findByLabelText("역할 전환"), value)
+	pickOption(user, await screen.findByLabelText("역할 전환"), value)
 
 describe("대시보드 URL과 화면 분리", () => {
 	it("메뉴를 URL로 이동하고 뒤로가기로 이전 화면을 복원한다", async () => {
@@ -86,7 +87,7 @@ describe("대시보드 URL과 화면 분리", () => {
 	})
 	it("경보 검색과 점수 필터를 URL에 보관한다", async () => {
 		const user = renderDemo("/demo/admin/alerts")
-		await user.selectOptions(await screen.findByLabelText("점수 상태"), "FAILED")
+		await pickOption(user, await screen.findByLabelText("점수 상태"), "FAILED")
 		expect(screen.getByTestId("location")).toHaveTextContent("score_status=FAILED")
 		expect(screen.getByText("ALT-20220902-000143")).toBeInTheDocument()
 		expect(screen.queryByText("ALT-20220902-000142")).not.toBeInTheDocument()

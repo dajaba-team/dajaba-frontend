@@ -6,6 +6,7 @@ import { statusKo } from "../../../shared/demo/labels.js"
 import Button from "../../../shared/ui/dashboard/Button.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
 import { formatSystemTime } from "../../../shared/format/time"
+import SelectMenu from "../../../shared/ui/SelectMenu"
 export default function Cases() {
 	const { db, role, assignCase: assign, openCase: open } = useDashboardDemo()
 	const item = db.cases[0]
@@ -31,34 +32,30 @@ export default function Cases() {
 					<div className="filter-row">
 						<label>
 							케이스 상태{" "}
-							<select
+							<SelectMenu
 								value={status}
-								onChange={(event) => filter("status", event.target.value)}
-							>
-								<option value="">전체</option>
-								{Object.entries(statusKo)
-									.filter(
+								options={[
+									["", "전체"],
+									...Object.entries(statusKo).filter(
 										([code]) =>
 											!["SUCCEEDED", "FAILED", "RUNNING", "IDLE"].includes(
 												code,
 											),
-									)
-									.map(([code, label]) => (
-										<option key={code} value={code}>
-											{label}
-										</option>
-									))}
-							</select>
+									),
+								]}
+								onChange={(value) => filter("status", value)}
+							/>
 						</label>
 						<label>
 							담당자{" "}
-							<select
+							<SelectMenu
 								value={owner}
-								onChange={(event) => filter("owner", event.target.value)}
-							>
-								<option value="">전체</option>
-								<option value="mine">조사역 A 담당</option>
-							</select>
+								options={[
+									["", "전체"],
+									["mine", "조사역 A 담당"],
+								]}
+								onChange={(value) => filter("owner", value)}
+							/>
 						</label>
 					</div>
 				</div>

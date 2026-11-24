@@ -8,6 +8,7 @@ import App from "../app/App"
 import { createQueryClient } from "../app/queryClient"
 import { resetCases } from "../mocks/handlers"
 import { server } from "../mocks/server"
+import { optionValues, pickOption } from "./selectMenu"
 
 // 감사 기록 화면 (SCRUM-170, ADM-05). AI 호출 기록은 계약서 5.9, 접근 기록은 5.10(BE #102, SCRUM-316) 그대로.
 const USERS = {
@@ -60,8 +61,8 @@ describe("AI 호출 기록 탭", () => {
 		await rows("AI 호출 기록")
 		const form = screen.getByRole("form", { name: "AI 호출 기록 필터" })
 		expect(within(form).getByLabelText("대상 번호")).toBeDisabled()
-		await user.selectOptions(within(form).getByLabelText("결과"), "FAILURE")
-		await user.selectOptions(within(form).getByLabelText("대상 종류"), "DRAFT")
+		await pickOption(user, within(form).getByLabelText("결과"), "FAILURE")
+		await pickOption(user, within(form).getByLabelText("대상 종류"), "DRAFT")
 		await user.type(within(form).getByLabelText("대상 번호"), "DRF-000124")
 		await user.click(within(form).getByRole("button", { name: "조회" }))
 		await waitFor(async () => expect(await rows("AI 호출 기록")).toHaveLength(1))
@@ -92,11 +93,9 @@ describe("AI 호출 기록 탭", () => {
 		server.events.removeAllListeners()
 	})
 	it("엔드포인트 필터에 질문 답변(/v1/cases/ask)·참고 사례 찾기가 있다 — 계약서 5.9 + SCRUM-309", async () => {
-		renderApp()
+		const user = renderApp()
 		const form = await screen.findByRole("form", { name: "AI 호출 기록 필터" })
-		const options = within(within(form).getByLabelText("엔드포인트"))
-			.getAllByRole("option")
-			.map((option) => option.value)
+		const options = await optionValues(user, within(form).getByLabelText("엔드포인트"))
 		expect(options).toEqual([
 			"",
 			"/v1/scores",
@@ -171,7 +170,7 @@ describe("접근 기록 탭", () => {
 		expect(within(list[0]).getByText("예시 admin")).toBeInTheDocument()
 		expect(within(list[2]).getByText("케이스 CASE-2022-001004")).toBeInTheDocument()
 		const form = screen.getByRole("form", { name: "접근 기록 필터" })
-		await user.selectOptions(within(form).getByLabelText("동작"), "LOGIN_FAIL")
+		await pickOption(user, within(form).getByLabelText("동작"), "LOGIN_FAIL")
 		await user.click(within(form).getByRole("button", { name: "조회" }))
 		await waitFor(async () => expect(await rows("접근 기록")).toHaveLength(1))
 		expect(
@@ -186,7 +185,7 @@ describe("접근 기록 탭", () => {
 		await rows("접근 기록")
 		const form = screen.getByRole("form", { name: "접근 기록 필터" })
 		expect(within(form).getByLabelText("대상 번호")).toBeDisabled()
-		await user.selectOptions(within(form).getByLabelText("대상 종류"), "STR_DRAFT")
+		await pickOption(user, within(form).getByLabelText("대상 종류"), "STR_DRAFT")
 		expect(within(form).getByLabelText("대상 번호")).toHaveAttribute(
 			"placeholder",
 			"예: DRF-000123",

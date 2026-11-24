@@ -161,7 +161,7 @@
 	font-size: 12px;
 	font-weight: 600;
 }
-.dashboard-demo .demo-role select {
+.dashboard-demo .demo-role :is(select, .select-menu-trigger) {
 	height: 34px;
 	padding: 0 10px;
 	border: 1px solid var(--border);

@@ -10,8 +10,10 @@
 	cursor: pointer;
 	transition: border-color 0.15s ease;
 }
-.select-menu-trigger:hover {
+/* 입력칸처럼 보이게 — 일반 버튼의 hover 배경은 쓰지 않아요. */
+.select-menu-trigger:hover:enabled {
 	border-color: var(--color-control-border-hover);
+	background: var(--color-surface);
 }
 .select-menu-trigger[aria-expanded="true"] {
 	border-color: var(--color-primary);

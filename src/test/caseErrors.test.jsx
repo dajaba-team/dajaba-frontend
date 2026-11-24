@@ -10,6 +10,7 @@ import { resetCases } from "../mocks/handlers"
 import { detailResponse, seedCases } from "../mocks/cases"
 import { AI_REQUEST_TIMEOUT_MS, apiClient } from "../shared/api/apiClient"
 import { server } from "../mocks/server"
+import { pickOption } from "./selectMenu"
 
 // 케이스 화면 오류 표시 점검 (SCRUM-200, 계약서 3절). 오류 코드마다 MSW 로 한 번씩 띄워
 // 어디에(그 칸·그 확인창) 무슨 문구가 나오는지, 입력이 남는지, 다른 동작이 막히지 않는지 본다.
@@ -55,7 +56,7 @@ describe("403 — 역할 권한 없음·담당 아님", () => {
 		const user = renderApp(`/cases/${REVIEWING}`, "admin")
 		await user.click(await screen.findByRole("button", { name: "담당자 변경" }))
 		const dialog = await screen.findByRole("dialog", { name: "담당자 변경" })
-		await user.selectOptions(await within(dialog).findByLabelText("새 담당 조사역"), "inv02")
+		await pickOption(user, await within(dialog).findByLabelText("새 담당 조사역"), "inv02")
 		await user.click(within(dialog).getByRole("button", { name: "변경" }))
 		expect(await within(dialog).findByRole("alert")).toHaveTextContent("실행 권한이 없어요.")
 		expect(within(dialog).getByRole("alert")).not.toHaveTextContent("권한이 없습니다")
@@ -147,7 +148,7 @@ describe("409 — 버전 충돌·배정 대상", () => {
 		const user = renderApp(`/cases/${REVIEWING}`, "admin")
 		await user.click(await screen.findByRole("button", { name: "담당자 변경" }))
 		const dialog = await screen.findByRole("dialog", { name: "담당자 변경" })
-		await user.selectOptions(await within(dialog).findByLabelText("새 담당 조사역"), "inv02")
+		await pickOption(user, await within(dialog).findByLabelText("새 담당 조사역"), "inv02")
 		await user.click(within(dialog).getByRole("button", { name: "변경" }))
 		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
 			"활성 조사역에게만 맡길 수 있어요",

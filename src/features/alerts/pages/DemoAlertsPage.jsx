@@ -7,6 +7,7 @@ import Badge from "../../../shared/ui/dashboard/Badge.jsx"
 import Button from "../../../shared/ui/dashboard/Button.jsx"
 import Modal from "../../../shared/ui/dashboard/Modal.jsx"
 import { useDashboardDemo } from "../../../shared/demo/useDashboardDemo.js"
+import SelectMenu from "../../../shared/ui/SelectMenu"
 export default function Alerts() {
 	const { db } = useDashboardDemo()
 	const [params, setParams] = useSearchParams()
@@ -48,15 +49,17 @@ export default function Alerts() {
 					<div className="filter-row">
 						<label>
 							점수 상태{" "}
-							<select
+							<SelectMenu
 								value={scoreStatus}
-								onChange={(event) => filter("score_status", event.target.value)}
-							>
-								<option value="">전체</option>
-								{["SCORED", "FAILED", "PENDING"].map((value) => (
-									<option key={value}>{value}</option>
-								))}
-							</select>
+								options={[
+									["", "전체"],
+									...["SCORED", "FAILED", "PENDING"].map((value) => [
+										value,
+										value,
+									]),
+								]}
+								onChange={(value) => filter("score_status", value)}
+							/>
 						</label>
 						<span>{filtered.length}건</span>
 					</div>
