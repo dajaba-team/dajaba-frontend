@@ -20,16 +20,35 @@ function assigneeChange({ fromAssignee, toAssignee }) {
 		</span>
 	)
 }
+// 한 줄에 다 이어 붙이면 좁은 탭에서 날짜가 「2026-」「11-23」으로 끊겨서(SCRUM-400) 타임라인으로 나눠요 —
+// 동작(+담당 변경) / 상태 변화 / 작업자·시각 / 사유 순서로 한 줄씩.
 function HistoryList({ items }) {
 	return (
-		<ol className="case-history">
+		<ol className="case-timeline">
 			{items.map((entry, index) => (
-				<li key={`${entry.createdAt}-${index}`}>
-					<strong>{labelOf(HISTORY_LABELS, entry.action)}</strong> {assigneeChange(entry)}
-					{entry.fromStatus && `${labelOf(STATUS_LABELS, entry.fromStatus)} → `}
-					{labelOf(STATUS_LABELS, entry.toStatus)} · {actorLabel(entry.createdBy)} ·{" "}
-					{formatSystemTime(entry.createdAt)}
-					{entry.comment && <p className="preserve-lines">{entry.comment}</p>}
+				<li key={`${entry.createdAt}-${index}`} className="case-timeline-item">
+					<p className="case-timeline-head">
+						<strong>{labelOf(HISTORY_LABELS, entry.action)}</strong>{" "}
+						{assigneeChange(entry)}
+					</p>
+					<p className="case-timeline-status">
+						{entry.fromStatus && (
+							<>
+								<span>{labelOf(STATUS_LABELS, entry.fromStatus)}</span>
+								<span className="case-timeline-arrow">→</span>
+							</>
+						)}
+						<span className="case-timeline-to">
+							{labelOf(STATUS_LABELS, entry.toStatus)}
+						</span>
+					</p>
+					<p className="case-timeline-meta">
+						{actorLabel(entry.createdBy)} ·{" "}
+						<time dateTime={entry.createdAt}>{formatSystemTime(entry.createdAt)}</time>
+					</p>
+					{entry.comment && (
+						<p className="case-timeline-comment preserve-lines">{entry.comment}</p>
+					)}
 				</li>
 			))}
 		</ol>

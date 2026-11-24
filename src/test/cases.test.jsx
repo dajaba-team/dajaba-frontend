@@ -1291,7 +1291,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		expect(await within(history).findByText("담당 배정")).toBeInTheDocument()
 		expect(within(history).getByText("케이스 생성")).toBeInTheDocument()
 		// 배치가 만든 줄의 작업자 system 은 "시스템"
-		expect(within(history).getByText(/· 시스템 ·/)).toBeInTheDocument()
+		expect(within(history).getByText(/^시스템 ·/)).toBeInTheDocument()
 		expect(within(history).queryByText("메모 저장")).not.toBeInTheDocument()
 		await user.click(screen.getByRole("button", { name: "조사 메모" }))
 		expect(screen.getByRole("region", { name: "메모 이력" })).toBeInTheDocument()
