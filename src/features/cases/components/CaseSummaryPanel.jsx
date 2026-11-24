@@ -48,7 +48,6 @@ export default function CaseSummaryPanel({ detail }) {
 							})
 						}
 					>
-						<Icon name="refresh" size={16} />
 						{command.isPending
 							? "요약 만드는 중…"
 							: summary
