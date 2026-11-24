@@ -14,7 +14,7 @@ import {
 } from "../labels"
 import { nextActionOf } from "./nextAction"
 
-// 판단 요약(SCRUM-369 B안) — 등급·점수, 상태·사유·담당, 다음 처리 버튼만.
+// 판단 요약(SCRUM-369 B안) — 등급·점수(조사 우선순위 점수), 상태·사유·초안, 다음 처리 버튼만. 담당자는 보여 주지 않아요.
 // 계좌·탐지 규칙·탐지 기간·경보 번호는 바로 아래 개요 띠(CaseInfoCard)에 있어요.
 // 점수는 latest_score 와 같은 값(계약서 Q2 MVP). 실패 코드(failure_code)는 내부 값이라 보여 주지 않아요.
 // 반려·종료 사유는 그 상태에서 가장 먼저 볼 정보라 상태 배지 옆에 둬요.
@@ -36,7 +36,6 @@ export default function CaseSummaryHeader({ detail, askButton, onAction }) {
 		detail.rejectionReasonCode &&
 			`반려 사유: ${labelOf(REJECTION_LABELS, detail.rejectionReasonCode)}`,
 		detail.closeReason && `종료 사유: ${labelOf(CLOSE_REASON_LABELS, detail.closeReason)}`,
-		detail.assignee?.displayName ? `담당 ${detail.assignee.displayName}` : "담당자 미배정",
 		detail.currentDraftNo && `STR 초안 ${detail.currentDraftNo}`,
 	].filter(Boolean)
 	return (

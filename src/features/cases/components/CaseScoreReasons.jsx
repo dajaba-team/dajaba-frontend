@@ -1,5 +1,6 @@
 import { useState } from "react"
 import InfoTip from "../../../shared/ui/InfoTip"
+import Icon from "../../../shared/ui/dashboard/Icon"
 import { formatDataTime } from "../../../shared/format/time"
 import { formatNumber } from "./caseMoney"
 import { basisLabel, reasonLabel, withReasonUnit } from "../reasonLabels"
@@ -79,7 +80,7 @@ function emptyText(latest) {
 	return "점수 근거가 없습니다."
 }
 
-// 처음엔 상위 3개, 더 있으면 [전체 n개 보기]로 펼쳐요.
+// 처음엔 상위 3개, 더 있으면 목록 아래 펼침 줄(⌄)을 눌러 전부 보여 줘요. 다시 누르면 접어요.
 export default function CaseScoreReasons({ latestScore }) {
 	const [all, setAll] = useState(false)
 	const scored = latestScore?.scoreStatus === "SCORED"
@@ -90,7 +91,7 @@ export default function CaseScoreReasons({ latestScore }) {
 			<h2 id="score-reasons-title">점수 근거</h2>
 			{reasons.length ? (
 				<>
-					<ol className="case-reasons">
+					<ol className="case-reasons" id="score-reasons-list">
 						{reasons.map((reason, index) => (
 							<li key={`${reason.name ?? "reason"}-${index}`}>
 								<ReasonName name={reason.name} />
@@ -120,8 +121,15 @@ export default function CaseScoreReasons({ latestScore }) {
 						))}
 					</ol>
 					{total > TOP_N && (
-						<button type="button" onClick={() => setAll(!all)}>
-							{all ? "상위 3개만 보기" : `전체 ${total}개 보기`}
+						<button
+							type="button"
+							className="case-reasons-toggle"
+							aria-expanded={all}
+							aria-controls="score-reasons-list"
+							onClick={() => setAll(!all)}
+						>
+							{all ? "접기" : `${total - TOP_N}개 더 보기`}
+							<Icon name="chevron" size={16} />
 						</button>
 					)}
 				</>

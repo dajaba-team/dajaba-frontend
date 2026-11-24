@@ -386,7 +386,11 @@ describe("케이스 조사", () => {
 			"inv01",
 		)
 		await user.click(screen.getByRole("button", { name: "배정" }))
-		expect(await screen.findByText(/담당 예시 inv01/)).toBeInTheDocument()
+		// 담당자는 판단 요약에 쓰지 않아요 — 상태가 조사 중으로 바뀌고 처리 이력에 받은 사람이 남아요
+		expect(
+			await screen.findByText("조사 중", { selector: ".status-badge" }),
+		).toBeInTheDocument()
+		expect(screen.getByText(/\(→ 예시 inv01\)/)).toBeInTheDocument()
 		await user.click(screen.getByRole("button", { name: "로그아웃" }))
 		await screen.findByText("로그인이 필요합니다.")
 		await login(user, "inv01")
@@ -420,7 +424,7 @@ describe("케이스 조사", () => {
 		expect(input).toHaveValue("inv01")
 		await user.selectOptions(input, "inv02")
 		await user.click(screen.getByRole("button", { name: "배정" }))
-		expect(await screen.findByText(/담당 예시 inv02/)).toBeInTheDocument()
+		expect(await screen.findByText(/\(→ 예시 inv02\)/)).toBeInTheDocument()
 	})
 	it("관리자는 상세에서 [담당자 변경]으로 활성 조사역을 골라 바꾼다 (A2)", async () => {
 		const bodies = recordBodies("/reassign")
@@ -438,7 +442,6 @@ describe("케이스 조사", () => {
 		await user.type(within(dialog).getByLabelText("변경 사유 (선택)"), "업무 분담")
 		await user.click(within(dialog).getByRole("button", { name: "변경" }))
 		await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
-		expect(await screen.findByText(/담당 예시 inv02/)).toBeInTheDocument()
 		expect(bodies).toEqual([{ assignee: "inv02", comment: "업무 분담", version: 1 }])
 		// 처리 이력에 누구에게서 누구로 — 변경은 둘 다, 배정은 받은 사람만 (SCRUM-348)
 		await user.click(screen.getByRole("button", { name: "처리 이력" }))
@@ -723,8 +726,10 @@ describe("케이스 조사", () => {
 		expect(within(summary).getByRole("tooltip", { hidden: true })).toHaveTextContent(
 			"범죄 확률을 뜻하지 않습니다",
 		)
-		// 개요 띠와 겹치는 규칙·기간은 판단 요약에 다시 쓰지 않아요
+		// 개요 띠와 겹치는 규칙·기간, 담당자는 판단 요약에 쓰지 않아요. 조사 우선순위 점수 이름은 남겨요
 		expect(within(summary).queryByText(/R02/)).not.toBeInTheDocument()
+		expect(within(summary).queryByText(/담당/)).not.toBeInTheDocument()
+		expect(within(summary).getByText("조사 우선순위 점수")).toBeInTheDocument()
 	})
 	it("점수 근거: 기여 크기 순 상위 3개를 관측값·기준값·모델 기여로 나눠 보여 준다 (SCRUM-208)", async () => {
 		renderApp(`/cases/${REVIEWING}`)
@@ -751,8 +756,12 @@ describe("케이스 조사", () => {
 		expect(within(items[2]).getByText("(점수를 낮춤)")).toBeInTheDocument()
 		expect(within(panel).queryByText(/raw_margin|SHAP ·|count\b/)).not.toBeInTheDocument()
 		expect(within(panel).getAllByText(/^모델 기여도/, { selector: "dt" })).toHaveLength(3)
-		// 4개 중 상위 3개만, [전체 4개 보기]로 펼친다
-		await userEvent.click(within(panel).getByRole("button", { name: "전체 4개 보기" }))
+		// 4개 중 상위 3개만, 아래 펼침 줄로 나머지를 펼치고 다시 접는다
+		const toggle = within(panel).getByRole("button", { name: "1개 더 보기" })
+		expect(toggle).toHaveAttribute("aria-expanded", "false")
+		await userEvent.click(toggle)
+		expect(toggle).toHaveAttribute("aria-expanded", "true")
+		expect(toggle).toHaveTextContent("접기")
 		expect(within(panel).getByText("24시간 야간 거래 비율")).toBeInTheDocument()
 		expect(within(panel).getByText("40%")).toBeInTheDocument() // ratio 0.4 → 40%
 	})
