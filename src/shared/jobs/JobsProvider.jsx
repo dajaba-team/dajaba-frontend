@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useQueries } from "@tanstack/react-query"
 import { useLocation } from "react-router"
 import { useToast } from "../ui/toast/useToast"
+import { backoffMs, createFailureCounter } from "./failureBackoff"
 import { JobsContext } from "./JobsContext"
 import {
 	addJob,
@@ -16,8 +17,6 @@ import {
 	writeJobs,
 } from "./jobStore"
 
-const MAX_BACKOFF_MS = 30_000
-
 // 작업 추적기(SCRUM-365, 「비동기 작업 알림 설계 문서」 7.2·8.2·9). 내가 시작한 비동기 작업을 화면을 옮겨도 지켜보다가 끝나면 토스트로.
 // 종류별 조회·판정은 kinds(app/jobs/jobKinds)가 정해요 — shared 는 기능을 몰라요. 같은 조회 키를 화면 카드도 쓰면 요청이 합쳐져요(4-3).
 // 끝남: 그 작업 화면에 있거나, 복구한 지난 결과(끝난 지 1분 넘음)면 토스트 없이 목록에만(7.6). 404·403은 확인 불가(LOST), 401은 전부 멈춤.
@@ -26,6 +25,8 @@ export default function JobsProvider({ loginId, kinds, children }) {
 	const jobsRef = useRef(jobs)
 	const [stopped, setStopped] = useState(false)
 	const announced = useRef(new Set())
+	const counter = useRef(null)
+	if (counter.current === null) counter.current = createFailureCounter()
 	const { show } = useToast()
 	const { pathname } = useLocation()
 	const pathRef = useRef(pathname)
@@ -43,6 +44,7 @@ export default function JobsProvider({ loginId, kinds, children }) {
 		previousLogin.current = loginId
 		if (before && !loginId) clearJobs(before)
 		announced.current = new Set()
+		counter.current.clear()
 		setStopped(false)
 		setJobs(loginId ? readJobs(loginId) : [])
 	}, [loginId])
@@ -51,7 +53,13 @@ export default function JobsProvider({ loginId, kinds, children }) {
 		if (loginId) writeJobs(loginId, jobs)
 	}, [loginId, jobs])
 
-	const tracking = jobs.filter((job) => job.state === "TRACKING" && kinds[job.kind])
+	const tracking = useMemo(
+		() => jobs.filter((job) => job.state === "TRACKING" && kinds[job.kind]),
+		[jobs, kinds],
+	)
+	useEffect(() => {
+		counter.current.keep(tracking.map((job) => `${job.kind}:${job.id}`))
+	}, [tracking])
 	const results = useQueries({
 		queries: tracking.map((job) => {
 			const kind = kinds[job.kind]
@@ -60,13 +68,12 @@ export default function JobsProvider({ loginId, kinds, children }) {
 				queryFn: ({ signal }) => kind.fetch(job, signal),
 				enabled: !stopped,
 				retry: false,
-				// 네트워크·5xx 가 이어지면 간격을 늘려 가며(최대 30초) 계속(9 #10)
-				refetchInterval: (query) => {
-					const failures = query.state.fetchFailureCount
-					return failures
-						? Math.min(kind.intervalMs * 2 ** failures, MAX_BACKOFF_MS)
-						: kind.intervalMs
-				},
+				// 네트워크·5xx 가 이어지면 간격을 늘려 가며(최대 30초) 계속(9 #10) — 작업마다 실패 수를 따로 세요.
+				refetchInterval: (query) =>
+					backoffMs(
+						kind.intervalMs,
+						counter.current.observe(`${job.kind}:${job.id}`, query.state),
+					),
 				refetchIntervalInBackground: false,
 			}
 		}),
@@ -133,7 +140,7 @@ export default function JobsProvider({ loginId, kinds, children }) {
 				now - Date.parse(verdict.finishedAt) > QUIET_AFTER_MS
 			finish(job, verdict, pathRef.current !== job.to && !late)
 		})
-		// tracking·results 는 매 렌더 새 배열이라 signature(받은 시각)와 jobs 로만 다시 봐요
+		// results 는 매 렌더 새 배열이라 signature(받은 시각)와 jobs 로만 다시 봐요
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [signature, jobs, finish, kinds])
 

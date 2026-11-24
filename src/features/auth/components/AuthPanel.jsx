@@ -54,6 +54,10 @@ export default function AuthPanel({ placement = "main" }) {
 	})
 	const logout = useMutation({
 		mutationFn: authApi.logout,
+		onError: () => {
+			// 로그아웃 오류를 바로 보여 주도록 세션 재조회가 끝나기를 기다리지 않아요.
+			me.refetch()
+		},
 		onSuccess: async () => {
 			await queryClient.cancelQueries({ queryKey: sessionKey })
 			queryClient.setQueryData(sessionKey, null)
@@ -92,6 +96,7 @@ export default function AuthPanel({ placement = "main" }) {
 					>
 						{logout.isPending ? "로그아웃 중…" : "로그아웃"}
 					</button>
+					{logout.isError && <p role="alert">{getErrorMessage(logout.error)}</p>}
 				</section>
 			</details>
 		)

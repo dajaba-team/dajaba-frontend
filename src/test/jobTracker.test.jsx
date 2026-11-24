@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { useEffect } from "react"
 import { act, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -42,7 +42,28 @@ const kinds = {
 			return { state: "TRACKING" }
 		},
 	},
+	// 실패 간격(BH-FE-06) — 조회한 시각을 calls[id] 에 남겨요. SLOW 는 기본 간격이 커서 30초 상한을 봐요.
+	FLAKY: {
+		intervalMs: 20,
+		queryKey: (job) => ["flaky", job.id],
+		fetch: async (job) => flakyFetch(job),
+		evaluate: () => ({ state: "TRACKING" }),
+	},
+	SLOW: {
+		intervalMs: 5000,
+		queryKey: (job) => ["slow", job.id],
+		fetch: async (job) => flakyFetch(job),
+		evaluate: () => ({ state: "TRACKING" }),
+	},
 }
+const calls = {}
+function flakyFetch(job) {
+	;(calls[job.id] ??= []).push(Date.now())
+	const state = states[job.id]
+	if (typeof state === "number") throw httpError(state)
+	return state
+}
+const gaps = (id) => (calls[id] ?? []).slice(1).map((at, index) => at - calls[id][index])
 
 const holder = { current: null }
 function Grab() {
@@ -79,8 +100,10 @@ const track = (id, extra = {}) =>
 const jobOf = (id) => holder.current.jobs.find((job) => job.id === id)
 
 afterEach(() => {
+	vi.useRealTimers()
 	sessionStorage.clear()
 	Object.keys(states).forEach((key) => delete states[key])
+	Object.keys(calls).forEach((key) => delete calls[key])
 })
 
 describe("작업 추적기", () => {
@@ -195,5 +218,54 @@ describe("작업 추적기", () => {
 		rerenderAs(null)
 		expect(sessionStorage.getItem(storageKey("admin"))).toBeNull()
 		expect(holder.current.jobs).toEqual([])
+	})
+})
+
+// 9/7 점검 BH-FE-06 — 네트워크·5xx 가 이어지면 작업마다 간격을 2배씩(최대 30초) 늘리고, 성공하면 기본으로
+describe("작업 추적 실패 간격", () => {
+	const advance = (ms) => act(() => vi.advanceTimersByTimeAsync(ms))
+	const trackKind = (kind, id) =>
+		act(() => holder.current.track({ kind, id, label: `작업${id}`, to: "/batches" }))
+
+	it("연속 실패 1~4회 → 간격 2·4·8·16배, 한 번 성공하면 기본 간격", async () => {
+		vi.useFakeTimers()
+		states.f = 500
+		show()
+		await trackKind("FLAKY", "f")
+		await advance(0)
+		// 실패 1 → 40 · 실패 2 → 80 · 실패 3 → 160 · 실패 4 → 320
+		await advance(40 + 80 + 160)
+		expect(gaps("f")).toEqual([40, 80, 160])
+		states.f = "RUNNING"
+		await advance(320)
+		expect(gaps("f")).toEqual([40, 80, 160, 320])
+		// 5번째 조회가 성공 → 다음부터 기본 20
+		await advance(20 * 3)
+		expect(gaps("f")).toEqual([40, 80, 160, 320, 20, 20, 20])
+	})
+
+	it("간격은 최대 30초에서 멈춘다", async () => {
+		vi.useFakeTimers()
+		states.s = 503
+		show()
+		await trackKind("SLOW", "s")
+		await advance(0)
+		// 기본 5초 → 10 · 20 · 30(상한) · 30
+		await advance(10_000 + 20_000 + 30_000 + 30_000)
+		expect(gaps("s")).toEqual([10_000, 20_000, 30_000, 30_000])
+	})
+
+	it("작업 두 개가 서로 실패 수를 섞지 않는다", async () => {
+		vi.useFakeTimers()
+		states.bad = 500
+		states.ok = "RUNNING"
+		show()
+		await trackKind("FLAKY", "bad")
+		await trackKind("FLAKY", "ok")
+		await advance(0)
+		await advance(40 + 80 + 160 + 320)
+		expect(gaps("bad")).toEqual([40, 80, 160, 320])
+		expect(new Set(gaps("ok"))).toEqual(new Set([20]))
+		expect(gaps("ok").length).toBeGreaterThanOrEqual(25)
 	})
 })
