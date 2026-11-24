@@ -1075,7 +1075,8 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		const rows = await within(table).findAllByRole("row")
 		expect(rows).toHaveLength(5) // 머리 + 4건
 		expect(within(rows[1]).getByText("III부 1 · 입금")).toBeInTheDocument()
-		expect(within(rows[1]).getByText("2022-10-31 09:00")).toBeInTheDocument()
+		// 날짜 / 시각은 두 줄로 나눠 보여요(SCRUM-410)
+		expect(rows[1].cells[1]).toHaveTextContent("2022-10-31 09:00")
 		expect(within(rows[3]).getByText("III부 3 · 출금")).toBeInTheDocument()
 		expect(within(rows[4]).getByText("대상 계좌 미참여")).toBeInTheDocument()
 	})

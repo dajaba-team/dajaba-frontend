@@ -132,6 +132,35 @@
 	min-width: 32rem;
 	border-collapse: collapse;
 }
+/* 거래 표(SCRUM-410) — 칸 안에서 아무 데서나 끊기지 않게: 머리글·한 줄 값은 줄바꿈 없음,
+   두 줄 값(날짜/시각 · 보낸/받는 계좌 · 숫자/통화)은 정해 둔 자리에서만 나눠요. 좁으면 표만 가로로 밀어요. */
+.case-tx-table th,
+.case-tx-table td {
+	padding-inline: var(--space-4);
+	white-space: nowrap;
+	vertical-align: middle;
+}
+.case-tx-table td {
+	font-variant-numeric: tabular-nums;
+}
+.case-tx-table .tx-num {
+	text-align: right;
+}
+.tx-lines {
+	display: inline-grid;
+	gap: 0.125rem;
+	line-height: var(--leading-tight);
+}
+.tx-sub {
+	color: var(--color-muted);
+	font-size: var(--font-xs);
+}
+.case-tx-table button {
+	min-height: 2rem;
+	padding: 0 var(--space-3);
+	font-size: var(--font-xs);
+	white-space: nowrap;
+}
 /* 행 간격은 화면 폭과 상관없이 좁게(세로 --space-3), 가로만 폭에 따라 넓혀요. */
 .case-table th,
 .case-table td {

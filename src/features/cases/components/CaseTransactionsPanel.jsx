@@ -2,7 +2,8 @@ import { useState } from "react"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatDataMinute as formatDataTime } from "../caseTime"
 import { useCaseTransactions } from "../hooks/useCases"
-import { formatAmount } from "./caseMoney"
+import { formatNumber } from "./caseMoney"
+import { currencyLabel } from "../currencyLabels"
 import EvidenceDialog from "./EvidenceDialog"
 import { DIRECTION_LABELS } from "../labels"
 import Pagination from "../../../shared/ui/Pagination"
@@ -15,6 +16,29 @@ import Pagination from "../../../shared/ui/Pagination"
 function directionText(item, n) {
 	if (item.direction === "INDIRECT") return "대상 계좌 미참여"
 	return `III부 ${n} · ${DIRECTION_LABELS[item.direction] ?? item.direction}`
+}
+
+// 거래 표 칸 줄바꿈(SCRUM-410) — 아무 데서나 끊기지 않게, 정해 둔 자리에서만 두 줄로 나눠요.
+// "2022-09-02 09:17" → 날짜 / 시각, 금액 → 숫자 / 통화(회색 작은 글자).
+// 두 조각 사이 공백은 글자로 읽을 때(복사·화면 읽기) 붙지 않게 — 화면에서는 grid 라 보이지 않아요.
+function TwoLines({ value }) {
+	const [first, ...rest] = String(value).split(" ")
+	return (
+		<span className="tx-lines">
+			<span>{first}</span>{" "}
+			{rest.length > 0 && <span className="tx-sub">{rest.join(" ")}</span>}
+		</span>
+	)
+}
+
+function Money({ amount, currency }) {
+	if (amount == null) return "—"
+	const unit = currencyLabel(currency)
+	return (
+		<span className="tx-lines">
+			<span>{formatNumber(amount)}</span> {unit && <span className="tx-sub">{unit}</span>}
+		</span>
+	)
 }
 
 const SCOPE_TITLES = { EVIDENCE: "근거 거래", CONTEXT: "참고 거래" }
@@ -70,15 +94,19 @@ export default function CaseTransactionsPanel({
 			{data &&
 				(data.items.length ? (
 					<div className="case-table-scroll" tabIndex={0} aria-label="거래 표">
-						<table className="case-table">
+						<table className="case-table case-tx-table">
 							<thead>
 								<tr>
 									<th scope="col">거래</th>
 									<th scope="col">원천 시각</th>
 									<th scope="col">송금 → 수취</th>
 									<th scope="col">대상 계좌 기준</th>
-									<th scope="col">보낸 금액</th>
-									<th scope="col">받은 금액</th>
+									<th scope="col" className="tx-num">
+										보낸 금액
+									</th>
+									<th scope="col" className="tx-num">
+										받은 금액
+									</th>
 									<th scope="col">원본</th>
 								</tr>
 							</thead>
@@ -102,9 +130,14 @@ export default function CaseTransactionsPanel({
 												<span className="case-status"> 참고</span>
 											)}
 										</td>
-										<td>{formatDataTime(item.ts)}</td>
 										<td>
-											{item.fromAccountNo} → {item.toAccountNo}
+											<TwoLines value={formatDataTime(item.ts)} />
+										</td>
+										<td>
+											<span className="tx-lines">
+												<span>{item.fromAccountNo}</span>{" "}
+												<span className="tx-sub">→ {item.toAccountNo}</span>
+											</span>
 										</td>
 										<td>
 											{item.scope === "CONTEXT"
@@ -114,12 +147,17 @@ export default function CaseTransactionsPanel({
 														(page - 1) * data.size + index + 1,
 													)}
 										</td>
-										<td>{formatAmount(item.amountPaid, item.currencyPaid)}</td>
-										<td>
-											{formatAmount(
-												item.amountReceived,
-												item.currencyReceived,
-											)}
+										<td className="tx-num">
+											<Money
+												amount={item.amountPaid}
+												currency={item.currencyPaid}
+											/>
+										</td>
+										<td className="tx-num">
+											<Money
+												amount={item.amountReceived}
+												currency={item.currencyReceived}
+											/>
 										</td>
 										<td>
 											<button
