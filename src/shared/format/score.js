@@ -5,14 +5,17 @@
 //   Math.floor(x * 10000)은 0.29 * 10000 = 2899.9999…처럼 한 자리 내려가서 쓰지 않아요.
 // - toFixed(10)이 열째 자리에서 반올림하니, 열째 자리 아래 차이(예 0.69999999999996 → 0.7000)는 같은 값으로 봐요.
 //   모델 점수가 경계에 그만큼 붙을 일은 사실상 없고, 등급은 서버 값으로 정해요 (#79 리뷰).
+// - 대시보드 「지금 바로 확인해야 할 케이스」는 한눈에 보는 카드라 둘째 자리까지(0.9233 → 0.92). 똑같이 버림이라
+//   0.69996은 0.69로 보여 MEDIUM 배지와 어긋나지 않아요. 목록·상세는 넷째 자리 그대로 [SCRUM-392].
 
 export const SCORE_DECIMALS = 4
+export const DASHBOARD_SCORE_DECIMALS = 2
 
-/** 점수를 "0.8600" 모양 글자로. null·숫자가 아닌 값은 null — 빈 칸 글자는 부르는 쪽이 정해요. */
-export function formatScore(score) {
+/** 점수를 "0.8600" 모양 글자로(decimals 자리까지 버림). null·숫자가 아닌 값은 null — 빈 칸 글자는 부르는 쪽이 정해요. */
+export function formatScore(score, decimals = SCORE_DECIMALS) {
 	if (score == null || score === "") return null
 	const value = Number(score)
 	if (!Number.isFinite(value)) return null
 	const [whole, fraction = ""] = value.toFixed(10).split(".")
-	return `${whole}.${fraction.slice(0, SCORE_DECIMALS)}`
+	return `${whole}.${fraction.slice(0, decimals)}`
 }
