@@ -758,6 +758,12 @@
 	font-size: var(--font-lead);
 	font-weight: var(--weight-semibold);
 }
+.case-summary-score-name {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	white-space: nowrap;
+}
 .case-summary-score .kpi-info {
 	position: relative;
 	display: inline-flex;
@@ -768,13 +774,18 @@
 	min-width: 1.5rem;
 	min-height: 1.5rem;
 }
-/* 설명은 ⓘ 오른쪽 끝에 맞춰 왼쪽으로 펼쳐요 — 숨겨져 있어도 자리를 차지해 좁은 화면에서 가로로 넘치지 않게. */
+/* 설명은 ⓘ 오른쪽 끝에 맞춰 왼쪽으로 펼쳐요 — 숨겨져 있어도 자리를 차지해 좁은 화면에서 가로로 넘치지 않게.
+   폭은 글자 길이에 맞춰 늘어나 보통 한 줄로 보여요(BUG-009). 화면이 좁을 때만 줄을 바꾸고,
+   그때도 줄 길이를 고르게(balance)·단어 단위로(keep-all) 나눠 상자에 빈 자리가 덜 남게. */
 .case-summary-score .kpi-info-tip {
 	top: calc(100% + var(--space-1));
 	right: 0;
 	left: auto;
-	max-width: min(16rem, 70vw);
+	width: max-content;
+	max-width: min(32rem, 70vw);
 	white-space: normal;
+	word-break: keep-all;
+	text-wrap: balance;
 }
 .case-summary-meta {
 	display: flex;

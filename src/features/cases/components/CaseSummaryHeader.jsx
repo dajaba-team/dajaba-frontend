@@ -41,11 +41,14 @@ export default function CaseSummaryHeader({ detail, askButton, onAction }) {
 						<>
 							<RiskBadge band={band} />
 							<strong>{formatScore(score)}</strong>
-							<span className="case-summary-score-label">조사 우선순위 점수</span>
-							<InfoTip
-								label="조사 우선순위 점수"
-								text={`모델 점수예요. 범죄 확률이 아니에요.${modelVersion ? ` 모델 ${modelVersion}` : ""}`}
-							/>
+							{/* 라벨과 ⓘ 는 한 덩어리 — 좁은 화면에서 ⓘ 만 다음 줄 왼쪽 끝으로 떨어져 설명이 화면 밖으로 나가지 않게. */}
+							<span className="case-summary-score-name">
+								<span className="case-summary-score-label">조사 우선순위 점수</span>
+								<InfoTip
+									label="조사 우선순위 점수"
+									text={`모델 점수예요. 범죄 확률이 아니에요.${modelVersion ? ` 모델 ${modelVersion}` : ""}`}
+								/>
+							</span>
 						</>
 					) : (
 						<span className="case-summary-score-status">{status}</span>

@@ -106,12 +106,17 @@
 	position: relative;
 	display: inline-flex;
 }
+/* 설명이 길어(60~90자) 여러 줄 — 줄 길이를 고르게(balance)·단어 단위로(keep-all), 왼쪽 정렬로 읽기 쉽게.
+   상자 폭을 가장 긴 줄에 맞추고 화면 밖으로 나가면 안쪽으로 미는 건 InfoTip 이 해요(SCRUM-393). */
 .batch-step .kpi-info-tip {
 	top: calc(100% + 6px);
 	left: 50%;
 	width: max-content;
-	max-width: 16rem;
+	max-width: min(18rem, calc(100vw - 1rem));
 	white-space: normal;
+	text-align: start;
+	word-break: keep-all;
+	text-wrap: balance;
 	transform: translateX(-50%);
 }
 
