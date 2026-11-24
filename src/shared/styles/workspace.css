@@ -194,9 +194,12 @@
 	opacity: 0.7;
 	cursor: help;
 }
-.kpi-info-button:hover,
-.kpi-info-button:focus-visible {
+/* 올리면 조금 진해지기만 — 배경·색은 그대로. 전역 button:hover:enabled(연한 배경)·시연 화면 버튼 hover(글자색)가
+   이기지 못하게 .kpi-info 를 붙여 우선순위를 올려요. 파란 카드에서 ⓘ 가 흰 동그라미로 바뀌던 것(SCRUM-393). */
+.kpi-info .kpi-info-button:hover:enabled,
+.kpi-info .kpi-info-button:focus-visible {
 	background: transparent;
+	color: inherit;
 	opacity: 1;
 }
 .kpi-info-tip {
