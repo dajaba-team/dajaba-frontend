@@ -634,6 +634,26 @@
 .case-reasons li > dl {
 	padding: var(--space-2) 0 0;
 }
+/* 모델 기여 ⓘ — 공용 .kpi-info-tip 은 카드 기준(top 66px)이라 위치 기준을 ⓘ 로 잡아요. 안 그러면 설명이 페이지 맨 위에 떠요.
+   ⓘ 바로 아래에서 오른쪽으로 펼쳐요(라벨이 카드 왼쪽에 있어서). 누르는 영역 24px 이상(WCAG 2.5.8). */
+.case-reasons .kpi-info {
+	position: relative;
+	display: inline-flex;
+	vertical-align: middle;
+	color: var(--color-muted);
+}
+.case-reasons .kpi-info-button {
+	min-width: 1.5rem;
+	min-height: 1.5rem;
+}
+.case-reasons .kpi-info-tip {
+	top: calc(100% + var(--space-1));
+	left: 0;
+	max-width: min(24rem, 70vw);
+	white-space: normal;
+	word-break: keep-all;
+	text-wrap: balance;
+}
 
 /* 케이스 상세 — 시연 화면(/demo/cases)과 같은 모양: 위에 작은 머리글(CASE v·번호·한 줄 설명 + 오른쪽 배지),
    아래는 왼쪽 본문 + 오른쪽 메모·다음 작업 2단, 거래 근거는 그 밑 전체 폭. 카드 제목은 구분선 있는 머리 띠로 보여요. 좁으면 한 줄로 쌓아요. */
