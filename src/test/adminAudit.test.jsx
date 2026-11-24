@@ -108,6 +108,31 @@ describe("AI 호출 기록 탭", () => {
 			"/v1/references/search",
 		])
 	})
+	it("[조회] 전에 고친 값도 [필터 초기화]로 모두 기본값으로 비운다 (SCRUM-410)", async () => {
+		// 주소가 이미 ?tab=ai 라 [필터 초기화]가 주소를 바꾸지 못하는 경우 — 예전엔 칸이 그대로 남았어요.
+		const user = renderApp("/admin/audit?tab=ai")
+		let form = await screen.findByRole("form", { name: "AI 호출 기록 필터" })
+		await user.selectOptions(within(form).getByLabelText("결과"), "SUCCESS")
+		await user.selectOptions(within(form).getByLabelText("대상 종류"), "DRAFT")
+		await user.type(within(form).getByLabelText("대상 번호"), "DRF-1")
+		await user.type(within(form).getByLabelText("요청 ID"), "req-1")
+		await user.type(within(form).getByLabelText("실패 코드"), "AI_TIMEOUT")
+		await user.type(within(form).getByLabelText("시작일"), "2026-11-01")
+		await user.click(within(form).getByRole("button", { name: "필터 초기화" }))
+		form = screen.getByRole("form", { name: "AI 호출 기록 필터" })
+		for (const name of [
+			"엔드포인트",
+			"결과",
+			"대상 종류",
+			"대상 번호",
+			"요청 ID",
+			"실패 코드",
+			"시작일",
+			"종료일",
+		])
+			expect(within(form).getByLabelText(name)).toHaveValue("")
+		expect(within(form).getByLabelText("대상 번호")).toBeDisabled()
+	})
 	it("결과가 없으면 안내와 [필터 초기화]", async () => {
 		const user = renderApp("/admin/audit?tab=ai&error_code=NOPE")
 		expect(await screen.findByText("조건에 맞는 기록이 없어요.")).toBeInTheDocument()

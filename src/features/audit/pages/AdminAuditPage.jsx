@@ -170,7 +170,14 @@ function FilterForm({ tab, applied, errors = {}, onApply, onReset }) {
 			</div>
 			<div className="audit-filter-footer">
 				{periodInvalid && <p role="alert">시작일은 종료일보다 늦을 수 없어요.</p>}
-				<button type="button" onClick={onReset}>
+				{/* 조회 전에 고친 값은 주소에 없어서 주소만 되돌리면 그대로 남아요 — 칸도 직접 비워요(SCRUM-410). */}
+				<button
+					type="button"
+					onClick={() => {
+						setDraft(Object.fromEntries(KEYS(tab).map((key) => [key, ""])))
+						onReset()
+					}}
+				>
 					필터 초기화
 				</button>
 				<button type="submit" disabled={periodInvalid}>
