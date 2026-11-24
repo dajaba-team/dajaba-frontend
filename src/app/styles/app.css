@@ -474,27 +474,136 @@
 .skip-link:focus {
 	transform: translateY(0);
 }
+/* 햄버거·서랍 머리는 좁은 화면에서만(아래 media). 넓은 화면은 사이드바가 늘 펼쳐져 있어요. */
+.app-menu-toggle,
+.sidebar-drawer-head,
+.app-menu-backdrop {
+	display: none;
+}
+/* 좁은 화면(모바일, SCRUM-410) — 위 띠 한 줄(☰ 로고 … 알림·역할), 메뉴는 왼쪽에서 밀려 나오는 서랍. */
 @media (max-width: 47.99rem) {
-	.app-sidebar {
-		gap: var(--space-3);
-		padding: var(--space-3) var(--space-4);
+	.app-header {
+		position: sticky;
+		inset-block-start: 0;
+		z-index: 30;
+		flex-wrap: nowrap;
+		gap: var(--space-2);
+		min-height: 3.5rem;
+		padding: var(--space-2) var(--space-3);
 	}
-	.sidebar-label {
+	.app-header-brand {
+		gap: var(--space-1);
+	}
+	.app-header .app-brand {
+		gap: var(--space-2);
+		padding-inline: 0;
+		font-size: var(--font-lead);
+	}
+	.app-header .app-brand span,
+	.demo-tools-label {
 		display: none;
+	}
+	.app-header .app-brand-mark {
+		width: 1.875rem;
+		height: 1.875rem;
+	}
+	.app-header-context {
+		display: none;
+	}
+	.head-utils {
+		gap: var(--space-1);
+		margin-inline-start: auto;
+	}
+	.app-menu-toggle {
+		display: grid;
+		flex: none;
+		place-items: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		min-height: 0;
+		padding: 0;
+		border: 0;
+		border-radius: 50%;
+		background: transparent;
+		color: var(--color-text);
+	}
+	.app-menu-toggle:hover:enabled {
+		background: var(--color-soft);
+	}
+	/* 서랍 — 닫혀 있으면 화면 밖 + 숨김(키보드 Tab 도 안 닿게), 열리면 왼쪽에서 밀려 나와요. */
+	.app-sidebar {
+		position: fixed;
+		inset-block: 0;
+		inset-inline-start: 0;
+		z-index: 50;
+		width: min(18rem, 85vw);
+		gap: var(--space-4);
+		padding: var(--space-3) var(--space-4) var(--space-5);
+		overflow-y: auto;
+		border: 0;
+		box-shadow: 0 0 40px rgb(16 24 40 / 18%);
+		visibility: hidden;
+		transform: translateX(-100%);
+		transition:
+			transform 0.2s ease,
+			visibility 0s linear 0.2s;
+	}
+	.app-sidebar.is-open {
+		visibility: visible;
+		transform: none;
+		transition: transform 0.2s ease;
+	}
+	.sidebar-drawer-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding-block-end: var(--space-3);
+		border-block-end: var(--border-width) solid var(--color-border);
+	}
+	.sidebar-drawer-head .app-brand {
+		flex: none;
+		padding-inline: var(--space-2);
+	}
+	.sidebar-drawer-head .app-brand-mark {
+		width: 1.875rem;
+		height: 1.875rem;
+	}
+	.app-navigation {
+		flex-direction: column;
+		overflow: visible;
 	}
 	.sidebar-group.is-dev {
 		padding-block-start: 0;
 		border: 0;
 	}
-	.head-utils {
-		gap: var(--space-1);
+	.sidebar-note {
+		display: block;
+		margin-block-start: auto;
 	}
-	/* 좁은 화면: 지금 메뉴는 아래 메뉴 줄의 파란 칸으로 보이니 위 띠 제목은 숨겨요. */
-	.app-header-context {
-		display: none;
+	.app-menu-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 45;
+		display: block;
+		background: rgb(16 24 40 / 40%);
+		animation: app-menu-fade 0.2s ease;
 	}
-	.app-sidebar {
-		padding-block-start: 0;
+	body.is-menu-open {
+		overflow: hidden;
+	}
+}
+@keyframes app-menu-fade {
+	from {
+		opacity: 0;
+	}
+}
+@media (max-width: 47.99rem) and (prefers-reduced-motion: reduce) {
+	.app-sidebar,
+	.app-sidebar.is-open {
+		transition: none;
+	}
+	.app-menu-backdrop {
+		animation: none;
 	}
 }
 @media (min-width: 48rem) {
