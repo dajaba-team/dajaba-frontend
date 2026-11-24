@@ -33,6 +33,33 @@ const titles = (cards) =>
 	cards.map((card) => card.querySelector(".metric-title").firstChild.textContent)
 
 describe("일반 대시보드의 데이터 범위", () => {
+	it("지금 바로 확인해야 할 케이스에는 끝난 케이스(종료·보고됨)가 없다, 개수에는 그대로 (SCRUM-410)", () => {
+		show([
+			{
+				caseNo: "CASE-DONE",
+				status: "CLOSED",
+				score: 0.99,
+				scoreBand: "HIGH",
+				assignee: null,
+			},
+			{
+				caseNo: "CASE-SENT",
+				status: "REPORTED",
+				score: 0.98,
+				scoreBand: "HIGH",
+				assignee: null,
+			},
+			...sample,
+		])
+		const rows = [...document.querySelectorAll(".focus-case")]
+		expect(rows.map((row) => row.querySelector("a").textContent)).toEqual([
+			"CASE-HIGH",
+			"CASE-NONE",
+			"CASE-ZERO",
+		])
+		expect(kpiCards()[0]).toHaveTextContent("5건")
+	})
+
 	it("조사역은 내 담당 기준 — 조사 중·보완할 초안·승인 대기, 미산출을 고위험이나 0점으로 바꾸지 않는다", () => {
 		show(sample, { mine: true })
 		const cards = kpiCards()
