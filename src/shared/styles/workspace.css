@@ -187,8 +187,10 @@
 	white-space: normal; /* 제목 안 낱말 사이는 꺾여도 돼요 */
 	padding-right: 22px; /* 마지막 줄 끝에 ⓘ(18px) + 간격 자리를 미리 잡아 둬요 */
 }
-/* ⓘ 는 제목 글자 높이 가운데에 — 기준선에 앉으면 2px 쯤 위로 떠 보였어요(SCRUM-390) */
+/* ⓘ 는 제목 글자 높이 가운데에 — 실제 화면에서 보고 2px 올려 맞췄어요(SCRUM-390) */
 .metric-title .kpi-info {
+	position: relative;
+	top: -2px;
 	display: inline-flex;
 	margin-left: -18px; /* 제목 끝에 잡아 둔 자리로 당겨 와요 */
 	vertical-align: middle;
