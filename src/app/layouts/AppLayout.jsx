@@ -24,6 +24,8 @@ export default function AppLayout() {
 	const session = useSession()
 	const { pathname } = useLocation()
 	const isOverview = pathname === "/overview"
+	// 로그인 전(세션 확인 중 포함)에는 사이드바·위 띠 없이 로그인 카드만 보여요(SCRUM-387).
+	const signedIn = Boolean(session.data)
 	const menus = session.data ? visibleMenus(session.data.role) : []
 	const current = currentMenu(menus, pathname)
 	// 로그아웃·계정 전환·401 어느 길이든 loginId 가 바뀌면 이전 사람의 알림을 비워요.
@@ -34,7 +36,7 @@ export default function AppLayout() {
 	}, [loginId, dismiss])
 	// 사이드바 접기·펼치기(SCRUM-327). 넓은 화면에서만 접혀요 — 좁은 화면은 기존처럼 위에 쌓여요.
 	// 버튼을 누르면 사라지는 쪽 대신 새로 나타난 버튼으로 초점을 옮겨요.
-	const [sidebarCollapsed, toggleSidebar] = useSidebarCollapsed()
+	const [sidebarCollapsed, toggleSidebar] = useSidebarCollapsed({ enabled: signedIn })
 	const closeSidebarButton = useRef(null)
 	const openSidebarButton = useRef(null)
 	const sidebarToggled = useRef(false)
@@ -73,17 +75,21 @@ export default function AppLayout() {
 			<a className="skip-link" href="#main-content">
 				본문으로 건너뛰기
 			</a>
-			<div className={`app-shell${sidebarCollapsed ? " is-sidebar-collapsed" : ""}`}>
-				{sidebarCollapsed && (
+			<div
+				className={`app-shell${
+					!signedIn ? " is-signed-out" : sidebarCollapsed ? " is-sidebar-collapsed" : ""
+				}`}
+			>
+				{signedIn && sidebarCollapsed && (
 					// 접은 상태: 왼쪽 위 작은 알약 — 로고는 대시보드로, » 는 사이드바를 다시 펼쳐요.
 					<div className="sidebar-pill">
 						<Link
 							className="sidebar-pill-brand"
 							to="/overview"
-							aria-label="DAJABA 업무 대시보드"
+							aria-label="DAJAVA 업무 대시보드"
 						>
 							<img src={brandMark} alt="" />
-							<span aria-hidden="true">DAJABA</span>
+							<span aria-hidden="true">DAJAVA</span>
 						</Link>
 						<button
 							ref={openSidebarButton}
@@ -99,28 +105,28 @@ export default function AppLayout() {
 						</button>
 					</div>
 				)}
-				<aside id="app-sidebar" className="app-sidebar" aria-label="업무 공간">
-					<div className="app-brand-row">
-						<Link className="app-brand" to="/overview">
-							<img className="app-brand-mark" src={brandMark} alt="" />
-							<div>
-								DAJABA<span>AML 인텔리전스</span>
-							</div>
-						</Link>
-						<button
-							ref={closeSidebarButton}
-							type="button"
-							className="sidebar-toggle"
-							onClick={onToggleSidebar}
-							aria-label="사이드바 닫기"
-							aria-expanded={!sidebarCollapsed}
-							aria-controls="app-sidebar"
-							title="사이드바 닫기 (Ctrl+B)"
-						>
-							<Icon name="chevronsLeft" size={16} />
-						</button>
-					</div>
-					{session.data && (
+				{signedIn && (
+					<aside id="app-sidebar" className="app-sidebar" aria-label="업무 공간">
+						<div className="app-brand-row">
+							<Link className="app-brand" to="/overview">
+								<img className="app-brand-mark" src={brandMark} alt="" />
+								<div>
+									DAJAVA<span>AML 인텔리전스</span>
+								</div>
+							</Link>
+							<button
+								ref={closeSidebarButton}
+								type="button"
+								className="sidebar-toggle"
+								onClick={onToggleSidebar}
+								aria-label="사이드바 닫기"
+								aria-expanded={!sidebarCollapsed}
+								aria-controls="app-sidebar"
+								title="사이드바 닫기 (Ctrl+B)"
+							>
+								<Icon name="chevronsLeft" size={16} />
+							</button>
+						</div>
 						<div className="sidebar-group">
 							<p className="sidebar-label">업무 공간</p>
 							<nav className="app-navigation" aria-label="주요 메뉴">
@@ -138,45 +144,47 @@ export default function AppLayout() {
 								))}
 							</nav>
 						</div>
-					)}
-					<p className="sidebar-note">
-						<strong>AML 조사 워크스페이스</strong>
-						거래 근거부터 조사 메모까지
-					</p>
-				</aside>
+						<p className="sidebar-note">
+							<strong>AML 조사 워크스페이스</strong>
+							거래 근거부터 조사 메모까지
+						</p>
+					</aside>
+				)}
 				<div className="app-workspace">
-					<header className="app-header">
-						<div className="app-header-context">
-							<span className="app-header-title">
-								{current ? current.label : "조사 · 검토 · 보고"}
-							</span>
-						</div>
-						<div className="head-utils" ref={headUtils}>
-							{/* 업무 알림 종(SCRUM-334) — 계정이 바뀌면 본 시각·숫자를 처음부터 */}
-							{loginId && <NotificationBell key={loginId} loginId={loginId} />}
-							<AuthPanel placement="header" />
-							{import.meta.env.DEV && (
-								// 시안의 "시연 도구" — 개발 모드에서만. 시연 화면·연동 확인으로 가는 길을 여기 모아요.
-								<details className="demo-tools">
-									<summary>
-										<Icon name="help" size={16} /> 시연 도구
-									</summary>
-									<nav aria-label="개발 메뉴">
-										<span>
-											{import.meta.env.VITE_USE_MOCKS === "true"
-												? "예시 데이터 모드 · 새로고침하면 초기화"
-												: "개발 모드 · 팀 검토용"}
-										</span>
-										<NavLink to="/demo/overview">대시보드 시연</NavLink>
-										<NavLink to="/dev/connection">백엔드 연동 확인</NavLink>
-									</nav>
-								</details>
-							)}
-						</div>
-					</header>
+					{signedIn && (
+						<header className="app-header">
+							<div className="app-header-context">
+								<span className="app-header-title">
+									{current ? current.label : "조사 · 검토 · 보고"}
+								</span>
+							</div>
+							<div className="head-utils" ref={headUtils}>
+								{/* 업무 알림 종(SCRUM-334) — 계정이 바뀌면 본 시각·숫자를 처음부터 */}
+								{loginId && <NotificationBell key={loginId} loginId={loginId} />}
+								<AuthPanel placement="header" />
+								{import.meta.env.DEV && (
+									// 시안의 "시연 도구" — 개발 모드에서만. 시연 화면·연동 확인으로 가는 길을 여기 모아요.
+									<details className="demo-tools">
+										<summary>
+											<Icon name="help" size={16} /> 시연 도구
+										</summary>
+										<nav aria-label="개발 메뉴">
+											<span>
+												{import.meta.env.VITE_USE_MOCKS === "true"
+													? "예시 데이터 모드 · 새로고침하면 초기화"
+													: "개발 모드 · 팀 검토용"}
+											</span>
+											<NavLink to="/demo/overview">대시보드 시연</NavLink>
+											<NavLink to="/dev/connection">백엔드 연동 확인</NavLink>
+										</nav>
+									</details>
+								)}
+							</div>
+						</header>
+					)}
 					<main
 						id="main-content"
-						className={`app-main${session.data ? "" : " is-signed-out"}`}
+						className={`app-main${signedIn ? "" : " is-signed-out"}`}
 						tabIndex={-1}
 					>
 						<AuthPanel />

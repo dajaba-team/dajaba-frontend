@@ -189,6 +189,20 @@ describe("앱 셸 — 사용자 흐름", () => {
 		// 세션 확인 뒤 로그인 폼만 표시
 		await screen.findByLabelText("아이디")
 	})
+
+	it("로그인 화면에는 사이드바·위 띠가 없고, 로그인하면 나타난다(SCRUM-387)", async () => {
+		const user = renderApp("/overview", null)
+		await screen.findByLabelText("아이디")
+		expect(screen.queryByRole("complementary", { name: "업무 공간" })).toBeNull()
+		expect(document.querySelector(".app-header")).toBeNull()
+		expect(screen.queryByRole("button", { name: "사이드바 닫기" })).toBeNull()
+		expect(screen.queryByRole("button", { name: "사이드바 열기" })).toBeNull()
+		await user.type(screen.getByLabelText("아이디"), "inv01")
+		await user.type(screen.getByLabelText("비밀번호"), MOCK_PASSWORD)
+		await user.click(screen.getByRole("button", { name: "로그인" }))
+		expect(await screen.findByRole("complementary", { name: "업무 공간" })).toBeInTheDocument()
+		expect(document.querySelector(".app-header")).not.toBeNull()
+	})
 })
 
 describe("사이드바 접기·펼치기(SCRUM-327)", () => {
@@ -204,7 +218,7 @@ describe("사이드바 접기·펼치기(SCRUM-327)", () => {
 		const open = screen.getByRole("button", { name: "사이드바 열기" })
 		expect(open).toHaveAttribute("aria-expanded", "false")
 		expect(open).toHaveFocus()
-		expect(screen.getByRole("link", { name: "DAJABA 업무 대시보드" })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: "DAJAVA 업무 대시보드" })).toHaveAttribute(
 			"href",
 			"/overview",
 		)

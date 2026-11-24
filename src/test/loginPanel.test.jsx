@@ -21,10 +21,10 @@ function renderSignedOut() {
 }
 
 describe("로그인 카드 (SCRUM-345)", () => {
-	it("로고 아래 제목 DAJABA·부제목이 있고, 개발용 계정 안내 문구는 없다", async () => {
+	it("로고 아래 제목 DAJAVA·부제목이 있고, 개발용 계정 안내 문구는 없다", async () => {
 		renderSignedOut()
 		const card = await screen.findByRole("region", { name: "로그인" })
-		expect(await within(card).findByRole("heading", { name: "DAJABA" })).toBeInTheDocument()
+		expect(await within(card).findByRole("heading", { name: "DAJAVA" })).toBeInTheDocument()
 		expect(within(card).getByText("AI 기반 자금세탁방지 업무 시스템")).toBeInTheDocument()
 		expect(card.querySelector("img.auth-brand-mark")).not.toBeNull()
 		expect(card).not.toHaveTextContent(/로컬 계정|DEV_USER_PASSWORD|mock-password/)
