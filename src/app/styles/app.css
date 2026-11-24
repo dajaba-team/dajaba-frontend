@@ -876,11 +876,17 @@
 }
 
 .confirm-dialog-body {
-	margin-block-end: var(--space-2);
+	color: var(--color-text);
 }
+/* 확인창 실패 문구 — 옅은 빨강 상자로 본문과 나눠요(SCRUM-403). */
 .confirm-dialog-error {
-	margin-block-start: var(--space-2);
-	color: #8a2a1e;
+	margin-block: var(--space-4) 0;
+	padding: var(--space-3) var(--space-4);
+	border-radius: var(--radius-control);
+	background: var(--color-fail-soft);
+	color: var(--color-fail);
+	font-size: var(--font-small);
+	line-height: var(--leading-normal);
 }
 
 /* 공용 페이지 넘김 — 왼쪽 전체 건수·범위, 오른쪽 숫자 페이지 (SCRUM-285). */
