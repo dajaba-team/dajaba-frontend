@@ -9,6 +9,7 @@ import CaseAskPanel from "../components/CaseAskPanel"
 import bearFace from "../../../shared/assets/bear-face.png"
 import CaseEvidenceCard from "../components/CaseEvidenceCard"
 import CaseInfoCard from "../components/CaseInfoCard"
+import CaseHistoryCard from "../components/CaseHistoryCard"
 import CaseNotesCard from "../components/CaseNotesCard"
 import CaseScoreReasons from "../components/CaseScoreReasons"
 import CaseSummaryPanel from "../components/CaseSummaryPanel"
@@ -18,9 +19,14 @@ import { useGuide } from "../../../shared/ui/useGuide"
 import { caseDetailWorkflowGuide } from "../../../shared/ui/workflowGuide"
 
 // 케이스 상세 — 계약서 C2 `GET /cases/{case_no}`. 열람 기록은 서버가 남겨요.
-// 위계(SCRUM-369 B안): 맨 위 판단 요약(등급·점수·상태·다음 처리) → 점수 근거·AI 요약 → 거래 분석 → 조사 메모 → 처리 작업 → 케이스·경보 정보.
-// 넓은 화면(77.5rem~)은 2단: 왼쪽 점수 근거·AI 요약, 오른쪽 메모·처리 작업·정보, 거래 분석은 그 아래 전체 폭 —
-// 그래프 글자가 줄어들지 않고 표가 가로로 잘리지 않게. 좁은 화면에선 마크업 순서대로 한 줄 — 거래 분석이 메모보다 먼저(Tab 순서도 같게, SCRUM-373).
+// 조사 흐름대로 위에서 아래로 읽혀요:
+//   ① 무엇인가 — 판단 요약(번호·점수·상태·사유·담당·[다음 처리]) + 개요 띠(계좌·규칙·탐지 기간·경보)
+//   ② 왜 탐지됐나 — 점수 근거 → AI 요약
+//   ③ 근거 확인 — 거래 분석(자금 흐름·근거 거래)
+//   ④ 작업대 — 조사 메모 → 처리 작업
+//   ⑤ 참고 — 이력(처리·메모)
+// 마크업 순서 = 읽는 순서 = Tab 순서(SCRUM-373). 좁은 화면은 그대로 한 줄이라 근거 바로 뒤에 메모·처리가 와요.
+// 넓은 화면(77.5rem~)은 왼쪽 ②③⑤, 오른쪽 작업대 — 작업대는 스크롤을 따라와서 근거를 보며 바로 메모·처리할 수 있어요.
 // 채움 파랑 버튼은 판단 요약의 [다음 처리] 하나예요.
 
 // 질문 채팅창 상태 — 열림·접힘(근거 보기)·근거 강조. 케이스가 바뀌면 key 로 새로 시작해요(SCRUM-303).
@@ -117,12 +123,11 @@ function CaseDetail({ caseNo }) {
 							askButton={canAsk ? <AskButton ask={ask} /> : null}
 							onAction={requestAction}
 						/>
+						<CaseInfoCard detail={detail} />
 						<div className="case-detail-layout">
 							<div className="case-detail-main">
 								<CaseScoreReasons latestScore={detail.latestScore} />
 								<CaseSummaryPanel detail={detail} />
-							</div>
-							<div className="case-evidence">
 								<CaseEvidenceCard
 									detail={detail}
 									highlight={panelOpen ? ask.highlight : null}
@@ -132,15 +137,17 @@ function CaseDetail({ caseNo }) {
 									}
 								/>
 							</div>
-							<aside className="case-detail-aside" aria-label="메모와 처리 작업">
+							<aside className="case-detail-aside" aria-label="조사 메모와 처리 작업">
 								<CaseNotesCard detail={detail} onRefresh={() => query.refetch()} />
 								<CaseActions
 									detail={detail}
 									request={actionRequest}
 									primaryKey={nextActionOf(detail)?.key ?? null}
 								/>
-								<CaseInfoCard detail={detail} />
 							</aside>
+							<div className="case-detail-history">
+								<CaseHistoryCard detail={detail} />
+							</div>
 						</div>
 					</>
 				)}

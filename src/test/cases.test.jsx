@@ -598,6 +598,8 @@ describe("케이스 조사", () => {
 	})
 	it("메모를 저장하면 메모 이력에 새 메모와 이전 메모가 보인다 (C8)", async () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
+		// 메모 이력은 본문 아래 「이력」 카드의 탭이에요
+		await user.click(await screen.findByRole("button", { name: "메모 이력" }))
 		const historySection = await screen.findByRole("region", { name: "메모 이력" })
 		expect(await within(historySection).findByText("메모 이력이 없습니다.")).toBeInTheDocument()
 		const memo = await screen.findByRole("textbox", { name: "메모 내용" })
@@ -631,7 +633,8 @@ describe("케이스 조사", () => {
 				}),
 			),
 		)
-		renderApp(`/cases/${REVIEWING}`)
+		const user = renderApp(`/cases/${REVIEWING}`)
+		await user.click(await screen.findByRole("button", { name: "메모 이력" }))
 		const historySection = await screen.findByRole("region", { name: "메모 이력" })
 		expect(await within(historySection).findByText("(메모 비움)")).toBeInTheDocument()
 	})
@@ -702,15 +705,15 @@ describe("케이스 조사", () => {
 	})
 	it("상세에 경보 정보와 최근 모델 점수를 보여 준다", async () => {
 		renderApp(`/cases/${REVIEWING}`)
-		// 경보 정보는 「케이스·경보 정보」 카드로 합쳤어요(SCRUM-369).
+		// 계좌·규칙·탐지 기간·경보는 판단 요약 바로 아래 개요 띠(「케이스·경보 정보」)에 있어요.
 		const panel = await screen.findByRole("region", { name: "케이스·경보 정보" })
 		expect(within(panel).getByText("ALT-20221101-000104")).toBeInTheDocument()
 		expect(within(panel).getByText("R02 집중 입금")).toBeInTheDocument()
 		// 동시 수정 검사용 version 은 화면에 없어요
 		expect(within(panel).queryByText("버전")).not.toBeInTheDocument()
-		// 탐지 기간은 판단 요약에만 있어요. 데이터 시각은 시간대를 붙이지 않고 받은 그대로(T만 공백)
+		// 데이터 시각은 시간대를 붙이지 않고 받은 그대로(T만 공백)
 		expect(
-			screen.getByText(/탐지 기간 2022-10-31 00:00:00 ~ 2022-11-01 00:00:00/),
+			within(panel).getByText("2022-10-31 00:00:00 ~ 2022-11-01 00:00:00"),
 		).toBeInTheDocument()
 		expect(within(panel).getByText("15건")).toBeInTheDocument()
 		// 점수·등급은 맨 위 판단 요약(h1 이 있는 banner)으로 올라왔어요. 범죄 확률 아님 안내는 ⓘ 설명으로.
@@ -720,7 +723,8 @@ describe("케이스 조사", () => {
 		expect(within(summary).getByRole("tooltip", { hidden: true })).toHaveTextContent(
 			"범죄 확률을 뜻하지 않습니다",
 		)
-		expect(within(summary).getByText("탐지 규칙 R02 집중 입금")).toBeInTheDocument()
+		// 개요 띠와 겹치는 규칙·기간은 판단 요약에 다시 쓰지 않아요
+		expect(within(summary).queryByText(/R02/)).not.toBeInTheDocument()
 	})
 	it("점수 근거: 기여 크기 순 상위 3개를 관측값·기준값·모델 기여로 나눠 보여 준다 (SCRUM-208)", async () => {
 		renderApp(`/cases/${REVIEWING}`)
@@ -856,7 +860,6 @@ describe("케이스 조사", () => {
 		)
 		// 다른 작업 버튼·메모 칸은 그대로
 		expect(screen.getByRole("button", { name: "에스컬레이션" })).toBeEnabled()
-		await user.click(screen.getByRole("button", { name: "조사 메모" }))
 		expect(screen.getByRole("textbox", { name: "메모 내용" })).toBeEnabled()
 	})
 	it("요약 버튼은 REFRESH_SUMMARY가 있을 때만 보여 준다", async () => {
@@ -1299,8 +1302,9 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		expect(await within(history).findByText("담당 배정")).toBeInTheDocument()
 		expect(within(history).getByText("케이스 생성")).toBeInTheDocument()
 		expect(within(history).queryByText("메모 저장")).not.toBeInTheDocument()
-		await user.click(screen.getByRole("button", { name: "조사 메모" }))
+		await user.click(screen.getByRole("button", { name: "메모 이력" }))
 		expect(screen.getByRole("region", { name: "메모 이력" })).toBeInTheDocument()
+		expect(screen.queryByRole("region", { name: "처리 이력 전체" })).not.toBeInTheDocument()
 		await user.click(screen.getByRole("button", { name: "처리 이력" }))
 		await user.click(within(history).getByRole("button", { name: "최근 이력만 보기" }))
 		expect(await screen.findByRole("region", { name: "처리 이력" })).toBeInTheDocument()

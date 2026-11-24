@@ -13,48 +13,45 @@ export default function CaseNoteHistory({ caseNo }) {
 	const query = useCaseNoteHistories(caseNo, page)
 	const data = query.data
 	return (
-		<section className="case-note-history" aria-labelledby="note-history-title">
-			<details>
-				<summary>
-					<h3 id="note-history-title">메모 이력</h3>
-					{data?.total > 0 && <span> {data.total}건</span>}
-				</summary>
-				<AsyncState query={query} />
-				{data &&
-					(data.items.length ? (
-						<>
-							<ol className="case-history">
-								{data.items.map((entry) => (
-									<li key={entry.caseVersionBefore}>
-										<strong>{entry.createdBy}</strong> ·{" "}
-										{formatSystemTime(entry.createdAt)}
-										<p className="preserve-lines">{textOf(entry.afterText)}</p>
-										{entry.beforeText != null && (
-											<details>
-												<summary>이전 메모</summary>
-												<p className="preserve-lines">
-													{textOf(entry.beforeText)}
-												</p>
-											</details>
-										)}
-									</li>
-								))}
-							</ol>
-							{data.totalPages > 1 && (
-								<Pagination
-									label="메모 이력 페이지"
-									page={page}
-									totalPages={data.totalPages}
-									total={data.total}
-									size={data.size}
-									onChange={setPage}
-								/>
-							)}
-						</>
-					) : (
-						<p>메모 이력이 없습니다.</p>
-					))}
-			</details>
+		<section aria-labelledby="note-history-title">
+			<h3 id="note-history-title" className="visually-hidden">
+				메모 이력
+			</h3>
+			<AsyncState query={query} />
+			{data &&
+				(data.items.length ? (
+					<>
+						<ol className="case-history">
+							{data.items.map((entry) => (
+								<li key={entry.caseVersionBefore}>
+									<strong>{entry.createdBy}</strong> ·{" "}
+									{formatSystemTime(entry.createdAt)}
+									<p className="preserve-lines">{textOf(entry.afterText)}</p>
+									{entry.beforeText != null && (
+										<details>
+											<summary>이전 메모</summary>
+											<p className="preserve-lines">
+												{textOf(entry.beforeText)}
+											</p>
+										</details>
+									)}
+								</li>
+							))}
+						</ol>
+						{data.totalPages > 1 && (
+							<Pagination
+								label="메모 이력 페이지"
+								page={page}
+								totalPages={data.totalPages}
+								total={data.total}
+								size={data.size}
+								onChange={setPage}
+							/>
+						)}
+					</>
+				) : (
+					<p>메모 이력이 없습니다.</p>
+				))}
 		</section>
 	)
 }

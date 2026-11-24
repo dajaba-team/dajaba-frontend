@@ -43,7 +43,9 @@ export default function CaseHistoryPanel({ caseNo, recent }) {
 	const data = query.data
 	return (
 		<section aria-labelledby="history-title">
-			<h2 id="history-title">{all ? "처리 이력 전체" : "처리 이력"}</h2>
+			<h3 id="history-title" className="visually-hidden">
+				{all ? "처리 이력 전체" : "처리 이력"}
+			</h3>
 			<button
 				type="button"
 				onClick={() => {

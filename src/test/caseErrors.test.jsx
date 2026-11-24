@@ -177,7 +177,6 @@ describe("502 — AI 요약 실패는 요약 칸에만", () => {
 		// 칸 밖에는 오류가 없고, 메모·종료는 그대로 쓸 수 있다
 		const outside = screen.getAllByRole("alert").filter((node) => !panel.contains(node))
 		expect(outside).toHaveLength(0)
-		await user.click(screen.getByRole("button", { name: "조사 메모" }))
 		expect(screen.getByRole("button", { name: "메모 저장" })).toBeEnabled()
 		expect(screen.getByRole("button", { name: "종료" })).toBeEnabled()
 	})
