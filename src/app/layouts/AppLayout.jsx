@@ -9,7 +9,6 @@ import { useToast } from "../../shared/ui/toast/useToast"
 import Icon from "../../shared/ui/dashboard/Icon"
 import { visibleMenus } from "../navigation/appNavigation"
 import brandMark from "../../assets/brand-mark.png"
-import { useSidebarCollapsed } from "./useSidebarCollapsed"
 import JobsProvider from "../../shared/jobs/JobsProvider"
 import { jobKinds } from "../jobs/jobKinds"
 
@@ -34,9 +33,6 @@ export default function AppLayout() {
 	useEffect(() => {
 		dismiss()
 	}, [loginId, dismiss])
-	// 사이드바 접기·펼치기(SCRUM-327). 넓은 화면에서만 접혀요 — 좁은 화면은 기존처럼 위에 쌓여요.
-	// 접기 버튼은 위 띠 왼쪽 로고 옆 한 자리에 늘 있어서(SCRUM-408) 눌러도 초점이 그대로 남아요.
-	const [sidebarCollapsed, toggleSidebar] = useSidebarCollapsed({ enabled: signedIn })
 	// 위 띠의 알림 종·역할 칩·시연 도구 메뉴는 한 번에 하나만 — 바깥을 누르거나 Esc, 화면을 옮기면 닫아요.
 	const headUtils = useRef(null)
 	useEffect(() => {
@@ -63,26 +59,11 @@ export default function AppLayout() {
 			<a className="skip-link" href="#main-content">
 				본문으로 건너뛰기
 			</a>
-			<div
-				className={`app-shell${
-					!signedIn ? " is-signed-out" : sidebarCollapsed ? " is-sidebar-collapsed" : ""
-				}`}
-			>
+			<div className={`app-shell${!signedIn ? " is-signed-out" : ""}`}>
 				{signedIn && (
 					<header className="app-header">
-						{/* 햄버거 버튼 + 로고 — 사이드바를 접어도 같은 크기로 위 띠 왼쪽에 남아요(SCRUM-408). */}
+						{/* 로고 — 위 띠 왼쪽, 사이드바와 같은 폭의 칸(SCRUM-408). 사이드바는 늘 펼쳐 둬요. */}
 						<div className="app-header-brand">
-							<button
-								type="button"
-								className="sidebar-toggle"
-								onClick={toggleSidebar}
-								aria-label={sidebarCollapsed ? "사이드바 열기" : "사이드바 닫기"}
-								aria-expanded={!sidebarCollapsed}
-								aria-controls="app-sidebar"
-								title={`${sidebarCollapsed ? "사이드바 열기" : "사이드바 닫기"} (Ctrl+B)`}
-							>
-								<Icon name="menu" size={20} />
-							</button>
 							<Link
 								className="app-brand"
 								to="/overview"

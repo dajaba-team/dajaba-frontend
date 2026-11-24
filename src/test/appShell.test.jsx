@@ -195,8 +195,6 @@ describe("앱 셸 — 사용자 흐름", () => {
 		await screen.findByLabelText("아이디")
 		expect(screen.queryByRole("complementary", { name: "업무 공간" })).toBeNull()
 		expect(document.querySelector(".app-header")).toBeNull()
-		expect(screen.queryByRole("button", { name: "사이드바 닫기" })).toBeNull()
-		expect(screen.queryByRole("button", { name: "사이드바 열기" })).toBeNull()
 		await user.type(screen.getByLabelText("아이디"), "inv01")
 		await user.type(screen.getByLabelText("비밀번호"), MOCK_PASSWORD)
 		await user.click(screen.getByRole("button", { name: "로그인" }))
@@ -205,84 +203,26 @@ describe("앱 셸 — 사용자 흐름", () => {
 	})
 })
 
-describe("사이드바 접기·펼치기(SCRUM-327)", () => {
+describe("사이드바는 늘 펼쳐 둔다(SCRUM-408)", () => {
 	afterEach(() => localStorage.clear())
 
-	it("위 띠의 닫기 버튼으로 접으면 같은 자리 버튼이 열기로 바뀌고, 다시 펼친다", async () => {
-		const user = renderApp("/cases", "inv01")
-		const close = await screen.findByRole("button", { name: "사이드바 닫기" })
-		expect(close).toHaveAttribute("aria-expanded", "true")
-		expect(close).toHaveAttribute("aria-controls", "app-sidebar")
-
-		await user.click(close)
-		const open = screen.getByRole("button", { name: "사이드바 열기" })
-		expect(open).toHaveAttribute("aria-expanded", "false")
-		expect(open).toHaveFocus()
+	it("접기 버튼이 없고, 위 띠 로고는 대시보드로 간다", async () => {
+		renderApp("/cases", "inv01")
+		expect(await screen.findByRole("complementary", { name: "업무 공간" })).toBeInTheDocument()
+		expect(screen.queryByRole("button", { name: /사이드바/ })).toBeNull()
 		expect(screen.getByRole("link", { name: "DAJAVA 업무 대시보드" })).toHaveAttribute(
 			"href",
 			"/overview",
 		)
-		expect(document.querySelector(".app-shell")).toHaveClass("is-sidebar-collapsed")
-		expect(localStorage.getItem("dajaba.sidebar.v1")).toBe("collapsed")
-
-		await user.click(open)
-		expect(screen.queryByRole("button", { name: "사이드바 열기" })).toBeNull()
-		expect(screen.getByRole("button", { name: "사이드바 닫기" })).toHaveFocus()
-		expect(document.querySelector(".app-shell")).not.toHaveClass("is-sidebar-collapsed")
-		expect(localStorage.getItem("dajaba.sidebar.v1")).toBeNull()
 	})
 
-	it("Ctrl+B로 열고 닫는다", async () => {
-		const user = renderApp("/cases", "inv01")
-		await screen.findByRole("button", { name: "사이드바 닫기" })
-		await user.keyboard("{Control>}b{/Control}")
-		expect(screen.getByRole("button", { name: "사이드바 열기" })).toBeInTheDocument()
-		await user.keyboard("{Control>}b{/Control}")
-		expect(screen.queryByRole("button", { name: "사이드바 열기" })).toBeNull()
-	})
-
-	it("글을 쓰는 칸이나 확인창이 열려 있을 때 Ctrl+B는 사이드바를 건드리지 않는다", async () => {
-		const user = renderApp("/cases", "inv01")
-		await screen.findByRole("button", { name: "사이드바 닫기" })
-		const memo = document.createElement("textarea")
-		document.body.appendChild(memo)
-		memo.focus()
-		await user.keyboard("{Control>}b{/Control}")
-		expect(screen.queryByRole("button", { name: "사이드바 열기" })).toBeNull()
-		memo.remove()
-
-		const dialog = document.createElement("div")
-		dialog.setAttribute("role", "dialog")
-		document.body.appendChild(dialog)
-		await user.keyboard("{Control>}b{/Control}")
-		expect(screen.queryByRole("button", { name: "사이드바 열기" })).toBeNull()
-		dialog.remove()
-	})
-
-	it("좁은 화면에서는 Ctrl+B가 접힘 상태를 바꾸거나 저장하지 않는다", async () => {
-		const original = window.matchMedia
-		window.matchMedia = (query) => ({
-			matches: false,
-			media: query,
-			addEventListener() {},
-			removeEventListener() {},
-		})
-		try {
-			const user = renderApp("/cases", "inv01")
-			await screen.findByRole("button", { name: "사이드바 닫기" })
-			await user.keyboard("{Control>}b{/Control}")
-			expect(screen.queryByRole("button", { name: "사이드바 열기" })).toBeNull()
-			expect(localStorage.getItem("dajaba.sidebar.v1")).toBeNull()
-		} finally {
-			window.matchMedia = original
-		}
-	})
-
-	it("접은 상태는 다시 열어도 유지된다", async () => {
+	it("예전에 접어 둔 기록이 있거나 Ctrl+B를 눌러도 사이드바가 그대로다", async () => {
 		localStorage.setItem("dajaba.sidebar.v1", "collapsed")
-		renderApp("/cases", "inv01")
-		expect(await screen.findByRole("button", { name: "사이드바 열기" })).toBeInTheDocument()
-		expect(document.querySelector(".app-shell")).toHaveClass("is-sidebar-collapsed")
+		const user = renderApp("/cases", "inv01")
+		await screen.findByRole("complementary", { name: "업무 공간" })
+		await user.keyboard("{Control>}b{/Control}")
+		expect(document.querySelector(".app-shell")).not.toHaveClass("is-sidebar-collapsed")
+		expect(screen.getByRole("complementary", { name: "업무 공간" })).toBeInTheDocument()
 	})
 })
 

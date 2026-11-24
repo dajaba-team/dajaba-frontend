@@ -1,7 +1,7 @@
 /* 앱 셸 — 흰 틀(위 띠 + 왼쪽 사이드바)이 회색 캔버스 본문을 ㄱ자로 감싸요(SCRUM-408).
    포인트 컬러(#0046ff)는 선택한 메뉴·주 버튼·링크에만 써요. */
 .app-shell {
-	--app-sidebar-width: 17.5rem;
+	--app-sidebar-width: 15rem;
 	--app-header-height: 4.25rem;
 	min-height: 100dvh;
 	background: var(--color-canvas);
@@ -17,7 +17,7 @@
 	color: var(--color-sidebar-text);
 	border-block-end: var(--border-width) solid var(--color-border);
 }
-/* 위 띠 왼쪽 로고 칸: 햄버거(사이드바 접기) 버튼 + 로고(SCRUM-327 → SCRUM-408 에서 위 띠로 옮김) */
+/* 위 띠 왼쪽 로고 칸 — 사이드바와 같은 폭(SCRUM-408). */
 .app-header-brand {
 	display: flex;
 	align-items: center;
@@ -131,30 +131,6 @@
 	margin-block-end: var(--space-1);
 	color: var(--color-text);
 	font-size: var(--font-small);
-}
-
-/* ── 사이드바 접기·펼치기(SCRUM-327) ──
-   넓은 화면에서만 써요. 좁은 화면은 메뉴가 위 띠 아래에 쌓이므로 버튼을 숨겨요. */
-.sidebar-toggle {
-	display: none;
-	flex-shrink: 0;
-	place-items: center;
-	width: 2.5rem;
-	height: 2.5rem;
-	min-height: 0;
-	padding: 0;
-	border: 0;
-	border-radius: 50%;
-	background: transparent;
-	color: var(--color-sidebar-text);
-	cursor: pointer;
-	transition:
-		background-color 0.15s ease,
-		color 0.15s ease;
-}
-.sidebar-toggle:hover:enabled {
-	background: var(--color-soft);
-	color: var(--color-text);
 }
 
 /* ── 위 띠 ───────────────────────────── */
@@ -503,12 +479,15 @@
 		background: var(--color-surface);
 		backdrop-filter: none;
 	}
-	/* 로고 칸은 사이드바와 같은 폭 — 사이드바를 접어도 그대로 남아요. */
+	/* 로고 칸은 사이드바와 같은 폭이라 아래 메뉴와 줄이 맞아요. */
 	.app-header-brand {
 		flex: 0 0 var(--app-sidebar-width);
 		align-self: stretch;
-		/* 햄버거 아이콘이 아래 메뉴 아이콘과 같은 세로줄에 오게. 세로 경계선은 위 띠에 두지 않아요. */
+		/* 로고가 아래 메뉴 아이콘과 같은 세로줄에 오게. 세로 경계선은 위 띠에 두지 않아요. */
 		padding-inline: var(--space-4);
+	}
+	.app-header-brand .app-brand {
+		padding-inline: var(--space-3);
 	}
 	.app-header-context {
 		flex: 1;
@@ -523,34 +502,11 @@
 		overflow-y: auto;
 		border-block-end: 0;
 		border-inline-end: var(--border-width) solid var(--color-border);
-		transition:
-			opacity 0.18s ease,
-			transform 0.18s ease;
 	}
 	.app-workspace {
 		grid-column: 2;
 		grid-row: 2;
 	}
-	.sidebar-toggle {
-		display: grid;
-	}
-	/* 접은 상태: 사이드바 칸만 숨기고 본문이 전체 너비를 써요. 위 띠의 로고 칸은 그대로예요. */
-	.app-shell.is-sidebar-collapsed {
-		grid-template-columns: 0 minmax(0, 1fr);
-	}
-	.is-sidebar-collapsed .app-sidebar {
-		visibility: hidden;
-		opacity: 0;
-		transform: translateX(-1rem);
-		transition:
-			opacity 0.18s ease,
-			transform 0.18s ease,
-			visibility 0s linear 0.18s;
-	}
-	.is-sidebar-collapsed .app-workspace {
-		grid-column: 1 / -1;
-	}
-
 	.app-navigation {
 		flex-direction: column;
 		overflow: visible;
@@ -566,13 +522,6 @@
 	}
 	.app-main {
 		padding: var(--space-6);
-	}
-}
-@media (min-width: 48rem) and (prefers-reduced-motion: reduce) {
-	.app-sidebar,
-	.is-sidebar-collapsed .app-sidebar {
-		transform: none;
-		transition: none;
 	}
 }
 .login-form [role="alert"],
