@@ -720,7 +720,7 @@ describe("케이스 조사", () => {
 		expect(within(items[0]).getByText("12개")).toBeInTheDocument()
 		expect(within(items[0]).getByText("3개 (같은 계좌 직전 30일 평균)")).toBeInTheDocument()
 		expect(within(items[0]).getByText("(점수를 높임)")).toBeInTheDocument()
-		expect(within(items[1]).getByText("152,000.5 USD")).toBeInTheDocument()
+		expect(within(items[1]).getByText("152,000.5 미국 달러")).toBeInTheDocument()
 		expect(within(items[1]).getByText("기준값 없음")).toBeInTheDocument()
 		expect(within(items[2]).getByText("확인 못 함")).toBeInTheDocument()
 		expect(within(items[2]).getByText("(점수를 낮춤)")).toBeInTheDocument()
@@ -786,6 +786,9 @@ describe("케이스 조사", () => {
 		await user.click(within(panel).getByRole("button", { name: "요약 생성" }))
 		expect(await within(panel).findByText("현재 입력 기준")).toBeInTheDocument()
 		expect(within(panel).getByText(/모델이 주목한 점/)).toBeInTheDocument()
+		// AI 문장 속 지표 코드는 한글 이름으로
+		expect(within(panel).getByText(/'24시간 입금 상대 계좌 수' 신호/)).toBeInTheDocument()
+		expect(within(panel).queryByText(/account_in_counterparties_24h/)).not.toBeInTheDocument()
 		expect(within(panel).getByRole("button", { name: "요약 갱신" })).toBeInTheDocument()
 		expect(bodies).toEqual([{ version: 1 }])
 		// 요약 갱신은 version을 올려요 — 상세를 다시 불러 새 버전을 보여 줘요
@@ -1041,7 +1044,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
 		const agg = await screen.findByRole("region", { name: "유입·유출 합계" })
 		expect(within(agg).getByText("유입 합계 (2건)")).toBeInTheDocument()
-		expect(within(agg).getByText("1,000 US Dollar")).toBeInTheDocument()
+		expect(within(agg).getByText("1,000 미국 달러")).toBeInTheDocument()
 		expect(within(agg).getByText("유출 합계 (1건)")).toBeInTheDocument()
 
 		// 처음 열려 있는 탭은 자금 흐름 그래프
@@ -1098,6 +1101,9 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 			await within(dialog).findByText(/IBM AML HI-Small · 행 4721 · 합성 데이터/),
 		).toBeInTheDocument()
 		expect(within(dialog).getByText("입금")).toBeInTheDocument()
+		// 데이터셋 원문(ACH·US Dollar)은 한글로
+		expect(within(dialog).getByText("자동이체(ACH)")).toBeInTheDocument()
+		expect(within(dialog).queryByText(/US Dollar/)).not.toBeInTheDocument()
 		await user.click(within(dialog).getByRole("button", { name: "닫기" }))
 
 		server.use(
@@ -1139,7 +1145,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		})
 		expect(within(route).getByText("3단계 · 대상 계좌 복귀")).toBeInTheDocument()
 		expect(within(route).getByText("대상 계좌 복귀")).toBeInTheDocument()
-		expect(within(route).getByText("4,600 Euro")).toBeInTheDocument()
+		expect(within(route).getByText("4,600 유로")).toBeInTheDocument()
 		// 화면이 찾은 길이지 룰 판정이 아니라고 적어요 (SCRUM-296)
 		expect(screen.getByText("화면에서 시간 순서로 찾은 길 · 룰 판정 아님")).toBeInTheDocument()
 		// 경로 표에 거래 ID가 단계 순서대로
@@ -1284,6 +1290,8 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		const history = await screen.findByRole("region", { name: "처리 이력 전체" })
 		expect(await within(history).findByText("담당 배정")).toBeInTheDocument()
 		expect(within(history).getByText("케이스 생성")).toBeInTheDocument()
+		// 배치가 만든 줄의 작업자 system 은 "시스템"
+		expect(within(history).getByText(/· 시스템 ·/)).toBeInTheDocument()
 		expect(within(history).queryByText("메모 저장")).not.toBeInTheDocument()
 		await user.click(screen.getByRole("button", { name: "조사 메모" }))
 		expect(screen.getByRole("region", { name: "메모 이력" })).toBeInTheDocument()
