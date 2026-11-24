@@ -6,6 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query"
 import { http, HttpResponse } from "msw"
 import App from "../app/App"
 import { createQueryClient } from "../app/queryClient"
+import { sessionKey } from "../features/auth/hooks/useSession"
 import { MOCK_PASSWORD, resetCases } from "../mocks/handlers"
 import { server } from "../mocks/server"
 
@@ -73,7 +74,7 @@ async function login(user, loginId, password = MOCK_PASSWORD) {
 }
 
 describe("인증 통신", () => {
-	it("현재 사용자 확인이 401이 아닌 오류면 안내와 다시 확인 버튼을 보여 준다", async () => {
+	it("현재 사용자 조회가 401이 아닌 오류면 안내와 다시 확인 버튼을 보여 준다", async () => {
 		resetCases(null)
 		server.use(
 			http.get(
@@ -105,7 +106,9 @@ describe("인증 통신", () => {
 		expect(await screen.findByText("예시 apr01 (apr01) · APPROVER")).toBeInTheDocument()
 		expect(body).toEqual({ login_id: "apr01", password: MOCK_PASSWORD })
 		server.events.removeAllListeners()
-		await user.click(screen.getByRole("button", { name: "현재 사용자 확인" }))
+		// 사용자 메뉴에는 "현재 사용자 확인" 버튼이 없어요(SCRUM-407).
+		expect(screen.queryByRole("button", { name: "현재 사용자 확인" })).not.toBeInTheDocument()
+		await act(() => user.queryClient.refetchQueries({ queryKey: sessionKey }))
 		expect(await screen.findByText("예시 apr01 (apr01) · APPROVER")).toBeInTheDocument()
 	})
 	it("LOGIN_FAILED는 사유 없이 한 문구로 보여 주고 다시 시도할 수 있다", async () => {
@@ -145,7 +148,7 @@ describe("인증 통신", () => {
 				HttpResponse.json({ error: { code: "UNAUTHENTICATED" } }, { status: 401 }),
 			),
 		)
-		await user.click(screen.getByRole("button", { name: "현재 사용자 확인" }))
+		await act(() => user.queryClient.refetchQueries({ queryKey: sessionKey }))
 		expect(await screen.findByText(/다른 곳에서 같은 계정으로 로그인/)).toBeInTheDocument()
 		expect(screen.getByLabelText("비밀번호")).toBeInTheDocument()
 		server.resetHandlers()
@@ -902,7 +905,7 @@ describe("세션과 업무 정보 격리", () => {
 		const user = renderApp("/cases/CASE-2022-001004")
 		await screen.findByRole("textbox", { name: "메모 내용" })
 		server.use(http.get("*/api/v1/auth/me", () => new HttpResponse(null, { status: 401 })))
-		await user.click(screen.getByRole("button", { name: "현재 사용자 확인" }))
+		await act(() => user.queryClient.refetchQueries({ queryKey: sessionKey }))
 		await screen.findByText("로그인이 필요합니다.")
 		expect(user.queryClient.getQueryData(["case", "CASE-2022-001004"])).toBeUndefined()
 	})

@@ -1,13 +1,14 @@
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { afterEach, describe, expect, it } from "vitest"
-import { render, screen, waitFor, within } from "@testing-library/react"
+import { act, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { http, HttpResponse } from "msw"
 import App from "../app/App"
 import { createQueryClient } from "../app/queryClient"
+import { sessionKey } from "../features/auth/hooks/useSession"
 import { MOCK_PASSWORD, resetCases } from "../mocks/handlers"
 import { server } from "../mocks/server"
 import Modal from "../shared/ui/dashboard/Modal"
@@ -22,14 +23,15 @@ const USERS = {
 
 function renderApp(path, who = "admin") {
 	resetCases(USERS[who])
+	const queryClient = createQueryClient()
 	render(
-		<QueryClientProvider client={createQueryClient()}>
+		<QueryClientProvider client={queryClient}>
 			<MemoryRouter initialEntries={[path]}>
 				<App />
 			</MemoryRouter>
 		</QueryClientProvider>,
 	)
-	return userEvent.setup()
+	return Object.assign(userEvent.setup(), { queryClient })
 }
 
 afterEach(() => server.events.removeAllListeners())
@@ -248,7 +250,7 @@ describe("세션이 바뀌면 알림을 비운다 (SCRUM-203)", () => {
 				),
 			),
 		)
-		await user.click(screen.getByRole("button", { name: "현재 사용자 확인" }))
+		await act(() => user.queryClient.refetchQueries({ queryKey: sessionKey }))
 		await screen.findByText(/로그인이 필요합니다/)
 		expect(screen.queryByText(/inv09 계정을 발급했어요/)).not.toBeInTheDocument()
 	})
