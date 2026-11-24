@@ -37,7 +37,8 @@ function isTyping(target) {
 	)
 }
 
-export function useSidebarCollapsed() {
+// enabled=false(로그인 전 — 사이드바가 없음)면 단축키를 받지 않아요.
+export function useSidebarCollapsed({ enabled = true } = {}) {
 	const [collapsed, setCollapsed] = useState(readCollapsed)
 
 	const toggle = useCallback(() => {
@@ -51,6 +52,7 @@ export function useSidebarCollapsed() {
 	// 글을 쓰는 중(입력칸·본문 편집)이거나 확인창이 열려 있으면 건드리지 않아요 — 굵게 습관 키로 화면이 바뀌지 않게.
 	// 좁은 화면(사이드바가 안 접힘)에서도 받지 않아요.
 	useEffect(() => {
+		if (!enabled) return
 		const onKey = (event) => {
 			if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return
 			if (event.key !== "b" && event.key !== "B") return
@@ -61,7 +63,7 @@ export function useSidebarCollapsed() {
 		}
 		document.addEventListener("keydown", onKey)
 		return () => document.removeEventListener("keydown", onKey)
-	}, [toggle])
+	}, [enabled, toggle])
 
 	return [collapsed, toggle]
 }

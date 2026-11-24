@@ -308,12 +308,16 @@
 	flex-wrap: wrap;
 	gap: var(--space-2);
 }
+/* 로그인 전(SCRUM-387): 사이드바·위 띠 없이 화면 가운데 로그인 카드만 */
+.app-shell.is-signed-out {
+	display: block;
+}
 .app-main.is-signed-out {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	min-height: calc(100dvh - 4.25rem);
+	min-height: 100dvh;
 }
 .app-main.is-signed-out .auth-panel {
 	flex-direction: column;
