@@ -86,9 +86,6 @@ export default function CaseEvidenceCard({
 					ruleId={detail.alert?.ruleId}
 				/>
 			</div>
-			<p className="evidence-foot">
-				통화별로 따로 집계하고 환산하지 않아요. 경유·참고 거래는 입출금 합계에서 제외해요.
-			</p>
 		</section>
 	)
 }

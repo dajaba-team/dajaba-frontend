@@ -287,6 +287,12 @@
 	min-block-size: 3rem;
 	border-block-start: var(--border-width) solid var(--color-graph-border);
 }
+/* 안내 문구를 뺐어요 — 선·계좌를 고르기 전엔 빈 띠가 남지 않게 접어 두고, 알림 영역(aria-live)은 그대로 둬요. */
+.flow-graph-detail:empty {
+	min-block-size: 0;
+	padding: 0;
+	border: 0;
+}
 .flow-graph-head p,
 .flow-graph-detail p {
 	margin: 0;
@@ -331,9 +337,6 @@
 	border-block-start: 0.125rem dashed var(--color-graph-muted);
 	border-radius: 0;
 	background: none;
-}
-.flow-graph-hint {
-	color: var(--color-graph-muted);
 }
 .flow-graph-mono {
 	font-variant-numeric: tabular-nums;
@@ -506,10 +509,6 @@
 .case-ai-summary > button {
 	margin: var(--space-4);
 }
-.case-ai-summary-note {
-	color: var(--color-muted);
-	font-size: var(--font-small);
-}
 .case-ai-summary-lines {
 	margin: 0;
 	padding-inline-start: var(--space-5);
@@ -629,7 +628,8 @@
 	display: grid;
 	gap: var(--space-3);
 	margin: 0;
-	padding: 0 var(--space-4) var(--space-4) calc(var(--space-4) + 1.25rem);
+	/* 위 설명 문구를 뺐어요 — 첫 이유가 머리 띠 구분선에 붙지 않게 위 여백을 둬요. */
+	padding: var(--space-4) var(--space-4) var(--space-4) calc(var(--space-4) + 1.25rem);
 }
 .case-reasons li > dl {
 	padding: var(--space-2) 0 0;
@@ -1205,13 +1205,6 @@
 	background-color: #f5f8ff;
 	background-image: radial-gradient(#c9d8ef 0.8px, transparent 0.8px);
 	background-size: 14px 14px;
-}
-.case-card > .evidence-foot {
-	margin: var(--space-3) 0 0;
-	padding-block-start: 0.5625rem;
-	border-block-start: var(--border-width) solid #e2e8f2;
-	color: var(--color-muted);
-	font-size: var(--font-xs);
 }
 @media (max-width: 36rem) {
 	.ledger-strip {

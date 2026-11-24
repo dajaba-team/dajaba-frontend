@@ -29,9 +29,6 @@ export default function CaseSummaryPanel({ detail }) {
 	return (
 		<section className="case-panel case-ai-summary" aria-labelledby="ai-summary-title">
 			<h2 id="ai-summary-title">AI 요약</h2>
-			<p className="case-ai-summary-note">
-				요약 실패가 거래 열람·메모·상태 변경을 막지 않습니다.
-			</p>
 			{checking && <p role="status">결과를 확인하는 중이에요…</p>}
 			{failed && <p role="alert">{getErrorMessage(command.error)}</p>}
 			{summary ? (

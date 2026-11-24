@@ -36,9 +36,7 @@ export default function CaseAggregatesPanel({ aggregates }) {
 					</dl>
 					<p className="ledger-note">
 						근거 거래 {aggregates.transactionCount}건 ·{" "}
-						{formatDataTime(aggregates.firstTs)} ~ {formatDataTime(aggregates.lastTs)}.
-						경유 거래와 내 계좌끼리 옮긴 돈은 합계에서 뺐어요. 통화가 다르면 더하지
-						않아요.
+						{formatDataTime(aggregates.firstTs)} ~ {formatDataTime(aggregates.lastTs)}
 					</p>
 				</>
 			) : (

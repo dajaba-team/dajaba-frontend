@@ -74,11 +74,6 @@ export default function CaseScoreReasons({ latestScore }) {
 			<h2 id="score-reasons-title">점수 근거</h2>
 			{reasons.length ? (
 				<>
-					<p className="case-action-note">
-						모델이 이 점수를 매길 때 크게 본 이유 {reasons.length}개예요(모델 기여 크기
-						순). 모델 기여는 모델 안의 값이라 거래 사실이 아니고, STR 근거로 쓰지
-						않아요.
-					</p>
 					<ol className="case-reasons">
 						{reasons.map((reason, index) => (
 							<li key={`${reason.name ?? "reason"}-${index}`}>

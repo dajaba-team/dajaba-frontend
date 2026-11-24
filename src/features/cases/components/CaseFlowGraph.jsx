@@ -28,14 +28,7 @@ function edgeKey(edge, index) {
 }
 
 function FlowGraphDetail({ active, graph, accountNos, accountRef }) {
-	if (!active) {
-		return (
-			<p className="flow-graph-hint">
-				선이나 계좌에 마우스를 올리면 거래 내용이 보여요. 누르면 고정돼요. 계좌는 Tab으로
-				옮기고 Enter로 고정할 수 있어요.
-			</p>
-		)
-	}
+	if (!active) return null
 	if (active.type === "edge") {
 		const edge = active.edge
 		return (
