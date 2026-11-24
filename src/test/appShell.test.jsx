@@ -208,7 +208,7 @@ describe("앱 셸 — 사용자 흐름", () => {
 describe("사이드바 접기·펼치기(SCRUM-327)", () => {
 	afterEach(() => localStorage.clear())
 
-	it("닫기 버튼으로 접으면 알약이 나타나고, 열기 버튼으로 다시 펼친다", async () => {
+	it("위 띠의 닫기 버튼으로 접으면 같은 자리 버튼이 열기로 바뀌고, 다시 펼친다", async () => {
 		const user = renderApp("/cases", "inv01")
 		const close = await screen.findByRole("button", { name: "사이드바 닫기" })
 		expect(close).toHaveAttribute("aria-expanded", "true")
