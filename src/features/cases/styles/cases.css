@@ -237,6 +237,94 @@
 	margin-block: var(--space-1) 0;
 	color: var(--color-muted);
 }
+/* 처리 이력 타임라인 (SCRUM-400) — 왼쪽 세로선 + 점, 항목마다 동작 / 상태 변화 / 작업자·시각 / 사유를 줄로 나눠 정렬. */
+.case-timeline {
+	list-style: none;
+	margin: var(--space-4) 0 0;
+	padding: 0;
+}
+.case-timeline-item {
+	position: relative;
+	display: grid;
+	gap: var(--space-1);
+	padding-inline-start: var(--space-5);
+	padding-block-end: var(--space-4);
+}
+.case-timeline-item:last-child {
+	padding-block-end: 0;
+}
+/* 세로선 — 마지막 항목은 점에서 끝나게 */
+.case-timeline-item::before {
+	content: "";
+	position: absolute;
+	inset-block: 0.75rem 0;
+	inset-inline-start: 0.3125rem;
+	border-inline-start: var(--border-width) solid var(--color-border);
+}
+.case-timeline-item:last-child::before {
+	display: none;
+}
+/* 점 — 맨 위(최신)만 파랑 */
+.case-timeline-item::after {
+	content: "";
+	position: absolute;
+	inset-block-start: 0.4375rem;
+	inset-inline-start: 0;
+	inline-size: 0.6875rem;
+	block-size: 0.6875rem;
+	box-sizing: border-box;
+	border: 0.125rem solid var(--color-control-border);
+	border-radius: var(--radius-pill);
+	background: var(--color-surface);
+}
+.case-timeline-item:first-child::after {
+	border-color: var(--color-primary);
+	background: var(--color-primary);
+}
+.case-timeline-item p {
+	margin: 0;
+}
+.case-timeline-head {
+	line-height: 1.5;
+}
+.case-timeline-head strong {
+	font-weight: var(--weight-semibold);
+}
+.case-history-assignee {
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.case-timeline-status {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-1);
+	font-size: var(--font-small);
+	color: var(--color-muted);
+}
+.case-timeline-arrow {
+	color: var(--color-control-border-hover);
+}
+.case-timeline-to {
+	color: var(--color-text);
+	font-weight: var(--weight-medium);
+}
+.case-timeline-meta {
+	font-size: var(--font-xs);
+	color: var(--color-muted);
+}
+.case-timeline-meta time {
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+.case-timeline-item .case-timeline-comment {
+	margin-block-start: var(--space-1);
+	padding: var(--space-2) var(--space-3);
+	border-radius: var(--radius-control);
+	background: var(--color-soft);
+	font-size: var(--font-small);
+	color: var(--color-text);
+}
 @media (min-width: 48rem) {
 	.case-filter {
 		padding: var(--space-5);
