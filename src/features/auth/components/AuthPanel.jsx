@@ -62,7 +62,8 @@ export default function AuthPanel({ placement = "main" }) {
 	})
 	const busy = switching || login.isPending || logout.isPending
 	if ((placement === "header") !== Boolean(me.data)) return null
-	// 위 띠: 역할 칩(시안 "조사역 A · inv01 ⌄")을 누르면 로그인 정보·현재 사용자 확인·로그아웃이 펼쳐져요.
+	// 위 띠: 역할 칩(시안 "조사역 A · inv01 ⌄")을 누르면 로그인 정보·로그아웃이 펼쳐져요.
+	// "현재 사용자 확인" 버튼은 쓸 일이 없어 뺐어요(SCRUM-407).
 	if (placement === "header")
 		return (
 			<details className="persona">
@@ -77,13 +78,6 @@ export default function AuthPanel({ placement = "main" }) {
 					<p role="status" className="auth-identity">
 						{`${me.data.displayName} (${me.data.loginId}) · ${me.data.role}`}
 					</p>
-					<button
-						type="button"
-						disabled={me.isFetching || busy}
-						onClick={() => me.refetch()}
-					>
-						현재 사용자 확인
-					</button>
 					<button
 						type="button"
 						className="is-logout"
