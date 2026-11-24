@@ -20,11 +20,11 @@ function scoreOf(detail) {
 		const label = latest ? labelOf(SCORE_STATUS_LABELS, latest.scoreStatus) : "산출 정보 없음"
 		status = latest?.failureCode ? `${label} (${latest.failureCode})` : label
 	}
-	return { score, band, status, modelVersion: latest?.modelVersion ?? null }
+	return { score, band, status }
 }
 
 export default function CaseSummaryHeader({ detail, askButton, onAction }) {
-	const { score, band, status, modelVersion } = scoreOf(detail)
+	const { score, band, status } = scoreOf(detail)
 	const next = nextActionOf(detail)
 	const alert = detail.alert
 	const meta = [
@@ -47,7 +47,8 @@ export default function CaseSummaryHeader({ detail, askButton, onAction }) {
 								<InfoTip
 									clickable
 									label="조사 우선순위 점수"
-									text={`모델 점수예요. 범죄 확률이 아니에요.${modelVersion ? ` 모델 ${modelVersion}` : ""}`}
+									// 모델 버전 문자열은 조사역에게 뜻이 없어 보이지 않아요(SCRUM-408).
+									text="모델 점수예요. 범죄 확률이 아니에요."
 								/>
 							</span>
 						</>

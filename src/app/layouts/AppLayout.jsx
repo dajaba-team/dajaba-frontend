@@ -9,7 +9,6 @@ import { useToast } from "../../shared/ui/toast/useToast"
 import Icon from "../../shared/ui/dashboard/Icon"
 import { visibleMenus } from "../navigation/appNavigation"
 import brandMark from "../../assets/brand-mark.png"
-import { useSidebarCollapsed } from "./useSidebarCollapsed"
 import JobsProvider from "../../shared/jobs/JobsProvider"
 import { jobKinds } from "../jobs/jobKinds"
 
@@ -34,21 +33,6 @@ export default function AppLayout() {
 	useEffect(() => {
 		dismiss()
 	}, [loginId, dismiss])
-	// 사이드바 접기·펼치기(SCRUM-327). 넓은 화면에서만 접혀요 — 좁은 화면은 기존처럼 위에 쌓여요.
-	// 버튼을 누르면 사라지는 쪽 대신 새로 나타난 버튼으로 초점을 옮겨요.
-	const [sidebarCollapsed, toggleSidebar] = useSidebarCollapsed({ enabled: signedIn })
-	const closeSidebarButton = useRef(null)
-	const openSidebarButton = useRef(null)
-	const sidebarToggled = useRef(false)
-	useEffect(() => {
-		if (!sidebarToggled.current) return
-		sidebarToggled.current = false
-		;(sidebarCollapsed ? openSidebarButton : closeSidebarButton).current?.focus()
-	}, [sidebarCollapsed])
-	const onToggleSidebar = () => {
-		sidebarToggled.current = true
-		toggleSidebar()
-	}
 	// 위 띠의 알림 종·역할 칩·시연 도구 메뉴는 한 번에 하나만 — 바깥을 누르거나 Esc, 화면을 옮기면 닫아요.
 	const headUtils = useRef(null)
 	useEffect(() => {
@@ -75,58 +59,53 @@ export default function AppLayout() {
 			<a className="skip-link" href="#main-content">
 				본문으로 건너뛰기
 			</a>
-			<div
-				className={`app-shell${
-					!signedIn ? " is-signed-out" : sidebarCollapsed ? " is-sidebar-collapsed" : ""
-				}`}
-			>
-				{signedIn && sidebarCollapsed && (
-					// 접은 상태: 왼쪽 위 작은 알약 — 로고는 대시보드로, » 는 사이드바를 다시 펼쳐요.
-					<div className="sidebar-pill">
-						<Link
-							className="sidebar-pill-brand"
-							to="/overview"
-							aria-label="DAJAVA 업무 대시보드"
-						>
-							<img src={brandMark} alt="" />
-							<span aria-hidden="true">DAJAVA</span>
-						</Link>
-						<button
-							ref={openSidebarButton}
-							type="button"
-							className="sidebar-toggle"
-							onClick={onToggleSidebar}
-							aria-label="사이드바 열기"
-							aria-expanded="false"
-							aria-controls="app-sidebar"
-							title="사이드바 열기 (Ctrl+B)"
-						>
-							<Icon name="chevronsRight" size={16} />
-						</button>
-					</div>
-				)}
+			<div className={`app-shell${!signedIn ? " is-signed-out" : ""}`}>
 				{signedIn && (
-					<aside id="app-sidebar" className="app-sidebar" aria-label="업무 공간">
-						<div className="app-brand-row">
-							<Link className="app-brand" to="/overview">
+					<header className="app-header">
+						{/* 로고 — 위 띠 왼쪽, 사이드바와 같은 폭의 칸(SCRUM-408). 사이드바는 늘 펼쳐 둬요. */}
+						<div className="app-header-brand">
+							<Link
+								className="app-brand"
+								to="/overview"
+								aria-label="DAJAVA 업무 대시보드"
+							>
 								<img className="app-brand-mark" src={brandMark} alt="" />
-								<div>
+								<div aria-hidden="true">
 									DAJAVA<span>AML 인텔리전스</span>
 								</div>
 							</Link>
-							<button
-								ref={closeSidebarButton}
-								type="button"
-								className="sidebar-toggle"
-								onClick={onToggleSidebar}
-								aria-label="사이드바 닫기"
-								aria-expanded={!sidebarCollapsed}
-								aria-controls="app-sidebar"
-								title="사이드바 닫기 (Ctrl+B)"
-							>
-								<Icon name="chevronsLeft" size={16} />
-							</button>
 						</div>
+						<div className="app-header-context">
+							<span className="app-header-title">
+								{current ? current.label : "조사 · 검토 · 보고"}
+							</span>
+						</div>
+						<div className="head-utils" ref={headUtils}>
+							{/* 업무 알림 종(SCRUM-334) — 계정이 바뀌면 본 시각·숫자를 처음부터 */}
+							{loginId && <NotificationBell key={loginId} loginId={loginId} />}
+							<AuthPanel placement="header" />
+							{import.meta.env.DEV && (
+								// 시안의 "시연 도구" — 개발 모드에서만. 시연 화면·연동 확인으로 가는 길을 여기 모아요.
+								<details className="demo-tools">
+									<summary>
+										<Icon name="help" size={16} /> 시연 도구
+									</summary>
+									<nav aria-label="개발 메뉴">
+										<span>
+											{import.meta.env.VITE_USE_MOCKS === "true"
+												? "예시 데이터 모드 · 새로고침하면 초기화"
+												: "개발 모드 · 팀 검토용"}
+										</span>
+										<NavLink to="/demo/overview">대시보드 시연</NavLink>
+										<NavLink to="/dev/connection">백엔드 연동 확인</NavLink>
+									</nav>
+								</details>
+							)}
+						</div>
+					</header>
+				)}
+				{signedIn && (
+					<aside id="app-sidebar" className="app-sidebar" aria-label="업무 공간">
 						<div className="sidebar-group">
 							<p className="sidebar-label">업무 공간</p>
 							<nav className="app-navigation" aria-label="주요 메뉴">
@@ -151,37 +130,6 @@ export default function AppLayout() {
 					</aside>
 				)}
 				<div className="app-workspace">
-					{signedIn && (
-						<header className="app-header">
-							<div className="app-header-context">
-								<span className="app-header-title">
-									{current ? current.label : "조사 · 검토 · 보고"}
-								</span>
-							</div>
-							<div className="head-utils" ref={headUtils}>
-								{/* 업무 알림 종(SCRUM-334) — 계정이 바뀌면 본 시각·숫자를 처음부터 */}
-								{loginId && <NotificationBell key={loginId} loginId={loginId} />}
-								<AuthPanel placement="header" />
-								{import.meta.env.DEV && (
-									// 시안의 "시연 도구" — 개발 모드에서만. 시연 화면·연동 확인으로 가는 길을 여기 모아요.
-									<details className="demo-tools">
-										<summary>
-											<Icon name="help" size={16} /> 시연 도구
-										</summary>
-										<nav aria-label="개발 메뉴">
-											<span>
-												{import.meta.env.VITE_USE_MOCKS === "true"
-													? "예시 데이터 모드 · 새로고침하면 초기화"
-													: "개발 모드 · 팀 검토용"}
-											</span>
-											<NavLink to="/demo/overview">대시보드 시연</NavLink>
-											<NavLink to="/dev/connection">백엔드 연동 확인</NavLink>
-										</nav>
-									</details>
-								)}
-							</div>
-						</header>
-					)}
 					<main
 						id="main-content"
 						className={`app-main${signedIn ? "" : " is-signed-out"}`}

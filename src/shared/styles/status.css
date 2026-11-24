@@ -1,7 +1,9 @@
 /* 상태 배지(SCRUM-332) — 같은 뜻의 상태는 어느 화면이든 같은 색·같은 모양이에요(05_ui.md 4절 「상태 배지」).
    색은 보조예요. 배지 글자만으로도 상태를 알 수 있게 써요. 강조는 배지에만, 행 전체는 칠하지 않아요.
    여백(0.125rem 0.625rem)·점(0.375rem)은 표 줄 높이를 늘리지 않게 간격 토큰보다 작게 고정해요(05_ui.md 4절). */
-.status-badge {
+/* 모양은 위험 등급 배지(.risk-badge, SCRUM-371)와 함께 써요 — 두 배지가 나란히 있어도 같은 모양이에요. 색만 따로예요. */
+.status-badge,
+.risk-badge {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.375rem;
@@ -15,7 +17,8 @@
 	line-height: 1.5;
 	white-space: nowrap;
 }
-.status-badge::before {
+.status-badge::before,
+.risk-badge::before {
 	content: "";
 	flex: none;
 	width: 0.375rem;

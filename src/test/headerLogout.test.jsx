@@ -31,6 +31,21 @@ function renderSignedIn() {
 }
 const headerMenu = () => document.querySelector(".app-header .persona-menu")
 
+describe("위 띠 계정 칩 (SCRUM-408)", () => {
+	it("칩에는 역할만 보이고, 펼치면 이름·아이디·역할이 보인다", async () => {
+		const { user } = renderSignedIn()
+		await screen.findByRole("navigation", { name: "주요 메뉴" })
+		const chip = document.querySelector(".app-header .persona > summary")
+		expect(chip).toHaveTextContent(/^조사역$/)
+		await user.click(chip)
+		const menu = headerMenu()
+		expect(menu).toBeVisible()
+		expect(within(menu).getByText("예시 inv01")).toBeInTheDocument()
+		expect(within(menu).getByText("아이디").nextElementSibling).toHaveTextContent("inv01")
+		expect(within(menu).getByText("역할").nextElementSibling).toHaveTextContent("조사역")
+	})
+})
+
 describe("위 띠 로그아웃 실패 (BH-FE-05)", () => {
 	afterEach(() => server.events.removeAllListeners())
 
