@@ -48,6 +48,9 @@ export function SuspicionFields({ types, level, recommended, onTypesChange, onLe
 					않아요)
 				</p>
 			)}
+			<p className="str-vi-title">
+				의심 유형 <span className="str-required">필수 · 1개 이상 선택</span>
+			</p>
 			{SUSPICION_GROUPS.map((group) => (
 				<fieldset key={group} className="str-vi-group">
 					<legend>{group}</legend>
@@ -79,7 +82,9 @@ export function SuspicionFields({ types, level, recommended, onTypesChange, onLe
 				</p>
 			)}
 			<fieldset className="str-vi-group">
-				<legend>지점 의심 정도 *</legend>
+				<legend>
+					지점 의심 정도 <span className="str-required">필수 · 1개 선택</span>
+				</legend>
 				<p className="str-muted">{SUSPICION_LEVEL_HINT} · 기본값 없음</p>
 				<div className="str-levels">
 					{SUSPICION_LEVELS.map((value) => (

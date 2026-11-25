@@ -89,10 +89,13 @@ export default function StrNarrative({
 												onChange(section.section, event.target.value)
 											}
 										/>
-										<small className={error ? "str-error" : "str-muted"}>
-											{error ??
-												`${textLength(value).toLocaleString()} / ${SECTION_MAX.toLocaleString()}`}
-										</small>
+										{/* 글자 수는 고치는 동안(저장 안 된 변경)만 — 저장하면 숨겨요. 오류는 늘 보여요. */}
+										{(error || changed) && (
+											<small className={error ? "str-error" : "str-muted"}>
+												{error ??
+													`${textLength(value).toLocaleString()} / ${SECTION_MAX.toLocaleString()}`}
+											</small>
+										)}
 									</>
 								) : (
 									<p className="str-section-text">
