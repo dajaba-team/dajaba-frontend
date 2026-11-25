@@ -2478,3 +2478,18 @@
 	box-shadow: inset 3px 0 0 #547edc;
 	font-weight: 700;
 }
+/* ML+DL 조사 순위 한 칸(SCRUM-420) — 결합 순위 위, ML 순위·이유는 작은 회색 줄. 조회 불가는 회색 한 줄. */
+.dl-rank {
+	display: inline-flex;
+	flex-direction: column;
+	gap: 0.125rem;
+}
+.dl-rank-main {
+	font-weight: 600;
+}
+.dl-rank-note,
+.dl-rank-unavailable .dl-rank-main {
+	color: var(--color-muted);
+	font-size: var(--font-small);
+	font-weight: 400;
+}

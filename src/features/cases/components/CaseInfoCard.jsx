@@ -1,5 +1,7 @@
 import { formatSystemMinute as formatSystemTime } from "../caseTime"
 import { CLOSE_REASON_LABELS, REJECTION_LABELS, labelOf } from "../labels"
+import { formatScore } from "../../../shared/format/score"
+import DlRankText from "./DlRankText"
 
 // 케이스·경보 정보(SCRUM-369) — 예전 「케이스 개요」·「경보 정보」 두 카드를 하나로. 점수는 판단 요약으로 올라갔어요.
 export default function CaseInfoCard({ detail }) {
@@ -23,6 +25,17 @@ export default function CaseInfoCard({ detail }) {
 						<dd>{alert.batchDate}</dd>
 						<dt>묶인 거래</dt>
 						<dd>{alert.transactionCount}건</dd>
+						{/* ML+DL 조사 순위(SCRUM-420) — 배치 기준일 하루치 경보 안에서의 순위. DL 점수는 있을 때만 */}
+						<dt>조사 순위</dt>
+						<dd>
+							<DlRankText rank={detail.dlRank} />
+						</dd>
+						{detail.dlRank?.status === "AVAILABLE" && detail.dlRank.dlScore != null && (
+							<>
+								<dt>DL 점수</dt>
+								<dd>{formatScore(detail.dlRank.dlScore)}</dd>
+							</>
+						)}
 					</>
 				) : (
 					<>

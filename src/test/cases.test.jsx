@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { act, render, screen, waitFor, within } from "@testing-library/react"
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router"
 import { QueryClientProvider } from "@tanstack/react-query"
@@ -694,6 +694,73 @@ describe("케이스 조사", () => {
 		expect(await screen.findByText("메모가 저장되었습니다.")).toBeInTheDocument()
 		expect(bodies).toEqual([{ investigator_notes: "내가 작성 중인 메모", version: 2 }])
 		server.events.removeAllListeners()
+	})
+	it("목록 조사 순위 칸은 결합·ML 순위, 순위 없음, 조회 불가를 보여 준다 (SCRUM-420)", async () => {
+		renderApp()
+		const cell = async (caseNo) => {
+			const row = (await screen.findByRole("link", { name: caseNo })).closest("tr")
+			const index = within(row.closest("table"))
+				.getAllByRole("columnheader")
+				.findIndex((th) => th.textContent === "조사 순위")
+			return within(row).getAllByRole("cell")[index]
+		}
+		expect(await cell("CASE-2022-001001")).toHaveTextContent("결합 1위ML 2위")
+		expect(await cell("CASE-2022-001002")).toHaveTextContent("순위 없음ML 점수 없음")
+		expect(await cell("CASE-2022-001003")).toHaveTextContent(
+			"결합 3위ML 3위 · DL 근거 일부 빠짐(ML 순위 유지)",
+		)
+		expect(await cell(REVIEWING)).toHaveTextContent("순위 조회 불가")
+	})
+	it("상세 조사 순위 — 새 이유(EVIDENCE_MISMATCH)도 조회 불가, 맞으면 순위와 DL 점수 (SCRUM-420)", async () => {
+		// 순위 줄은 경보가 있을 때 「케이스·경보 정보」 카드의 경보 칸 아래에 있어요.
+		const alert = {
+			alert_no: "ALT-20220907-000001",
+			rule_id: "R02_FAN_IN",
+			batch_date: "2022-09-07",
+			window_start: "2022-09-06T00:00:00",
+			window_end: "2022-09-07T00:00:00",
+			reference_ts: "2022-09-07T00:00:00",
+			transaction_count: 3,
+		}
+		const rank = (fields) => ({
+			status: "AVAILABLE",
+			reason: null,
+			ml_rank: null,
+			fused_rank: null,
+			fallback_reason: null,
+			dl_score: null,
+			...fields,
+		})
+		server.use(
+			http.get(`/api/v1/cases/${REVIEWING}`, () =>
+				HttpResponse.json(
+					detailJson({
+						alert,
+						dl_rank: rank({ status: "UNAVAILABLE", reason: "EVIDENCE_MISMATCH" }),
+					}),
+				),
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		let panel = await screen.findByRole("region", { name: "케이스·경보 정보" })
+		expect(within(panel).getByText("순위 조회 불가")).toBeInTheDocument()
+		expect(within(panel).queryByText("DL 점수")).not.toBeInTheDocument()
+		cleanup()
+		server.use(
+			http.get(`/api/v1/cases/${REVIEWING}`, () =>
+				HttpResponse.json(
+					detailJson({
+						alert,
+						dl_rank: rank({ ml_rank: 4, fused_rank: 2, dl_score: 0.8765 }),
+					}),
+				),
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		panel = await screen.findByRole("region", { name: "케이스·경보 정보" })
+		expect(within(panel).getByText("결합 2위")).toBeInTheDocument()
+		expect(within(panel).getByText("ML 4위")).toBeInTheDocument()
+		expect(within(panel).getByText("0.87")).toBeInTheDocument()
 	})
 	it("상세에 경보 정보와 최근 모델 점수를 보여 준다", async () => {
 		renderApp(`/cases/${REVIEWING}`)
