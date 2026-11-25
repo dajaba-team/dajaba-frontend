@@ -218,6 +218,15 @@ export default function DashboardView({
 	}, [demo, items, period])
 	return (
 		<section className="intelligence-page" aria-label="업무 대시보드">
+			{/* 새로고침은 화면 맨 위 오른쪽 구석에 둬요(SCRUM-423). 머리말(hero)이 있으면 제목 줄과 같은 높이에 겹쳐 놓아요. */}
+			<div className={`dashboard-toolbar${hero ? " dashboard-toolbar-corner" : ""}`}>
+				{updatedAt > 0 && (
+					<span className="refresh-time">마지막 갱신 {clockOf(updatedAt)}</span>
+				)}
+				<button type="button" onClick={refresh} disabled={refreshing}>
+					<Icon name="refresh" size={13} /> {refreshing ? "새로고침 중…" : "새로고침"}
+				</button>
+			</div>
 			{/* 업무 화면은 역할별 머리말(hero)을, 시연 화면은 기존 큰 배너를 써요. */}
 			{hero ?? (
 				<DashboardHero
@@ -227,14 +236,6 @@ export default function DashboardView({
 					replay={replay}
 				/>
 			)}
-			<div className="dashboard-section-label">
-				{updatedAt > 0 && (
-					<span className="refresh-time">마지막 갱신 {clockOf(updatedAt)}</span>
-				)}
-				<button type="button" onClick={refresh} disabled={refreshing}>
-					<Icon name="refresh" size={13} /> {refreshing ? "새로고침 중…" : "새로고침"}
-				</button>
-			</div>
 			<section className="signal-kpis" aria-label="업무 현황 요약">
 				{cards.map(([name, value, note, icon], index) => (
 					<article
