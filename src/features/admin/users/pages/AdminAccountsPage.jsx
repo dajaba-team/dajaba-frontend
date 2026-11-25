@@ -8,6 +8,7 @@ import { useSession } from "../../../auth/hooks/useSession"
 import { adminUsersApi } from "../api/adminUsersApi"
 import { ROLE_LABELS, ROLE_SWAP } from "../accountRules"
 import Pagination from "../../../../shared/ui/Pagination"
+import StatusBadge from "../../../../shared/ui/StatusBadge"
 import {
 	ActiveToggleDialog,
 	ChangeRoleDialog,
@@ -144,12 +145,12 @@ export default function AdminAccountsPage() {
 												</td>
 												<td>{ROLE_LABELS[user.role] ?? user.role}</td>
 												<td>
-													<span
-														className="account-state"
-														data-active={user.isActive || undefined}
+													{/* 다른 화면과 같은 상태 배지로(SCRUM-423) — 활성 초록, 비활성 회색 */}
+													<StatusBadge
+														tone={user.isActive ? "success" : "neutral"}
 													>
 														{user.isActive ? "활성" : "비활성"}
-													</span>
+													</StatusBadge>
 												</td>
 												<td>
 													{user.role === "INVESTIGATOR" ? (

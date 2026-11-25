@@ -52,27 +52,6 @@
 	white-space: nowrap;
 }
 
-/* 상태 — 점 + 글자. 활성 초록, 비활성 회색 */
-.account-state {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--space-2);
-	color: var(--color-muted);
-}
-.account-state::before {
-	content: "";
-	width: 0.5rem;
-	height: 0.5rem;
-	border-radius: 50%;
-	background: var(--color-control-border);
-}
-.account-state[data-active] {
-	color: var(--color-text);
-}
-.account-state[data-active]::before {
-	background: var(--color-pass);
-}
-
 /* 진행 중 담당 — 건수 칸을 같은 폭으로 둬서 행마다 [케이스 보기] 시작점이 맞고, 링크는 세로 가운데로. */
 .account-cases {
 	display: inline-flex;
