@@ -12,7 +12,6 @@ import { SuspicionFields } from "./StrSuspicionPanel"
 // 고른 값은 화면(StrWorkspace)이 들고 있어서, 계속 편집 뒤 다시 열어도 그대로예요.
 export default function StrSubmitDialog({
 	draft,
-	verification,
 	types,
 	level,
 	onTypesChange,
@@ -62,7 +61,7 @@ export default function StrSubmitDialog({
 
 	return (
 		<Modal
-			className="modal-confirm str-submit-dialog"
+			className="str-submit-dialog str-submit-confirm"
 			title="승인 요청 확인"
 			onClose={cancel}
 			footer={
@@ -89,8 +88,8 @@ export default function StrSubmitDialog({
 				<div>
 					<dt>보낼 본문</dt>
 					<dd>
-						{revisionLabel(draft.currentRevisionNo)} · 검증{" "}
-						{verification?.verificationId ?? "-"} 통과
+						{/* 검증 번호(VRF-…)는 보여 주지 않아요 — 요청엔 그대로 실어 보내요(S6 verification_id) */}
+						{revisionLabel(draft.currentRevisionNo)} · 검증 통과
 					</dd>
 				</div>
 				<div>

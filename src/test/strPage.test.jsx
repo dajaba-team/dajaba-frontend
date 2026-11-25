@@ -126,14 +126,19 @@ describe("STR 화면 — 서버가 준 서술부 목록대로 그리기 (SCRUM-1
 		expect(sectionTitle({ section: "NEW_ITEM", label: null })).toBe("NEW_ITEM")
 	})
 
-	it("사실 정보는 정해진 11개 항목 표로만 보여 준다", async () => {
+	it("사실 정보는 정해진 11개 항목을 반으로 나눈 표 두 개로만 보여 준다", async () => {
 		renderStr("CASE-2022-001001")
-		const table = await screen.findByRole("table", { name: "사실 정보" })
-		expect(
+		const tables = [
+			await screen.findByRole("table", { name: "사실 정보 1/2" }),
+			screen.getByRole("table", { name: "사실 정보 2/2" }),
+		]
+		const labels = tables.map((table) =>
 			within(table)
 				.getAllByRole("rowheader")
 				.map((cell) => cell.textContent),
-		).toEqual([
+		)
+		expect(labels.map((part) => part.length)).toEqual([6, 5])
+		expect(labels.flat()).toEqual([
 			"거래자",
 			"계좌",
 			"기간",
@@ -343,6 +348,18 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 
 		expect(seen).toEqual(["코드 검사 실패", "AI 평가 미달", "검증 못 함", "통과"])
 		expect(new Set(seen).size).toBe(4)
+	})
+
+	it("글자 수(N / 5,000)는 고치는 동안만 보이고 저장하면 사라진다", async () => {
+		const user = renderStr("CASE-2022-001001")
+		const box = await sectionBox("장소")
+		const counter = () => screen.queryByText(/^\d[\d,]* \/ 5,000$/)
+		expect(counter()).not.toBeInTheDocument()
+		await replaceText(user, box, "서울 지점 창구.")
+		expect(counter()).toHaveTextContent("9 / 5,000")
+		await user.click(screen.getByRole("button", { name: "변경 저장" }))
+		expect(await screen.findByText(/수정본 2번으로 저장했어요/)).toBeInTheDocument()
+		expect(counter()).not.toBeInTheDocument()
 	})
 
 	it("빈 항목은 저장 버튼이 꺼진다", async () => {

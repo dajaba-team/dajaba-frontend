@@ -467,7 +467,6 @@ function StrWorkspace({ draft, detail }) {
 			{panel === "submit" && (
 				<StrSubmitDialog
 					draft={draft}
-					verification={verification}
 					types={types}
 					level={level}
 					onTypesChange={setTypes}

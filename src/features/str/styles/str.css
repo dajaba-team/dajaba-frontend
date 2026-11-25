@@ -212,21 +212,63 @@
 	}
 }
 /* 사실 정보 표 — 왼쪽 항목 이름(연하게·고정 폭), 오른쪽 값 */
-.str-facts-table th {
+.str-facts-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0 var(--space-5);
+	align-items: start;
+}
+@media (max-width: 40rem) {
+	.str-facts-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+/* 칸 안 글씨는 앞쪽(왼쪽) 정렬·세로 가운데, 칸 여백 넉넉히 — 공통 .str-table(위쪽 붙음)보다 우선하게 두 클래스로 */
+.str-table.str-facts-table :is(th, td) {
+	padding: var(--space-2) var(--space-3);
+	text-align: start;
+	vertical-align: middle;
+}
+.str-table.str-facts-table th {
 	inline-size: 7rem;
 	color: var(--color-muted);
 	font-weight: 500;
 	white-space: nowrap;
 }
-.str-facts-table td {
+.str-table.str-facts-table td {
 	overflow-wrap: anywhere;
 }
+/* 서술부 항목 바로 가기 — 케이스 목록 상태 필터 칩과 같은 알약 모양 */
 .str-section-index {
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--space-2);
 	margin-block-end: var(--space-3);
 	font-size: var(--font-small);
+}
+.str-section-index a {
+	display: inline-flex;
+	align-items: center;
+	min-height: 2rem;
+	padding: 0 var(--space-3);
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-pill);
+	background: var(--color-surface);
+	color: var(--color-sidebar-text);
+	font-weight: 500;
+	text-decoration: none;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease,
+		color 0.15s ease;
+}
+.str-section-index a:hover {
+	border-color: var(--color-primary);
+	color: var(--color-primary);
+}
+.str-section-index a:focus-visible {
+	outline: var(--focus-width) solid var(--color-focus);
+	outline-offset: 2px;
 }
 .str-section-input {
 	width: 100%;
@@ -271,6 +313,30 @@
 .str-levels {
 	display: flex;
 	gap: var(--space-3);
+}
+/* 승인 요청 창 1단계 — 항목 제목은 굵고 크게, 필수는 빨간 글씨로 */
+.str-vi-title {
+	margin: var(--space-3) 0 0;
+	font-size: var(--font-lead);
+	font-weight: var(--weight-bold);
+}
+.str-vi-group legend {
+	font-size: var(--font-body);
+	font-weight: var(--weight-bold);
+	color: var(--color-text);
+}
+.str-vi-fields > .str-vi-group:last-of-type legend {
+	font-size: var(--font-lead);
+}
+.str-required {
+	margin-inline-start: var(--space-1);
+	color: var(--color-fail);
+	font-size: var(--font-small);
+	font-weight: var(--weight-semibold);
+}
+/* 승인 요청 확인 창 — 기본 확인 창(460px)보다 넓게 */
+.modal.str-submit-confirm {
+	width: min(640px, 100%);
 }
 .str-history {
 	display: grid;
