@@ -6,7 +6,7 @@ import "../styles/accounts.css"
 import { AsyncState } from "../../../../shared/ui/AsyncState"
 import { useSession } from "../../../auth/hooks/useSession"
 import { adminUsersApi } from "../api/adminUsersApi"
-import { ROLE_LABELS, ROLE_SWAP } from "../accountRules"
+import { ROLE_LABELS, ROLE_SWAP, activeCasesPath } from "../accountRules"
 import Pagination from "../../../../shared/ui/Pagination"
 import StatusBadge from "../../../../shared/ui/StatusBadge"
 import {
@@ -18,7 +18,7 @@ import {
 
 // 계정 관리 (ADM-03) — 계약서 5.8, 프론트 docs/04_auth_session.md §6. 관리자만(라우트 RequireRole + 서버 403).
 // 목록 기본 활성만. 내 계정·SYSTEM 행에는 버튼 없음, 관리자 행에는 역할 변경 없음(조사역 ↔ 승인자만), 삭제 버튼 없음.
-const casesOf = (user) => `/cases?assignee=${encodeURIComponent(user.loginId)}`
+const casesOf = (user) => activeCasesPath(user.loginId)
 
 export default function AdminAccountsPage() {
 	const [role, setRole] = useState("")
