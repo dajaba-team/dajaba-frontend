@@ -8,12 +8,12 @@ import {
 import { formatAmount } from "../features/cases/components/caseMoney"
 
 describe("화면 표기 변환", () => {
-	it("통화: 데이터셋 이름·ISO 코드 모두 한글, 모르면 원문", () => {
-		expect(currencyLabel("US Dollar")).toBe("미국 달러")
-		expect(currencyLabel("USD")).toBe("미국 달러")
-		expect(currencyLabel("Brazil Real")).toBe("브라질 헤알")
+	it("통화: 데이터셋 이름·ISO 코드 모두 기호(나라), 모르면 원문 (SCRUM-428)", () => {
+		expect(currencyLabel("US Dollar")).toBe("$(미국)")
+		expect(currencyLabel("USD")).toBe("$(미국)")
+		expect(currencyLabel("Brazil Real")).toBe("R$(브라질)")
 		expect(currencyLabel("Dogecoin")).toBe("Dogecoin")
-		expect(formatAmount(1000, "Euro")).toBe("1,000 유로")
+		expect(formatAmount(1000, "Euro")).toBe("1,000 €(유로)")
 		expect(formatAmount(null, "Euro")).toBe("—")
 	})
 	it("결제 방식·작업자", () => {
