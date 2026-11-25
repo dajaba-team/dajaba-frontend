@@ -14,6 +14,8 @@ import { AI_REQUEST_TIMEOUT_MS, apiClient } from "../../../shared/api/apiClient"
 // 아직 없는 API는 계약서 모양 그대로 MSW(`src/mocks/handlers.js`)가 답해요. BE가 붙으면 이 파일은 그대로 써요.
 // 참고 사례 찾기는 AI 임베딩을 기다려요 — 백엔드 8초 + 여유(설계 문서 A 5.1·7.3 "화면 timeout 10초"). 자동 재시도 없음.
 export const REFERENCE_SEARCH_TIMEOUT_MS = 10_000
+// 참고 사례 관련 구절 excerpt 최대 길이 — NFC 뒤 UTF-16 코드 단위, AI·BE와 같은 기준, SCRUM-427.
+const EXCERPT_MAX_LENGTH = 300
 
 const draftPath = (draftNo) => `/api/v1/str-drafts/${encodeURIComponent(draftNo)}`
 const casePath = (caseNo) => `/api/v1/cases/${encodeURIComponent(caseNo)}`
@@ -124,14 +126,21 @@ export function toDraft(data) {
 	}
 }
 
-// S2 references — BE GetStrDraft가 AI generation_meta.references에서 chunk_id·doc_id·doc_title·page·score만 옮겨 줘요
-// (본문 text는 빠짐, SCRUM-125 후속). page는 PDF 쪽 번호(1부터)라 화면은 "PDF n쪽"으로 적어요.
+// 빈 값·문자열 아님·300 넘음은 null, 값은 받은 그대로.
+function toExcerpt(value) {
+	if (typeof value !== "string" || value.trim() === "") return null
+	return value.normalize("NFC").length <= EXCERPT_MAX_LENGTH ? value : null
+}
+
+// S2 references — AI generation_meta.references의 chunk_id·doc_id·doc_title·page·score와 관련 구절 excerpt(SCRUM-427).
+// excerpt는 AI·BE와 같은 기준(NFC 뒤 UTF-16 300단위 이하). page는 1부터 세어 "PDF n쪽"으로 적어요.
 const toReference = (data) => ({
 	chunkId: data.chunk_id ?? null,
 	docId: data.doc_id ?? null,
 	docTitle: data.doc_title ?? null,
 	page: data.page ?? null,
 	score: typeof data.score === "number" ? data.score : null,
+	excerpt: toExcerpt(data.excerpt),
 })
 
 // 참고 사례 찾기 결과 한 건(계약서 S9(설계 문서 A 6.1)). doc_id·chunk_id는 BE가 화면에 주지 않아요.
@@ -144,6 +153,7 @@ const toSearchItem = (data) => ({
 	score: typeof data.score === "number" ? data.score : null,
 	typologies: Array.isArray(data.typologies) ? data.typologies : [],
 	sourceType: data.source_type ?? null,
+	excerpt: toExcerpt(data.excerpt),
 })
 
 // ai_original: 서버가 정한 "AI 원문 행" 여부(S4). 없으면 null — revisionLabel이 번호로 대신 봐요.

@@ -18,7 +18,7 @@
 | 5    | S5 `POST …/verify`                                             | 없음                                                                                                                            | `strApi.verify` (timeout 100초)                    |
 | 6    | S6 `POST …/submit`                                             | 없음                                                                                                                            | `strApi.submit`                                    |
 | -    | A6 `POST /cases/{case_no}/close-with-draft`                    | 없음                                                                                                                            | `casesApi.closeWithDraft` (STR 화면에서도 같은 폼) |
-| -    | 참고 사례 찾기 `POST /str-drafts/{draft_no}/references/search` | 없음 (SCRUM-313·354). shared `AiClient.searchReferences`는 develop(SCRUM-309 #167)                                              | `strApi.searchReferences` (timeout 10초) 〔임시〕  |
+| -    | 참고 사례 찾기 `POST /str-drafts/{draft_no}/references/search` | develop (SCRUM-354 #178). shared `AiClient.searchReferences`(SCRUM-309 #167)                                                    | `strApi.searchReferences` (timeout 10초)           |
 
 BE가 한 단계씩 붙으면 프론트 코드는 그대로예요(경로·모양을 계약서대로 미리 맞춰 둠). `VITE_USE_MOCKS=true`면 전부 MSW가 답해요.
 
@@ -98,7 +98,7 @@ Query key 〔제안〕: `["draft", draftNo]`, `["draft", draftNo, "revisions"]`,
 
 검증 결과(`latest_verification`)는 AI 응답 그대로예요 [계약서 S5, 규약 §5.3]. `code_checks[]`는 `{ check, section, draft_value, source_value, match, reason }`(`reason`: `MISMATCH`·`UNPARSED`·`MISSING`·`OUT_OF_SCOPE`), `llm_checks[]`는 `{ check, comment, score }`(1~5점)이고 코드 검사가 실패하면 `llm_checks: null`. 프론트는 `null`을 빈 배열로 바꾸지 않아요.
 
-S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), `last_rejection { reason_code, comment, revision_no, decided_by, decided_at, narrative_unchanged }`(없으면 `null`), `suspicion_types`·`suspicion_types_recommended`(문자열 배열), `suspicion_level_branch`·`suspicion_level_hq`(1~5), `available_actions`(케이스 상세와 같은 이름, 계약서 Q16). 프론트 `toDraft`가 camelCase로 옮기고, MSW 시드엔 키만 두고 값은 비워 뒀어요. `references`는 BE가 AI `generation_meta.references`에서 `chunk_id`·`doc_id`·`doc_title`·`page`·`score`만 옮겨 줘요(본문 `text` 없음) — `toDraft`가 camelCase로 옮기고, 없거나 `null`이면 `[]`예요(SCRUM-312). 〔확인 필요 — 채영〕 `report`는 모양이 아직 없어 옮기지 않아요.
+S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), `last_rejection { reason_code, comment, revision_no, decided_by, decided_at, narrative_unchanged }`(없으면 `null`), `suspicion_types`·`suspicion_types_recommended`(문자열 배열), `suspicion_level_branch`·`suspicion_level_hq`(1~5), `available_actions`(케이스 상세와 같은 이름, 계약서 Q16). 프론트 `toDraft`가 camelCase로 옮기고, MSW 시드엔 키만 두고 값은 비워 뒀어요. `references`는 BE가 AI `generation_meta.references`에서 `chunk_id`·`doc_id`·`doc_title`·`page`·`score`와 관련 구절 `excerpt`(문자열|null, SCRUM-427)만 옮겨 줘요(본문 `text` 없음) — `toDraft`가 camelCase로 옮기고, 없거나 `null`이면 `[]`예요(SCRUM-312). 〔확인 필요 — 채영〕 `report`는 모양이 아직 없어 옮기지 않아요.
 
 `facts`는 **AI facts 그대로** 넘어와요(통화별 `inbound`/`outbound`, `period` 등, 화면용으로 줄이지 않음) [계약서 Q15, 11/4 채영]. 프론트도 키를 camelCase로 바꾸지 않고 그대로 둬요 — 본문 `cites`가 `inbound.amount.USD`·`counterparties.count`처럼 AI fact 키 이름(snake_case)이라, 키를 그대로 둬야 `cites`와 값을 바로 맞춰 볼 수 있어요. MSW 시드의 `facts`는 AI 리포 `contracts/examples/draft_response.json`의 `facts`를 그대로 옮겼어요(규약 §6.4).
 
@@ -106,11 +106,11 @@ S2에 더해진 필드(11/4 채영): `narrative[].label`(서식 항목 제목), 
 
 `components/StrReferencePanel.jsx` · 규칙 `model/referenceSearch.js`(순수 함수) · 훅 `useReferenceSearch`. STR 화면 오른쪽(`str-aside`) 의심 유형 패널 아래.
 
-- **패널**: S2 `references`(0~3건)를 카드로 — 문서명 · `PDF n쪽` · 유사도(소수 둘째 자리). 본문은 없어요. 아래 한 줄 "원문은 해당 문서의 쪽에서 확인해 주세요". 0건이면 "이 초안에 붙은 참고 사례가 없어요."
+- **패널**: S2 `references`(0~3건)를 카드로 — 문서명 · `PDF n쪽` · 유사도(소수 둘째 자리). 본문은 없어요. 관련 구절 `excerpt`가 있는 카드는 오른쪽 위 끝에 공통 `InfoTip` ⓘ — ⓘ에 hover·Tab 포커스 때 "[원문 발췌]" + 빈 줄 + 구절, Esc로 닫음(버튼 이름 "원문 발췌 — {문서명} 설명")(SCRUM-427, 카드 자체 hover는 안 함). 아래 한 줄 "원문은 해당 문서의 쪽에서 확인해 주세요" — 그 목록에 excerpt가 하나라도 있으면 "카드의 ⓘ에 마우스를 올리면 원문 발췌가 보여요. 전체 원문은 해당 문서의 쪽에서 확인해 주세요." 0건이면 "이 초안에 붙은 참고 사례가 없어요."
 - **[유형으로 더 찾아보기]**: S2 `available_actions`에 `SEARCH_REFERENCES`가 있을 때만. 서버가 본문 열람 권한(담당 조사역·승인자)과 설정(`aml.ai.reference-search-enabled`)으로 판단하고, 초안 상태로는 막지 않아요(잠긴 초안 포함). 영역은 패널 아래로 펼치고, 닫았다 열어도 마지막 결과를 유지해요. 페이지를 떠나면 결과를 지워요.
 - **유형 칩 5개**: `FAN_IN`·`FAN_OUT`·`CYCLE`·`SCATTER_GATHER`·`GATHER_SCATTER`(이름은 룰 화면 `ruleLabels.js`와 같게). 이 STR의 `facts.typology`가 다섯 중 하나면 미리 골라 둬요. 최대 3개 — 4번째를 누르면 "유형은 3개까지 고를 수 있어요"만 보이고 고르지 않아요. 0개면 [찾기] 막음.
 - **검색어**: 선택, 안내 "더 좁히고 싶을 때만 적어 주세요". 아래 `n / 200` — 길이는 AI·BE와 같은 기준(앞뒤 공백 뺀 뒤 NFC, UTF-16 단위). 넘으면 숫자 빨강 + [찾기] 막음. 보낼 때 앞뒤 공백을 지우고 빈 값이면 `null`.
-- **결과 카드**: 문서명 · 발행처 연도 · `PDF n쪽` · 유사도 · 유형 태그(검색 가능한 다섯 밖 태그는 코드 그대로). 초안에 붙은 참고 사례와 문서명·쪽이 같으면 "이미 붙어 있음"(찾기 응답엔 `doc_id`가 없어서 문서명으로 비교). 유사도 도움말은 결과 머리의 [?] 하나로 펼쳐요(카드마다 두지 않음).
+- **결과 카드**: (관련 구절 ⓘ·안내 문구는 패널 카드와 같은 규칙) 문서명 · 발행처 연도 · `PDF n쪽` · 유사도 · 유형 태그(검색 가능한 다섯 밖 태그는 코드 그대로). 초안에 붙은 참고 사례와 문서명·쪽이 같으면 "이미 붙어 있음"(찾기 응답엔 `doc_id`가 없어서 문서명으로 비교). 유사도 도움말은 결과 머리의 [?] 하나로 펼쳐요(카드마다 두지 않음).
 - **상태별**: 결과 있음 · 0건 "이 유형의 참고 자료가 아직 없어요" · `degraded` 회색 한 줄 · 400 `INVALID_REQUEST`는 입력 아래 칸별 안내(`details.typologies`·`details.query`, 입력 유지) · 502·503·timeout·응답 없음은 영역 안에만 "AI 서버가 응답하지 않아요" + [다시 시도]. 편집 중인 본문은 그대로.
 - **호출**: [찾기]를 누를 때만. 누를 때마다 새 요청(Query key에 순번) — 화면은 마지막 요청 결과만 보여 줘서 늦게 온 이전 응답은 버려져요. 찾는 중엔 [찾기]를 막아요. timeout 10초, 자동 재시도·포커스 재조회 없음.
 - **MSW** 〔임시〕: `mocks/referenceSearch.js` — `SCATTER_GATHER`만 고르면 0건, 검색어에 "일부"가 있으면 `degraded`, "AI오류"면 502 `AI_UNAVAILABLE`, 입력이 틀리면 400. 시드 `DRF-000124`(케이스 1001)에 참고 사례 3건, `DRF-000098`(케이스 1003, 잠김)은 0건. MSW는 본문을 볼 수 있으면 `SEARCH_REFERENCES`를 늘 줘요(설정 켬 가정).

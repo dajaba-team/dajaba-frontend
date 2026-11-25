@@ -19,16 +19,42 @@ import {
 	isAiFailure,
 	isNoResponse,
 } from "../../../shared/api/apiClient"
+import InfoTip from "../../../shared/ui/InfoTip"
 
 const SOURCE_NOTE = "원문은 해당 문서의 쪽에서 확인해 주세요."
+const EXCERPT_NOTE =
+	"카드의 ⓘ에 마우스를 올리면 원문 발췌가 보여요. 전체 원문은 해당 문서의 쪽에서 확인해 주세요."
 const SIMILARITY_HELP =
 	"검색어와 얼마나 비슷한지 나타내는 값이에요. 높다고 같은 사건이라는 뜻은 아니에요."
 
 const pageLabel = (page) => (page != null ? `PDF ${page}쪽` : "쪽 정보 없음")
 
+function renderRefTitle({ docTitle, excerpt }) {
+	const title = docTitle ?? "문서명 없음"
+	const heading = <strong>{title}</strong>
+	if (!excerpt) return heading
+
+	return (
+		<div className="str-ref-title str-check-name">
+			{heading}
+			<InfoTip
+				label={`원문 발췌 — ${title}`}
+				text={
+					<>
+						[원문 발췌]
+						<br />
+						<br />
+						{excerpt}
+					</>
+				}
+			/>
+		</div>
+	)
+}
+
 // 참고 사례 패널 (SCRUM-312·333, 설계 문서 A 7.1) — STR 화면 오른쪽(str-aside).
 // ① 초안을 만들 때 AI가 붙인 참고 사례(S2 references) ② [유형으로 더 찾아보기] 영역.
-// 본문 발췌는 응답에 없고 화면에도 그리지 않아요(문서명·쪽·유사도만).
+// 관련 구절이 있으면 카드 오른쪽 위 InfoTip ⓘ로 표시해요(SCRUM-427).
 // [유형으로 더 찾아보기]는 S2 available_actions에 SEARCH_REFERENCES가 있을 때만 — 서버가 권한·설정을 판단해요.
 export default function StrReferencePanel({ draftNo, references, facts, canSearch }) {
 	const [open, setOpen] = useState(false)
@@ -46,14 +72,16 @@ export default function StrReferencePanel({ draftNo, references, facts, canSearc
 					<ul className="str-ref-list" aria-label="초안에 붙은 참고 사례">
 						{references.map((ref, index) => (
 							<li key={ref.chunkId ?? `${ref.docTitle}-${ref.page}-${index}`}>
-								<strong>{ref.docTitle ?? "문서명 없음"}</strong>
+								{renderRefTitle(ref)}
 								<span className="str-ref-meta">
 									{pageLabel(ref.page)} · 유사도 {formatSimilarity(ref.score)}
 								</span>
 							</li>
 						))}
 					</ul>
-					<p className="str-muted">{SOURCE_NOTE}</p>
+					<p className="str-muted">
+						{references.some((ref) => ref.excerpt) ? EXCERPT_NOTE : SOURCE_NOTE}
+					</p>
 				</>
 			)}
 			{canSearch && (
@@ -237,7 +265,7 @@ function SearchResults({ result, references }) {
 					<ul className="str-ref-list" aria-label="찾은 참고 사례">
 						{result.items.map((item, index) => (
 							<li key={`${item.docTitle}-${item.page}-${index}`}>
-								<strong>{item.docTitle ?? "문서명 없음"}</strong>
+								{renderRefTitle(item)}
 								{isAttached(item, references) && (
 									<span className="str-badge">이미 붙어 있음</span>
 								)}
@@ -256,7 +284,9 @@ function SearchResults({ result, references }) {
 							</li>
 						))}
 					</ul>
-					<p className="str-muted">{SOURCE_NOTE}</p>
+					<p className="str-muted">
+						{result.items.some((item) => item.excerpt) ? EXCERPT_NOTE : SOURCE_NOTE}
+					</p>
 				</>
 			)}
 		</>
