@@ -100,11 +100,31 @@ const TRANSACTIONS_1001 = [
 	routeTx(5103, "18:05", ROUTE_C, ACCOUNT_1001, 4800, "US Dollar", "INBOUND"),
 ]
 
+// ML+DL 조사 순위(SCRUM-420, BE CaseDlRank). 화면 예시라 한 목록에 여러 모양을 섞었어요 —
+// 실제 서버는 같은 배치 날짜면 전부 AVAILABLE 이거나 전부 UNAVAILABLE 이에요. dl_rank 가 없는 예시는 UNAVAILABLE.
+const DL_RANK_UNAVAILABLE = {
+	status: "UNAVAILABLE",
+	reason: "ALERT_SET_MISMATCH",
+	ml_rank: null,
+	fused_rank: null,
+	fallback_reason: null,
+	dl_score: null,
+}
+const dlRank = ({ ml = null, fused = null, fallback = null, dl = null }) => ({
+	status: "AVAILABLE",
+	reason: null,
+	ml_rank: ml,
+	fused_rank: fused,
+	fallback_reason: fallback,
+	dl_score: dl,
+})
+
 export function seedCases() {
 	return [
 		{
 			case_no: "CASE-2022-001001",
 			status: "DRAFTED",
+			dl_rank: dlRank({ ml: 2, fused: 1, dl: 0.88 }),
 			account_ref: "ACR-0001",
 			account_no: "10_****8842",
 			assignee: user("inv01"),
@@ -134,6 +154,7 @@ export function seedCases() {
 		{
 			case_no: "CASE-2022-001002",
 			status: "OPEN",
+			dl_rank: dlRank({ fallback: "ML_UNSCORED" }),
 			account_ref: "ACR-0002",
 			account_no: "20_****1109",
 			assignee: null,
@@ -147,6 +168,7 @@ export function seedCases() {
 		{
 			case_no: "CASE-2022-001003",
 			status: "APPROVED",
+			dl_rank: dlRank({ ml: 3, fused: 3, fallback: "INCOMPLETE_DL_EVIDENCE" }),
 			account_ref: "ACR-0003",
 			account_no: "10_****5521",
 			assignee: user("inv01"),
@@ -233,6 +255,7 @@ const summaryOf = (item) => ({
 	rejection_reason_code: item.rejection_reason_code,
 	version: item.version,
 	created_at: item.created_at,
+	dl_rank: item.dl_rank ?? DL_RANK_UNAVAILABLE,
 })
 
 export function listResponse(items, url, viewer = null) {

@@ -9,6 +9,7 @@ import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemMinute as formatSystemTime } from "../caseTime"
 import CaseOverview from "../components/CaseOverview"
 import ReassignDialog from "../components/ReassignDialog"
+import DlRankText from "../components/DlRankText"
 import Pagination from "../../../shared/ui/Pagination"
 import { formatScore } from "../../../shared/format/score"
 import { useSession } from "../../auth/hooks/useSession"
@@ -229,6 +230,7 @@ export default function CaseListPage() {
 											<th scope="col">계좌</th>
 											<th scope="col">상태</th>
 											<th scope="col">점수</th>
+											<th scope="col">조사 순위</th>
 											<th scope="col">담당자</th>
 											<th scope="col">생성</th>
 											{manageColumn && <th scope="col">관리</th>}
@@ -252,6 +254,9 @@ export default function CaseListPage() {
 													</StatusBadge>
 												</td>
 												<td>{formatScore(item.score) ?? "—"}</td>
+												<td>
+													<DlRankText rank={item.dlRank} />
+												</td>
 												<td>{item.assignee?.displayName || "미배정"}</td>
 												<td>{formatSystemTime(item.createdAt)}</td>
 												{manageColumn && (
