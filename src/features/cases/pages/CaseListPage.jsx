@@ -28,7 +28,8 @@ const SORTS = [
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 // 주소 query → 필터. 모르는 상태·틀린 날짜는 버리고, page 는 1 이상 정수만.
-function readFilters(params) {
+// 관리자는 맡는 케이스가 없어서 '내 담당만'을 쓰지 않아요 — 주소에 mine=1 이 있어도 무시(SCRUM-429).
+function readFilters(params, { allowMine = true } = {}) {
 	const statuses = (params.get("status") ?? "")
 		.split(",")
 		.filter((value) => value in STATUS_LABELS)
@@ -39,7 +40,7 @@ function readFilters(params) {
 		statuses,
 		from: date("from"),
 		to: date("to"),
-		mine: params.get("mine") === "1",
+		mine: allowMine && params.get("mine") === "1",
 		assignee: params.get("assignee") ?? "",
 		sort: SORTS.some(([value]) => value === sort) ? sort : "",
 		page: Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1,
@@ -91,9 +92,10 @@ function ResetIcon() {
 export default function CaseListPage() {
 	const role = useSession().data?.role
 	useGuide(caseListWorkflowGuide(role))
+	const showMineFilter = role !== "ADMIN"
 	const [params, setParams] = useSearchParams()
 	const location = useLocation()
-	const filters = readFilters(params)
+	const filters = readFilters(params, { allowMine: showMineFilter })
 	const periodInvalid = Boolean(filters.from && filters.to && filters.from > filters.to)
 	const query = useCases(
 		{
@@ -164,14 +166,16 @@ export default function CaseListPage() {
 							onChange={(event) => update({ to: event.target.value })}
 						/>
 					</label>
-					<label>
-						<input
-							type="checkbox"
-							checked={filters.mine}
-							onChange={(event) => update({ mine: event.target.checked })}
-						/>{" "}
-						내 담당만
-					</label>
+					{showMineFilter && (
+						<label>
+							<input
+								type="checkbox"
+								checked={filters.mine}
+								onChange={(event) => update({ mine: event.target.checked })}
+							/>{" "}
+							내 담당만
+						</label>
+					)}
 					{filters.assignee && !filters.mine && (
 						<span>
 							담당자: {filters.assignee}{" "}

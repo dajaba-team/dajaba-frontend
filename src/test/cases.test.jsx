@@ -1492,6 +1492,19 @@ describe("케이스 목록 필터 (SCRUM-181)", () => {
 		expect(await screen.findByRole("link", { name: "CASE-2022-001002" })).toBeInTheDocument()
 		server.events.removeAllListeners()
 	})
+	it("관리자에게는 '내 담당만'이 없고 주소의 mine=1 도 무시한다 (SCRUM-429)", async () => {
+		const urls = recordListUrls()
+		renderApp("/cases?mine=1", true, "admin")
+		await screen.findByRole("link", { name: REVIEWING })
+		expect(screen.queryByRole("checkbox", { name: "내 담당만" })).not.toBeInTheDocument()
+		expect(urls.at(-1).searchParams.get("assignee")).toBeNull()
+		server.events.removeAllListeners()
+	})
+	it("조사역에게는 '내 담당만'이 그대로 보인다", async () => {
+		renderApp()
+		await screen.findByRole("link", { name: REVIEWING })
+		expect(screen.getByRole("checkbox", { name: "내 담당만" })).toBeInTheDocument()
+	})
 	it("반려 케이스는 보완 요청·보고 안 함을 나눠 보여 준다", async () => {
 		const row = (caseNo, code) => ({
 			case_no: caseNo,
