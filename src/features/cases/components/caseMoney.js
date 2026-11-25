@@ -1,6 +1,6 @@
 import { currencyLabel } from "../currencyLabels"
 
-// 금액은 받은 숫자 + 한글 통화 이름(계약서 2.4 원문 "US Dollar" → "미국 달러", currencyLabels). 통화 이름이 ISO 코드가 아니라("US Dollar") Intl currency 형식은 쓰지 않아요.
+// 금액은 받은 숫자 + 통화 표기(계약서 2.4 원문 "US Dollar" → "$(미국)", currencyLabels · SCRUM-428). 통화 이름이 ISO 코드가 아니라("US Dollar") Intl currency 형식은 쓰지 않아요.
 // 더하거나 환산하지 않아요.
 const number = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 6 })
 

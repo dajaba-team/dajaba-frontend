@@ -1,0 +1,97 @@
+/* 위 띠 [사용 안내] — 알림 종·이름 칩 옆, 예전 "시연 도구" 자리(SCRUM-428) */
+.guide-open {
+	display: flex;
+	min-height: 2.375rem;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.375rem;
+	border: 0;
+	border-radius: 0.4375rem;
+	background: transparent;
+	color: var(--color-muted);
+	font-size: var(--font-small);
+	font-weight: 600;
+	cursor: pointer;
+}
+.guide-open:hover:enabled {
+	background: transparent;
+	color: var(--color-primary);
+}
+@media (max-width: 47.99rem) {
+	.guide-open-label {
+		display: none;
+	}
+}
+
+/* 안내 창 */
+.tutorial-dialog .modal-body {
+	display: grid;
+	gap: var(--space-3);
+}
+.tutorial-count {
+	margin: 0;
+	color: var(--color-muted);
+	font-size: var(--font-xs);
+	font-weight: 600;
+}
+.tutorial-title {
+	margin: 0;
+	font-size: var(--font-lead);
+}
+/* 캡처 칸 — 창이 세로로 넘치지 않게 높이를 화면의 40%까지만(설명 줄과 점이 한 화면에 보이게) */
+.tutorial-shot {
+	width: 100%;
+	height: min(40vh, 360px);
+	object-fit: contain;
+	border: var(--border-width) solid var(--color-border);
+	border-radius: 0.75rem;
+	background: #f3f6fb;
+}
+.tutorial-shot.is-empty {
+	display: grid;
+	place-items: center;
+	color: var(--color-muted);
+	font-size: var(--font-small);
+}
+.tutorial-points {
+	margin: 0;
+	padding-inline-start: 1.25rem;
+	line-height: 1.6;
+}
+.tutorial-dialog > footer {
+	justify-content: space-between;
+	align-items: center;
+}
+.tutorial-dots {
+	display: flex;
+	gap: 0.375rem;
+}
+/* 점은 창 아래 버튼 공통 규칙(.modal > footer button — 최소 폭·높이·테두리·hover 면)을 덮어써요 */
+.modal.tutorial-dialog > footer button.tutorial-dot {
+	flex: none;
+	width: 0.5rem;
+	min-width: 0;
+	height: 0.5rem;
+	min-height: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 999px;
+	background: #c9d6ea;
+	cursor: pointer;
+	transition:
+		width 0.15s ease,
+		background 0.15s ease;
+}
+.modal.tutorial-dialog
+	> footer
+	button.tutorial-dot:not(.primary):not([aria-current]):hover:enabled {
+	background: #9fb3d1;
+}
+.modal.tutorial-dialog > footer button.tutorial-dot[aria-current="step"] {
+	width: 1.25rem;
+	background: var(--color-primary);
+}
+.tutorial-nav {
+	display: flex;
+	gap: var(--space-2);
+}

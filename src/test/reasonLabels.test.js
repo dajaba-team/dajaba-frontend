@@ -14,13 +14,13 @@ describe("점수 근거 한글 표기", () => {
 		expect(basisLabel("distinct_inbound_counterparties")).toBe("서로 다른 입금 상대 계좌")
 		expect(basisLabel("something_else")).toBeNull()
 	})
-	it("단위: 계좌 수는 개, 그 밖 count 는 건, ratio 는 %, 통화 코드는 한글 통화 이름", () => {
+	it("단위: 계좌 수는 개, 그 밖 count 는 건, ratio 는 %, 통화 코드는 기호(나라)", () => {
 		const name = "account_in_counterparties_24h"
 		expect(withReasonUnit(12, "count", name, formatNumber)).toBe("12개")
 		expect(withReasonUnit(5, "count", "tx_count_24h", formatNumber)).toBe("5건")
 		expect(withReasonUnit(0.4, "ratio", "night_tx_ratio_24h", formatNumber)).toBe("40%")
 		expect(withReasonUnit(152000.5, "USD", "amount_out_sum_24h", formatNumber)).toBe(
-			"152,000.5 미국 달러",
+			"152,000.5 $(미국)",
 		)
 		expect(withReasonUnit(3, "weird_unit", name, formatNumber)).toBe("3")
 		expect(withReasonUnit(null, "count", name, formatNumber)).toBeNull()

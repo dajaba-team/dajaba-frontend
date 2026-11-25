@@ -115,7 +115,11 @@ describe("409 — 버전 충돌·배정 대상", () => {
 		expect(screen.getByRole("radio", { name: "오탐" })).toBeChecked()
 		server.events.removeAllListeners()
 	})
-	it("관리자 배정의 INVALID_ASSIGNEE 는 담당자 칸 아래에, 입력을 남긴다", async () => {
+	it("관리자 배정의 INVALID_ASSIGNEE 는 확인창 안에 안내하고, 고른 값을 비우고 조사역 목록을 다시 부른다 (SCRUM-428)", async () => {
+		let lists = 0
+		server.events.on("request:start", ({ request }) => {
+			if (new URL(request.url).pathname === "/api/v1/admin/users") lists += 1
+		})
 		server.use(
 			http.post(`*/api/v1/cases/${OPEN}/assign`, () =>
 				fail(409, "INVALID_ASSIGNEE", "활성 조사역에게만 배정할 수 있습니다", {
@@ -125,14 +129,16 @@ describe("409 — 버전 충돌·배정 대상", () => {
 		)
 		const user = renderApp(`/cases/${OPEN}`, "admin")
 		await user.click(await screen.findByRole("button", { name: "담당자 배정" }))
-		const input = screen.getByLabelText("배정할 조사역 아이디")
-		await user.type(input, "old01")
-		await user.click(screen.getByRole("button", { name: "배정" }))
-		const error = await screen.findByText("활성 조사역에게만 배정할 수 있습니다")
-		expect(input).toHaveAttribute("aria-invalid", "true")
-		expect(input).toHaveAttribute("aria-describedby", error.id)
-		expect(input).toHaveValue("old01")
-		expect(screen.getAllByRole("alert")).toHaveLength(1) // 폼 공통 안내와 겹치지 않음
+		const dialog = await screen.findByRole("dialog", { name: "담당자 배정" })
+		const select = await within(dialog).findByLabelText("배정할 조사역")
+		await user.selectOptions(select, "inv01")
+		await user.click(within(dialog).getByRole("button", { name: "배정" }))
+		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+			"활성 조사역에게만 맡길 수 있어요",
+		)
+		expect(select).toHaveValue("")
+		await waitFor(() => expect(lists).toBe(2))
+		server.events.removeAllListeners()
 	})
 	it("담당자 변경의 INVALID_ASSIGNEE 는 확인창 안에 안내하고 조사역 목록을 다시 부른다", async () => {
 		let lists = 0

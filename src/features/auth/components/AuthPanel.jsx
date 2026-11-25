@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useSession, sessionKey } from "../hooks/useSession"
 import { clearBusinessData, sessionEndedKey } from "../../../app/queryClient"
@@ -8,7 +9,9 @@ import Icon from "../../../shared/ui/dashboard/Icon"
 import brandMark from "../../../assets/brand-mark.png"
 import Spinner from "../../../shared/ui/Spinner"
 
-const ROLE_LABELS = { INVESTIGATOR: "조사역", APPROVER: "승인자", ADMIN: "운영 관리자" }
+const ROLE_LABELS = { INVESTIGATOR: "조사역", APPROVER: "승인자", ADMIN: "관리자" }
+// 시연용 표시 이름(SCRUM-428) — 위 띠 칩에 "이름(역할)". 서버 계정 이름(display_name)은 그대로 두고 칩만 바꿔요.
+const DEMO_NAMES = { ADMIN: "배준혁", INVESTIGATOR: "김지윤", APPROVER: "오채영" }
 
 // 로그인 뒤에는 위 띠(placement="header")에 프로필 칩으로, 로그인 전에는 본문 가운데 로그인 카드로 보여요.
 // 두 자리 모두 늘 마운트해 두고 한쪽만 그려서, 로그인·로그아웃 순간에 컴포넌트가 다시 만들어지지 않게 해요.
@@ -18,6 +21,7 @@ export default function AuthPanel({ placement = "main" }) {
 	// 비밀번호 보기 — 비밀번호가 지워지면(로그인 성공·실패) 다시 숨겨요(SCRUM-345)
 	const [showPassword, setShowPassword] = useState(false)
 	const queryClient = useQueryClient()
+	const navigate = useNavigate()
 	const me = useSession()
 	// 캐시에만 두는 표시라 queryFn 없이 읽습니다. 로그인에 성공하면 지웁니다.
 	const sessionEnded = useQuery({
@@ -62,19 +66,28 @@ export default function AuthPanel({ placement = "main" }) {
 			await queryClient.cancelQueries({ queryKey: sessionKey })
 			queryClient.setQueryData(sessionKey, null)
 			await clearBusinessData(queryClient)
+			// 직접 로그아웃하면 다음 사람은 대시보드에서 시작해요(SCRUM-428). 세션을 비운 뒤라 이전 화면 조회가 안 나가요.
+			// 세션 만료(401)는 이 길이 아니라서 URL을 그대로 둬요 — 다시 로그인하면 보던 케이스로 돌아가요.
+			navigate("/overview", { replace: true })
 		},
 	})
 	const busy = switching || login.isPending || logout.isPending
 	if ((placement === "header") !== Boolean(me.data)) return null
-	// 위 띠: 칩에는 역할만("조사역 ⌄"), 누르면 이름·아이디·역할과 로그아웃이 펼쳐져요(SCRUM-408).
+	// 위 띠: 칩에는 "이름(역할)"(SCRUM-428), 누르면 계정 이름·아이디·역할과 로그아웃이 펼쳐져요(SCRUM-408).
 	// "현재 사용자 확인" 버튼은 쓸 일이 없어 뺐어요(SCRUM-407).
 	if (placement === "header") {
 		const roleLabel = ROLE_LABELS[me.data.role] ?? me.data.role
+		const chipName = DEMO_NAMES[me.data.role] ?? me.data.displayName
+		const chipLabel = `${chipName}(${roleLabel})`
 		return (
 			<details className="persona">
-				<summary aria-label={`${roleLabel} 계정 메뉴`}>
+				<summary aria-label={`${chipLabel} 계정 메뉴`}>
 					<Icon name="user" size={16} />
-					<span>{roleLabel}</span>
+					{/* 좁은 화면에선 (역할)을 숨기고 이름만 — 칩이 두 줄로 꺾이지 않게(app.css .persona-chip-role) */}
+					<span className="persona-chip-label">
+						{chipName}
+						<span className="persona-chip-role">({roleLabel})</span>
+					</span>
 					<Icon name="chevron" size={16} />
 				</summary>
 				<section className="persona-menu" aria-label="로그인 정보">
