@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { act, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { MemoryRouter } from "react-router"
+import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { http, HttpResponse } from "msw"
 import App from "../app/App"
@@ -26,6 +26,22 @@ function renderApp(path = "/cases", authenticated = true, who = "inv01") {
 		</QueryClientProvider>,
 	)
 	return Object.assign(userEvent.setup(), { queryClient })
+}
+
+// 실제 앱(main.jsx)처럼 data router로 띄워요 — 브라우저 뒤로 가기(router.navigate(-1))까지 확인할 때.
+function renderDataRouterApp(entries) {
+	resetCases(USERS.inv01)
+	const queryClient = createQueryClient()
+	const router = createMemoryRouter([{ path: "*", element: <App /> }], {
+		initialEntries: entries,
+		initialIndex: entries.length - 1,
+	})
+	render(
+		<QueryClientProvider client={queryClient}>
+			<RouterProvider router={router} />
+		</QueryClientProvider>,
+	)
+	return Object.assign(userEvent.setup(), { router })
 }
 
 const REVIEWING = "CASE-2022-001004"
@@ -1015,6 +1031,26 @@ describe("예시 계정 권한과 입력 보호", () => {
 		expect(screen.getByRole("textbox", { name: "메모 내용" })).toHaveValue(
 			"거래 목적 확인 필요 추가",
 		)
+	})
+	it("변경한 메모가 있을 때 브라우저 뒤로 가기도 확인하고, 계속 작성이면 남고 저장하지 않고 이동이면 이동한다(EX-15)", async () => {
+		const user = renderDataRouterApp(["/cases", "/cases/CASE-2022-001004"])
+		const memo = await screen.findByRole("textbox", { name: "메모 내용" })
+		await user.type(memo, " 추가")
+		act(() => {
+			user.router.navigate(-1)
+		})
+		const dialog = await screen.findByRole("dialog", { name: "저장하지 않은 메모가 있습니다" })
+		await user.click(within(dialog).getByRole("button", { name: "계속 작성" }))
+		expect(user.router.state.location.pathname).toBe("/cases/CASE-2022-001004")
+		expect(screen.getByRole("textbox", { name: "메모 내용" })).toHaveValue(
+			"거래 목적 확인 필요 추가",
+		)
+		act(() => {
+			user.router.navigate(-1)
+		})
+		const again = await screen.findByRole("dialog", { name: "저장하지 않은 메모가 있습니다" })
+		await user.click(within(again).getByRole("button", { name: "저장하지 않고 이동" }))
+		await waitFor(() => expect(user.router.state.location.pathname).toBe("/cases"))
 	})
 	it("확인창이 열리면 계속 작성에 포커스가 가서, 바로 Enter를 눌러도 메모가 남는다", async () => {
 		const user = renderApp("/cases/CASE-2022-001004")
