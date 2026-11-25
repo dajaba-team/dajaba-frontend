@@ -182,6 +182,7 @@ export function seedPendingApproval(cases, drafts) {
 // PDF 본문은 짧은 예시 바이트예요 — 실제 서식·워터마크는 서버가 만들어요〔미결 — 서식 안건 2〕.
 const MOCK_PDF = "%PDF-1.4\n% dajaba mock report\n%%EOF\n"
 const pdf = (label) => ({ status: 200, pdf: `${MOCK_PDF}% ${label}\n` })
+const reportNoOf = (draft) => `RPT-${draft.draft_no.slice(4)}`
 const canViewReport = (viewer, item) =>
 	viewer.role === "APPROVER" || item.assignee?.login_id === viewer.login_id
 
@@ -218,7 +219,7 @@ export function reportDraft(viewer, item, draft, body) {
 		case_status: item.status,
 		case_version: item.version,
 		draft_no: draft.draft_no,
-		report_no: `RPT-${draft.draft_no.slice(4)}`,
+		report_no: reportNoOf(draft),
 		report_due_at: null,
 		reported_at: item.updated_at,
 		late: false,
@@ -247,7 +248,7 @@ export function reportPdf(viewer, item, draft) {
 		return fail(409, "REPORT_PDF_NOT_READY", "PDF를 만들지 못했습니다", {
 			pdf_status: draft.pdf_status ?? "PENDING",
 		})
-	return pdf("REPORT")
+	return { ...pdf("REPORT"), fileName: `${reportNoOf(draft)}.pdf` }
 }
 
 /** P5 `POST /approvals/{draft_no}/report/pdf` — 승인자, PDF FAILED 일 때만 → 202 {pdf_status}. */

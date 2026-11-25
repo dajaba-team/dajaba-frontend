@@ -176,6 +176,8 @@ BE #176이 develop에 들어가야 실제 서버에서 동작해요 — 그 전 
 
 S1(SCRUM-183, `case_version` #89)·S2(SCRUM-205 #84)·S3·S4(SCRUM-184 #91)는 BE develop에 있어요. S5·S6·A6은 아직 MSW예요. 표는 `06_features/str.md` "백엔드 연결 상태".
 
+- 확정본 PDF(S8 `GET /str-drafts/{draft_no}/report.pdf`, `approvalsApi.reportPdf`) 저장 파일명은 응답 `Content-Disposition`의 `filename*`·`filename`(없거나 읽지 못하면 `{draft_no}.pdf`). 다른 출처로 부르면 BE CORS가 이 헤더를 노출하지 않아 초안 번호 이름이 돼요.
+
 ### STR 초안 조회 [STR API 명세 2·4번, 계약서 S2·S4·S5(11/4 채영), BE SCRUM-184 #91, FE 코드 `strApi.js`·`mocks/strDrafts.js`, SCRUM-110]
 
 수정 이력(S4)은 BE develop에 있어요. MSW는 같은 모양으로 답해요. 본문 열람 제한 규칙은 `06_features/str.md` §3.
