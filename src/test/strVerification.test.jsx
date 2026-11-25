@@ -163,21 +163,22 @@ describe("검증 결과 패널 (SCRUM-116)", () => {
 			llm_checks: [llm("FIVE_W_ONE_H_COMPLETE", 5)],
 		})
 
-		const helpButton = screen.getByRole("button", { name: "육하원칙 빠짐 없음 도움말" })
+		const helpButton = screen.getByRole("button", { name: "육하원칙 빠짐 없음 설명" })
 		const helpText = screen.getByRole("tooltip", {
 			name: /누가·언제·어디서·무엇을·어떻게·왜/,
 		})
 		expect(helpButton).toHaveAttribute("aria-describedby", helpText.id)
 		helpButton.focus()
 		expect(helpButton).toHaveFocus()
-		expect(screen.getAllByRole("button", { name: /도움말$/ })).toHaveLength(11)
-		expect(screen.getByText("FIVE_W_ONE_H_COMPLETE")).toBeInTheDocument()
+		expect(screen.getAllByRole("button", { name: /설명$/ })).toHaveLength(11)
+		// 아는 항목은 한글 이름만 — 영어 검사 코드는 화면에 안 보여요(표에 없는 항목만 이름 그대로)
+		expect(screen.queryByText("FIVE_W_ONE_H_COMPLETE")).not.toBeInTheDocument()
 		expect(screen.getByRole("tooltip", { name: /건수·계좌 수 같은 숫자/ })).toBeInTheDocument()
 		expect(screen.getByRole("tooltip", { name: /근거로 든 거래와 항목/ })).toBeInTheDocument()
 		expect(screen.getAllByRole("tooltip", { name: /이 케이스 거래 자료/ })).toHaveLength(4)
 	})
 
-	it("OPINION_PRESENT(종합의견 공란) 실패 — 그 항목이 위로, 이름·사유가 보인다", () => {
+	it("OPINION_PRESENT(종합의견 공란) 실패 — 그 항목이 위로, 한글 이름·사유가 보인다(영어 코드는 안 보임)", () => {
 		renderPanel({
 			revision_no: 2,
 			is_current: true,
@@ -203,7 +204,7 @@ describe("검증 결과 패널 (SCRUM-116)", () => {
 			"근거 범위",
 		])
 		const opinion = codeItem("종합의견")
-		expect(opinion).toHaveTextContent("OPINION_PRESENT")
+		expect(opinion).not.toHaveTextContent("OPINION_PRESENT")
 		expect(opinion).toHaveTextContent("실패")
 		expect(opinion).toHaveTextContent("빠짐 · 종합의견 · 본문 - · 원본 -")
 	})

@@ -1,7 +1,7 @@
 import { formatSystemTime } from "../../../shared/format/time"
 import { revisionLabel } from "../../../shared/str/revisionLabel"
 import { sectionTitle } from "../../../shared/str/sectionTitles"
-import HelpTooltip from "../../../shared/ui/HelpTooltip"
+import InfoTip from "../../../shared/ui/InfoTip"
 import {
 	CODE_CHECKS,
 	CODE_REASON_LABELS,
@@ -85,7 +85,7 @@ function CheckName({ item }) {
 	return (
 		<span className="str-check-name">
 			<strong>{item.label}</strong>
-			{help && <HelpTooltip label={item.label}>{help}</HelpTooltip>}
+			{help && <InfoTip label={item.label} text={help} />}
 		</span>
 	)
 }
@@ -95,7 +95,6 @@ function CodeCheckRow({ item }) {
 		<li className={`str-check str-check--${item.state.toLowerCase()}`}>
 			<div className="str-check-head">
 				<CheckName item={item} />
-				{item.label !== item.check && <code>{item.check}</code>}
 				<StatusBadge className="str-check-state" tone={CHECK_STATE_TONES[item.state]}>
 					{CODE_STATE_TEXT[item.state]}
 				</StatusBadge>
@@ -128,7 +127,6 @@ function LlmCheckRow({ item, status }) {
 		<li className={`str-check str-check--${item.state.toLowerCase()}`}>
 			<div className="str-check-head">
 				<CheckName item={item} />
-				{item.label !== item.check && <code>{item.check}</code>}
 				<StatusBadge className="str-check-state" tone={CHECK_STATE_TONES[item.state]}>
 					{item.row?.score != null && `${item.row.score}점 · `}
 					{LLM_STATE_TEXT[item.state]}

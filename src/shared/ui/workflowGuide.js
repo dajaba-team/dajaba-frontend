@@ -46,7 +46,7 @@ export function strWorkflowGuide({ draft, detail, role }) {
 			? "3. 보완 — 반려 사유에 맞게 본문을 수정·저장한 뒤 다시 검증하고 승인 요청하세요."
 			: readOnlyGuide
 	if (has(draft.availableActions, "SUBMIT"))
-		return "4. 승인 요청 — 의심 유형과 지점 의심 정도를 확인한 뒤 승인 요청을 보내세요."
+		return "4. 승인 요청 — 위 [승인 요청]을 눌러 의심 유형과 지점 의심 정도를 고른 뒤 보내세요."
 	if (has(draft.availableActions, "VERIFY"))
 		return "3. STR 검증 — 수정한 내용을 저장하고 현재 저장본을 검증하세요. 통과하면 승인 요청할 수 있습니다."
 	if (has(draft.availableActions, "REVISE"))

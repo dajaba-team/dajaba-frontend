@@ -68,7 +68,6 @@ export default function StrNarrative({
 							<article className="str-section" aria-labelledby={headingId}>
 								<header>
 									<h2 id={headingId}>{sectionTitle(section)}</h2>
-									<code>{section.section}</code>
 									{changed && <span className="str-badge">저장 안 됨</span>}
 								</header>
 								{editable && marks.length > 0 && (
@@ -114,13 +113,20 @@ export default function StrNarrative({
 										{check.sourceValue ?? "-"}
 									</p>
 								))}
-								<p className="str-section-evidence">
-									{section.evidenceIds.length > 0
-										? `근거 거래 ${section.evidenceIds.length}건 · ${section.evidenceIds.join(", ")}`
-										: "근거 거래 없음"}
-									{section.cites.length > 0 &&
-										` · 근거 사실 ${section.cites.join(", ")}`}
-								</p>
+								{/* 근거는 접어 두고 눌러서 펼쳐요 — 근거 거래 번호·근거 사실 키 */}
+								{section.evidenceIds.length > 0 || section.cites.length > 0 ? (
+									<details className="str-section-evidence">
+										<summary>근거 거래 {section.evidenceIds.length}건</summary>
+										{section.evidenceIds.length > 0 && (
+											<p>{section.evidenceIds.join(", ")}</p>
+										)}
+										{section.cites.length > 0 && (
+											<p>근거 사실 {section.cites.join(", ")}</p>
+										)}
+									</details>
+								) : (
+									<p className="str-section-evidence">근거 거래 없음</p>
+								)}
 							</article>
 						</li>
 					)

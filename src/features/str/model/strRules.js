@@ -80,8 +80,15 @@ export function submitBlockReason({
 	// 보완 요청 뒤 같은 본문(서버 last_rejection.narrative_unchanged) — S6이 409 NARRATIVE_UNCHANGED
 	if (narrativeUnchanged) return "반려 당시와 본문이 같아요. 고쳐 저장한 뒤 다시 요청해 주세요."
 	if (verificationState(verification) !== "PASSED")
-		return "지금 저장된 본문의 검증 통과가 필요해요."
+		return "검증을 통과해야 승인 요청할 수 있어요. 저장한 본문을 먼저 검증해 주세요."
 	if (!verification.verificationId) return "검증 번호를 확인할 수 없어요. 다시 검증해 주세요."
+	// 유형·지점 정도는 [승인 요청] 창에서 골라요 — 넘겨받았을 때만 봐요(화면 버튼은 안 넘겨요)
+	if (types !== undefined || level !== undefined) return suspicionMissing(types ?? [], level)
+	return null
+}
+
+/** 승인 요청 창 1단계 [완료] 전 확인 — VI부 의심 유형(1개 이상)·지점 의심 정도(기본값 없음). */
+export function suspicionMissing(types, level) {
 	if (!types.length) return "의심 유형을 1개 이상 선택해 주세요."
 	if (!level) return "지점 의심 정도를 선택해 주세요."
 	return null
