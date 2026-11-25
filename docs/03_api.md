@@ -141,6 +141,7 @@
 
 - AI 조사 요약 칸(`CaseSummaryPanel`, SCRUM-175)은 상세 `latest_summary`를 그대로 보여 줘요. `is_current`가 true면 "현재 입력 기준", false면 "입력 변경됨", null이면 다시 생성 안내. 버튼은 `REFRESH_SUMMARY`가 있을 때만 — 요약이 없으면 [요약 생성], 있으면 [요약 갱신]. 실패는 그 칸에만 보여 주고, 기존 요약은 "이전에 만든 요약"으로 구분해요. 갱신하면 `case_version`이 +1이라 상세를 다시 불러요.
 - 계좌는 서버가 가린 `account_no`와 구별용 `account_ref`만 와요. 버튼은 `available_actions`만 보고 켜요(`CaseActions`).
+- **ML+DL 조사 순위 `dl_rank`** (목록·상세 같은 모양, BE SCRUM-420) — `{status, reason, ml_rank, fused_rank, fallback_reason, dl_score}`. `AVAILABLE`이면 목록 「조사 순위」 칸·상세 「케이스·경보 정보」에 "결합 N위 / ML M위", ML 점수 없으면(`ML_UNSCORED`) "순위 없음", DL 근거가 덜 이어지면(`INCOMPLETE_DL_EVIDENCE`) ML 순위 유지 안내. `UNAVAILABLE`(이유 7종 — `REFERENCE_MISMATCH`·`EVIDENCE_MISMATCH` 포함)·칸 없음은 이유와 상관없이 "순위 조회 불가"(`dlRank.js`). 목업 백엔드에선 거의 다 조회 불가가 정상이고, 순위는 DB를 새로 만들고 9/7을 처음 스캔했을 때만 붙어요.
 - 종료 버튼은 하나예요. `available_actions`에 `CLOSE`가 있으면 `close`, `CLOSE_WITH_DRAFT`가 있으면 `close-with-draft`를 불러요 — 초안이 있는지 화면이 따로 판단하지 않아요(SCRUM-112). 백엔드가 아직 없으면 404 `NOT_FOUND` 안내("아직 서버에 없는 기능이에요.") — 입력은 폼에 그대로 남아요.
 - 변경 응답(M)은 상세 전체가 아니라서 성공 뒤 상세·목록을 무효화해 다시 불러요(`useCaseCommand`). `CONCURRENT_UPDATE`·`INVALID_CASE_TRANSITION`·`NOT_ASSIGNEE`면 입력을 두고 상세만 다시 불러요.
 - 400 `details`의 필드 이름은 요청 JSON 이름(snake_case, 예: `investigator_notes`) 하나로 와요(BE SCRUM-167 #76).
@@ -175,6 +176,8 @@ BE #176이 develop에 들어가야 실제 서버에서 동작해요 — 그 전 
 ### STR — 단계별 연결 (11/10)
 
 S1(SCRUM-183, `case_version` #89)·S2(SCRUM-205 #84)·S3·S4(SCRUM-184 #91)는 BE develop에 있어요. S5·S6·A6은 아직 MSW예요. 표는 `06_features/str.md` "백엔드 연결 상태".
+
+- 확정본 PDF(S8 `GET /str-drafts/{draft_no}/report.pdf`, `approvalsApi.reportPdf`) 저장 파일명은 응답 `Content-Disposition`의 `filename*`·`filename`(없거나 읽지 못하면 `{draft_no}.pdf`). 다른 출처로 부르면 BE CORS가 이 헤더를 노출하지 않아 초안 번호 이름이 돼요.
 
 ### STR 초안 조회 [STR API 명세 2·4번, 계약서 S2·S4·S5(11/4 채영), BE SCRUM-184 #91, FE 코드 `strApi.js`·`mocks/strDrafts.js`, SCRUM-110]
 

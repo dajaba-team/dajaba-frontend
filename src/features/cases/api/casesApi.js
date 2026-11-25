@@ -3,6 +3,7 @@ import {
 	ASK_REQUEST_TIMEOUT_MS,
 	apiClient,
 } from "../../../shared/api/apiClient"
+import { toDlRank } from "../dlRank"
 
 // 케이스 API — 프론트 API 계약서 v0.2 C1~C8·A1~A7, CASES 명세 API-01~13·15.
 // 백엔드 CaseController(SCRUM-106)와 같은 경로·모양이에요. 메모(A3)·메모 이력(C8)은 SCRUM-176, 요약(A7·C7)은 SCRUM-175.
@@ -28,6 +29,8 @@ const toCaseSummary = (data) => ({
 	createdAt: data.created_at,
 	// 목록 한 줄에도 상세와 같은 버튼 목록이 와요(BE #87, #23 리뷰). 상세는 아래 toCaseDetail 이 같은 키로 덮어써요.
 	availableActions: data.available_actions ?? [],
+	// ML+DL 조사 순위(SCRUM-420) — 목록·상세 같은 모양. null 이면 화면은 "순위 조회 불가"
+	dlRank: toDlRank(data.dl_rank),
 })
 
 const toHistory = (data) => ({

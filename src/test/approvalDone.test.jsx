@@ -101,7 +101,8 @@ describe("승인 완료 — 미리보기·모의 제출·확정본", () => {
 	})
 
 	it("확정본 PDF를 못 만들었으면(FAILED) 승인자에게 [PDF 다시 만들기]를 준다", async () => {
-		const user = renderAt("/approvals/DRF-000098")
+		// 모의 제출 뒤 PDF 가 FAILED — 목업 S2 가 BE 처럼 이 초안을 승인한 승인자에게 REGENERATE_PDF 를 줘요
+		const user = renderAt("/approvals/DRF-000098", "apr01", { nextPdfStatus: "FAILED" })
 		await user.click(await screen.findByRole("button", { name: "모의 제출" }))
 		const dialog = await screen.findByRole("dialog", { name: "모의 제출" })
 		await user.click(within(dialog).getByRole("button", { name: "모의 제출" }))
@@ -109,8 +110,10 @@ describe("승인 완료 — 미리보기·모의 제출·확정본", () => {
 
 		server.use(http.get("*/api/v1/str-drafts/:draftNo/report.pdf", () => notReady("FAILED")))
 		await user.click(screen.getByRole("button", { name: "확정본 PDF 받기" }))
-		expect(await screen.findByText(/PDF를 만들지 못했어요/)).toBeInTheDocument()
-		// MSW 기본 상태는 READY 라 P5 는 409 — 여기선 202 를 흉내 내요
+		// 추적기도 FAILED 를 알림 목록에 남겨요 — 화면 안내만 봐요
+		const report = within(screen.getByRole("region", { name: "승인 완료 보고서" }))
+		expect(await report.findByText(/PDF를 만들지 못했어요/)).toBeInTheDocument()
+		// P5 응답을 202 로 고정해요
 		server.use(
 			http.post("*/api/v1/approvals/:draftNo/report/pdf", () =>
 				HttpResponse.json({ pdf_status: "PENDING" }, { status: 202 }),

@@ -1,6 +1,6 @@
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
-import { BrowserRouter } from "react-router"
+import { createBrowserRouter, RouterProvider } from "react-router"
 import { QueryClientProvider } from "@tanstack/react-query"
 import App from "./app/App"
 import { createQueryClient } from "./app/queryClient"
@@ -11,12 +11,13 @@ async function bootstrap() {
 		const { worker } = await import("./mocks/browser")
 		await worker.start({ onUnhandledRequest: "bypass" })
 	}
+	// data router — 미저장 메모가 있을 때 useBlocker로 뒤로 가기까지 막으려고(EX-15).
+	// 화면 경로는 그대로 App 안의 <Routes>가 정해요.
+	const router = createBrowserRouter([{ path: "*", element: <App /> }])
 	createRoot(document.getElementById("root")).render(
 		<StrictMode>
 			<QueryClientProvider client={createQueryClient()}>
-				<BrowserRouter>
-					<App />
-				</BrowserRouter>
+				<RouterProvider router={router} />
 			</QueryClientProvider>
 		</StrictMode>,
 	)

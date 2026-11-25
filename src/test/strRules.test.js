@@ -6,6 +6,7 @@ import {
 	sectionError,
 	strActionsFor,
 	submitBlockReason,
+	suspicionMissing,
 	textLength,
 	verificationState,
 	mismatchMarks,
@@ -86,9 +87,14 @@ describe("STR 화면 규칙", () => {
 		expect(submitBlockReason({ ...base, narrativeUnchanged: false })).toBeNull()
 		expect(
 			submitBlockReason({ ...base, verification: { ...passed, isCurrent: false } }),
-		).toMatch("검증 통과")
+		).toMatch("검증을 통과해야 승인 요청할 수 있어요")
 		expect(submitBlockReason({ ...base, types: [] })).toMatch("유형")
 		expect(submitBlockReason({ ...base, level: null })).toMatch("지점 의심 정도")
+		// 화면 버튼은 유형·정도 없이 물어요 — 창에서 고르니까 막지 않아요
+		expect(submitBlockReason({ ...base, types: undefined, level: undefined })).toBeNull()
+		expect(suspicionMissing([], 3)).toMatch("유형")
+		expect(suspicionMissing(["T"], null)).toMatch("지점 의심 정도")
+		expect(suspicionMissing(["T"], 3)).toBeNull()
 	})
 
 	it("불일치 본문 값을 본문 글자 모양으로 찾아 밑줄 범위를 준다", () => {

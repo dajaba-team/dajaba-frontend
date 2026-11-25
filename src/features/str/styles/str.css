@@ -2,6 +2,79 @@
 .str-page-heading {
 	margin-block: var(--space-3) var(--space-5);
 }
+/* 작업 줄 — [변경 비교]·[수정 이력]과 [승인 요청]을 한 줄에, [승인 요청]은 오른쪽 끝.
+   버튼 윗선을 맞추고, 막힌 이유 문구는 [승인 요청] 아래로 내려요. */
+.str-workbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--space-2) var(--space-4);
+	margin-block: var(--space-3);
+}
+.str-workbar .str-toolbar {
+	align-items: center;
+	min-height: 2.75rem; /* [승인 요청] 높이 — 작은 버튼이 그 가운데에 오게 */
+	margin-block: 0;
+}
+/* [승인 요청] — 한 단계 크게. 왼쪽 버튼이 없어도 오른쪽 끝에 */
+.str-submit-cta {
+	margin-inline-start: auto;
+	display: grid;
+	justify-items: end;
+	gap: var(--space-1);
+	max-inline-size: 22rem;
+}
+.str-submit-cta button {
+	min-height: 2.75rem;
+	padding-inline: var(--space-5);
+	font-size: var(--font-body);
+}
+/* 두 문장 안내가 글자 중간에서 끊기지 않게 — 단어 단위(keep-all)·두 줄 길이 고르게(balance) */
+.str-submit-hint {
+	margin: 0;
+	color: var(--color-fail);
+	font-size: var(--font-small);
+	text-align: end;
+	word-break: keep-all;
+	text-wrap: balance;
+}
+.str-submit-dialog .str-submit-hint {
+	text-align: start;
+	margin-block-start: var(--space-3);
+}
+.str-submit-warning {
+	padding: var(--space-3);
+	border-radius: var(--radius-card);
+	background: var(--color-fail-soft);
+	color: var(--color-fail);
+}
+.str-submit-summary {
+	display: grid;
+	gap: var(--space-2);
+	margin-block: var(--space-3);
+}
+.str-submit-summary div {
+	display: grid;
+	grid-template-columns: 7rem minmax(0, 1fr);
+	gap: var(--space-2);
+}
+.str-submit-summary dt {
+	color: var(--color-muted);
+}
+.str-submit-summary dd {
+	margin: 0;
+}
+@media (max-width: 40rem) {
+	.str-submit-cta {
+		flex-basis: 100%;
+		justify-items: stretch;
+		max-inline-size: none;
+	}
+	.str-workbar .str-submit-hint {
+		text-align: start;
+	}
+}
 .str-page-heading h1 {
 	margin-block: 0 var(--space-2);
 }
@@ -45,10 +118,6 @@
 	margin: 0;
 	font-size: var(--font-body);
 }
-.str-section code {
-	color: var(--color-muted);
-	font-size: var(--font-small);
-}
 /* AI 문장의 줄바꿈을 그대로 보여 줍니다. */
 .str-section-text {
 	margin-block: var(--space-2);
@@ -60,6 +129,13 @@
 	color: var(--color-muted);
 	font-size: var(--font-small);
 	overflow-wrap: anywhere;
+}
+.str-section-evidence summary {
+	inline-size: fit-content;
+	cursor: pointer;
+}
+.str-section-evidence p {
+	margin: var(--space-1) 0 0;
 }
 .str-restricted {
 	padding: var(--space-4);
@@ -135,24 +211,15 @@
 		position: static;
 	}
 }
-.str-facts {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-	gap: var(--space-2) var(--space-4);
-	margin: 0;
-}
-.str-facts dt {
+/* 사실 정보 표 — 왼쪽 항목 이름(연하게·고정 폭), 오른쪽 값 */
+.str-facts-table th {
+	inline-size: 7rem;
 	color: var(--color-muted);
-	font-size: var(--font-small);
+	font-weight: 500;
+	white-space: nowrap;
 }
-.str-facts dd {
-	margin: 0;
+.str-facts-table td {
 	overflow-wrap: anywhere;
-}
-.str-raw pre {
-	max-height: 20rem;
-	overflow: auto;
-	font-size: var(--font-small);
 }
 .str-section-index {
 	display: flex;
@@ -249,61 +316,26 @@
 	align-items: center;
 	gap: var(--space-1);
 }
-.str-check-head code {
-	color: var(--color-muted);
-	font-size: var(--font-small);
-}
-.help-tooltip {
+/* 검증 항목 옆 ⓘ — 데이터·배치 운영(원천 적재 등)과 같은 공통 InfoTip. 말풍선은 아이콘 위로, 검은 바탕·흰 글씨.
+   상자 폭을 가장 긴 줄에 맞추고 화면 밖으로 나가면 안쪽으로 미는 건 InfoTip 이 해요. */
+.str-check-name .kpi-info {
 	position: relative;
 	display: inline-flex;
+	vertical-align: middle;
 }
-.help-tooltip-trigger {
-	display: inline-grid;
-	place-items: center;
-	width: 1.25rem;
-	height: 1.25rem;
-	padding: 0;
-	border: var(--border-width) solid currentColor;
-	border-radius: 50%;
-	background: transparent;
-	color: var(--color-muted);
-	font-family: inherit;
-	font-size: var(--font-small);
-	font-weight: 700;
-	line-height: 1;
-	cursor: help;
-}
-.help-tooltip-trigger:hover,
-.help-tooltip-trigger:focus-visible {
-	color: var(--color-primary-strong);
-	outline: 2px solid var(--color-primary);
-	outline-offset: 2px;
-}
-.help-tooltip-content {
-	position: absolute;
-	z-index: 10;
-	top: calc(100% + var(--space-2));
-	left: 0;
-	width: min(19rem, 75vw);
-	padding: var(--space-2) var(--space-3);
-	border-radius: var(--radius-control);
-	background: var(--color-primary-strong);
-	box-shadow: var(--shadow-card);
-	color: var(--color-surface);
-	font-size: var(--font-small);
-	font-weight: 400;
-	line-height: 1.5;
-	opacity: 0;
-	pointer-events: none;
-	transform: translateY(-0.25rem);
-	transition:
-		opacity 120ms ease,
-		transform 120ms ease;
-}
-.help-tooltip:hover .help-tooltip-content,
-.help-tooltip:focus-within .help-tooltip-content {
-	opacity: 1;
-	transform: translateY(0);
+.str-check-name .kpi-info-tip {
+	top: auto;
+	bottom: calc(100% + 6px);
+	left: 50%;
+	width: max-content;
+	max-width: min(18rem, calc(100vw - 1rem));
+	background: #000;
+	color: #fff;
+	white-space: normal;
+	text-align: start;
+	word-break: keep-all;
+	text-wrap: balance;
+	transform: translateX(-50%);
 }
 .str-check-state {
 	margin-inline-start: auto;
@@ -320,10 +352,6 @@
 }
 .str-check-reason {
 	font-weight: 600;
-}
-.str-block-reason {
-	color: var(--color-muted);
-	font-size: var(--font-small);
 }
 /* 코드 대조 불일치 — 본문 값 밑줄 + 바로 옆 "원본: …" (STR-02-S CODE_FAILED). 색만으로 구분하지 않게 물결 밑줄 + 글자. */
 .str-section-verified {
@@ -556,4 +584,24 @@
 }
 .str-ref-list .str-badge {
 	justify-self: start;
+}
+
+/* 보고서 PDF(S7·S8) 버튼 — 서버가 PREVIEW_PDF·DOWNLOAD_PDF 를 줄 때만 (QnA BH-FE-01). 작업 바(sticky)와 따로 본문 흐름에 둬요 */
+.str-pdf {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+	align-items: center;
+	margin-block-start: var(--space-4);
+}
+.str-pdf > p {
+	flex-basis: 100%;
+	margin: 0;
+}
+.str-pdf-preview {
+	flex-basis: 100%;
+	width: 100%;
+	min-height: 32rem;
+	border: var(--border-width) solid var(--color-border);
+	border-radius: var(--radius-card);
 }

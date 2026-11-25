@@ -1,16 +1,44 @@
-import { useEffect, useState } from "react"
-import { useLocation, useNavigate } from "react-router"
+import { useContext, useEffect, useState } from "react"
+import { UNSAFE_DataRouterContext, useBlocker, useLocation, useNavigate } from "react-router"
 
-// 미저장 입력이 있을 때 앱 안 링크 이동을 잠깐 멈추고 확인을 받아요.
-// 이 앱의 화면 이동은 전부 <Link>(a 태그)라서 클릭을 먼저 잡아요 — BrowserRouter에서는 useBlocker를 못 써요.
-// 새로고침·탭 닫기·바깥 주소는 beforeunload가, 브라우저 뒤로·앞으로 가기는 아직 막지 않아요.
+// 미저장 입력이 있을 때 앱 안 화면 이동을 잠깐 멈추고 확인을 받아요.
 //
-// 반환: pending(가려던 경로, 없으면 null) · stay()(머무르기) · leave()(저장하지 않고 이동)
+// 앱(main.jsx)은 data router(createBrowserRouter)라서 useBlocker로 모든 앱 안 이동을 막아요 —
+// 링크·메뉴 클릭, navigate() 호출(알림의 [열기] 등), 브라우저 뒤로·앞으로 가기까지(EX-15).
+// data router가 없는 곳(MemoryRouter로 띄우는 테스트 등)에서는 예전처럼 링크 클릭만 잡아요.
+// 새로고침·탭 닫기·바깥 주소는 각 화면의 beforeunload가 맡아요.
+//
+// 쓰는 법: const guard = useUnsavedLinkGuard(dirty) → guard.pending 이면 확인창,
+//          guard.stay()(머무르기) · guard.leave()(저장하지 않고 이동)
 export function useUnsavedLinkGuard(dirty) {
+	// 라우터 종류는 앱이 떠 있는 동안 바뀌지 않아서, 어느 쪽 훅을 부를지도 처음부터 끝까지 같아요.
+	const hasDataRouter = Boolean(useContext(UNSAFE_DataRouterContext))
+	// eslint-disable-next-line react-hooks/rules-of-hooks -- 위 주석: 렌더마다 같은 쪽만 불려요.
+	return hasDataRouter ? useBlockerGuard(dirty) : useLinkClickGuard(dirty)
+}
+
+const pathOf = (location) => location.pathname + location.search
+
+function useBlockerGuard(dirty) {
+	const blocker = useBlocker(
+		({ currentLocation, nextLocation }) =>
+			dirty && pathOf(currentLocation) !== pathOf(nextLocation),
+	)
+	const blocked = blocker.state === "blocked"
+	return {
+		pending: blocked ? { to: pathOf(blocker.location) } : null,
+		stay: () => blocked && blocker.reset(),
+		leave: () => blocked && blocker.proceed(),
+	}
+}
+
+// data router가 없을 때의 대신 — 이 앱의 화면 이동은 <Link>(a 태그)라서 클릭을 먼저 잡아요.
+// 이 모드에서는 브라우저 뒤로·앞으로 가기를 막지 못해요.
+function useLinkClickGuard(dirty) {
 	const [pending, setPending] = useState(null)
 	const navigate = useNavigate()
 	const location = useLocation()
-	const here = location.pathname + location.search
+	const here = pathOf(location)
 
 	useEffect(() => {
 		if (!dirty) return undefined
@@ -25,7 +53,7 @@ export function useUnsavedLinkGuard(dirty) {
 			if (url.origin !== window.location.origin) return
 			if (url.pathname + url.search === here) return
 			event.preventDefault()
-			setPending(url.pathname + url.search + url.hash)
+			setPending({ to: url.pathname + url.search + url.hash })
 		}
 		// 캡처 단계 — Link의 클릭 처리보다 먼저 잡아야 preventDefault가 이동을 멈춰요.
 		document.addEventListener("click", onClick, true)
@@ -36,9 +64,9 @@ export function useUnsavedLinkGuard(dirty) {
 		pending,
 		stay: () => setPending(null),
 		leave: () => {
-			const to = pending
+			const target = pending
 			setPending(null)
-			if (to) navigate(to)
+			if (target) navigate(target.to)
 		},
 	}
 }

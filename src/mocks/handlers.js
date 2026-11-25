@@ -187,12 +187,21 @@ const accountFail = (status, code, message, details = {}) =>
 
 // pendingApproval: 케이스 1001을 승인 대기로 둔 시드(승인함 테스트 — mocks/approvals.js seedPendingApproval)
 // formerAssignee: 승인 대기 케이스 1001을 예전에 담당했던 사람(login_id) — 이력에 REASSIGN 행을 남겨요(자기 승인 막기 시험).
+// nextPdfStatus: 시드 초안을 모의 제출한 뒤의 PDF 상태(기본 READY).
 export function resetCases(
 	user = null,
-	{ pendingApproval = false, formerAssignee = null, scoreFails: failFirstScore = false } = {},
+	{
+		pendingApproval = false,
+		formerAssignee = null,
+		scoreFails: failFirstScore = false,
+		nextPdfStatus = null,
+	} = {},
 ) {
 	cases = seedCases()
 	drafts = seedStrDrafts()
+	if (nextPdfStatus !== null) {
+		for (const draft of drafts) draft.next_pdf_status = nextPdfStatus
+	}
 	if (pendingApproval) seedPendingApproval(cases, drafts)
 	if (formerAssignee) {
 		const item = cases.find((entry) => entry.case_no === "CASE-2022-001001")
@@ -223,10 +232,12 @@ const draftNotFound = () =>
 	)
 const caseOf = (draft) => cases.find((entry) => entry.case_no === draft.case_no) ?? null
 // pdf 가 있으면 PDF 본문(S7·S8), 아니면 JSON
-const reply = ({ status, body, pdf }) =>
-	pdf != null
-		? new HttpResponse(pdf, { status, headers: { "Content-Type": "application/pdf" } })
-		: HttpResponse.json(body, { status })
+const reply = ({ status, body, pdf, fileName }) => {
+	if (pdf == null) return HttpResponse.json(body, { status })
+	const headers = { "Content-Type": "application/pdf" }
+	if (fileName) headers["Content-Disposition"] = `inline; filename="${fileName}"`
+	return new HttpResponse(pdf, { status, headers })
+}
 const unauthenticated = () =>
 	HttpResponse.json({ error: { code: "UNAUTHENTICATED" } }, { status: 401 })
 const base = new URL(import.meta.env.VITE_API_BASE_URL || "", window.location.origin).href.replace(

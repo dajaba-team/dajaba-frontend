@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { render, screen, waitFor, within } from "@testing-library/react"
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { http, HttpResponse } from "msw"
 import { server } from "../mocks/server"
@@ -54,6 +54,12 @@ const sectionHeadings = async () => {
 }
 
 // 검증 결과 패널(#32 VerificationPanel) — 화면에 하나만 있어요.
+// 작업 줄 오른쪽 끝 [승인 요청] (창 안의 [승인 요청]과 구분)
+const submitButton = () =>
+	within(document.querySelector(".str-submit-cta")).getByRole("button", {
+		name: "승인 요청",
+	})
+
 // 머리글의 초안 정보 칩(케이스 번호·초안 번호·케이스 상태) — 디버그성 한 줄 대신
 const draftInfo = () => screen.findByRole("list", { name: "초안 정보" })
 
@@ -81,11 +87,16 @@ describe("STR 화면 — 서버가 준 서술부 목록대로 그리기 (SCRUM-1
 			"사유",
 			"종합의견",
 		])
-		expect(screen.getByText(/7개 항목 · 수정본 1번 \(AI 원문\)/)).toBeInTheDocument()
 		// 줄바꿈이 든 AI 문장도 글자 그대로 (담당 조사역이라 편집칸에)
 		// toHaveValue는 expect.stringContaining을 못 받아(jest-dom 7) 값을 꺼내 비교해요.
 		expect((await sectionBox("방법")).value).toContain("(FAN_IN).\n건당 USD 12,500.00")
-		expect(screen.getAllByText(/근거 거래 3건 · 104221, 104233, 104301/)).toHaveLength(2)
+		// 근거 거래는 접힌 토글 — 제목에 건수, 펼치면 번호
+		const evidence = (await screen.findAllByText("근거 거래 3건")).map((summary) =>
+			summary.closest("details"),
+		)
+		expect(evidence).toHaveLength(2)
+		expect(evidence[0]).not.toHaveAttribute("open")
+		expect(evidence[0]).toHaveTextContent("104221, 104233, 104301")
 	})
 
 	it("7항목 전환 전에 만든 6섹션 승인본도 그대로 보여 준다", async () => {
@@ -115,6 +126,30 @@ describe("STR 화면 — 서버가 준 서술부 목록대로 그리기 (SCRUM-1
 		expect(sectionTitle({ section: "NEW_ITEM", label: null })).toBe("NEW_ITEM")
 	})
 
+	it("사실 정보는 정해진 11개 항목 표로만 보여 준다", async () => {
+		renderStr("CASE-2022-001001")
+		const table = await screen.findByRole("table", { name: "사실 정보" })
+		expect(
+			within(table)
+				.getAllByRole("rowheader")
+				.map((cell) => cell.textContent),
+		).toEqual([
+			"거래자",
+			"계좌",
+			"기간",
+			"입금",
+			"출금",
+			"내부 이체",
+			"경유",
+			"거래 상대",
+			"결제 수단",
+			"유형",
+			"보고 기관",
+		])
+		expect(screen.queryByText(/전체 값 보기/)).not.toBeInTheDocument()
+		expect(screen.queryByText(/환산 못 한 통화/)).not.toBeInTheDocument()
+	})
+
 	it("관리자는 본문 없이 상태만 보고, 본문 문장은 화면에 없다", async () => {
 		renderStr("CASE-2022-001001", "admin")
 		expect(await screen.findByRole("note")).toHaveTextContent(
@@ -141,10 +176,12 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		// MSW 초안엔 수정본 1번 검증 기록이 있어요(SCRUM-116 예시) — 그래서 버튼 이름은 [다시 검증]
 		expect(within(panel).getByRole("button", { name: "다시 검증" })).toBeDisabled()
 		expect(within(panel).getByRole("status")).toHaveTextContent(VERIFICATION_TEXT.UNSAVED)
-		expect(screen.getByText("먼저 변경 내용을 저장해 주세요.")).toBeInTheDocument()
+		// [승인 요청]은 제목 줄 오른쪽 — 꺼진 이유를 빨간 글씨로 바로 아래에
+		expect(submitButton()).toBeDisabled()
+		expect(submitButton()).toHaveAccessibleDescription("먼저 변경 내용을 저장해 주세요.")
 
 		await user.click(screen.getByRole("button", { name: "변경 저장" }))
-		expect(await screen.findByText(/7개 항목 · 수정본 2번/)).toBeInTheDocument()
+		expect(await screen.findByText(/수정본 2번으로 저장했어요/)).toBeInTheDocument()
 		// 저장하면 수정본 1번 결과는 지난 결과 — #32의 안내 그대로
 		expect(within(panel).getByText(/이전 수정본을 검증한 결과예요/)).toBeInTheDocument()
 
@@ -162,22 +199,49 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		)
 		expect(marked.querySelector("mark.str-mismatch")).toHaveTextContent("2022년 9월 3일")
 		expect(marked).toHaveTextContent("원본: 2022-09-02")
-		expect(screen.getByRole("button", { name: "승인 요청" })).toBeDisabled()
+		expect(submitButton()).toBeDisabled()
+		expect(screen.getByText(/검증을 통과해야 승인 요청할 수 있어요/)).toHaveClass(
+			"str-submit-hint",
+		)
 
 		await replaceText(user, await sectionBox("일자"), "2022년 9월 2일 하루 동안.")
 		await user.click(screen.getByRole("button", { name: "변경 저장" }))
-		expect(await screen.findByText(/7개 항목 · 수정본 3번/)).toBeInTheDocument()
+		expect(await screen.findByText(/수정본 3번으로 저장했어요/)).toBeInTheDocument()
 		await verifyAndWait(user, "통과 · 수정본 3번 검증")
 
-		// VI부 — 유형·지점 정도는 기본값 없음
-		expect(screen.getByText("의심 유형을 1개 이상 선택해 주세요.")).toBeInTheDocument()
-		await user.click(screen.getByText("유형 선택 열기"))
-		await user.click(screen.getAllByRole("checkbox")[0])
-		expect(screen.getByText("지점 의심 정도를 선택해 주세요.")).toBeInTheDocument()
-		await user.click(screen.getByRole("radio", { name: "3" }))
+		// 검증 통과면 켜져요 — 유형·정도는 창에서 골라요
+		expect(submitButton()).toBeEnabled()
+		expect(screen.queryByText(/검증을 통과해야/)).not.toBeInTheDocument()
+		await user.click(submitButton())
 
-		await user.click(screen.getByRole("button", { name: "승인 요청" }))
-		const confirm = screen.getByRole("region", { name: "승인 요청 확인" })
+		// 1단계: 의심 유형·지점 의심 정도(기본값 없음) → [완료]
+		const pick = await screen.findByRole("dialog", {
+			name: "승인 요청 — 의심 유형·지점 의심 정도",
+		})
+		const done = within(pick).getByRole("button", { name: "완료" })
+		expect(done).toBeDisabled()
+		expect(within(pick).getByText("의심 유형을 1개 이상 선택해 주세요.")).toBeInTheDocument()
+		await user.click(within(pick).getAllByRole("checkbox")[0])
+		expect(within(pick).getByText("지점 의심 정도를 선택해 주세요.")).toBeInTheDocument()
+		await user.click(within(pick).getByRole("radio", { name: "3" }))
+		await user.click(done)
+
+		// 2단계: 편집할 수 없다는 안내 → [계속 편집]이면 닫고, 다시 열면 고른 값이 남아 있어요
+		let confirm = await screen.findByRole("dialog", { name: "승인 요청 확인" })
+		expect(
+			within(confirm).getByText("승인 요청을 누르면 보고서를 편집할 수 없어요."),
+		).toBeInTheDocument()
+		await user.click(within(confirm).getByRole("button", { name: "계속 편집" }))
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+		expect(await sectionBox("일자")).toBeEnabled()
+		await user.click(submitButton())
+		const again = await screen.findByRole("dialog", {
+			name: "승인 요청 — 의심 유형·지점 의심 정도",
+		})
+		expect(within(again).getByRole("radio", { name: "3" })).toBeChecked()
+		await user.click(within(again).getByRole("button", { name: "완료" }))
+		confirm = await screen.findByRole("dialog", { name: "승인 요청 확인" })
+		expect(within(confirm).getByText("3")).toBeInTheDocument()
 		await user.click(within(confirm).getByRole("button", { name: "승인 요청" }))
 		expect(
 			await screen.findByText("승인 대기 중이라 본문을 수정할 수 없어요."),
@@ -196,7 +260,7 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		// MSW: 본문에 "검증불가"가 있으면 평가 서비스 오류로 답해요.
 		await replaceText(user, await sectionBox("종합의견"), "검증불가 예시 의견.")
 		await user.click(screen.getByRole("button", { name: "변경 저장" }))
-		expect(await screen.findByText(/7개 항목 · 수정본 2번/)).toBeInTheDocument()
+		expect(await screen.findByText(/수정본 2번으로 저장했어요/)).toBeInTheDocument()
 
 		const panel = await verifyAndWait(user, "검증 못 함 · 수정본 2번 검증")
 		expect(within(panel).getAllByText(LLM_SKIPPED_NOTES.VERIFY_UNAVAILABLE)).toHaveLength(5)
@@ -265,7 +329,7 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		// 3) 검증 못 함
 		await replaceText(user, await sectionBox("종합의견"), "검증불가 예시 의견.")
 		await user.click(screen.getByRole("button", { name: "변경 저장" }))
-		expect(await screen.findByText(/7개 항목 · 수정본 2번/)).toBeInTheDocument()
+		expect(await screen.findByText(/수정본 2번으로 저장했어요/)).toBeInTheDocument()
 		panel = await verifyAndWait(user, "검증 못 함 · 수정본 2번 검증")
 		seen.push(statusOf(panel))
 		expect(within(panel).getAllByText(LLM_SKIPPED_NOTES.VERIFY_UNAVAILABLE)).toHaveLength(5)
@@ -273,7 +337,7 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		// 4) 통과
 		await replaceText(user, await sectionBox("종합의견"), "자금 출처 확인이 필요해 보여요.")
 		await user.click(screen.getByRole("button", { name: "변경 저장" }))
-		expect(await screen.findByText(/7개 항목 · 수정본 3번/)).toBeInTheDocument()
+		expect(await screen.findByText(/수정본 3번으로 저장했어요/)).toBeInTheDocument()
 		panel = await verifyAndWait(user, "통과 · 수정본 3번 검증")
 		seen.push(statusOf(panel))
 
@@ -304,8 +368,19 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		await user.click(
 			within(compare).getByRole("button", { name: "내 입력 유지하고 다시 저장" }),
 		)
-		expect(await screen.findByText(/7개 항목 · 수정본 3번/)).toBeInTheDocument()
+		expect(await screen.findByText(/수정본 3번으로 저장했어요/)).toBeInTheDocument()
 		expect(await sectionBox("장소")).toHaveValue("내가 고친 장소")
+	})
+
+	it("VI부 패널은 [승인 요청] 창을 쓰는 담당 조사역에겐 없고, 승인된 초안에선 읽기 전용으로 보인다", async () => {
+		const vi = () => screen.queryByRole("heading", { name: /VI\./ })
+		renderStr("CASE-2022-001001")
+		await sectionBox("일자")
+		expect(submitButton()).toBeInTheDocument()
+		expect(vi()).not.toBeInTheDocument()
+		cleanup()
+		renderStr("CASE-2022-001003")
+		expect(await screen.findByRole("heading", { name: /VI\./ })).toBeInTheDocument()
 	})
 
 	it("관리자는 편집칸·작업 버튼 없이 상태만 본다", async () => {

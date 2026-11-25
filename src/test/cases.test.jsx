@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
-import { act, render, screen, waitFor, within } from "@testing-library/react"
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { MemoryRouter } from "react-router"
+import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { http, HttpResponse } from "msw"
 import App from "../app/App"
@@ -26,6 +26,22 @@ function renderApp(path = "/cases", authenticated = true, who = "inv01") {
 		</QueryClientProvider>,
 	)
 	return Object.assign(userEvent.setup(), { queryClient })
+}
+
+// 실제 앱(main.jsx)처럼 data router로 띄워요 — 브라우저 뒤로 가기(router.navigate(-1))까지 확인할 때.
+function renderDataRouterApp(entries) {
+	resetCases(USERS.inv01)
+	const queryClient = createQueryClient()
+	const router = createMemoryRouter([{ path: "*", element: <App /> }], {
+		initialEntries: entries,
+		initialIndex: entries.length - 1,
+	})
+	render(
+		<QueryClientProvider client={queryClient}>
+			<RouterProvider router={router} />
+		</QueryClientProvider>,
+	)
+	return Object.assign(userEvent.setup(), { router })
 }
 
 const REVIEWING = "CASE-2022-001004"
@@ -240,7 +256,7 @@ describe("케이스 조사", () => {
 		)
 		await user.click(screen.getByRole("button", { name: "에스컬레이션 실행" }))
 		expect(
-			await screen.findByText("에스컬레이션됨", { selector: ".status-badge" }),
+			await screen.findByText("에스컬레이션 완료", { selector: ".status-badge" }),
 		).toBeInTheDocument()
 		expect(screen.getByText("STR 검토 필요")).toBeInTheDocument()
 
@@ -324,7 +340,7 @@ describe("케이스 조사", () => {
 		await user.type(screen.getByLabelText("에스컬레이션 사유"), "작성 중인 사유")
 		await user.click(screen.getByRole("button", { name: "에스컬레이션 실행" }))
 		expect(
-			await screen.findByText("에스컬레이션됨", { selector: ".status-badge" }),
+			await screen.findByText("에스컬레이션 완료", { selector: ".status-badge" }),
 		).toBeInTheDocument()
 		expect(screen.getByRole("button", { name: "종료" })).toBeEnabled()
 		expect(screen.queryByLabelText("에스컬레이션 사유")).not.toBeInTheDocument()
@@ -364,7 +380,7 @@ describe("케이스 조사", () => {
 		await user.click(await screen.findByRole("button", { name: "에스컬레이션" }))
 		await user.type(screen.getByLabelText("에스컬레이션 사유"), "STR 검토 필요")
 		await user.click(screen.getByRole("button", { name: "에스컬레이션 실행" }))
-		await screen.findByText("에스컬레이션됨", { selector: ".status-badge" })
+		await screen.findByText("에스컬레이션 완료", { selector: ".status-badge" })
 		expect(screen.queryByText(/서버의 최신 메모/)).not.toBeInTheDocument()
 		const memo = screen.getByRole("textbox", { name: "메모 내용" })
 		await user.type(memo, " 추가")
@@ -710,6 +726,73 @@ describe("케이스 조사", () => {
 		expect(bodies).toEqual([{ investigator_notes: "내가 작성 중인 메모", version: 2 }])
 		server.events.removeAllListeners()
 	})
+	it("목록 조사 순위 칸은 결합·ML 순위, 순위 없음, 조회 불가를 보여 준다 (SCRUM-420)", async () => {
+		renderApp()
+		const cell = async (caseNo) => {
+			const row = (await screen.findByRole("link", { name: caseNo })).closest("tr")
+			const index = within(row.closest("table"))
+				.getAllByRole("columnheader")
+				.findIndex((th) => th.textContent === "조사 순위")
+			return within(row).getAllByRole("cell")[index]
+		}
+		expect(await cell("CASE-2022-001001")).toHaveTextContent("결합 1위ML 2위")
+		expect(await cell("CASE-2022-001002")).toHaveTextContent("순위 없음ML 점수 없음")
+		expect(await cell("CASE-2022-001003")).toHaveTextContent(
+			"결합 3위ML 3위 · DL 근거 일부 빠짐(ML 순위 유지)",
+		)
+		expect(await cell(REVIEWING)).toHaveTextContent("순위 조회 불가")
+	})
+	it("상세 조사 순위 — 새 이유(EVIDENCE_MISMATCH)도 조회 불가, 맞으면 순위와 DL 점수 (SCRUM-420)", async () => {
+		// 순위 줄은 경보가 있을 때 「케이스·경보 정보」 카드의 경보 칸 아래에 있어요.
+		const alert = {
+			alert_no: "ALT-20220907-000001",
+			rule_id: "R02_FAN_IN",
+			batch_date: "2022-09-07",
+			window_start: "2022-09-06T00:00:00",
+			window_end: "2022-09-07T00:00:00",
+			reference_ts: "2022-09-07T00:00:00",
+			transaction_count: 3,
+		}
+		const rank = (fields) => ({
+			status: "AVAILABLE",
+			reason: null,
+			ml_rank: null,
+			fused_rank: null,
+			fallback_reason: null,
+			dl_score: null,
+			...fields,
+		})
+		server.use(
+			http.get(`/api/v1/cases/${REVIEWING}`, () =>
+				HttpResponse.json(
+					detailJson({
+						alert,
+						dl_rank: rank({ status: "UNAVAILABLE", reason: "EVIDENCE_MISMATCH" }),
+					}),
+				),
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		let panel = await screen.findByRole("region", { name: "케이스·경보 정보" })
+		expect(within(panel).getByText("순위 조회 불가")).toBeInTheDocument()
+		expect(within(panel).queryByText("DL 점수")).not.toBeInTheDocument()
+		cleanup()
+		server.use(
+			http.get(`/api/v1/cases/${REVIEWING}`, () =>
+				HttpResponse.json(
+					detailJson({
+						alert,
+						dl_rank: rank({ ml_rank: 4, fused_rank: 2, dl_score: 0.8765 }),
+					}),
+				),
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		panel = await screen.findByRole("region", { name: "케이스·경보 정보" })
+		expect(within(panel).getByText("결합 2위")).toBeInTheDocument()
+		expect(within(panel).getByText("ML 4위")).toBeInTheDocument()
+		expect(within(panel).getByText("0.87")).toBeInTheDocument()
+	})
 	it("상세에 경보 정보와 최근 모델 점수를 보여 준다", async () => {
 		renderApp(`/cases/${REVIEWING}`)
 		// 경보 정보는 「케이스·경보 정보」 카드로 합쳤어요(SCRUM-369).
@@ -1031,6 +1114,26 @@ describe("예시 계정 권한과 입력 보호", () => {
 		expect(screen.getByRole("textbox", { name: "메모 내용" })).toHaveValue(
 			"거래 목적 확인 필요 추가",
 		)
+	})
+	it("변경한 메모가 있을 때 브라우저 뒤로 가기도 확인하고, 계속 작성이면 남고 저장하지 않고 이동이면 이동한다(EX-15)", async () => {
+		const user = renderDataRouterApp(["/cases", "/cases/CASE-2022-001004"])
+		const memo = await screen.findByRole("textbox", { name: "메모 내용" })
+		await user.type(memo, " 추가")
+		act(() => {
+			user.router.navigate(-1)
+		})
+		const dialog = await screen.findByRole("dialog", { name: "저장하지 않은 메모가 있습니다" })
+		await user.click(within(dialog).getByRole("button", { name: "계속 작성" }))
+		expect(user.router.state.location.pathname).toBe("/cases/CASE-2022-001004")
+		expect(screen.getByRole("textbox", { name: "메모 내용" })).toHaveValue(
+			"거래 목적 확인 필요 추가",
+		)
+		act(() => {
+			user.router.navigate(-1)
+		})
+		const again = await screen.findByRole("dialog", { name: "저장하지 않은 메모가 있습니다" })
+		await user.click(within(again).getByRole("button", { name: "저장하지 않고 이동" }))
+		await waitFor(() => expect(user.router.state.location.pathname).toBe("/cases"))
 	})
 	it("확인창이 열리면 계속 작성에 포커스가 가서, 바로 Enter를 눌러도 메모가 남는다", async () => {
 		const user = renderApp("/cases/CASE-2022-001004")

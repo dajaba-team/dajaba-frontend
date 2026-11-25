@@ -52,46 +52,23 @@
 	white-space: nowrap;
 }
 
-/* 상태 — 점 + 글자. 활성 초록, 비활성 회색 */
-.account-state {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--space-2);
-	color: var(--color-muted);
-}
-.account-state::before {
-	content: "";
-	width: 0.5rem;
-	height: 0.5rem;
-	border-radius: 50%;
-	background: var(--color-control-border);
-}
-.account-state[data-active] {
-	color: var(--color-text);
-}
-.account-state[data-active]::before {
-	background: var(--color-pass);
-}
-
-/* 진행 중 담당 — 건수 칸을 같은 폭으로 둬서 행마다 [케이스 보기] 시작점이 맞고, 링크는 세로 가운데로. */
-.account-cases {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--space-3);
+/* 진행 중 건수 — 숫자 칸은 오른쪽 정렬(SCRUM-423) */
+.account-table .account-count {
+	text-align: right;
 	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
 }
-.account-cases > span:first-child {
-	min-width: 2.25rem;
-}
-.account-cases a {
+/* 담당 케이스 — 파란 글자 링크, 올리면 밑줄 */
+.account-cases-link {
 	font-size: var(--font-xs);
 	font-weight: var(--weight-semibold);
 	text-decoration: none;
+	white-space: nowrap;
 }
-.account-cases a::after {
+.account-cases-link::after {
 	content: " →";
 }
-.account-cases a:hover {
+.account-cases-link:hover {
 	text-decoration: underline;
 }
 .account-none {
