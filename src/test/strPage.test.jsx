@@ -181,7 +181,7 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		expect(submitButton()).toHaveAccessibleDescription("먼저 변경 내용을 저장해 주세요.")
 
 		await user.click(screen.getByRole("button", { name: "변경 저장" }))
-		expect(await screen.findByText(/7개 항목 · 수정본 2번/)).toBeInTheDocument()
+		expect(await screen.findByText(/수정본 2번으로 저장했어요/)).toBeInTheDocument()
 		// 저장하면 수정본 1번 결과는 지난 결과 — #32의 안내 그대로
 		expect(within(panel).getByText(/이전 수정본을 검증한 결과예요/)).toBeInTheDocument()
 
@@ -206,7 +206,7 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 
 		await replaceText(user, await sectionBox("일자"), "2022년 9월 2일 하루 동안.")
 		await user.click(screen.getByRole("button", { name: "변경 저장" }))
-		expect(await screen.findByText(/7개 항목 · 수정본 3번/)).toBeInTheDocument()
+		expect(await screen.findByText(/수정본 3번으로 저장했어요/)).toBeInTheDocument()
 		await verifyAndWait(user, "통과 · 수정본 3번 검증")
 
 		// 검증 통과면 켜져요 — 유형·정도는 창에서 골라요
@@ -260,7 +260,7 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		// MSW: 본문에 "검증불가"가 있으면 평가 서비스 오류로 답해요.
 		await replaceText(user, await sectionBox("종합의견"), "검증불가 예시 의견.")
 		await user.click(screen.getByRole("button", { name: "변경 저장" }))
-		expect(await screen.findByText(/7개 항목 · 수정본 2번/)).toBeInTheDocument()
+		expect(await screen.findByText(/수정본 2번으로 저장했어요/)).toBeInTheDocument()
 
 		const panel = await verifyAndWait(user, "검증 못 함 · 수정본 2번 검증")
 		expect(within(panel).getAllByText(LLM_SKIPPED_NOTES.VERIFY_UNAVAILABLE)).toHaveLength(5)
@@ -329,7 +329,7 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		// 3) 검증 못 함
 		await replaceText(user, await sectionBox("종합의견"), "검증불가 예시 의견.")
 		await user.click(screen.getByRole("button", { name: "변경 저장" }))
-		expect(await screen.findByText(/7개 항목 · 수정본 2번/)).toBeInTheDocument()
+		expect(await screen.findByText(/수정본 2번으로 저장했어요/)).toBeInTheDocument()
 		panel = await verifyAndWait(user, "검증 못 함 · 수정본 2번 검증")
 		seen.push(statusOf(panel))
 		expect(within(panel).getAllByText(LLM_SKIPPED_NOTES.VERIFY_UNAVAILABLE)).toHaveLength(5)
@@ -337,7 +337,7 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		// 4) 통과
 		await replaceText(user, await sectionBox("종합의견"), "자금 출처 확인이 필요해 보여요.")
 		await user.click(screen.getByRole("button", { name: "변경 저장" }))
-		expect(await screen.findByText(/7개 항목 · 수정본 3번/)).toBeInTheDocument()
+		expect(await screen.findByText(/수정본 3번으로 저장했어요/)).toBeInTheDocument()
 		panel = await verifyAndWait(user, "통과 · 수정본 3번 검증")
 		seen.push(statusOf(panel))
 
@@ -368,7 +368,7 @@ describe("STR 작성 흐름 — 저장 → 검증 → 승인 요청 (STR-01·02,
 		await user.click(
 			within(compare).getByRole("button", { name: "내 입력 유지하고 다시 저장" }),
 		)
-		expect(await screen.findByText(/7개 항목 · 수정본 3번/)).toBeInTheDocument()
+		expect(await screen.findByText(/수정본 3번으로 저장했어요/)).toBeInTheDocument()
 		expect(await sectionBox("장소")).toHaveValue("내가 고친 장소")
 	})
 
