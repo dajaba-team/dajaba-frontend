@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Link, NavLink, Outlet, useLocation } from "react-router"
+import TutorialDialog from "../../shared/ui/tutorial/TutorialDialog"
 import "../styles/app.css"
 import { useSession } from "../../features/auth/hooks/useSession"
 import AuthPanel from "../../features/auth/components/AuthPanel"
@@ -25,7 +26,9 @@ export default function AppLayout() {
 	useEffect(() => {
 		dismiss()
 	}, [loginId, dismiss])
-	// 위 띠의 알림 종·역할 칩·시연 도구 메뉴는 한 번에 하나만 — 바깥을 누르거나 Esc, 화면을 옮기면 닫아요.
+	// 사용 안내(SCRUM-428) — 위 띠 [사용 안내]로 여는 단계별 안내 창. 운영(빌드)에서도 보여요.
+	const [guideOpen, setGuideOpen] = useState(false)
+	// 위 띠의 알림 종·역할 칩 메뉴는 한 번에 하나만 — 바깥을 누르거나 Esc, 화면을 옮기면 닫아요.
 	const headUtils = useRef(null)
 	useEffect(() => {
 		const closeAll = (except) =>
@@ -97,9 +100,7 @@ export default function AppLayout() {
 								aria-label="DAJAVA 업무 대시보드"
 							>
 								<img className="app-brand-mark" src={brandMark} alt="" />
-								<div aria-hidden="true">
-									DAJAVA<span>AML 인텔리전스</span>
-								</div>
+								<div aria-hidden="true">DAJAVA</div>
 							</Link>
 						</div>
 						{/* 지금 메뉴 이름은 사이드바 선택 칸으로 보여서 위 띠에는 쓰지 않아요(SCRUM-410). 빈 칸은 오른쪽 도구를 밀어 두는 자리예요. */}
@@ -108,27 +109,20 @@ export default function AppLayout() {
 							{/* 업무 알림 종(SCRUM-334) — 계정이 바뀌면 본 시각·숫자를 처음부터 */}
 							{loginId && <NotificationBell key={loginId} loginId={loginId} />}
 							<AuthPanel placement="header" />
-							{import.meta.env.DEV && (
-								// 시안의 "시연 도구" — 개발 모드에서만. 시연 화면·연동 확인으로 가는 길을 여기 모아요.
-								<details className="demo-tools">
-									<summary>
-										<Icon name="help" size={16} />{" "}
-										<span className="demo-tools-label">시연 도구</span>
-									</summary>
-									<nav aria-label="개발 메뉴">
-										<span>
-											{import.meta.env.VITE_USE_MOCKS === "true"
-												? "예시 데이터 모드 · 새로고침하면 초기화"
-												: "개발 모드 · 팀 검토용"}
-										</span>
-										<NavLink to="/demo/overview">대시보드 시연</NavLink>
-										<NavLink to="/dev/connection">백엔드 연동 확인</NavLink>
-									</nav>
-								</details>
-							)}
+							{/* 예전 "시연 도구" 자리(SCRUM-428). 시연 화면·연동 확인은 주소(/demo/overview, /dev/connection)로 열어요. */}
+							<button
+								type="button"
+								className="guide-open"
+								aria-label="사용 안내"
+								onClick={() => setGuideOpen(true)}
+							>
+								<Icon name="help" size={16} />
+								<span className="guide-open-label">사용 안내</span>
+							</button>
 						</div>
 					</header>
 				)}
+				{signedIn && guideOpen && <TutorialDialog onClose={() => setGuideOpen(false)} />}
 				{signedIn && (
 					<aside
 						id="app-sidebar"

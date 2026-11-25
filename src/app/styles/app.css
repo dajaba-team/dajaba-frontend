@@ -1035,3 +1035,16 @@
 	min-width: 1.5rem;
 	color: var(--color-muted);
 }
+
+/* 위 띠 이름 칩 "이름(역할)"(SCRUM-428) — 한 줄로, 좁은 화면에선 (역할)을 숨기고 이름만 */
+.persona-chip-label {
+	white-space: nowrap;
+}
+.persona > summary .persona-chip-role {
+	margin: 0;
+}
+@media (max-width: 47.99rem) {
+	.persona > summary .persona-chip-role {
+		display: none;
+	}
+}

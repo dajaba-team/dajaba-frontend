@@ -32,11 +32,11 @@ function renderSignedIn() {
 const headerMenu = () => document.querySelector(".app-header .persona-menu")
 
 describe("위 띠 계정 칩 (SCRUM-408)", () => {
-	it("칩에는 역할만 보이고, 펼치면 이름·아이디·역할이 보인다", async () => {
+	it("칩에는 시연 이름(역할)이 보이고, 펼치면 계정 이름·아이디·역할이 보인다 (SCRUM-428)", async () => {
 		const { user } = renderSignedIn()
 		await screen.findByRole("navigation", { name: "주요 메뉴" })
 		const chip = document.querySelector(".app-header .persona > summary")
-		expect(chip).toHaveTextContent(/^조사역$/)
+		expect(chip).toHaveTextContent(/^김지윤\(조사역\)$/)
 		await user.click(chip)
 		const menu = headerMenu()
 		expect(menu).toBeVisible()
