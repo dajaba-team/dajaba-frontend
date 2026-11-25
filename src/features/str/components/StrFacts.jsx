@@ -1,5 +1,6 @@
 import { groupDigits } from "../../../shared/format/amount"
 import { formatDataTime } from "../../../shared/format/time"
+import { currencyLabel } from "../../cases/currencyLabels"
 
 // 사실 정보(facts) — AI 서버 코드가 원천을 읽어 계산한 값이에요(안건 23). 읽기 전용.
 // 프론트는 다시 계산하지 않고(통화 합산·환산 없음) 받은 문자열에 천 단위 쉼표만 넣어 보여 줘요. 경유(indirect)는 직접 입출금과 따로 써요.
@@ -8,7 +9,11 @@ import { formatDataTime } from "../../../shared/format/time"
 
 const amountsOf = (flow) =>
 	(flow?.by_currency ?? [])
-		.map((item) => `${item.currency} ${groupDigits(item.total)} (${item.count}건)`)
+		// 금액 뒤에 통화 표기 — 케이스 화면과 같은 "기호(나라)"(SCRUM-432, currencyLabels). 모르는 통화는 원문
+		.map(
+			(item) =>
+				`${groupDigits(item.total)} ${currencyLabel(item.currency)} (${item.count}건)`,
+		)
 		.join(" · ")
 
 const countOf = (flow) => (flow?.count == null ? "-" : `${flow.count}건`)

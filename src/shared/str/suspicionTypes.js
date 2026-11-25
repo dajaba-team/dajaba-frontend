@@ -1,4 +1,4 @@
-// VI부 "의심스러운 거래유형" 선택 목록 — 5분류 38항목.
+// VI부 "의심스러운 거래유형" 선택 목록 — 4분류 37항목(VI-5 「기타」는 SCRUM-432에서 고르는 목록에서 뺌).
 // 출처: UI/UX 검토 자료 v1.3(dajaba-flow-demo, 11/7)의 "첨부 미확정 서식 참고안". 항목명·분류는 협의안이에요.
 //
 // 〔확인 필요 — 준혁·채영〕 코드(id)는 아직 확정이 아니에요. 시연 자료의 DEMO_ 접두사 코드를 그대로 둬서
@@ -130,12 +130,17 @@ export const SUSPICION_TYPES = [
 		label: "무관업종 또는 의심스러운 재산에 대한 보험청약",
 	},
 	{ id: "DEMO_VI4_16", group: "VI-4. 거래유형 관련", label: "테러자금 의심 거래" },
+]
+
+// 고르는 목록에서 뺀 항목(SCRUM-432) — "기타"는 따로 기술할 칸이 없어 고르기만 하면 내용이 비어요.
+// 예전에 고른 초안이 있을 수 있어 이름표(suspicionTypeLabel)는 남겨요. 백엔드 목록(SuspicionTypes)에도 그대로 있어요.
+const RETIRED_TYPES = [
 	{ id: "DEMO_VI5_01", group: "VI-5. 기타 특징 및 유형", label: "기타 (특징·유형을 따로 기술)" },
 ]
 
 export const SUSPICION_GROUPS = [...new Set(SUSPICION_TYPES.map((item) => item.group))]
 
-const BY_ID = new Map(SUSPICION_TYPES.map((item) => [item.id, item]))
+const BY_ID = new Map([...SUSPICION_TYPES, ...RETIRED_TYPES].map((item) => [item.id, item]))
 
 /** 코드 → 화면 글자. 모르는 코드는 숨기지 않고 코드를 같이 보여 줘요. */
 export const suspicionTypeLabel = (id) => BY_ID.get(id)?.label ?? `확인 필요한 유형 (${id})`
