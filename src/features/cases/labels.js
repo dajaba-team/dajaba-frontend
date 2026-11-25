@@ -1,9 +1,9 @@
 // 서버 enum → 화면 글자. 값 자체는 서버 것을 그대로 쓰고 여기서 새로 만들지 않아요(01_code_rules §3).
-// 상태 이름은 계약서 v0.2 §4·§7 — ESCALATED는 "에스컬레이션됨"("상신" 안 씀).
+// 상태 이름은 계약서 v0.2 §4·§7 — ESCALATED는 "에스컬레이션 완료"("상신" 안 씀, SCRUM-423에서 "에스컬레이션됨"에서 바꿈).
 export const STATUS_LABELS = {
 	OPEN: "접수",
 	REVIEWING: "조사 중",
-	ESCALATED: "에스컬레이션됨",
+	ESCALATED: "에스컬레이션 완료",
 	DRAFTED: "초안 작성됨",
 	PENDING_APPROVAL: "승인 대기",
 	APPROVED: "승인",
