@@ -83,7 +83,7 @@ export default function AdminAccountsPage() {
 						<p>
 							{notice.displayName} 계정을 비활성화했어요.
 							{notice.activeCaseCount > 0 &&
-								` 진행 중 담당 ${notice.activeCaseCount}건이 남았어요 — 담당자를 바꿔 주세요.`}
+								` 진행 중인 담당 케이스 ${notice.activeCaseCount}건이 남았어요 — 담당자를 바꿔 주세요.`}
 						</p>
 						{notice.activeCaseCount > 0 && (
 							<Link to={casesOf(notice)}>케이스 보기</Link>
@@ -99,14 +99,18 @@ export default function AdminAccountsPage() {
 							aria-label="계정 목록 표"
 							tabIndex={0}
 						>
-							{/* 계정 표(SCRUM-410) — 이름·아이디는 한 칸, 상태는 점+글자, 관리는 오른쪽 작은 글자 버튼. */}
+							{/* 계정 표(SCRUM-410) — 이름·아이디는 한 칸, 상태는 배지(SCRUM-423), 관리는 오른쪽 작은 글자 버튼. */}
 							<table className="case-table account-table">
 								<thead>
 									<tr>
 										<th scope="col">계정</th>
 										<th scope="col">역할</th>
 										<th scope="col">상태</th>
-										<th scope="col">진행 중 담당</th>
+										{/* 건수와 [케이스 보기]를 칸으로 나눠요 — 숫자는 오른쪽 정렬, 링크는 행마다 같은 세로줄(SCRUM-423) */}
+										<th scope="col" className="account-count">
+											진행 중 건수
+										</th>
+										<th scope="col">담당 케이스</th>
 										{/* 머리글 글자는 화면에서 빼고 화면 읽기 프로그램에만(SCRUM-410) */}
 										<th scope="col" className="account-manage-head">
 											<span className="visually-hidden">관리</span>
@@ -152,20 +156,24 @@ export default function AdminAccountsPage() {
 														{user.isActive ? "활성" : "비활성"}
 													</StatusBadge>
 												</td>
+												<td className="account-count">
+													{user.role === "INVESTIGATOR" &&
+													user.activeCaseCount != null ? (
+														`${user.activeCaseCount}건`
+													) : (
+														<span className="account-none">—</span>
+													)}
+												</td>
 												<td>
-													{user.role === "INVESTIGATOR" ? (
-														<span className="account-cases">
-															<span>
-																{user.activeCaseCount != null
-																	? `${user.activeCaseCount}건`
-																	: "—"}
-															</span>
-															{user.activeCaseCount > 0 && (
-																<Link to={casesOf(user)}>
-																	케이스 보기
-																</Link>
-															)}
-														</span>
+													{user.role === "INVESTIGATOR" &&
+													user.activeCaseCount > 0 ? (
+														<Link
+															className="account-cases-link"
+															to={casesOf(user)}
+															aria-label={`${user.displayName} 케이스 보기`}
+														>
+															케이스 보기
+														</Link>
 													) : (
 														<span className="account-none">—</span>
 													)}
