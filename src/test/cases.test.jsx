@@ -73,6 +73,13 @@ async function login(user, loginId, password = MOCK_PASSWORD) {
 	await user.click(screen.getByRole("button", { name: "로그인" }))
 }
 
+// 로그인 뒤엔 대시보드에서 시작해요(SCRUM-428) — 왼쪽 메뉴 [조사 케이스] → 목록에서 케이스를 열어요.
+async function openCase(user, caseNo) {
+	const menu = await screen.findByRole("navigation", { name: "주요 메뉴" })
+	await user.click(within(menu).getByRole("link", { name: "조사 케이스" }))
+	await user.click(await screen.findByRole("link", { name: caseNo }))
+}
+
 describe("인증 통신", () => {
 	it("현재 사용자 조회가 401이 아닌 오류면 안내와 다시 확인 버튼을 보여 준다", async () => {
 		resetCases(null)
@@ -400,27 +407,35 @@ describe("케이스 조사", () => {
 	it("관리자가 배정하면 조사역은 로그인해서 그 케이스에 메모를 쓸 수 있다 (SCRUM-339)", async () => {
 		const user = renderApp("/cases/CASE-2022-001002", true, "admin")
 		await user.click(await screen.findByRole("button", { name: "담당자 배정" }))
-		await user.type(screen.getByLabelText("배정할 조사역 아이디"), "inv01")
-		await user.click(screen.getByRole("button", { name: "배정" }))
+		const dialog = await screen.findByRole("dialog", { name: "담당자 배정" })
+		await user.selectOptions(await within(dialog).findByLabelText("배정할 조사역"), "inv01")
+		await user.click(within(dialog).getByRole("button", { name: "배정" }))
 		expect(await screen.findByText(/담당 예시 inv01/)).toBeInTheDocument()
 		await user.click(screen.getByRole("button", { name: "로그아웃" }))
 		await screen.findByText("로그인이 필요합니다.")
 		await login(user, "inv01")
+		// 로그아웃 뒤 다시 로그인하면 대시보드에서 시작해요(SCRUM-428) — 메뉴로 케이스를 열어요.
+		await openCase(user, "CASE-2022-001002")
 		expect(await screen.findByRole("textbox", { name: "메모 내용" })).toBeInTheDocument()
 		expect(screen.queryByRole("button", { name: "담당자 배정" })).not.toBeInTheDocument()
 	})
-	it("관리자 배정은 조사역이 아니면 거절되고 입력을 남겨 다시 고칠 수 있다", async () => {
+	it("관리자 배정은 활성 조사역 목록에서 골라요 — 아이디를 치지 않고, 승인자는 목록에 없다 (SCRUM-428)", async () => {
+		const bodies = recordBodies("/assign")
 		const user = renderApp("/cases/CASE-2022-001002", true, "admin")
 		await user.click(await screen.findByRole("button", { name: "담당자 배정" }))
-		const input = screen.getByLabelText("배정할 조사역 아이디")
-		await user.type(input, "apr01")
-		await user.click(screen.getByRole("button", { name: "배정" }))
-		expect(await screen.findByRole("alert")).toHaveTextContent("조사역만 배정할 수 있습니다")
-		expect(input).toHaveValue("apr01")
-		await user.clear(input)
-		await user.type(input, "inv02")
-		await user.click(screen.getByRole("button", { name: "배정" }))
+		const dialog = await screen.findByRole("dialog", { name: "담당자 배정" })
+		const select = await within(dialog).findByLabelText("배정할 조사역")
+		const options = within(select)
+			.getAllByRole("option")
+			.map((option) => option.value)
+		expect(options).toEqual(["", "inv01", "inv02"])
+		expect(within(dialog).getByRole("button", { name: "배정" })).toBeDisabled()
+		await user.selectOptions(select, "inv02")
+		await user.click(within(dialog).getByRole("button", { name: "배정" }))
+		await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
 		expect(await screen.findByText(/담당 예시 inv02/)).toBeInTheDocument()
+		expect(bodies).toEqual([{ assignee: "inv02", version: 0 }])
+		server.events.removeAllListeners()
 	})
 	it("관리자는 상세에서 [담당자 변경]으로 활성 조사역을 골라 바꾼다 (A2)", async () => {
 		const bodies = recordBodies("/reassign")
@@ -737,7 +752,7 @@ describe("케이스 조사", () => {
 		expect(within(items[0]).getByText("12개")).toBeInTheDocument()
 		expect(within(items[0]).getByText("3개 (같은 계좌 직전 30일 평균)")).toBeInTheDocument()
 		expect(within(items[0]).getByText("(점수를 높임)")).toBeInTheDocument()
-		expect(within(items[1]).getByText("152,000.5 미국 달러")).toBeInTheDocument()
+		expect(within(items[1]).getByText("152,000.5 $(미국)")).toBeInTheDocument()
 		expect(within(items[1]).getByText("기준값 없음")).toBeInTheDocument()
 		expect(within(items[2]).getByText("확인 못 함")).toBeInTheDocument()
 		expect(within(items[2]).getByText("(점수를 낮춤)")).toBeInTheDocument()
@@ -968,6 +983,7 @@ describe("예시 계정 권한과 입력 보호", () => {
 		await screen.findByText("로그인이 필요합니다.")
 		await login(user, "apr01")
 		await screen.findByText("예시 apr01", { selector: ".persona-name" })
+		await openCase(user, "CASE-2022-001004")
 		// 조사 중인 케이스라 "읽기 전용"이 아니라 담당자 안내 (SCRUM-176)
 		expect(
 			await screen.findByText("담당 조사역만 메모를 수정할 수 있어요."),
@@ -1057,7 +1073,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		const user = renderApp(`/cases/${REVIEWING}`)
 		const agg = await screen.findByRole("region", { name: "유입·유출 합계" })
 		expect(within(agg).getByText("유입 합계 (2건)")).toBeInTheDocument()
-		expect(within(agg).getByText("1,000 미국 달러")).toBeInTheDocument()
+		expect(within(agg).getByText("1,000 $(미국)")).toBeInTheDocument()
 		expect(within(agg).getByText("유출 합계 (1건)")).toBeInTheDocument()
 
 		// 처음 열려 있는 탭은 자금 흐름 그래프
@@ -1159,7 +1175,7 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		})
 		expect(within(route).getByText("3단계 · 대상 계좌 복귀")).toBeInTheDocument()
 		expect(within(route).getByText("대상 계좌 복귀")).toBeInTheDocument()
-		expect(within(route).getByText("4,600 유로")).toBeInTheDocument()
+		expect(within(route).getByText("4,600 €(유로)")).toBeInTheDocument()
 		// 화면이 찾은 길이지 룰 판정이 아니라고 적어요 (SCRUM-296)
 		expect(screen.getByText("화면에서 시간 순서로 찾은 길 · 룰 판정 아님")).toBeInTheDocument()
 		// 경로 표에 거래 ID가 단계 순서대로
@@ -1297,10 +1313,29 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		)
 		expect(screen.getByRole("region", { name: "유입·유출 합계" })).toBeInTheDocument()
 	})
-	it("[이력 전체 보기]는 C6 상태 이력을 따로 불러오고 메모 이력과 섞지 않는다", async () => {
+	it("처리 이력은 최근 5건만 보이고, [더 보기]로 C6 전체를 펼치고 [접기]로 돌아간다 (SCRUM-428)", async () => {
+		// 상세의 최근 이력을 6건으로 늘려 [더 보기]가 나오게 해요. 펼친 전체 목록(C6)은 MSW 원래 이력이에요.
+		const rows = Array.from({ length: 6 }, (_, i) => ({
+			action: "ASSIGN",
+			from_status: "OPEN",
+			to_status: "REVIEWING",
+			created_by: "admin",
+			created_at: `2026-11-0${i + 1}T00:00:00Z`,
+			comment: `최근 이력 ${i + 1}`,
+		}))
+		server.use(
+			http.get(`*/api/v1/cases/${REVIEWING}`, () =>
+				HttpResponse.json(detailJson({ history: rows })),
+			),
+		)
 		const user = renderApp(`/cases/${REVIEWING}`)
 		await user.click(await screen.findByRole("button", { name: "처리 이력" }))
-		await user.click(await screen.findByRole("button", { name: "이력 전체 보기" }))
+		const recent = await screen.findByRole("region", { name: "처리 이력" })
+		expect(await within(recent).findByText("최근 이력 5")).toBeInTheDocument()
+		expect(within(recent).queryByText("최근 이력 6")).not.toBeInTheDocument()
+		const more = within(recent).getByRole("button", { name: "이력 1건 더 보기" })
+		expect(more).toHaveAttribute("aria-expanded", "false")
+		await user.click(more)
 		const history = await screen.findByRole("region", { name: "처리 이력 전체" })
 		expect(await within(history).findByText("담당 배정")).toBeInTheDocument()
 		expect(within(history).getByText("케이스 생성")).toBeInTheDocument()
@@ -1310,8 +1345,9 @@ describe("근거 거래·그래프·이력 (SCRUM-179)", () => {
 		await user.click(screen.getByRole("button", { name: "조사 메모" }))
 		expect(screen.getByRole("region", { name: "메모 이력" })).toBeInTheDocument()
 		await user.click(screen.getByRole("button", { name: "처리 이력" }))
-		await user.click(within(history).getByRole("button", { name: "최근 이력만 보기" }))
+		await user.click(within(history).getByRole("button", { name: "접기" }))
 		expect(await screen.findByRole("region", { name: "처리 이력" })).toBeInTheDocument()
+		expect(screen.getByRole("button", { name: "이력 1건 더 보기" })).toBeInTheDocument()
 	})
 })
 
