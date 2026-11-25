@@ -12,11 +12,13 @@ export function useCases(params, { enabled = true } = {}) {
 	})
 }
 
+// 서버가 상세·거래 원본 조회마다 열람 기록을 남겨서 탭 복귀로 다시 부르지 않아요(상태 변경 뒤 무효화·화면 진입 때는 그대로 불러요).
 export function useCaseDetail(caseNo) {
 	return useQuery({
 		queryKey: caseKey(caseNo),
 		queryFn: ({ signal }) => casesApi.detail(caseNo, signal),
 		enabled: Boolean(caseNo),
+		refetchOnWindowFocus: false,
 	})
 }
 
@@ -43,6 +45,7 @@ export function useCaseEvidence(caseNo, transactionId) {
 		queryKey: [...caseKey(caseNo), "evidence", transactionId],
 		queryFn: ({ signal }) => casesApi.evidence({ caseNo, transactionId }, signal),
 		enabled: Boolean(caseNo) && transactionId != null,
+		refetchOnWindowFocus: false,
 	})
 }
 
