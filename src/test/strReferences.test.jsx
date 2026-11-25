@@ -51,8 +51,11 @@ describe("참고 사례 패널 — 초안에 붙은 자료 (SCRUM-312)", () => {
 		expect(cards).toHaveLength(3)
 		expect(cards[0]).toHaveTextContent("APG Yearly Typologies Report 2025")
 		expect(cards[0]).toHaveTextContent("PDF 53쪽 · 유사도 0.58")
+		// 시드 참고 사례엔 관련 구절(excerpt)이 있어 안내가 ⓘ 문구로 바뀌어요(SCRUM-427)
 		expect(
-			within(await panel()).getByText("원문은 해당 문서의 쪽에서 확인해 주세요."),
+			within(await panel()).getByText(
+				"카드의 ⓘ에 마우스를 올리면 관련 구절이 보여요. 전체 원문은 해당 문서의 쪽에서 확인해 주세요.",
+			),
 		).toBeInTheDocument()
 	})
 	it("0건이면 빈 상태 안내를 보여 주고, 잠긴 초안에서도 [유형으로 더 찾아보기]가 있다", async () => {

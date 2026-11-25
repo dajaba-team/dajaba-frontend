@@ -100,7 +100,7 @@ export const AI_FACTS_EXAMPLE = {
 	model_signals: ["account_in_counterparties_24h"],
 	unmapped_currencies: [],
 }
-// S2 references — BE GetStrDraft가 옮기는 칸만(chunk_id·doc_id·doc_title·page·score, 본문 없음). SCRUM-312
+// S2 references — chunk_id·doc_id·doc_title·page·score와 관련 구절 excerpt(예시 문장 또는 null). SCRUM-312·427
 // 문서명은 AI corpus 공개 문서를 흉내 낸 예시예요. 참고 사례 찾기 목업(referenceSearch.js)과 겹치는 문서·쪽이 있어
 // "이미 붙어 있음" 표시를 확인할 수 있어요.
 const SEED_REFERENCES = [
@@ -110,6 +110,7 @@ const SEED_REFERENCES = [
 		doc_title: "APG Yearly Typologies Report 2025",
 		page: 53,
 		score: 0.58,
+		excerpt: "Several unrelated senders transferred funds to the same dormant account.",
 	},
 	{
 		chunk_id: "chk-fatf-pml-021",
@@ -117,6 +118,7 @@ const SEED_REFERENCES = [
 		doc_title: "FATF Professional Money Laundering",
 		page: 21,
 		score: 0.51,
+		excerpt: null,
 	},
 	{
 		chunk_id: "chk-fatf-pml-044",
@@ -124,6 +126,7 @@ const SEED_REFERENCES = [
 		doc_title: "FATF Professional Money Laundering",
 		page: 44,
 		score: 0.47,
+		excerpt: "The outgoing transfers exceeded the sales recorded by the business.",
 	},
 ]
 const codeCheck = (check, section, draftValue, sourceValue) => ({

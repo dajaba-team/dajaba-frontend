@@ -403,6 +403,13 @@
 	text-wrap: balance;
 	transform: translateX(-50%);
 }
+/* 참고 사례 카드 — 문서명 오른쪽 위 끝에 관련 구절 ⓘ(SCRUM-427). ⓘ·말풍선 모양은 검증 항목(.str-check-name)과 같아요 */
+.str-ref-title.str-check-name {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--space-2);
+}
 .str-check-state {
 	margin-inline-start: auto;
 }

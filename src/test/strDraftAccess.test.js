@@ -59,7 +59,7 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 				// 본문을 볼 수 있으면 상태와 상관없이 참고 사례 찾기(SCRUM-313, MSW는 설정 켬 가정)
 				availableActions: ["SEARCH_REFERENCES"],
 			})
-			// S2 references — 문서명·쪽·점수만, 본문 없음(SCRUM-312)
+			// S2 references — 문서명·쪽·점수 + 관련 구절 excerpt, 원문 text 없음(SCRUM-312·427)
 			expect(draft.references).toHaveLength(3)
 			expect(draft.references[0]).toEqual({
 				chunkId: "chk-apg-2025-053",
@@ -67,7 +67,9 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 				docTitle: "APG Yearly Typologies Report 2025",
 				page: 53,
 				score: 0.58,
+				excerpt: "Several unrelated senders transferred funds to the same dormant account.",
 			})
+			expect(draft.references[1].excerpt).toBeNull()
 			// facts는 AI facts 그대로 — 받은 그대로 넘기는지만 봐요(Q15). 모양이 바뀌어도 이 단언은 안 흔들려요.
 			expect(draft.facts).toEqual(AI_FACTS_EXAMPLE)
 			expect(draft.latestVerification).toMatchObject({
@@ -80,7 +82,7 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 		},
 	)
 
-	it("S2 references의 다섯 필드를 화면 모델로 옮기고 원문 text는 사용하지 않는다", () => {
+	it("S2 references의 다섯 필드와 excerpt를 화면 모델로 옮기고 원문 text는 사용하지 않는다", () => {
 		const draft = toDraft({
 			draft_no: DRAFT_NO,
 			access: "FULL",
@@ -102,6 +104,8 @@ describe("STR 초안 조회 — 본문 열람 제한 (SCRUM-110, STR 명세 2·4
 				docTitle: "STR 작성 사례집",
 				page: 12,
 				score: 0.83,
+				// excerpt 칸이 없으면 null — 원문 text를 대신 쓰지 않아요(SCRUM-427)
+				excerpt: null,
 			},
 		])
 		expect(JSON.stringify(draft.references)).not.toContain("원문 조각")
