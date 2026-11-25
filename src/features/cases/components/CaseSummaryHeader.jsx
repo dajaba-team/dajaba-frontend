@@ -7,6 +7,13 @@ import RiskBadge from "../../../shared/ui/RiskBadge"
 import StatusBadge from "../../../shared/ui/StatusBadge"
 import { SCORE_STATUS_LABELS, STATUS_LABELS, STATUS_TONES, labelOf } from "../labels"
 import { nextActionOf } from "./nextAction"
+import {
+	DL_RANK_HELP,
+	DL_RANK_LABEL,
+	ML_SCORE_HELP,
+	ML_SCORE_LABEL,
+	fusedRankText,
+} from "../dlRank"
 
 // 판단 요약(SCRUM-369 B안) — 등급·점수, 상태·담당·탐지 규칙, 탐지 기간, 다음 처리 버튼만.
 // 계좌·경보 번호·버전 같은 보조 정보는 「케이스·경보 정보」 카드로 내려요.
@@ -25,6 +32,7 @@ function scoreOf(detail) {
 
 export default function CaseSummaryHeader({ detail, onAction }) {
 	const { score, band, status } = scoreOf(detail)
+	const fusedRank = fusedRankText(detail.dlRank)
 	const next = nextActionOf(detail)
 	const alert = detail.alert
 	const meta = [
@@ -43,17 +51,26 @@ export default function CaseSummaryHeader({ detail, onAction }) {
 							<strong>{formatScore(score)}</strong>
 							{/* 라벨과 ⓘ 는 한 덩어리 — 좁은 화면에서 ⓘ 만 다음 줄 왼쪽 끝으로 떨어져 설명이 화면 밖으로 나가지 않게. */}
 							<span className="case-summary-score-name">
-								<span className="case-summary-score-label">조사 우선순위 점수</span>
+								<span className="case-summary-score-label">{ML_SCORE_LABEL}</span>
 								<InfoTip
 									clickable
-									label="조사 우선순위 점수"
+									label={ML_SCORE_LABEL}
 									// 모델 버전 문자열은 조사역에게 뜻이 없어 보이지 않아요(SCRUM-408).
-									text="모델 점수예요. 범죄 확률이 아니에요."
+									text={ML_SCORE_HELP}
 								/>
 							</span>
 						</>
 					) : (
 						<span className="case-summary-score-status">{status}</span>
+					)}
+					{/* 결합 순위를 점수 옆에 작게(SCRUM-431) — 점수만 크게 있으면 "0.99인데 왜 2위?"가 남아서. 순위가 있을 때만. */}
+					{fusedRank && (
+						<span className="case-summary-score-name case-summary-rank">
+							<span className="case-summary-score-label">
+								{DL_RANK_LABEL} <b>{fusedRank}</b>
+							</span>
+							<InfoTip clickable label={DL_RANK_LABEL} text={DL_RANK_HELP} />
+						</span>
 					)}
 				</p>
 				<p className="case-summary-meta">

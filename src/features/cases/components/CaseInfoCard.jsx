@@ -1,11 +1,19 @@
 import { formatSystemMinute as formatSystemTime } from "../caseTime"
 import { CLOSE_REASON_LABELS, REJECTION_LABELS, labelOf } from "../labels"
-import { formatScore } from "../../../shared/format/score"
+import InfoTip from "../../../shared/ui/InfoTip"
 import DlRankText from "./DlRankText"
+import {
+	DL_RANK_HELP,
+	DL_RANK_LABEL,
+	DL_SCORE_HELP,
+	DL_SCORE_LABEL,
+	describeDlScore,
+} from "../dlRank"
 
 // 케이스·경보 정보(SCRUM-369) — 예전 「케이스 개요」·「경보 정보」 두 카드를 하나로. 점수는 판단 요약으로 올라갔어요.
 export default function CaseInfoCard({ detail }) {
 	const alert = detail.alert
+	const dlScore = describeDlScore(detail.dlRank)
 	return (
 		<section
 			className="case-panel case-summary case-info-card"
@@ -25,17 +33,26 @@ export default function CaseInfoCard({ detail }) {
 						<dd>{alert.batchDate}</dd>
 						<dt>묶인 거래</dt>
 						<dd>{alert.transactionCount}건</dd>
-						{/* ML+DL 조사 순위(SCRUM-420) — 배치 기준일 하루치 경보 안에서의 순위. DL 점수는 있을 때만 */}
-						<dt>조사 순위</dt>
+						{/* ML+DL 조사 순위(SCRUM-420) — 배치 기준일 하루치 경보 안에서의 순위.
+						    DL 참고 점수는 늘 보여 주고 값·미산출·조회 불가를 나눠요(SCRUM-431). */}
+						<dt>
+							<span className="case-info-term">
+								{DL_RANK_LABEL}
+								<InfoTip clickable label={DL_RANK_LABEL} text={DL_RANK_HELP} />
+							</span>
+						</dt>
 						<dd>
 							<DlRankText rank={detail.dlRank} />
 						</dd>
-						{detail.dlRank?.status === "AVAILABLE" && detail.dlRank.dlScore != null && (
-							<>
-								<dt>DL 점수</dt>
-								<dd>{formatScore(detail.dlRank.dlScore)}</dd>
-							</>
-						)}
+						<dt>
+							<span className="case-info-term">
+								{DL_SCORE_LABEL}
+								<InfoTip clickable label={DL_SCORE_LABEL} text={DL_SCORE_HELP} />
+							</span>
+						</dt>
+						<dd className={dlScore.missing ? "dl-score-missing" : undefined}>
+							{dlScore.text}
+						</dd>
 					</>
 				) : (
 					<>
