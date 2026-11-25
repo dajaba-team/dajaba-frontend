@@ -249,7 +249,7 @@ describe("케이스 조사", () => {
 		)
 		await user.click(screen.getByRole("button", { name: "에스컬레이션 실행" }))
 		expect(
-			await screen.findByText("에스컬레이션됨", { selector: ".status-badge" }),
+			await screen.findByText("에스컬레이션 완료", { selector: ".status-badge" }),
 		).toBeInTheDocument()
 		expect(screen.getByText("STR 검토 필요")).toBeInTheDocument()
 
@@ -333,7 +333,7 @@ describe("케이스 조사", () => {
 		await user.type(screen.getByLabelText("에스컬레이션 사유"), "작성 중인 사유")
 		await user.click(screen.getByRole("button", { name: "에스컬레이션 실행" }))
 		expect(
-			await screen.findByText("에스컬레이션됨", { selector: ".status-badge" }),
+			await screen.findByText("에스컬레이션 완료", { selector: ".status-badge" }),
 		).toBeInTheDocument()
 		expect(screen.getByRole("button", { name: "종료" })).toBeEnabled()
 		expect(screen.queryByLabelText("에스컬레이션 사유")).not.toBeInTheDocument()
@@ -373,7 +373,7 @@ describe("케이스 조사", () => {
 		await user.click(await screen.findByRole("button", { name: "에스컬레이션" }))
 		await user.type(screen.getByLabelText("에스컬레이션 사유"), "STR 검토 필요")
 		await user.click(screen.getByRole("button", { name: "에스컬레이션 실행" }))
-		await screen.findByText("에스컬레이션됨", { selector: ".status-badge" })
+		await screen.findByText("에스컬레이션 완료", { selector: ".status-badge" })
 		expect(screen.queryByText(/서버의 최신 메모/)).not.toBeInTheDocument()
 		const memo = screen.getByRole("textbox", { name: "메모 내용" })
 		await user.type(memo, " 추가")

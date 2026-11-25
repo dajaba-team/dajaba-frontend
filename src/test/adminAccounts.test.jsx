@@ -15,6 +15,10 @@ const USERS = {
 	inv01: { id: 1, login_id: "inv01", display_name: "예시 inv01", role: "INVESTIGATOR" },
 }
 
+// 진행 중 담당만 거는 [케이스 보기] 주소 — BE CaseStatus.active() 와 같은 상태(SCRUM-423)
+const ACTIVE_INV01 =
+	"/cases?assignee=inv01&status=REVIEWING,ESCALATED,DRAFTED,PENDING_APPROVAL,REJECTED"
+
 function renderApp(who = "admin") {
 	resetCases(USERS[who])
 	render(
@@ -43,13 +47,13 @@ function recordBodies(suffix) {
 }
 
 describe("계정 목록", () => {
-	it("기본은 활성만, 조사역 행에 진행 중 담당 건수, 내 계정·SYSTEM 에는 버튼이 없다", async () => {
+	it("기본은 활성만, 조사역 행에 진행 중 건수와 [케이스 보기] 칸, 내 계정·SYSTEM 에는 버튼이 없다", async () => {
 		const user = renderApp()
 		const inv01 = await rowOf("inv01")
 		expect(within(inv01).getByText("2건")).toBeInTheDocument() // DRAFTED + REVIEWING (APPROVED 는 안 셈)
-		expect(within(inv01).getByRole("link", { name: "케이스 보기" })).toHaveAttribute(
+		expect(within(inv01).getByRole("link", { name: "예시 inv01 케이스 보기" })).toHaveAttribute(
 			"href",
-			"/cases?assignee=inv01",
+			ACTIVE_INV01,
 		)
 		expect(within(inv01).getByRole("button", { name: "역할 변경" })).toBeInTheDocument()
 		const me = await rowOf("admin")
@@ -140,7 +144,7 @@ describe("역할 변경", () => {
 		).toBeInTheDocument()
 		expect(within(dialog).getByRole("link", { name: "담당 케이스 보기" })).toHaveAttribute(
 			"href",
-			"/cases?assignee=inv01",
+			ACTIVE_INV01,
 		)
 		expect(within(dialog).getByRole("button", { name: "변경" })).toBeDisabled()
 	})
@@ -159,18 +163,29 @@ describe("역할 변경", () => {
 	})
 })
 
+describe("진행 중 담당 [케이스 보기] (SCRUM-423)", () => {
+	it("누르면 그 조사역의 진행 중 케이스만 열려 건수(2건)와 목록이 같다 — 끝난 승인 케이스는 빠진다", async () => {
+		const user = renderApp()
+		const inv01 = await rowOf("inv01")
+		await user.click(within(inv01).getByRole("link", { name: "예시 inv01 케이스 보기" }))
+		expect(await screen.findByRole("heading", { name: "케이스 목록" })).toBeInTheDocument()
+		await waitFor(() => expect(screen.getAllByRole("link", { name: /^CASE-/ })).toHaveLength(2))
+		expect(screen.queryByText("승인", { selector: ".status-badge" })).not.toBeInTheDocument()
+	})
+})
+
 describe("비활성화·재활성화·비밀번호 초기화", () => {
-	it("비활성화는 막지 않고, 끝난 뒤 진행 중 담당 N건과 [케이스 보기]를 알린다 — 비활성 목록에서 재활성화", async () => {
+	it("비활성화는 막지 않고, 끝난 뒤 진행 중인 담당 케이스 N건과 [케이스 보기]를 알린다 — 비활성 목록에서 재활성화", async () => {
 		const user = renderApp()
 		await user.click(within(await rowOf("inv01")).getByRole("button", { name: "비활성화" }))
 		const dialog = await screen.findByRole("dialog", { name: "계정 비활성화" })
 		await user.click(within(dialog).getByRole("button", { name: "비활성화" }))
 		const notice = await screen.findByText(
-			/예시 inv01 계정을 비활성화했어요. 진행 중 담당 2건이 남았어요/,
+			/예시 inv01 계정을 비활성화했어요. 진행 중인 담당 케이스 2건이 남았어요/,
 		)
 		expect(
 			within(notice.closest("[role=status]")).getByRole("link", { name: "케이스 보기" }),
-		).toHaveAttribute("href", "/cases?assignee=inv01")
+		).toHaveAttribute("href", ACTIVE_INV01)
 		await waitFor(async () =>
 			expect(
 				within(await table()).queryByText("inv01", { selector: ".account-login-id" }),

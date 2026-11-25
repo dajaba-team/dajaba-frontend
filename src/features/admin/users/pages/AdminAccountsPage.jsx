@@ -6,8 +6,9 @@ import "../styles/accounts.css"
 import { AsyncState } from "../../../../shared/ui/AsyncState"
 import { useSession } from "../../../auth/hooks/useSession"
 import { adminUsersApi } from "../api/adminUsersApi"
-import { ROLE_LABELS, ROLE_SWAP } from "../accountRules"
+import { ROLE_LABELS, ROLE_SWAP, activeCasesPath } from "../accountRules"
 import Pagination from "../../../../shared/ui/Pagination"
+import StatusBadge from "../../../../shared/ui/StatusBadge"
 import {
 	ActiveToggleDialog,
 	ChangeRoleDialog,
@@ -17,7 +18,7 @@ import {
 
 // 계정 관리 (ADM-03) — 계약서 5.8, 프론트 docs/04_auth_session.md §6. 관리자만(라우트 RequireRole + 서버 403).
 // 목록 기본 활성만. 내 계정·SYSTEM 행에는 버튼 없음, 관리자 행에는 역할 변경 없음(조사역 ↔ 승인자만), 삭제 버튼 없음.
-const casesOf = (user) => `/cases?assignee=${encodeURIComponent(user.loginId)}`
+const casesOf = (user) => activeCasesPath(user.loginId)
 
 export default function AdminAccountsPage() {
 	const [role, setRole] = useState("")
@@ -82,7 +83,7 @@ export default function AdminAccountsPage() {
 						<p>
 							{notice.displayName} 계정을 비활성화했어요.
 							{notice.activeCaseCount > 0 &&
-								` 진행 중 담당 ${notice.activeCaseCount}건이 남았어요 — 담당자를 바꿔 주세요.`}
+								` 진행 중인 담당 케이스 ${notice.activeCaseCount}건이 남았어요 — 담당자를 바꿔 주세요.`}
 						</p>
 						{notice.activeCaseCount > 0 && (
 							<Link to={casesOf(notice)}>케이스 보기</Link>
@@ -98,14 +99,18 @@ export default function AdminAccountsPage() {
 							aria-label="계정 목록 표"
 							tabIndex={0}
 						>
-							{/* 계정 표(SCRUM-410) — 이름·아이디는 한 칸, 상태는 점+글자, 관리는 오른쪽 작은 글자 버튼. */}
+							{/* 계정 표(SCRUM-410) — 이름·아이디는 한 칸, 상태는 배지(SCRUM-423), 관리는 오른쪽 작은 글자 버튼. */}
 							<table className="case-table account-table">
 								<thead>
 									<tr>
 										<th scope="col">계정</th>
 										<th scope="col">역할</th>
 										<th scope="col">상태</th>
-										<th scope="col">진행 중 담당</th>
+										{/* 건수와 [케이스 보기]를 칸으로 나눠요 — 숫자는 오른쪽 정렬, 링크는 행마다 같은 세로줄(SCRUM-423) */}
+										<th scope="col" className="account-count">
+											진행 중 건수
+										</th>
+										<th scope="col">담당 케이스</th>
 										{/* 머리글 글자는 화면에서 빼고 화면 읽기 프로그램에만(SCRUM-410) */}
 										<th scope="col" className="account-manage-head">
 											<span className="visually-hidden">관리</span>
@@ -144,27 +149,31 @@ export default function AdminAccountsPage() {
 												</td>
 												<td>{ROLE_LABELS[user.role] ?? user.role}</td>
 												<td>
-													<span
-														className="account-state"
-														data-active={user.isActive || undefined}
+													{/* 다른 화면과 같은 상태 배지로(SCRUM-423) — 활성 초록, 비활성 회색 */}
+													<StatusBadge
+														tone={user.isActive ? "success" : "neutral"}
 													>
 														{user.isActive ? "활성" : "비활성"}
-													</span>
+													</StatusBadge>
+												</td>
+												<td className="account-count">
+													{user.role === "INVESTIGATOR" &&
+													user.activeCaseCount != null ? (
+														`${user.activeCaseCount}건`
+													) : (
+														<span className="account-none">—</span>
+													)}
 												</td>
 												<td>
-													{user.role === "INVESTIGATOR" ? (
-														<span className="account-cases">
-															<span>
-																{user.activeCaseCount != null
-																	? `${user.activeCaseCount}건`
-																	: "—"}
-															</span>
-															{user.activeCaseCount > 0 && (
-																<Link to={casesOf(user)}>
-																	케이스 보기
-																</Link>
-															)}
-														</span>
+													{user.role === "INVESTIGATOR" &&
+													user.activeCaseCount > 0 ? (
+														<Link
+															className="account-cases-link"
+															to={casesOf(user)}
+															aria-label={`${user.displayName} 케이스 보기`}
+														>
+															케이스 보기
+														</Link>
 													) : (
 														<span className="account-none">—</span>
 													)}

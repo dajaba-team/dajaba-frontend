@@ -8,6 +8,7 @@ import {
 	ISSUABLE_ROLES,
 	ROLE_LABELS,
 	ROLE_SWAP,
+	activeCasesPath,
 	displayNameError,
 	loginIdError,
 	passwordError,
@@ -200,9 +201,7 @@ export function ChangeRoleDialog({ user, onClose }) {
 								진행 중인 담당 케이스가 {count ?? user.activeCaseCount ?? "몇"}건
 								있어요. 먼저 담당자를 바꿔 주세요.
 							</p>
-							<Link to={`/cases?assignee=${encodeURIComponent(user.loginId)}`}>
-								담당 케이스 보기
-							</Link>
+							<Link to={activeCasesPath(user.loginId)}>담당 케이스 보기</Link>
 						</div>
 					)}
 				</>
