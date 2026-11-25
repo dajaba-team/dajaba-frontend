@@ -168,7 +168,7 @@ describe("MSW 목업 — excerpt 있는 것·없는 것이 섞여 있어요", ()
 describe("화면 — excerpt 가 있는 카드 오른쪽 위에 HelpTooltip ⓘ", () => {
 	const OLD_NOTE = "원문은 해당 문서의 쪽에서 확인해 주세요."
 	const NEW_NOTE =
-		"카드의 ⓘ에 마우스를 올리면 관련 구절이 보여요. 전체 원문은 해당 문서의 쪽에서 확인해 주세요."
+		"카드의 ⓘ에 마우스를 올리면 원문 발췌가 보여요. 전체 원문은 해당 문서의 쪽에서 확인해 주세요."
 	const SECOND = "One incoming payment funded transfers to several unrelated recipients."
 
 	function renderStr() {
@@ -185,7 +185,7 @@ describe("화면 — excerpt 가 있는 카드 오른쪽 위에 HelpTooltip ⓘ"
 
 	/** ⓘ 버튼이 aria-describedby 로 가리키는 말풍선. */
 	const bubbleOf = (button) => document.getElementById(button.getAttribute("aria-describedby"))
-	const questionIn = (card) => within(card).queryByRole("button", { name: /이 자료의 관련 구절/ })
+	const questionIn = (card) => within(card).queryByRole("button", { name: /^원문 발췌 — / })
 
 	async function openSearchResults(user, panel) {
 		await user.click(within(panel).getByRole("button", { name: "유형으로 더 찾아보기" }))
@@ -209,12 +209,13 @@ describe("화면 — excerpt 가 있는 카드 오른쪽 위에 HelpTooltip ⓘ"
 		const button = questionIn(withExcerpt)
 		expect(button).not.toBeNull()
 		// 카드마다 구분되게 문서명이 이름에 들어가요(InfoTip 이 끝에 " 설명"을 붙여요)
-		expect(button).toHaveAccessibleName(
-			"이 자료의 관련 구절 — APG Yearly Typologies Report 2025 설명",
-		)
+		expect(button).toHaveAccessibleName("원문 발췌 — APG Yearly Typologies Report 2025 설명")
 		const bubble = bubbleOf(button)
 		expect(bubble).toHaveAttribute("role", "tooltip")
-		expect(bubble).toHaveTextContent("이 자료의 관련 구절")
+		// 제목 "[원문 발췌]" 다음 빈 줄 하나(<br /> 두 번), 그 다음 구절(리뷰 #122)
+		expect(bubble.textContent).toBe(`[원문 발췌]${EXCERPT}`)
+		expect(bubble.querySelectorAll("br")).toHaveLength(2)
+		expect(bubble.firstChild.textContent).toBe("[원문 발췌]")
 		expect(bubble).toHaveTextContent(EXCERPT)
 		await user.hover(button)
 		expect(bubble).toHaveTextContent(EXCERPT)
@@ -243,7 +244,7 @@ describe("화면 — excerpt 가 있는 카드 오른쪽 위에 HelpTooltip ⓘ"
 		expect(questionIn(without)).toBeNull()
 		const button = questionIn(withExcerpt)
 		expect(button).toHaveAccessibleName(/FATF Professional Money Laundering/)
-		expect(bubbleOf(button)).toHaveTextContent("이 자료의 관련 구절")
+		expect(bubbleOf(button).textContent).toBe(`[원문 발췌]${SECOND}`)
 		expect(bubbleOf(button)).toHaveTextContent(SECOND)
 		// 유형 배지 등 기존 글은 그대로
 		expect(withExcerpt).toHaveTextContent("FATF 2018 · PDF 21쪽 · 유사도 0.52")
@@ -270,9 +271,7 @@ describe("화면 — excerpt 가 있는 카드 오른쪽 위에 HelpTooltip ⓘ"
 		const user = renderStr()
 		const panel = await screen.findByRole("region", { name: "참고 사례" })
 		await openSearchResults(user, panel)
-		expect(
-			within(panel).queryAllByRole("button", { name: /이 자료의 관련 구절/ }),
-		).toHaveLength(0)
+		expect(within(panel).queryAllByRole("button", { name: /^원문 발췌 — / })).toHaveLength(0)
 		expect(within(panel).queryByRole("tooltip")).not.toBeInTheDocument()
 		expect(within(panel).getAllByText(OLD_NOTE)).toHaveLength(2)
 	})
@@ -284,7 +283,7 @@ describe("화면 — excerpt 가 있는 카드 오른쪽 위에 HelpTooltip ⓘ"
 		draftWithReferences([ref(long)])
 		renderStr()
 		const panel = await screen.findByRole("region", { name: "참고 사례" })
-		const button = await within(panel).findByRole("button", { name: /이 자료의 관련 구절/ })
+		const button = await within(panel).findByRole("button", { name: /^원문 발췌 — / })
 		expect(bubbleOf(button).textContent).toContain(long)
 	})
 })

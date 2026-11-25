@@ -23,7 +23,7 @@ import InfoTip from "../../../shared/ui/InfoTip"
 
 const SOURCE_NOTE = "원문은 해당 문서의 쪽에서 확인해 주세요."
 const EXCERPT_NOTE =
-	"카드의 ⓘ에 마우스를 올리면 관련 구절이 보여요. 전체 원문은 해당 문서의 쪽에서 확인해 주세요."
+	"카드의 ⓘ에 마우스를 올리면 원문 발췌가 보여요. 전체 원문은 해당 문서의 쪽에서 확인해 주세요."
 const SIMILARITY_HELP =
 	"검색어와 얼마나 비슷한지 나타내는 값이에요. 높다고 같은 사건이라는 뜻은 아니에요."
 
@@ -38,10 +38,11 @@ function renderRefTitle({ docTitle, excerpt }) {
 		<div className="str-ref-title str-check-name">
 			{heading}
 			<InfoTip
-				label={`이 자료의 관련 구절 — ${title}`}
+				label={`원문 발췌 — ${title}`}
 				text={
 					<>
-						이 자료의 관련 구절
+						[원문 발췌]
+						<br />
 						<br />
 						{excerpt}
 					</>
