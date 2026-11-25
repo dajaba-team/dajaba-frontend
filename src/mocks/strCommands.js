@@ -52,14 +52,19 @@ export function draftActions(viewer, item, draft) {
 	if (!item || item.current_draft_no !== draft.draft_no) return []
 	// 승인 뒤(초안 LOCKED) — BE StrDraftActions·StrReportPdfAccess.canRead 와 같게:
 	// PDF 는 승인자(누구나)와 담당 조사역. APPROVED 면 PREVIEW_PDF(S7), REPORTED 면 DOWNLOAD_PDF(S8).
-	// 모의 제출 REPORT(P4)는 APPROVED 이고 이 초안을 승인한 사람만. 다시 만들기(P5)는 목업에 PDF 상태가 없어 흉내 내지 않아요.
+	// 이 초안을 승인한 승인자만 APPROVED 면 REPORT(P4), REPORTED 이고 PDF 가 FAILED 면 REGENERATE_PDF(P5).
+	// 목업은 시간을 재지 않아 오래된 PENDING 은 흉내 내지 않아요.
 	if (draft.status === "LOCKED") {
 		const canReadPdf = viewer.role === "APPROVER" || isAssignee(viewer, item)
+		const isDraftApprover = viewer.role === "APPROVER" && approvedBy(item) === viewer.login_id
 		if (item.status === "APPROVED") {
-			const report = viewer.role === "APPROVER" && approvedBy(item) === viewer.login_id
-			return [...(report ? ["REPORT"] : []), ...(canReadPdf ? ["PREVIEW_PDF"] : [])]
+			return [...(isDraftApprover ? ["REPORT"] : []), ...(canReadPdf ? ["PREVIEW_PDF"] : [])]
 		}
-		if (item.status === "REPORTED") return canReadPdf ? ["DOWNLOAD_PDF"] : []
+		if (item.status === "REPORTED") {
+			const actions = canReadPdf ? ["DOWNLOAD_PDF"] : []
+			if (isDraftApprover && draft.pdf_status === "FAILED") actions.push("REGENERATE_PDF")
+			return actions
+		}
 		return []
 	}
 	if (draft.status !== "ACTIVE") return []

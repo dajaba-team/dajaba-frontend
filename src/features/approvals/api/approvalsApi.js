@@ -11,7 +11,7 @@ const draftPath = (draftNo) => `/api/v1/str-drafts/${encodeURIComponent(draftNo)
 // PDF는 blob으로 받아서 오류 본문도 blob이에요 — error.code 로 분기할 수 있게 JSON으로 되돌려요(01_code_rules §5).
 async function getPdf(url, signal) {
 	try {
-		return (await apiClient.get(url, { responseType: "blob", signal })).data
+		return await apiClient.get(url, { responseType: "blob", signal })
 	} catch (error) {
 		const body = error.response?.data
 		if (body && typeof body.text === "function") {
@@ -23,6 +23,32 @@ async function getPdf(url, signal) {
 		}
 		throw error
 	}
+}
+
+function pdfBaseName(value) {
+	const name = value.split(/[/\\]/).pop().trim()
+	return name && name !== "." && name !== ".." ? name : null
+}
+
+function pdfFileName(headers) {
+	const disposition = headers?.get?.("content-disposition") ?? headers?.["content-disposition"]
+	if (typeof disposition !== "string") return null
+
+	let fileName = null
+	const params = disposition.matchAll(/;\s*([^;=\s]+)\s*=\s*(?:"([^"]*)"|([^";]*))\s*(?=;|$)/g)
+	for (const [, key, quoted, plain] of params) {
+		const value = (quoted ?? plain).trim()
+		if (key.toLowerCase() === "filename") fileName = pdfBaseName(value)
+		if (key.toLowerCase() === "filename*" && /^UTF-8''/i.test(value)) {
+			try {
+				const name = pdfBaseName(decodeURIComponent(value.slice(7)))
+				if (name) return name
+			} catch {
+				// 인코딩을 읽지 못하면 filename을 써요.
+			}
+		}
+	}
+	return fileName
 }
 
 const toUser = (data) => (data ? { loginId: data.login_id, displayName: data.display_name } : null)
@@ -125,9 +151,13 @@ export const approvalsApi = {
 				.data,
 		),
 	/** S7 제출 전 미리보기 — 서버가 "제출 전" 워터마크를 찍은 PDF(저장 안 함). APPROVED 일 때. */
-	previewPdf: ({ draftNo }, signal) => getPdf(`${draftPath(draftNo)}/report/preview.pdf`, signal),
-	/** S8 확정본 — REPORTED 일 때. 아직이면 409 REPORT_PDF_NOT_READY(details.pdf_status PENDING·FAILED). */
-	reportPdf: ({ draftNo }, signal) => getPdf(`${draftPath(draftNo)}/report.pdf`, signal),
+	previewPdf: async ({ draftNo }, signal) =>
+		(await getPdf(`${draftPath(draftNo)}/report/preview.pdf`, signal)).data,
+	/** S8 확정본(REPORTED) — { blob, fileName }. 헤더에서 이름을 못 읽으면 null. 아직이면 409 REPORT_PDF_NOT_READY(details.pdf_status PENDING·FAILED). */
+	reportPdf: async ({ draftNo }, signal) => {
+		const { data, headers } = await getPdf(`${draftPath(draftNo)}/report.pdf`, signal)
+		return { blob: data, fileName: pdfFileName(headers) }
+	},
 	/** P5 PDF 다시 만들기 — PDF FAILED 일 때만, 202 {pdf_status}. */
 	regeneratePdf: async ({ draftNo }) => {
 		const { data } = await apiClient.post(`${approvalPath(draftNo)}/report/pdf`, {})

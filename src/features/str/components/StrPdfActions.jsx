@@ -20,7 +20,7 @@ export default function StrPdfActions({ draftNo, canPreview, canDownload }) {
 	})
 	const download = useMutation({
 		mutationFn: () => approvalsApi.reportPdf({ draftNo }),
-		onSuccess: (blob) => saveFile(blob, `${draftNo}.pdf`),
+		onSuccess: (file) => saveFile(file.blob, file.fileName ?? `${draftNo}.pdf`),
 	})
 	const pdfStatus = download.isError ? pdfStatusOf(download.error) : null
 

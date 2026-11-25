@@ -5,11 +5,13 @@ import { getErrorCode, isNoResponse } from "../../../shared/api/apiClient"
 
 export const draftKey = (draftNo) => ["draft", draftNo]
 
+// 서버가 초안·수정 이력 조회마다 열람 기록을 남겨서 탭 복귀로 다시 부르지 않아요(상태 변경 뒤 무효화·화면 진입 때는 그대로 불러요).
 export function useStrDraft(draftNo) {
 	return useQuery({
 		queryKey: draftKey(draftNo),
 		queryFn: ({ signal }) => strApi.getDraft(draftNo, signal),
 		enabled: Boolean(draftNo),
+		refetchOnWindowFocus: false,
 	})
 }
 
@@ -19,6 +21,7 @@ export function useStrRevisions(draftNo, { enabled = true } = {}) {
 		queryKey: [...draftKey(draftNo), "revisions"],
 		queryFn: ({ signal }) => strApi.getRevisions(draftNo, signal),
 		enabled: Boolean(draftNo) && enabled,
+		refetchOnWindowFocus: false,
 	})
 }
 
@@ -27,6 +30,7 @@ export function useStrRevision(draftNo, revisionNo, { enabled = true } = {}) {
 		queryKey: [...draftKey(draftNo), "revisions", revisionNo],
 		queryFn: ({ signal }) => strApi.getRevision(draftNo, revisionNo, signal),
 		enabled: Boolean(draftNo) && revisionNo != null && enabled,
+		refetchOnWindowFocus: false,
 	})
 }
 
