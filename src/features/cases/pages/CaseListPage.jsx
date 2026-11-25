@@ -8,7 +8,7 @@ import Button from "../../../shared/ui/Button"
 import { AsyncState } from "../../../shared/ui/AsyncState"
 import { formatSystemMinute as formatSystemTime } from "../caseTime"
 import CaseOverview from "../components/CaseOverview"
-import ReassignDialog from "../components/ReassignDialog"
+import AssigneeDialog from "../components/AssigneeDialog"
 import Pagination from "../../../shared/ui/Pagination"
 import { formatScore } from "../../../shared/format/score"
 import { useSession } from "../../auth/hooks/useSession"
@@ -296,7 +296,8 @@ export default function CaseListPage() {
 				)}
 			</section>
 			{reassigning && (
-				<ReassignDialog
+				<AssigneeDialog
+					mode="reassign"
 					caseNo={reassigning.caseNo}
 					version={reassigning.version}
 					assignee={reassigning.assignee}
