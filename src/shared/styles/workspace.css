@@ -198,13 +198,17 @@
 	white-space: normal; /* 제목 안 낱말 사이는 꺾여도 돼요 */
 	padding-right: 22px; /* 마지막 줄 끝에 ⓘ(18px) + 간격 자리를 미리 잡아 둬요 */
 }
-/* ⓘ 는 제목 글자 높이 가운데에 — 실제 화면에서 보고 1px 올려 맞췄어요(SCRUM-390) */
+/* ⓘ 는 제목 글자 높이 가운데에 — 실제 화면에서 보고 1px 올려 맞췄어요(SCRUM-390).
+   올리는 건 버튼에만 해요. 감싼 .kpi-info 에 position 을 주면 툴팁 기준이 ⓘ(20px)가 돼서
+   max-width: 100% 가 20px 로 줄고 설명이 한 글자씩 세로로 쌓여요(SCRUM-423). 기준은 .metric-label 이에요. */
 .metric-title .kpi-info {
-	position: relative;
-	top: -1px;
 	display: inline-flex;
 	margin-left: -18px; /* 제목 끝에 잡아 둔 자리로 당겨 와요 */
 	vertical-align: middle;
+}
+.metric-title .kpi-info-button {
+	position: relative;
+	top: -1px;
 }
 .kpi-info-button {
 	display: inline-grid;
