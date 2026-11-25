@@ -20,6 +20,7 @@ import StrReferencePanel from "../components/StrReferencePanel"
 import StrRevisionHistory from "../components/StrRevisionHistory"
 import StrGenerateForm from "../components/StrGenerateForm"
 import StrChangeReview from "../components/StrChangeReview"
+import StrPdfActions from "../components/StrPdfActions"
 import { baseOptions } from "../model/changeReview"
 import { useSession } from "../../auth/hooks/useSession"
 import ApprovalDialog from "../../approvals/components/ApprovalDialog"
@@ -445,6 +446,12 @@ function StrWorkspace({ draft, detail }) {
 					<span className="str-block-reason">{blockReason}</span>
 				)}
 			</section>
+			{/* 보고서 PDF(S7·S8) — 서버가 PREVIEW_PDF·DOWNLOAD_PDF 를 줄 때만 (QnA BH-FE-01) */}
+			<StrPdfActions
+				draftNo={draft.draftNo}
+				canPreview={can("PREVIEW_PDF")}
+				canDownload={can("DOWNLOAD_PDF")}
+			/>
 			{save.isError && !conflict && (
 				<p role="alert">
 					{getErrorMessage(save.error)}
