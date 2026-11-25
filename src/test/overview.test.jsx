@@ -67,8 +67,18 @@ describe("일반 대시보드의 데이터 범위", () => {
 		expect(cards[1]).toHaveTextContent("1건") // 조사 중(REVIEWING) 1건 — 접수·승인 대기는 빼요
 		expect(cards[2]).toHaveTextContent("0건")
 		expect(cards[3]).toHaveTextContent("1건")
-		// 카드는 제목·건수·아이콘만, 뜻은 제목 옆 ⓘ 툴팁(버튼 설명)으로, 카드 안 이동 링크 없음(SCRUM-345)
+		// 카드는 제목·건수·아이콘, 뜻은 제목 옆 ⓘ 툴팁(버튼 설명)으로(SCRUM-345)
 		expect(titles(cards)).toEqual(["내 담당 케이스", "조사 중", "보완할 초안", "승인 대기"])
+		// 카드를 누르면 센 조건 그대로 목록으로(SCRUM-432) — 조사역은 내 담당만 + 단계별 상태 필터
+		expect(
+			cards.map((card) => card.querySelector("a.signal-kpi-anchor")?.getAttribute("href")),
+		).toEqual([
+			"/cases?mine=1",
+			"/cases?mine=1&status=REVIEWING,ESCALATED,DRAFTED",
+			"/cases?mine=1&status=REJECTED",
+			"/cases?mine=1&status=PENDING_APPROVAL",
+		])
+		expect(screen.getByRole("link", { name: "조사 중 1건 — 목록 열기" })).toBeInTheDocument()
 		expect(cards.every((card) => card.querySelector(":scope > p") === null)).toBe(true)
 		const tips = [
 			["내 담당 케이스", "나에게 배정된 케이스 수"],
@@ -114,7 +124,7 @@ describe("일반 대시보드의 데이터 범위", () => {
 		expect(
 			screen.getByText("위험 점수가 가장 높은 케이스예요. 지금 바로 열어 확인해 주세요."),
 		).toBeInTheDocument()
-		expect(screen.getByRole("link", { name: /내 담당 케이스/ })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: /^내 담당 케이스$/ })).toHaveAttribute(
 			"href",
 			"/cases?mine=1",
 		)
@@ -156,6 +166,15 @@ describe("일반 대시보드의 데이터 범위", () => {
 		expect(cards[1]).toHaveTextContent("1건")
 		expect(cards[2]).toHaveTextContent("1건")
 		expect(cards[3]).toHaveTextContent("1건")
+		// 승인자 카드 링크(SCRUM-432) — 전체 범위, 승인 대기는 승인함으로
+		expect(
+			cards.map((card) => card.querySelector("a.signal-kpi-anchor")?.getAttribute("href")),
+		).toEqual([
+			"/cases",
+			"/cases?status=REVIEWING,ESCALATED,DRAFTED",
+			"/cases?status=REJECTED",
+			"/approvals",
+		])
 	})
 
 	it("관리자는 경보 기준 — 탐지 경보·고위험 경보(케이스 전환 포함)와 경보 위험 등급 도넛", () => {
@@ -180,6 +199,15 @@ describe("일반 대시보드의 데이터 범위", () => {
 		expect(cards[1]).toHaveTextContent("35건")
 		expect(cards[2]).toHaveTextContent("2건")
 		expect(cards[3]).toHaveTextContent("1건")
+		// 관리자 카드 링크(SCRUM-432) — 경보는 배치 운영, 미배정은 접수 상태, 승인 대기는 그 상태로
+		expect(
+			cards.map((card) => card.querySelector("a.signal-kpi-anchor")?.getAttribute("href")),
+		).toEqual([
+			"/admin/batches",
+			"/cases",
+			"/cases?status=OPEN",
+			"/cases?status=PENDING_APPROVAL",
+		])
 		expect(
 			within(cards[1]).getByRole("button", { name: "고위험 경보 설명" }),
 		).toHaveAccessibleDescription(
