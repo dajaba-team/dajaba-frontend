@@ -10,6 +10,7 @@ import { formatSystemMinute as formatSystemTime } from "../caseTime"
 import CaseOverview from "../components/CaseOverview"
 import AssigneeDialog from "../components/AssigneeDialog"
 import DlRankText from "../components/DlRankText"
+import { DL_RANK_LABEL, ML_SCORE_LABEL } from "../dlRank"
 import Pagination from "../../../shared/ui/Pagination"
 import { formatScore } from "../../../shared/format/score"
 import { useSession } from "../../auth/hooks/useSession"
@@ -19,9 +20,10 @@ import { caseListWorkflowGuide } from "../../../shared/ui/workflowGuide"
 // 목록의 [담당자 변경]도 상세처럼 서버가 준 available_actions(REASSIGN)만 보고 켜요(#23 리뷰). 누르면 서버가 다시 검사해요.
 const canReassign = (item) => item.availableActions.includes("REASSIGN")
 
-// 정렬 — 서버 기본은 점수 높은 순(score,desc). 점수가 없는 케이스는 오름·내림 모두 맨 뒤(계약서 C1).
+// 정렬 — 서버 기본은 ML 점수 높은 순(score,desc). 점수가 없는 케이스는 오름·내림 모두 맨 뒤(계약서 C1).
+// ML+DL 순위로는 정렬하지 않아요(SCRUM-431) — 순위가 배치 날짜마다 따로라 날짜가 섞인 목록·페이지에서 줄 세우면 오해가 생겨요.
 const SORTS = [
-	["", "점수 높은 순"],
+	["", "ML 위험도 점수 높은 순"],
 	["created_at,desc", "최근 생성 순"],
 	["created_at,asc", "오래된 생성 순"],
 ]
@@ -229,8 +231,8 @@ export default function CaseListPage() {
 											<th scope="col">케이스</th>
 											<th scope="col">계좌</th>
 											<th scope="col">상태</th>
-											<th scope="col">점수</th>
-											<th scope="col">조사 순위</th>
+											<th scope="col">{ML_SCORE_LABEL}</th>
+											<th scope="col">{DL_RANK_LABEL}</th>
 											<th scope="col">담당자</th>
 											<th scope="col">생성</th>
 											{manageColumn && <th scope="col">관리</th>}

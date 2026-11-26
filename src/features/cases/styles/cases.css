@@ -2549,3 +2549,17 @@
 	border-color: var(--color-primary);
 	color: var(--color-primary);
 }
+
+/* ML+DL 표기 정리(SCRUM-431) — 정보 카드 이름 옆 ⓘ, 미산출·조회 불가는 회색, 상단 결합 순위 숫자는 굵게 */
+.case-info-term {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+.dl-score-missing {
+	color: var(--color-muted);
+}
+.case-summary-rank b {
+	color: var(--color-text);
+	font-weight: var(--weight-semibold);
+}

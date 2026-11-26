@@ -732,7 +732,7 @@ describe("케이스 조사", () => {
 			const row = (await screen.findByRole("link", { name: caseNo })).closest("tr")
 			const index = within(row.closest("table"))
 				.getAllByRole("columnheader")
-				.findIndex((th) => th.textContent === "조사 순위")
+				.findIndex((th) => th.textContent === "ML+DL 조사 순위")
 			return within(row).getAllByRole("cell")[index]
 		}
 		expect(await cell("CASE-2022-001001")).toHaveTextContent("결합 1위ML 2위")
@@ -772,10 +772,16 @@ describe("케이스 조사", () => {
 				),
 			),
 		)
+		// 「케이스·경보 정보」의 이름(dt) 다음 값(dd) — 이름 옆 ⓘ 글자가 섞여도 앞부분으로 찾아요.
+		const valueOf = (panel, label) =>
+			[...panel.querySelectorAll("dt")].find((dt) => dt.textContent.startsWith(label))
+				.nextElementSibling.textContent
 		renderApp(`/cases/${REVIEWING}`)
 		let panel = await screen.findByRole("region", { name: "케이스·경보 정보" })
 		expect(within(panel).getByText("순위 조회 불가")).toBeInTheDocument()
-		expect(within(panel).queryByText("DL 점수")).not.toBeInTheDocument()
+		// DL 참고 점수는 늘 보여 주고 세 상태를 나눠요(SCRUM-431) — 순위 응답을 못 쓰면 "조회 불가"
+		expect(valueOf(panel, "DL 참고 점수")).toBe("조회 불가")
+		expect(document.querySelector(".case-summary-rank")).toBeNull()
 		cleanup()
 		server.use(
 			http.get(`/api/v1/cases/${REVIEWING}`, () =>
@@ -791,7 +797,71 @@ describe("케이스 조사", () => {
 		panel = await screen.findByRole("region", { name: "케이스·경보 정보" })
 		expect(within(panel).getByText("결합 2위")).toBeInTheDocument()
 		expect(within(panel).getByText("ML 4위")).toBeInTheDocument()
-		expect(within(panel).getByText("0.87")).toBeInTheDocument()
+		expect(valueOf(panel, "DL 참고 점수")).toBe("0.87")
+		// 상단 ML 점수 옆에 결합 순위를 작게(SCRUM-431)
+		expect(document.querySelector(".case-summary-rank")).toHaveTextContent(
+			"ML+DL 조사 순위 2위",
+		)
+	})
+	it("DL 참고 점수 — 순위는 있는데 점수가 없으면 미산출, 실제 0 은 0.00 으로 구분한다 (SCRUM-431)", async () => {
+		const alert = {
+			alert_no: "ALT-20220907-000002",
+			rule_id: "R02_FAN_IN",
+			batch_date: "2022-09-07",
+			window_start: "2022-09-06T00:00:00",
+			window_end: "2022-09-07T00:00:00",
+			reference_ts: "2022-09-07T00:00:00",
+			transaction_count: 3,
+		}
+		const available = (fields) => ({
+			status: "AVAILABLE",
+			reason: null,
+			ml_rank: 3,
+			fused_rank: 3,
+			fallback_reason: null,
+			dl_score: null,
+			...fields,
+		})
+		const valueOf = (panel, label) =>
+			[...panel.querySelectorAll("dt")].find((dt) => dt.textContent.startsWith(label))
+				.nextElementSibling
+		server.use(
+			http.get(`/api/v1/cases/${REVIEWING}`, () =>
+				HttpResponse.json(
+					detailJson({
+						alert,
+						dl_rank: available({ fallback_reason: "INCOMPLETE_DL_EVIDENCE" }),
+					}),
+				),
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		let panel = await screen.findByRole("region", { name: "케이스·경보 정보" })
+		expect(valueOf(panel, "DL 참고 점수")).toHaveTextContent(/^미산출$/)
+		expect(valueOf(panel, "DL 참고 점수")).toHaveClass("dl-score-missing")
+		cleanup()
+		server.use(
+			http.get(`/api/v1/cases/${REVIEWING}`, () =>
+				HttpResponse.json(detailJson({ alert, dl_rank: available({ dl_score: 0 }) })),
+			),
+		)
+		renderApp(`/cases/${REVIEWING}`)
+		panel = await screen.findByRole("region", { name: "케이스·경보 정보" })
+		expect(valueOf(panel, "DL 참고 점수")).toHaveTextContent(/^0\.00$/)
+		expect(valueOf(panel, "DL 참고 점수")).not.toHaveClass("dl-score-missing")
+	})
+	it("ML 점수·ML+DL 순위는 이름으로 구분한다 — 상단은 ML 위험도 점수, 목록 열은 둘 다 (SCRUM-431)", async () => {
+		renderApp(`/cases/${REVIEWING}`)
+		expect(
+			await screen.findByText("ML 위험도 점수", { selector: ".case-summary-score-label" }),
+		).toBeInTheDocument()
+		expect(screen.queryByText("조사 우선순위 점수")).not.toBeInTheDocument()
+		cleanup()
+		renderApp()
+		await screen.findByRole("link", { name: REVIEWING })
+		const headers = screen.getAllByRole("columnheader").map((th) => th.textContent)
+		expect(headers).toEqual(expect.arrayContaining(["ML 위험도 점수", "ML+DL 조사 순위"]))
+		expect(headers).not.toContain("DL 참고 점수")
 	})
 	it("상세에 경보 정보와 최근 모델 점수를 보여 준다", async () => {
 		renderApp(`/cases/${REVIEWING}`)
@@ -809,7 +879,7 @@ describe("케이스 조사", () => {
 		expect(within(summary).getByText("0.91")).toBeInTheDocument() // 둘째 자리 표기
 		expect(within(summary).getByText("등급 HIGH")).toBeInTheDocument()
 		expect(within(summary).getByRole("tooltip", { hidden: true })).toHaveTextContent(
-			"모델 점수예요. 범죄 확률이 아니에요.",
+			"ML 모델 점수예요. 범죄 확률이나 결합 순위 점수가 아니에요.",
 		)
 		// 모델 버전 문자열은 보이지 않아요(SCRUM-408)
 		expect(within(summary).getByRole("tooltip", { hidden: true })).not.toHaveTextContent(
@@ -1479,7 +1549,7 @@ describe("케이스 목록 필터 (SCRUM-181)", () => {
 			).not.toBeInTheDocument(),
 		)
 		expect(urls.at(-1).searchParams.get("status")).toBe("REVIEWING,DRAFTED")
-		expect(screen.getByText("점수 높은 순")).toBeInTheDocument()
+		expect(screen.getByText("ML 위험도 점수 높은 순")).toBeInTheDocument()
 		server.events.removeAllListeners()
 	})
 	it("시작일이 종료일보다 늦으면 안내하고 목록을 부르지 않는다", async () => {
