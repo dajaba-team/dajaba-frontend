@@ -951,3 +951,43 @@
 		width: 9.5rem;
 	}
 }
+
+/* 대시보드 카드 → 목록 링크(SCRUM-432). 링크를 카드 전체에 덮고, 제목 줄(ⓘ 말풍선 포함)은 그 위에 올려요.
+   제목 줄은 눌림을 링크로 흘려보내고 ⓘ 버튼만 따로 눌려요. */
+.signal-kpi-anchor {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	border-radius: inherit;
+}
+.signal-kpi-anchor:focus-visible {
+	outline: var(--focus-width) solid var(--color-focus);
+	outline-offset: 2px;
+}
+.signal-kpi-link .metric-label {
+	z-index: 2;
+	pointer-events: none;
+}
+.signal-kpi-link .kpi-info-button {
+	pointer-events: auto;
+}
+.signal-kpi-link {
+	transition:
+		transform 0.2s ease,
+		box-shadow 0.2s ease,
+		border-color 0.2s ease;
+}
+.signal-kpi-link:hover {
+	transform: translateY(-3px);
+	border-color: var(--color-primary);
+	box-shadow: 0 16px 28px -18px rgb(0 70 255 / 45%);
+}
+.signal-kpi-primary.signal-kpi-link:hover {
+	border-color: transparent;
+	box-shadow: 0 18px 30px -16px #0046ffcc;
+}
+@media (prefers-reduced-motion: reduce) {
+	.signal-kpi-link:hover {
+		transform: none;
+	}
+}

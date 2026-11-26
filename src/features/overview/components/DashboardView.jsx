@@ -61,20 +61,31 @@ export default function DashboardView({
 	// 케이스는 HIGH 경보로만 만들어져 "고위험 케이스"는 전체 케이스와 늘 같아서, 관리자는 경보 기준으로,
 	// 조사역·승인자는 조사 단계별(조사 중 → 보완 → 승인 대기)로 바꿨어요. 관리자의 고위험 경보는 케이스 전환 수와 정책상 같아 한 카드로 합쳤어요.
 	// 시연 화면은 합성 데이터라 기존 그대로.
+	// 카드를 누르면 그 숫자를 센 조건 그대로 목록을 열어요(SCRUM-432) — 조사역은 「내 담당만」, 단계 카드는 상태 필터까지.
+	// 목록 주소 query 는 케이스 목록(CaseListPage readFilters)과 같은 이름: mine=1, status=A,B
+	const listLink = (query = {}) => {
+		const params = new URLSearchParams({ ...(mine ? { mine: "1" } : {}), ...query })
+		const text = params.toString().replaceAll("%2C", ",")
+		return text ? `${listPath}?${text}` : listPath
+	}
 	const unassigned = [
 		"미배정 케이스",
 		items.filter((i) => !i.assignee).length,
 		"담당 조사역이 배정되지 않은 케이스 수",
 		"user",
+		listLink({ status: "OPEN" }),
 	]
 	const pending = [
 		"승인 대기",
 		items.filter((i) => i.status === "PENDING_APPROVAL").length,
 		"승인자 검토가 필요한 케이스 수",
 		"approval",
+		listLink({ status: "PENDING_APPROVAL" }),
 	]
+	const investigatingLink = listLink({ status: INVESTIGATING.join(",") })
+	const revisionLink = listLink({ status: "REJECTED" })
 	// 목록 링크도 집계와 같은 범위로 — 조사역은 내 담당 목록(SCRUM-337)
-	const scopedListPath = mine ? `${listPath}?mine=1` : listPath
+	const scopedListPath = listLink()
 	const investigating = items.filter((i) => INVESTIGATING.includes(i.status)).length
 	// 보완 요청으로 반려된 직후 — 본문을 고쳐 저장하기 시작하면 빠져요(SCRUM-339)
 	const needRevision = items.filter((i) => i.rejectionReasonCode === "NEED_REVISION").length
@@ -82,7 +93,13 @@ export default function DashboardView({
 	let cards
 	if (alertStats)
 		cards = [
-			["탐지 경보", alertStats.total, `${alertScope}에 룰 스캔이 탐지한 경보 수`, "alert"],
+			[
+				"탐지 경보",
+				alertStats.total,
+				`${alertScope}에 룰 스캔이 탐지한 경보 수`,
+				"alert",
+				"/admin/batches",
+			],
 			[
 				"고위험 경보",
 				alertStats.bands?.high ?? null,
@@ -90,6 +107,7 @@ export default function DashboardView({
 					? `운영 경계값 기준 HIGH 경보 수 — 이 경보만 케이스로 전환돼요(전환 ${alertStats.caseOpened.toLocaleString("ko-KR")}건)`
 					: "운영 등급 경계값이 아직 없어 나눌 수 없어요",
 				"warning",
+				listPath,
 			],
 			unassigned,
 			pending,
@@ -104,43 +122,49 @@ export default function DashboardView({
 	else if (mine)
 		// 조사역 — 내 담당 기준. 2·3·4번은 조사 → 보완 → 승인 대기 단계라 서로 겹치지 않아요
 		cards = [
-			["내 담당 케이스", total, "나에게 배정된 케이스 수", "case"],
+			["내 담당 케이스", total, "나에게 배정된 케이스 수", "case", scopedListPath],
 			[
 				"조사 중",
 				investigating,
 				"내 담당 중 아직 조사하고 있는 케이스 수(조사 중·에스컬레이션·초안 작성됨)",
 				"clock",
+				investigatingLink,
 			],
 			[
 				"보완할 초안",
 				needRevision,
 				"보완 요청으로 반려된 직후의 초안 수 — 본문을 고쳐 저장하기 시작하면 빠져요",
 				"user",
+				revisionLink,
 			],
 			[
 				"승인 대기",
 				pending[1],
 				"승인 요청을 올려 승인자 검토를 기다리는 케이스 수",
 				"approval",
+				pending[4],
 			],
 		]
 	else
 		// 승인자 — 전체 기준, 조사역과 같은 단계 틀
 		cards = [
-			["전체 조회 케이스", total, "조회 가능한 전체 케이스 수", "case"],
+			["전체 조회 케이스", total, "조회 가능한 전체 케이스 수", "case", listPath],
 			[
 				"조사 중",
 				investigating,
 				"아직 조사 단계라 곧 승인 요청이 올라올 케이스 수(조사 중·에스컬레이션·초안 작성됨)",
 				"clock",
+				investigatingLink,
 			],
 			[
 				"보완 중",
 				needRevision,
 				"보완 요청으로 반려돼 조사역이 고치고 있는 케이스 수",
 				"user",
+				revisionLink,
 			],
-			pending,
+			// 승인자의 승인 대기는 승인함으로 — 거기서 바로 검토를 시작해요
+			[pending[0], pending[1], pending[2], pending[3], "/approvals"],
 		]
 	// 오른쪽 도넛 — 관리자는 경보 위험 등급, 그 밖은 케이스 위험 등급
 	const SCORE_NOTE = "위험 점수는 범죄 확률이 아닌 조사 우선순위 지표입니다."
@@ -237,11 +261,22 @@ export default function DashboardView({
 				/>
 			)}
 			<section className="signal-kpis" aria-label="업무 현황 요약">
-				{cards.map(([name, value, note, icon], index) => (
+				{/* 카드 전체를 누르는 링크(SCRUM-432) — 링크는 카드 위에 덮고, ⓘ 버튼은 그 위로 올려 따로 눌려요.
+				    시연 화면(demo)은 합성 데이터라 링크가 없어요. */}
+				{cards.map(([name, value, note, icon, to], index) => (
 					<article
-						className={`signal-kpi ${index === 0 ? "signal-kpi-primary" : ""}`}
+						className={`signal-kpi ${index === 0 ? "signal-kpi-primary" : ""}${
+							to && !demo ? " signal-kpi-link" : ""
+						}`}
 						key={name}
 					>
+						{to && !demo && (
+							<Link
+								className="signal-kpi-anchor"
+								to={to}
+								aria-label={`${name} ${value ?? 0}건 — 목록 열기`}
+							/>
+						)}
 						<div className="metric-label">
 							{/* 제목은 낱말 사이에서만 꺾이고, ⓘ 는 마지막 낱말에 붙어 다녀요(SCRUM-390) */}
 							<span className="metric-title">

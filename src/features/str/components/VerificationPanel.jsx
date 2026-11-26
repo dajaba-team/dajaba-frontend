@@ -14,6 +14,7 @@ import {
 } from "../verificationLabels"
 import { VERIFICATION_TEXT } from "../model/strRules"
 import StatusBadge from "../../../shared/ui/StatusBadge"
+import Button from "../../../shared/ui/Button"
 
 // 검증 결과 패널 (SCRUM-116). 표의 코드 검사 6개·AI 평가 5개를 늘 다 보여 주고, 실패한 항목을 위로 올려요.
 // 표에 없는 검사 이름이 응답에 오면 이름 그대로 표 뒤에 보여 줘요(옛 GROUNDING만 뺌).
@@ -142,7 +143,9 @@ function LlmCheckRow({ item, status }) {
 	)
 }
 
-// 검증 실행 줄 — 결과가 없을 때도 있을 때도 같은 자리에 보여요. 가짜 진행률은 없어요(최대 90초 안내만).
+// 검증 실행 줄 — 결과가 없을 때도 있을 때도 같은 자리에 보여요. 가짜 진행률은 없어요.
+// [저장본 검증]은 승인 요청 전에 꼭 거치는 단계라 파란 주 버튼(SCRUM-432). 고친 게 저장 전이면 꺼진 회색이에요.
+// "최대 90초" 안내는 뺐어요 — 실제로는 몇 초 안에 끝나요(SCRUM-432).
 function VerifyControls({ hasResult, dirty, canVerify, verifying, verifyError, onVerify }) {
 	return (
 		<>
@@ -153,14 +156,14 @@ function VerifyControls({ hasResult, dirty, canVerify, verifying, verifyError, o
 			)}
 			{canVerify && (
 				<div className="str-toolbar">
-					<button type="button" onClick={onVerify} disabled={dirty || verifying}>
+					<Button variant="primary" onClick={onVerify} disabled={dirty || verifying}>
 						{verifying ? "검증 중…" : hasResult ? "다시 검증" : "저장본 검증"}
-					</button>
+					</Button>
 				</div>
 			)}
 			{verifying && (
 				<p role="status" className="str-check-note">
-					저장본을 검증하고 있어요. 최대 90초쯤 걸려요.
+					저장본을 검증하고 있어요. 잠시만 기다려 주세요.
 				</p>
 			)}
 			{verifyError && <p role="alert">{verifyError}</p>}

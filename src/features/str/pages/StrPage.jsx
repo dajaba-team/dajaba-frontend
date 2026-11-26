@@ -394,14 +394,15 @@ function StrWorkspace({ draft, detail }) {
 			</div>
 
 			<section className="str-actionbar" aria-label="STR 작업">
+				{/* [변경 저장]은 파란 주 버튼(SCRUM-432) — 고친 게 없으면 지금처럼 꺼진 회색 */}
 				{editable && (
-					<button
-						type="button"
+					<Button
+						variant="primary"
 						onClick={doSave}
 						disabled={!dirty || invalid || save.isPending}
 					>
 						{save.isPending ? "저장 중…" : "변경 저장"}
-					</button>
+					</Button>
 				)}
 				{can("REGENERATE") && (
 					<button
