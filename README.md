@@ -1,87 +1,109 @@
-# dajaba — AML 의심거래 탐지 + STR 초안 (프론트엔드)
+# dajaba frontend
 
-조사역이 우선순위대로 올라온 의심거래 케이스를 조사하고, AI가 쓴 STR(의심거래보고서) 초안을 고치고 검증해 승인자에게 넘기는 내부 업무 화면.
-React 19 / JavaScript(`.js`·`.jsx`, TypeScript 없음) / Vite / TanStack Query / React Router / MSW.
+<p align="center">
+  <img src="src/assets/brand-mark.png" alt="다자바 브랜드 마크" width="160" />
+</p>
 
-설계 정본은 팀 노션과 백엔드 리포([`dajaba-backend`](https://github.com/dajaba-team/dajaba-backend) `docs/`)예요. 프론트 규칙·구조·화면별 정리와 리뷰 체크리스트는 [`docs/README.md`](docs/README.md)에 모았어요.
+<p align="center"><strong>의심거래 탐지부터 STR 초안 검증·승인까지 이어지는 AML 조사 업무 화면</strong></p>
 
-## 처음 받았을 때 (5분)
+조사역은 경보에서 생성된 케이스의 거래·점수·이력을 확인하고, AI 조사 요약과 STR 초안을 검토합니다. 승인자는 제출된 초안을 승인하거나 반려하고, 관리자는 배치·계정·감사 기록을 확인합니다. 탐지와 판정, 권한과 상태 전이는 서버가 담당합니다.
 
-```bash
-git clone <repo> && cd dajaba-frontend
-# 1. Node 22.22.0 (.nvmrc)
-nvm install && nvm use
-# 2. 설치 — package-lock.json 그대로
-npm ci
-# 3. 환경변수
-cp .env.example .env.local
-# 4. 기동
-npm run dev            # http://localhost:5173
+**기술:** React 19 · JavaScript · Vite · React Router · TanStack Query · axios · MSW · Vitest
+
+## 화면 둘러보기
+
+| 화면          | 경로                                                | 주요 기능                                                            |
+| ------------- | --------------------------------------------------- | -------------------------------------------------------------------- |
+| 업무 대시보드 | `/overview`                                         | 역할별 업무 현황, 경보 등급 통계, 처리할 케이스·승인 건              |
+| 조사 케이스   | `/cases`, `/cases/:caseNo`                          | 목록 필터·페이지, 담당 배정, 거래·흐름·근거·이력, 메모, AI 요약·질문 |
+| STR 초안      | `/cases/:caseNo/str`                                | 초안 생성, 항목 수정·수정 이력, 검증, 승인 요청, 참고 사례 검색      |
+| 승인함        | `/approvals`, `/approvals/:draftNo`                 | 승인·반려, 모의 제출, PDF 미리보기·확정본 확인                       |
+| 관리자        | `/admin/batches`, `/admin/accounts`, `/admin/audit` | 데이터·탐지·케이스 생성 배치, 계정 관리, 감사 기록                   |
+
+화면 진입은 `/overview`입니다. 관리자와 승인자 경로는 `RequireRole`로 보호하며, 케이스와 STR의 실행 버튼은 서버 응답의 `available_actions`를 따릅니다. `/admin/alerts`와 `/admin/rules`는 메뉴가 아직 열려 있지 않습니다.
+
+## 프론트 구조
+
+```mermaid
+flowchart TD
+    U["사용자 화면 · React Router"] --> Q["기능별 훅 · TanStack Query"]
+    Q --> F["features/*/api · 응답 변환"]
+    F --> C["shared/api/apiClient · 세션·CSRF·오류"]
+    C -->|"개발: Vite 프록시 / 실행: 같은 출처"| B["백엔드 /api/v1"]
+    C -. "개발 모드 VITE_USE_MOCKS=true" .-> M["MSW 목업"]
 ```
 
-개발 모드에서 `http://localhost:5173`을 열면 먼저 **백엔드 연동 확인 화면(`/dev/connection`)**으로 가요. 조사 케이스는 `/cases`, 시연은 `/demo`로 들어가요.
+`src/app/`은 라우팅·레이아웃·QueryClient, `src/features/`는 업무 기능, `src/shared/`는 공통 API·UI·상태 표시, `src/mocks/`는 개발용 응답을 담습니다. 서버의 `snake_case`를 화면의 `camelCase`로 바꾸는 곳은 기능별 API 파일입니다. 상세 구조와 규칙은 [`docs/02_structure.md`](docs/02_structure.md), [`docs/01_code_rules.md`](docs/01_code_rules.md)에 있습니다.
 
-**백엔드 없이 보기** — `.env.local`에서 `VITE_USE_MOCKS=true`로 바꾸고 개발 서버를 다시 켜요. MSW가 API를 대신 받아요. 화면 위 로그인 폼에 `inv01` / `mock-password` → 로그인 → 목록 → 상세 → 메모 저장 → STR 화면까지 돌아가면 준비 끝. 새로고침하면 예시 데이터는 처음으로 돌아가요.
+## 조사에서 승인까지
 
-**백엔드와 같이 보기** — 백엔드를 local 프로파일로 띄우고(`docker compose up --build`, 백엔드 README 참고) `VITE_USE_MOCKS=false`. 개발 서버가 `/api` 요청을 `http://localhost:8080`으로 넘겨서(`vite.config.js` 프록시) 세션·CSRF 쿠키를 같은 출처로 써요. 한 번에 확인하려면 **`http://localhost:5173/dev/connection`**(개발 모드 전용)에서 [전체 확인] → 계정과 비밀번호(노션 「백엔드 개발 › .env」의 `DEV_USER_PASSWORD`) 입력 후 [로그인] → [로그아웃]을 눌러요. 서버 상태 · API 문서(swagger와 같은 `/v3/api-docs`) · 세션 · CSRF가 전부 "통과"면 연동 준비 끝.
+```mermaid
+sequenceDiagram
+    actor Investigator as 조사역
+    participant UI as React 화면
+    participant Query as TanStack Query
+    participant API as 백엔드 API
+    actor Approver as 승인자
+    Investigator->>UI: 케이스 목록·상세 열기
+    UI->>Query: 케이스 조회
+    Query->>API: GET /api/v1/cases/{caseNo}
+    API-->>Query: 상태·version·available_actions
+    Query-->>UI: 상세·허용된 작업 표시
+    Investigator->>UI: STR 초안 생성·수정
+    UI->>API: POST /cases/{caseNo}/str-drafts 또는 PUT /str-drafts/{draftNo}/revisions
+    API-->>UI: 생성·저장 결과
+    UI->>Query: 케이스·초안 캐시 무효화
+    Investigator->>UI: 검증 후 승인 요청
+    UI->>API: POST /str-drafts/{draftNo}/verify
+    API-->>UI: 검증 결과
+    UI->>API: POST /str-drafts/{draftNo}/submit
+    API-->>UI: 승인 대기 상태
+    Approver->>UI: 승인함에서 검토
+    UI->>API: GET /api/v1/approvals
+    API-->>UI: 승인 대기 목록
+    alt 승인
+        UI->>API: POST /approvals/{draftNo}/approve
+    else 반려
+        UI->>API: POST /approvals/{draftNo}/reject
+    end
+    API-->>UI: 변경된 케이스 상태
+```
 
-**전체 시연 화면** — 개발 모드에서만 `/demo`(업무 개요·배치·경보·룰·케이스·STR·승인·평가·감사)가 열려요. 합성 데이터만 쓰고 운영 빌드에는 들어가지 않아요. **없앨 예정이라(11/10) 고치지 않아요** — 새 작업은 실제 화면으로 해요(`docs/08_decisions.md` §1).
+다이어그램의 `/cases`, `/str-drafts`, `/approvals` 쓰기 경로에도 모두 `/api/v1` 접두사가 붙습니다. 초안 생성·검증은 AI 응답을 기다리므로 별도 타임아웃을 쓰고, 저장·승인 요청은 자동 재시도하지 않습니다. 성공하거나 응답을 확인하지 못하면 관련 케이스·초안을 다시 조회합니다. 409 충돌에서는 사용자가 작성한 입력을 유지하고 최신 상태를 확인하도록 안내합니다. 서버는 승인 요청 때 현재 검증 결과와 권한을 다시 검사합니다.
 
-### .env 변수
+## 로컬 실행
 
-| 변수                | 쓰는 곳                                                                 |
-| ------------------- | ----------------------------------------------------------------------- |
-| `VITE_API_BASE_URL` | API 주소. 개발은 `/`(Vite 프록시). 비우면 같은 출처(개발은 Vite 프록시) |
-| `VITE_USE_MOCKS`    | `true`면 개발 모드에서 MSW 사용. 운영·preview 빌드에서는 무시           |
+Node 버전은 `.nvmrc`의 **22.22.0**입니다.
 
-`VITE_` 값은 **빌드 결과에 그대로 들어가 누구나 볼 수 있어요.** 비밀값을 넣지 않아요. `.env.local`은 커밋되지 않아요.
+```bash
+git clone https://github.com/dajaba-team/dajaba-frontend.git
+cd dajaba-frontend
+nvm install && nvm use
+npm ci
+cp .env.example .env.local
+npm run dev
+```
 
-## 명령
+`http://localhost:5173`에서 실행합니다. 백엔드와 연결할 때는 `.env.local`의 `VITE_USE_MOCKS=false`를 사용하고 백엔드를 8080 포트로 실행합니다. Vite가 개발 중 `/api`를 백엔드로 전달합니다. `/dev/connection`에서 서버·세션·CSRF 연동을 확인할 수 있습니다.
 
-| 명령                              | 역할                          |
-| --------------------------------- | ----------------------------- |
-| `npm run dev`                     | 개발 서버 (5173)              |
-| `npm run lint`                    | ESLint (경고도 실패)          |
-| `npm run format` / `format:check` | Prettier 정리 / 검사          |
-| `npm test` / `test:run`           | Vitest 감시 모드 / 한 번 실행 |
-| `npm run build` / `preview`       | `dist` 생성 / 빌드 결과 확인  |
+백엔드 없이 화면을 확인하려면 `.env.local`에 `VITE_USE_MOCKS=true`를 지정하고 개발 서버를 다시 시작합니다. 예시 조사역 계정은 `inv01` / `mock-password`입니다. MSW 데이터는 새로고침하면 초기화됩니다. `/demo/*`도 개발 모드 전용 합성 데이터 화면이며 운영 빌드에서는 제외됩니다.
 
-CI(`.github/workflows/ci.yml`)는 lint → format:check → test:run → build를 돌려요. PR 전에 넷 다 로컬에서 통과시켜요.
+| 환경 변수           | 용도                                   |
+| ------------------- | -------------------------------------- |
+| `VITE_API_BASE_URL` | API 기본 주소. 비우면 같은 출처를 사용 |
+| `VITE_USE_MOCKS`    | 개발 모드에서 `true`일 때 MSW 사용     |
 
-## 지금 들어 있는 것 (W1 뼈대, 10/31)
+`VITE_` 환경 변수는 빌드에 포함되므로 비밀번호나 비밀키를 넣지 않습니다.
 
-| 묶음      | 파일                                                                                                                                             | 상태                                                                        |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| 앱 뼈대   | `src/app/` — 라우터, `QueryClient`(401·계정 전환 시 업무 캐시 제거), `AppLayout`                                                                 | 진짜                                                                        |
-| 공통 API  | `src/shared/api/apiClient.js` — axios, 쿠키·CSRF, 에러 코드 → 안내 문구                                                                          | 진짜. AI 전용 timeout(90초+)은 아직                                         |
-| 인증      | `src/features/auth/` — `GET /auth/me`, `POST /auth/login`(아이디·비밀번호), 로그아웃                                                             | **실제 백엔드 API** (BE PR #20)                                             |
-| 케이스    | `src/features/cases/` — 목록(상태·내 담당 필터·페이지 URL), 상세, 배정·에스컬레이션·종료(초안 있는 종료 포함), 메모 저장(충돌 시 입력 보존·비교) | 실제 `/api/v1/cases` (BE SCRUM-106). 메모·초안 있는 종료만 BE 준비 중 — MSW |
-| STR       | `src/features/str/pages/StrPage.jsx`                                                                                                             | 경로와 안내 화면만                                                          |
-| 시연      | `/demo/*` — `src/mocks/dashboard/`, 각 기능의 `Demo*Page.jsx`                                                                                    | 개발 전용, 합성 데이터                                                      |
-| 연동 확인 | `/dev/connection` — `src/features/connection/` (health · api-docs · me · 로그인 · 로그아웃)                                                      | 개발 전용, 실제 백엔드 또는 MSW                                             |
-| 목업      | `src/mocks/handlers.js`·`cases.js`(MSW)                                                                                                          | 인증·케이스 모두 백엔드와 같은 모양                                         |
-| 테스트    | `src/test/` — 사용자 흐름 25개 (인증·캐시 정리·목록·상세·메모 충돌·CSRF·시연)                                                                    | Vitest + Testing Library + MSW                                              |
-| 배포      | `vercel.json`(SPA rewrite)                                                                                                                       | Vercel 연결·보호 규칙은 아직                                                |
+## 개발·검증
 
-### 목업인 범위
+```bash
+npm run lint
+npm run format:check
+npm run test:run
+npm run build
+```
 
-인증은 **백엔드의 진짜 모양**(`/api/v1/auth/*`, snake_case, 세션·CSRF)이에요. MSW 로그인도 같은 계약(401 `LOGIN_FAILED`·400 `INVALID_REQUEST`)이고 비밀번호는 `mock-password` 하나예요.
-케이스 API는 계약서 v0.2와 백엔드 `CaseController`(SCRUM-106) 모양 그대로예요(`page` 0부터, `{items, page, size, total}`, `CONCURRENT_UPDATE`). 자세한 건 [`docs/03_api.md`](docs/03_api.md) §5.
+CI에서도 위 네 명령을 실행합니다. 사용자 흐름 테스트는 Vitest · Testing Library · MSW를 사용합니다. 세션 만료·계정 전환 때는 진행 중 조회를 취소하고 업무 캐시를 지워 이전 사용자의 데이터가 남지 않도록 합니다. 상세·초안 열람처럼 서버에 접근 기록이 남는 조회는 창 포커스 복귀만으로 다시 호출하지 않습니다.
 
-## 규칙 세 줄
-
-1. **API는 `features/{기능}/api/`에서만 부르고, snake_case는 그 경계에서 한 번 바꾼다.** 컴포넌트는 `apiClient`를 직접 모른다.
-2. **서버 데이터는 TanStack Query에만.** Zustand·컴포넌트 상태에 복사하지 않는다. 쓰기는 자동 재시도·낙관적 상태 변경 없이, 성공 응답 뒤에 캐시를 고친다.
-3. **버튼은 서버가 준 `available_actions`만 보고 켠다**(화면이 role·담당자·상태로 계산하지 않음). 판단은 서버가 다시 한다. 에러는 `error.code`로 분기하고 실패해도 사용자 입력은 지우지 않는다.
-
-자세한 건 [`docs/01_code_rules.md`](docs/01_code_rules.md) → [`docs/02_structure.md`](docs/02_structure.md).
-
-## 팀 작업
-
-`feat/SCRUM-xx` 브랜치 → `develop`으로 PR(템플릿 채우기) → CI 초록불 + 1명 Approve → 머지. `main`은 develop에서만 올려요. 커밋은 `Gitmoji type: 내용`(`✨ feat: 케이스 에스컬레이션 버튼`). `package-lock.json`을 같이 커밋하고 설치는 `npm ci`.
-
-## 다음
-
-- 케이스 상세: 배정 · 에스컬레이션 · 종료 · 근거 거래 · AI 요약
-- STR 편집 · 검증 · 승인 요청 → 승인함 · 반려 → 관리자 배치·계정
-- 순서와 미결 계약은 [`docs/08_decisions.md`](docs/08_decisions.md)
+API·화면별 상세는 [`docs/README.md`](docs/README.md)에서, 서버 설계와 상태 전이 기준은 [백엔드 저장소](https://github.com/dajaba-team/dajaba-backend)에서 확인할 수 있습니다. 팀 작업은 `feat/SCRUM-xx` 브랜치에서 `develop` 대상 PR로 진행합니다.
